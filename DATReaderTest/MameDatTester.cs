@@ -37,7 +37,11 @@ namespace Tester
         static readonly Stopwatch Sw = new Stopwatch();
         public static void Go()
         {
-            _file = new StreamWriter(@"D:\timeout.txt");
+            // test DAT files can be downloaded from
+            // www.romvault.com/download/TestDATs.rar
+            // extract this RAR to the same folder as MameDatTester.exe
+
+            _file = new StreamWriter(@"timeout.txt");
             //ProcVer("0.194");
             //ProcVer("0.195");
             //ProcVer("0.196");

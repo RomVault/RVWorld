@@ -1,6 +1,6 @@
 # RVWorld (RomVaultWorld)
 
-##The future home of RomVault 3.0
+## The future home of RomVault 3.0
 
 For now:
 * Compress         --  7Zip & Zip compression libraries
