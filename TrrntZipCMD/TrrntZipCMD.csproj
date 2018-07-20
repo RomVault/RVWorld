@@ -7,7 +7,7 @@
     <ProjectGuid>{68E9ABE4-313F-4345-9A8E-6E80289651C5}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <RootNamespace>TrrntZipCMD</RootNamespace>
-    <AssemblyName>TrrntZipCMD</AssemblyName>
+    <AssemblyName>TrrntZip.NET</AssemblyName>
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
