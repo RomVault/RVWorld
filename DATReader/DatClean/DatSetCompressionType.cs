@@ -2,12 +2,13 @@
 
 namespace DATReader.DatClean
 {
-    public static class DatSetTorrentZip
+    public static class DatSetCompressionType
     {
         public static void SetTorrentZip(DatBase inDat)
         {
             if (inDat is DatFile dFile)
             {
+                dFile.Name = dFile.Name.Replace("\\", "/");
                 dFile.DatFileType = DatFileType.FileTorrentZip;
                 return;
             }
@@ -41,7 +42,7 @@ namespace DATReader.DatClean
         {
             if (inDat is DatFile dFile)
             {
-                dFile.Name = dFile.Name.Replace(@"\", @"/");
+                dFile.Name = dFile.Name.Replace("\\", "/");
                 dFile.DatFileType = DatFileType.File7Zip;
                 return;
             }

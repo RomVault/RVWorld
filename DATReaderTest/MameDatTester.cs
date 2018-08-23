@@ -87,13 +87,13 @@ namespace Tester
             DatClean.RemoveEmptySets(dh.BaseDir);
             WriteLine(ver, "Removed Empty Sets");
 
-            DatSetTorrentZip.SetTorrentZip(dh.BaseDir);
+            DatSetCompressionType.SetTorrentZip(dh.BaseDir);
             WriteLine(ver, "Set TorrentZip");
             dxw.WriteDat(@"TestDATs\out\MAME " + ver + " ROMS (split-fromBin).xml", dh);
 
             WriteLine(ver, "Reading Dat Set");
             dr.ReadDat(@"TestDATs\MAME " + ver + " ROMs (split).xml", out dh);
-            DatSetTorrentZip.SetTorrentZip(dh.BaseDir);
+            DatSetCompressionType.SetTorrentZip(dh.BaseDir);
             dxw.WriteDat(@"TestDATs\out\MAME " + ver + " ROMs (split-sorted).xml", dh);
 
             WriteLine(ver, "Done Set 1");
@@ -119,13 +119,13 @@ namespace Tester
             DatClean.RemoveEmptySets(dh.BaseDir);
             WriteLine(ver, "Removed Empty Sets");
 
-            DatSetTorrentZip.SetTorrentZip(dh.BaseDir);
+            DatSetCompressionType.SetTorrentZip(dh.BaseDir);
             WriteLine(ver, "Set TorrentZip");
             dxw.WriteDat(@"TestDATs\out\MAME " + ver + " ROMS (merged-fromBin).xml", dh);
 
             WriteLine(ver, "Reading Dat Set");
             dr.ReadDat(@"TestDATs\MAME " + ver + " ROMs (merged).xml", out dh);
-            DatSetTorrentZip.SetTorrentZip(dh.BaseDir);
+            DatSetCompressionType.SetTorrentZip(dh.BaseDir);
             dxw.WriteDat(@"TestDATs\out\MAME " + ver + " ROMs (merged-sorted).xml", dh);
 
             WriteLine(ver, "Done Set 2");
@@ -153,13 +153,13 @@ namespace Tester
             DatClean.RemoveEmptySets(dh.BaseDir);
             WriteLine(ver, "Removed Empty Sets");
 
-            DatSetTorrentZip.SetTorrentZip(dh.BaseDir);
+            DatSetCompressionType.SetTorrentZip(dh.BaseDir);
             WriteLine(ver, "Set TorrentZip");
             dxw.WriteDat(@"TestDATs\out\MAME " + ver + " ROMS (non-merged-fromBin).xml", dh);
 
             WriteLine(ver, "Reading Dat Set");
             dr.ReadDat(@"TestDATs\MAME " + ver + " ROMs (non-merged).xml", out dh);
-            DatSetTorrentZip.SetTorrentZip(dh.BaseDir);
+            DatSetCompressionType.SetTorrentZip(dh.BaseDir);
             dxw.WriteDat(@"TestDATs\out\MAME " + ver + " ROMs (non-merged-sorted).xml", dh);
 
             WriteLine(ver, "Done Set 3");

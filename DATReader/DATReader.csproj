@@ -52,10 +52,11 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="DatClean\DatClean.cs" />
+    <Compile Include="DatClean\DatSetCleanFilenames.cs" />
     <Compile Include="DatClean\DatSetRemove.cs" />
     <Compile Include="DatClean\DatSetMakeMergeSet.cs" />
     <Compile Include="DatClean\DatSetMakeNonMergeSet.cs" />
-    <Compile Include="DatClean\DatSetTorrentZip.cs" />
+    <Compile Include="DatClean\DatSetCompressionType.cs" />
     <Compile Include="Utils\ArrByte.cs" />
     <Compile Include="Utils\DatFindParentSets.cs" />
     <Compile Include="DatClean\DatSetMakeSplitSet.cs" />
