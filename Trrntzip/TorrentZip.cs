@@ -4,38 +4,37 @@ using Compress;
 using Compress.SevenZip;
 using Compress.ZipFile;
 using RVIO;
+using File = Compress.File.File;
 
 namespace Trrntzip
 {
-    public delegate void StatusCallback(int threadID, int precent);
+    public delegate void StatusCallback(int threadId, int precent);
 
-    public delegate void LogCallback(int threadID, string log);
+    public delegate void LogCallback(int threadId, string log);
 
     public class TorrentZip
     {
         private readonly byte[] _buffer;
         public StatusCallback StatusCallBack;
         public LogCallback StatusLogCallBack;
-        public int ThreadID;
+        public int ThreadId;
 
         public TorrentZip()
         {
-            _buffer = new byte[1024*1024];
+            _buffer = new byte[1024 * 1024];
         }
 
         public TrrntZipStatus Process(FileInfo fi)
         {
             if (Program.VerboseLogging)
             {
-                StatusLogCallBack?.Invoke(ThreadID, "");
+                StatusLogCallBack?.Invoke(ThreadId, "");
             }
 
-            StatusLogCallBack?.Invoke(ThreadID, fi.Name + " - ");
+            StatusLogCallBack?.Invoke(ThreadId, fi.Name + " - ");
 
             // First open the zip (7z) file, and fail out if it is corrupt.
-
-            ICompress zipFile;
-            TrrntZipStatus tzs = OpenZip(fi, out zipFile);
+            TrrntZipStatus tzs = OpenZip(fi, out ICompress zipFile);
             // this will return ValidTrrntZip or CorruptZip.
 
             for (int i = 0; i < zipFile.LocalFilesCount(); i++)
@@ -45,7 +44,7 @@ namespace Trrntzip
 
             if ((tzs & TrrntZipStatus.CorruptZip) == TrrntZipStatus.CorruptZip)
             {
-                StatusLogCallBack?.Invoke(ThreadID, "Zip file is corrupt");
+                StatusLogCallBack?.Invoke(ThreadId, "Zip file is corrupt");
                 return TrrntZipStatus.CorruptZip;
             }
 
@@ -53,24 +52,28 @@ namespace Trrntzip
             // is actually valid, and may invalidate it being a valid trrntzip if any problem is found.
 
             List<ZippedFile> zippedFiles = ReadZipContent(zipFile);
-            tzs |= TorrentZipCheck.CheckZipFiles(ref zippedFiles, ThreadID, StatusLogCallBack);
+            tzs |= TorrentZipCheck.CheckZipFiles(ref zippedFiles, ThreadId, StatusLogCallBack);
 
             // check if the compression type has changed
             zipType inputType;
-            if (zipFile is ZipFile)
+            switch (zipFile)
             {
-                inputType = zipType.zip;
-            }
-            else if (zipFile is SevenZ)
-            {
-                inputType = zipType.sevenzip;
-            }
-            else
-            {
-                return TrrntZipStatus.Unknown;
+                case ZipFile _:
+                    inputType = zipType.zip;
+                    break;
+                case SevenZ _:
+                    inputType = zipType.sevenzip;
+                    break;
+                case File _:
+                    inputType = zipType.iso;
+                    break;
+                default:
+                    return TrrntZipStatus.Unknown;
             }
 
             zipType outputType = Program.OutZip == zipType.both ? inputType : Program.OutZip;
+            if (outputType == zipType.iso) outputType = zipType.zip;
+
             bool compressionChanged = inputType != outputType;
 
 
@@ -78,12 +81,12 @@ namespace Trrntzip
 
             if (((tzs == TrrntZipStatus.ValidTrrntzip) && !compressionChanged && !Program.ForceReZip) || Program.CheckOnly)
             {
-                StatusLogCallBack?.Invoke(ThreadID, "Skipping File");
+                StatusLogCallBack?.Invoke(ThreadId, "Skipping File");
                 return TrrntZipStatus.ValidTrrntzip;
             }
 
-            StatusLogCallBack?.Invoke(ThreadID, "TorrentZipping");
-            TrrntZipStatus fixedTzs = TorrentZipRebuild.ReZipFiles(zippedFiles, zipFile, _buffer, StatusCallBack, StatusLogCallBack, ThreadID);
+            StatusLogCallBack?.Invoke(ThreadId, "TorrentZipping");
+            TrrntZipStatus fixedTzs = TorrentZipRebuild.ReZipFiles(zippedFiles, zipFile, _buffer, StatusCallBack, StatusLogCallBack, ThreadId);
             return fixedTzs;
         }
 
@@ -91,16 +94,20 @@ namespace Trrntzip
         private TrrntZipStatus OpenZip(FileInfo fi, out ICompress zipFile)
         {
             string ext = Path.GetExtension(fi.Name);
-            if (ext == ".7z")
+            switch (ext)
             {
-                zipFile = new SevenZ();
-            }
-            else
-            {
-                zipFile = new ZipFile();
+                case ".iso":
+                    zipFile = new File();
+                    break;
+                case ".7z":
+                    zipFile = new SevenZ();
+                    break;
+                default:
+                    zipFile = new ZipFile();
+                    break;
             }
 
-            ZipReturn zr = zipFile.ZipFileOpen(fi.FullName, fi.LastWriteTime, true);
+            ZipReturn zr = zipFile.ZipFileOpen(fi.FullName, fi.LastWriteTime);
             if (zr != ZipReturn.ZipGood)
             {
                 return TrrntZipStatus.CorruptZip;
@@ -117,7 +124,7 @@ namespace Trrntzip
             return tzStatus;
         }
 
-        private List<ZippedFile> ReadZipContent(ICompress zipFile)
+        private static List<ZippedFile> ReadZipContent(ICompress zipFile)
         {
             List<ZippedFile> zippedFiles = new List<ZippedFile>();
             for (int i = 0; i < zipFile.LocalFilesCount(); i++)

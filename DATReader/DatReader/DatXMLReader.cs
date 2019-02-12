@@ -234,24 +234,24 @@ namespace DATReader.DatReader
             dGame.Manufacturer = VarFix.String(gameNode.SelectSingleNode("manufacturer"));
             dGame.Runnable = VarFix.String(gameNode.Attributes?.GetNamedItem("runnable"));
 
-            XmlNode tea = gameNode.SelectSingleNode("tea") ?? gameNode.SelectSingleNode("trurip");
-            if (tea != null)
+            XmlNode emuArc = gameNode.SelectSingleNode("tea") ?? gameNode.SelectSingleNode("trurip") ?? gameNode.SelectSingleNode("EmuArc");
+            if (emuArc != null)
             {
-                dGame.IsTea = true;
-                dGame.TitleId = VarFix.String(tea.SelectSingleNode("titleid"));
-                dGame.Publisher = VarFix.String(tea.SelectSingleNode("publisher"));
-                dGame.Developer = VarFix.String(tea.SelectSingleNode("developer"));
+                dGame.IsEmuArc = true;
+                dGame.TitleId = VarFix.String(emuArc.SelectSingleNode("titleid"));
+                dGame.Publisher = VarFix.String(emuArc.SelectSingleNode("publisher"));
+                dGame.Developer = VarFix.String(emuArc.SelectSingleNode("developer"));
                 dGame.Year = VarFix.String(gameNode.SelectSingleNode("year"));
-                dGame.Genre = VarFix.String(tea.SelectSingleNode("genre"));
-                dGame.SubGenre = VarFix.String(tea.SelectSingleNode("subgenre"));
-                dGame.Ratings = VarFix.String(tea.SelectSingleNode("ratings"));
-                dGame.Score = VarFix.String(tea.SelectSingleNode("score"));
-                dGame.Players = VarFix.String(tea.SelectSingleNode("players"));
-                dGame.Enabled = VarFix.String(tea.SelectSingleNode("enabled"));
-                dGame.CRC = VarFix.String(tea.SelectSingleNode("crc"));
-                dGame.CloneOf = VarFix.String(tea.SelectSingleNode("cloneof"));
-                dGame.RelatedTo = VarFix.String(tea.SelectSingleNode("relatedto"));
-                dGame.Source = VarFix.String(tea.SelectSingleNode("source"));
+                dGame.Genre = VarFix.String(emuArc.SelectSingleNode("genre"));
+                dGame.SubGenre = VarFix.String(emuArc.SelectSingleNode("subgenre"));
+                dGame.Ratings = VarFix.String(emuArc.SelectSingleNode("ratings"));
+                dGame.Score = VarFix.String(emuArc.SelectSingleNode("score"));
+                dGame.Players = VarFix.String(emuArc.SelectSingleNode("players"));
+                dGame.Enabled = VarFix.String(emuArc.SelectSingleNode("enabled"));
+                dGame.CRC = VarFix.String(emuArc.SelectSingleNode("crc"));
+                dGame.CloneOf = VarFix.String(emuArc.SelectSingleNode("cloneof"));
+                dGame.RelatedTo = VarFix.String(emuArc.SelectSingleNode("relatedto"));
+                dGame.Source = VarFix.String(emuArc.SelectSingleNode("source"));
             }
 
             parentDir.ChildAdd(dDir);

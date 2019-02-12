@@ -11,6 +11,8 @@ namespace Compress
         ulong UncompressedSize(int i);
         byte[] CRC32(int i);
 
+        bool IsDirectory(int i);
+
         ZipOpenType ZipOpen { get; }
 
         ZipReturn ZipFileOpen(string newFilename, long timestamp =-1, bool readHeaders=true);

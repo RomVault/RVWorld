@@ -5,7 +5,6 @@ using Compress;
 using Compress.SevenZip;
 using Compress.Utils;
 using Compress.ZipFile;
-using Compress.ZipFile.ZLib;
 using File = RVIO.File;
 using Path = RVIO.Path;
 
@@ -13,23 +12,26 @@ namespace Trrntzip
 {
     public static class TorrentZipRebuild
     {
-        public static TrrntZipStatus ReZipFiles(List<ZippedFile> zippedFiles, ICompress originalZipFile, byte[] buffer, StatusCallback StatusCallBack, LogCallback LogCallback, int ThreadID)
+        public static TrrntZipStatus ReZipFiles(List<ZippedFile> zippedFiles, ICompress originalZipFile, byte[] buffer, StatusCallback statusCallBack, LogCallback logCallback, int threadId)
         {
             zipType inputType;
-            if (originalZipFile is ZipFile)
+            switch (originalZipFile)
             {
-                inputType = zipType.zip;
-            }
-            else if (originalZipFile is SevenZ)
-            {
-                inputType = zipType.sevenzip;
-            }
-            else
-            {
-                return TrrntZipStatus.Unknown;
+                case ZipFile _:
+                    inputType = zipType.zip;
+                    break;
+                case SevenZ _:
+                    inputType = zipType.sevenzip;
+                    break;
+                case Compress.File.File _:
+                    inputType = zipType.iso;
+                    break;
+                default:
+                    return TrrntZipStatus.Unknown;
             }
 
             zipType outputType = Program.OutZip == zipType.both ? inputType : Program.OutZip;
+            if (outputType == zipType.iso) outputType = zipType.zip;
 
             int bufferSize = buffer.Length;
 
@@ -43,7 +45,7 @@ namespace Trrntzip
             {
                 if (File.Exists(outfilename))
                 {
-                    LogCallback?.Invoke(ThreadID, "Error output " + outExt + " file already exists");
+                    logCallback?.Invoke(threadId, "Error output " + outExt + " file already exists");
                     return TrrntZipStatus.RepeatFilesFound;
                 }
             }
@@ -53,7 +55,7 @@ namespace Trrntzip
                 File.Delete(tmpFilename);
             }
 
-            ICompress zipFileOut = outputType == zipType.zip ? new ZipFile() : (ICompress) new SevenZ();
+            ICompress zipFileOut = outputType == zipType.zip ? new ZipFile() : (ICompress)new SevenZ();
 
             try
             {
@@ -69,33 +71,32 @@ namespace Trrntzip
                 }
 
                 // by now the zippedFiles have been sorted so just loop over them
-                for (int i = 0; i < zippedFiles.Count; i++)
+                foreach (ZippedFile t in zippedFiles)
                 {
-                    ZippedFile t = zippedFiles[i];
-
                     if (Program.VerboseLogging)
                     {
-                        LogCallback?.Invoke(ThreadID, $"{t.Size,15}  {t.StringCRC}   {t.Name}");
+                        logCallback?.Invoke(threadId, $"{t.Size,15}  {t.StringCRC}   {t.Name}");
                     }
 
                     Stream readStream = null;
                     ulong streamSize = 0;
-                    ushort compMethod;
 
-                    ZipFile z = originalZipFile as ZipFile;
                     ZipReturn zrInput = ZipReturn.ZipUntested;
-                    if (z != null)
+                    switch (originalZipFile)
                     {
-                        zrInput = z.ZipFileOpenReadStream(t.Index, false, out readStream, out streamSize, out compMethod);
-                    }
-                    SevenZ z7 = originalZipFile as SevenZ;
-                    if (z7 != null)
-                    {
-                        zrInput = z7.ZipFileOpenReadStream(t.Index, out readStream, out streamSize);
+                        case ZipFile z:
+                            zrInput = z.ZipFileOpenReadStream(t.Index, false, out readStream, out streamSize, out ushort _);
+                            break;
+                        case SevenZ z7:
+                            zrInput = z7.ZipFileOpenReadStream(t.Index, out readStream, out streamSize);
+                            break;
+                        case Compress.File.File zf:
+                            zrInput = zf.ZipFileOpenReadStream(t.Index, out readStream, out streamSize);
+                            break;
                     }
 
-                    Stream writeStream;
-                    ZipReturn zrOutput = zipFileOut.ZipFileOpenWriteStream(false, true, t.Name, streamSize, 8, out writeStream);
+
+                    ZipReturn zrOutput = zipFileOut.ZipFileOpenWriteStream(false, true, t.Name, streamSize, 8, out Stream writeStream);
 
                     if ((zrInput != ZipReturn.ZipGood) || (zrOutput != ZipReturn.ZipGood))
                     {
@@ -111,29 +112,32 @@ namespace Trrntzip
                     ulong sizetogo = streamSize;
                     while (sizetogo > 0)
                     {
-                        int sizenow = sizetogo > (ulong) bufferSize ? bufferSize : (int) sizetogo;
+                        int sizenow = sizetogo > (ulong)bufferSize ? bufferSize : (int)sizetogo;
 
-                        fileSizeProgress += (ulong) sizenow;
-                        int filePercent = (int) ((double) fileSizeProgress/fileSizeTotal*20);
+                        fileSizeProgress += (ulong)sizenow;
+                        int filePercent = (int)((double)fileSizeProgress / fileSizeTotal * 20);
                         if (filePercent != filePercentReported)
                         {
-                            StatusCallBack?.Invoke(ThreadID, filePercent*5);
+                            statusCallBack?.Invoke(threadId, filePercent * 5);
                             filePercentReported = filePercent;
                         }
 
                         crcCs.Read(buffer, 0, sizenow);
                         writeStream.Write(buffer, 0, sizenow);
-                        sizetogo = sizetogo - (ulong) sizenow;
+                        sizetogo = sizetogo - (ulong)sizenow;
                     }
                     writeStream.Flush();
 
                     crcCs.Close();
-                    if (z != null)
+                    if (inputType != zipType.sevenzip)
                     {
                         originalZipFile.ZipFileCloseReadStream();
                     }
 
-                    uint crc = (uint) ((CrcCalculatorStream) crcCs).Crc;
+                    uint crc = (uint)((CrcCalculatorStream)crcCs).Crc;
+
+                    if (t.CRC == null)
+                        t.CRC = crc;
 
                     if (crc != t.CRC)
                     {
@@ -142,7 +146,7 @@ namespace Trrntzip
 
                     zipFileOut.ZipFileCloseWriteStream(t.ByteCRC);
                 }
-                StatusCallBack?.Invoke(ThreadID, 100);
+                statusCallBack?.Invoke(threadId, 100);
 
                 zipFileOut.ZipFileClose();
                 originalZipFile.ZipFileClose();

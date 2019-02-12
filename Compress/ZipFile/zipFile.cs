@@ -33,13 +33,11 @@ namespace Compress.ZipFile
 
         private byte[] _fileComment;
         private Stream _zipFs;
+        private Stream _compressionStream;
 
         private uint _localFilesCount;
 
         private bool _zip64;
-
-
-        private int _readIndex;
 
         public string ZipFilename => _zipFileInfo != null ? _zipFileInfo.FullName : "";
 
@@ -75,7 +73,14 @@ namespace Compress.ZipFile
             return _localFiles[i].CRC;
         }
 
-
+        public bool IsDirectory(int i)
+        {
+            if (_localFiles[i].UncompressedSize != 0)
+                return false;
+            string filename = _localFiles[i].FileName;
+            char lastChar = filename[filename.Length - 1];
+            return lastChar == '/' || lastChar == '\\';
+        }
 
         public ZipReturn ZipFileCreate(string newFilename)
         {
@@ -188,7 +193,16 @@ namespace Compress.ZipFile
 
         public ZipReturn ZipFileCloseReadStream()
         {
-            return _localFiles[_readIndex].LocalFileCloseReadStream();
+            if (_compressionStream == null)
+                return ZipReturn.ZipGood;
+            if (_compressionStream is DeflateStream dfStream)
+            {
+                dfStream.Close();
+                dfStream.Dispose();
+            }
+            _compressionStream = null;
+
+            return ZipReturn.ZipGood;
         }
 
         public ZipReturn ZipFileOpenWriteStream(bool raw, bool trrntzip, string filename, ulong uncompressedSize, ushort compressionMethod, out Stream stream)
@@ -199,10 +213,11 @@ namespace Compress.ZipFile
                 return ZipReturn.ZipWritingToInputFile;
             }
 
-            LocalFile lf = new LocalFile(_zipFs, filename);
+            LocalFile lf = new LocalFile(filename);
 
-            ZipReturn retVal = lf.LocalFileOpenWriteStream(raw, trrntzip, uncompressedSize, compressionMethod, out stream);
+            ZipReturn retVal = lf.LocalFileOpenWriteStream(_zipFs, raw, trrntzip, uncompressedSize, compressionMethod, out stream);
 
+            _compressionStream = stream;
             _localFiles.Add(lf);
 
             return retVal;
@@ -211,7 +226,15 @@ namespace Compress.ZipFile
 
         public ZipReturn ZipFileCloseWriteStream(byte[] crc32)
         {
-            return _localFiles[_localFiles.Count - 1].LocalFileCloseWriteStream(crc32);
+            if (_compressionStream is DeflateStream dfStream)
+            {
+                dfStream.Flush();
+                dfStream.Close();
+                dfStream.Dispose();
+            }
+            _compressionStream = null;
+
+            return _localFiles[_localFiles.Count - 1].LocalFileCloseWriteStream(_zipFs, crc32);
         }
 
         public ZipReturn ZipFileRollBack()
@@ -236,9 +259,8 @@ namespace Compress.ZipFile
 
         public void ZipFileAddDirectory()
         {
-            _localFiles[_localFiles.Count - 1].LocalFileAddDirectory();
+            LocalFile.LocalFileAddDirectory(_zipFs);
         }
-
 
         /*
         public void BreakTrrntZip(string filename)
@@ -259,8 +281,6 @@ namespace Compress.ZipFile
             _zipFs.Close();
         }
         */
-
-
 
         ~ZipFile()
         {
@@ -626,8 +646,8 @@ namespace Compress.ZipFile
                 _localFiles.Capacity = (int)_localFilesCount;
                 for (int i = 0; i < _localFilesCount; i++)
                 {
-                    LocalFile lc = new LocalFile(_zipFs);
-                    zRet = lc.CenteralDirectoryRead();
+                    LocalFile lc = new LocalFile();
+                    zRet = lc.CenteralDirectoryRead(_zipFs);
                     if (zRet != ZipReturn.ZipGood)
                     {
                         ZipFileClose();
@@ -639,7 +659,7 @@ namespace Compress.ZipFile
 
                 for (int i = 0; i < _localFilesCount; i++)
                 {
-                    zRet = _localFiles[i].LocalFileHeaderRead();
+                    zRet = _localFiles[i].LocalFileHeaderRead(_zipFs);
                     if (zRet != ZipReturn.ZipGood)
                     {
                         ZipFileClose();
@@ -781,39 +801,43 @@ namespace Compress.ZipFile
 
             streamSize = 0;
             compressionMethod = 0;
-            _readIndex = index;
             stream = null;
             if (ZipOpen != ZipOpenType.OpenRead)
             {
                 return ZipReturn.ZipReadingFromOutputFile;
             }
 
-            ZipReturn zRet = _localFiles[index].LocalFileHeaderRead();
+            ZipReturn zRet = _localFiles[index].LocalFileHeaderRead(_zipFs);
             if (zRet != ZipReturn.ZipGood)
             {
                 ZipFileClose();
                 return zRet;
             }
 
-            return _localFiles[index].LocalFileOpenReadStream(raw, out stream, out streamSize, out compressionMethod);
+            zRet = _localFiles[index].LocalFileOpenReadStream(_zipFs, raw, out stream, out streamSize, out compressionMethod);
+            _compressionStream = stream;
+            return zRet;
         }
 
         public ZipReturn ZipFileOpenReadStreamQuick(ulong pos, bool raw, out Stream stream, out ulong streamSize, out ushort compressionMethod)
         {
-            LocalFile tmpFile = new LocalFile(_zipFs) { LocalFilePos = pos };
+            ZipFileCloseReadStream();
+
+            LocalFile tmpFile = new LocalFile { LocalFilePos = pos };
             _localFiles.Clear();
             _localFiles.Add(tmpFile);
-            ZipReturn zr = tmpFile.LocalFileHeaderReadQuick();
-            if (zr != ZipReturn.ZipGood)
+            ZipReturn zRet = tmpFile.LocalFileHeaderReadQuick(_zipFs);
+            if (zRet != ZipReturn.ZipGood)
             {
                 stream = null;
                 streamSize = 0;
                 compressionMethod = 0;
-                return zr;
+                return zRet;
             }
-            _readIndex = 0;
 
-            return tmpFile.LocalFileOpenReadStream(raw, out stream, out streamSize, out compressionMethod);
+            zRet = tmpFile.LocalFileOpenReadStream(_zipFs, raw, out stream, out streamSize, out compressionMethod);
+            _compressionStream = stream;
+            return zRet;
         }
 
         public ZipReturn ZipFileAddFake(string filename, ulong fileOffset, ulong uncompressedSize, ulong compressedSize, byte[] crc32, out byte[] localHeader)
@@ -825,7 +849,7 @@ namespace Compress.ZipFile
                 return ZipReturn.ZipWritingToInputFile;
             }
 
-            LocalFile lf = new LocalFile(_zipFs, filename);
+            LocalFile lf = new LocalFile(filename);
             _localFiles.Add(lf);
 
             MemoryStream ms = new MemoryStream();
@@ -1037,7 +1061,6 @@ namespace Compress.ZipFile
 
         private class LocalFile
         {
-            private readonly Stream _zipFs;
             private ushort _compressionMethod;
             private ushort _lastModFileTime;
             private ushort _lastModFileDate;
@@ -1048,21 +1071,13 @@ namespace Compress.ZipFile
             private ulong _extraLocation;
             private ulong _dataLocation;
 
-            public ZipReturn FileStatus = ZipReturn.ZipUntested;
-
-            private Stream _readStream;
-
-            private Stream _writeStream;
-
-            public LocalFile(Stream zipFs)
+            public LocalFile()
             {
-                _zipFs = zipFs;
             }
 
-            public LocalFile(Stream zipFs, string filename)
+            public LocalFile(string filename)
             {
                 Zip64 = false;
-                _zipFs = zipFs;
                 GeneralPurposeBitFlag = 2; // Maximum Compression Deflating
                 _compressionMethod = 8; // Compression Method Deflate
                 _lastModFileTime = 48128;
@@ -1086,11 +1101,11 @@ namespace Compress.ZipFile
             }
 
 
-            public ZipReturn CenteralDirectoryRead()
+            public ZipReturn CenteralDirectoryRead(Stream zipFs)
             {
                 try
                 {
-                    BinaryReader br = new BinaryReader(_zipFs);
+                    BinaryReader br = new BinaryReader(zipFs);
 
                     uint thisSignature = br.ReadUInt32();
                     if (thisSignature != CentralDirectoryHeaderSigniature)
@@ -1291,15 +1306,15 @@ namespace Compress.ZipFile
             }
 
 
-            public ZipReturn LocalFileHeaderRead()
+            public ZipReturn LocalFileHeaderRead(Stream zipFs)
             {
                 try
                 {
                     TrrntZip = true;
 
-                    BinaryReader br = new BinaryReader(_zipFs);
+                    BinaryReader br = new BinaryReader(zipFs);
 
-                    _zipFs.Position = (long)RelativeOffsetOfLocalHeader;
+                    zipFs.Position = (long)RelativeOffsetOfLocalHeader;
                     uint thisSignature = br.ReadUInt32();
                     if (thisSignature != LocalFileHeaderSignature)
                     {
@@ -1402,11 +1417,11 @@ namespace Compress.ZipFile
                         return ZipReturn.ZipLocalFileHeaderError;
                     }
 
-                    _dataLocation = (ulong)_zipFs.Position;
+                    _dataLocation = (ulong)zipFs.Position;
 
                     if ((GeneralPurposeBitFlag & 8) == 8)
                     {
-                        _zipFs.Position += (long)_compressedSize;
+                        zipFs.Position += (long)_compressedSize;
 
                         tCRC = ReadCRC(br);
                         if (!ByteArrCompare(tCRC, new byte[] { 0x50, 0x4b, 0x07, 0x08 }))
@@ -1441,15 +1456,15 @@ namespace Compress.ZipFile
                 }
             }
 
-            public ZipReturn LocalFileHeaderReadQuick()
+            public ZipReturn LocalFileHeaderReadQuick(Stream zipFs)
             {
                 try
                 {
                     TrrntZip = true;
 
-                    BinaryReader br = new BinaryReader(_zipFs);
+                    BinaryReader br = new BinaryReader(zipFs);
 
-                    _zipFs.Position = (long)RelativeOffsetOfLocalHeader;
+                    zipFs.Position = (long)RelativeOffsetOfLocalHeader;
                     uint thisSignature = br.ReadUInt32();
                     if (thisSignature != LocalFileHeaderSignature)
                     {
@@ -1531,7 +1546,7 @@ namespace Compress.ZipFile
                         }
                     }
 
-                    _dataLocation = (ulong)_zipFs.Position;
+                    _dataLocation = (ulong)zipFs.Position;
                     return ZipReturn.ZipGood;
                 }
                 catch
@@ -1541,9 +1556,9 @@ namespace Compress.ZipFile
             }
 
 
-            private void LocalFileHeaderWrite()
+            private void LocalFileHeaderWrite(Stream zipFs)
             {
-                BinaryWriter bw = new BinaryWriter(_zipFs);
+                BinaryWriter bw = new BinaryWriter(zipFs);
 
                 Zip64 = UncompressedSize >= 0xffffffff;
 
@@ -1560,7 +1575,7 @@ namespace Compress.ZipFile
 
                 ushort versionNeededToExtract = (ushort)(Zip64 ? 45 : 20);
 
-                RelativeOffsetOfLocalHeader = (ulong)_zipFs.Position;
+                RelativeOffsetOfLocalHeader = (ulong)zipFs.Position;
                 const uint header = 0x4034B50;
                 bw.Write(header);
                 bw.Write(versionNeededToExtract);
@@ -1569,7 +1584,7 @@ namespace Compress.ZipFile
                 bw.Write(_lastModFileTime);
                 bw.Write(_lastModFileDate);
 
-                _crc32Location = (ulong)_zipFs.Position;
+                _crc32Location = (ulong)zipFs.Position;
 
                 // these 3 values will be set correctly after the file data has been written
                 bw.Write(0xffffffff);
@@ -1584,7 +1599,7 @@ namespace Compress.ZipFile
 
                 bw.Write(bFileName, 0, fileNameLength);
 
-                _extraLocation = (ulong)_zipFs.Position;
+                _extraLocation = (ulong)zipFs.Position;
                 if (Zip64)
                     bw.Write(new byte[20], 0, extraFieldLength);
             }
@@ -1658,120 +1673,102 @@ namespace Compress.ZipFile
                 }
             }
 
-            public ZipReturn LocalFileOpenReadStream(bool raw, out Stream stream, out ulong streamSize, out ushort compressionMethod)
+            public ZipReturn LocalFileOpenReadStream(Stream zipFs, bool raw, out Stream readStream, out ulong streamSize, out ushort compressionMethod)
             {
                 streamSize = 0;
                 compressionMethod = _compressionMethod;
 
-                _readStream = null;
-                _zipFs.Seek((long)_dataLocation, SeekOrigin.Begin);
+                readStream = null;
+                zipFs.Seek((long)_dataLocation, SeekOrigin.Begin);
 
                 switch (_compressionMethod)
                 {
                     case 8:
                         if (raw)
                         {
-                            _readStream = _zipFs;
+                            readStream = zipFs;
                             streamSize = _compressedSize;
                         }
                         else
                         {
-                            _readStream = new DeflateStream(_zipFs, CompressionMode.Decompress, true);
+                            readStream = new DeflateStream(zipFs, CompressionMode.Decompress, true);
                             streamSize = UncompressedSize;
                         }
                         break;
                     case 0:
-                        _readStream = _zipFs;
+                        readStream = zipFs;
                         streamSize = _compressedSize; // same as UncompressedSize
                         break;
                 }
-                stream = _readStream;
-                return stream == null ? ZipReturn.ZipErrorGettingDataStream : ZipReturn.ZipGood;
+
+                return readStream == null ? ZipReturn.ZipErrorGettingDataStream : ZipReturn.ZipGood;
             }
 
-            public ZipReturn LocalFileCloseReadStream()
-            {
-                if (_readStream is DeflateStream dfStream)
-                {
-                    dfStream.Close();
-                    dfStream.Dispose();
-                }
-                return ZipReturn.ZipGood;
-            }
-
-            public ZipReturn LocalFileOpenWriteStream(bool raw, bool trrntZip, ulong uncompressedSize, ushort compressionMethod, out Stream stream)
+            public ZipReturn LocalFileOpenWriteStream(Stream zipFs, bool raw, bool trrntZip, ulong uncompressedSize, ushort compressionMethod, out Stream writeStream)
             {
                 UncompressedSize = uncompressedSize;
                 _compressionMethod = compressionMethod;
 
-                LocalFileHeaderWrite();
-                _dataLocation = (ulong)_zipFs.Position;
+                LocalFileHeaderWrite(zipFs);
+                _dataLocation = (ulong)zipFs.Position;
 
                 if (raw)
                 {
-                    _writeStream = _zipFs;
+                    writeStream = zipFs;
                     TrrntZip = trrntZip;
                 }
                 else
                 {
                     if (compressionMethod == 0)
                     {
-                        _writeStream = _zipFs;
+                        writeStream = zipFs;
                         TrrntZip = false;
                     }
                     else
                     {
-                        _writeStream = new DeflateStream(_zipFs, CompressionMode.Compress, CompressionLevel.BestCompression, true);
+                        writeStream = new DeflateStream(zipFs, CompressionMode.Compress, CompressionLevel.BestCompression, true);
                         TrrntZip = true;
                     }
                 }
 
-                stream = _writeStream;
-                return stream == null ? ZipReturn.ZipErrorGettingDataStream : ZipReturn.ZipGood;
+                return writeStream == null ? ZipReturn.ZipErrorGettingDataStream : ZipReturn.ZipGood;
             }
 
-            public ZipReturn LocalFileCloseWriteStream(byte[] crc32)
+            public ZipReturn LocalFileCloseWriteStream(Stream zipFs, byte[] crc32)
             {
-                if (_writeStream is DeflateStream dfStream)
-                {
-                    dfStream.Flush();
-                    dfStream.Close();
-                    dfStream.Dispose();
-                }
-
-                _compressedSize = (ulong)_zipFs.Position - _dataLocation;
+                _compressedSize = (ulong)zipFs.Position - _dataLocation;
 
                 if (_compressedSize == 0 && UncompressedSize == 0)
                 {
-                    LocalFileAddDirectory();
-                    _compressedSize = (ulong)_zipFs.Position - _dataLocation;
+                    LocalFileAddDirectory(zipFs);
+                    _compressedSize = (ulong)zipFs.Position - _dataLocation;
                 }
 
                 CRC = crc32;
-                WriteCompressedSize();
+                WriteCompressedSize(zipFs);
 
                 return ZipReturn.ZipGood;
             }
 
-            private void FixFileForZip64()
+            private void FixFileForZip64(Stream zipFs)
             {
-                long posNow = _zipFs.Position;
+                long posNow = zipFs.Position;
 
                 // _crc32Loction - 10  needs set to 45  
-                _zipFs.Seek((long)_crc32Location - 10, SeekOrigin.Begin);
+                zipFs.Seek((long)_crc32Location - 10, SeekOrigin.Begin);
                 ushort versionNeededToExtract = 45;
-                BinaryWriter bw = new BinaryWriter(_zipFs);
+                BinaryWriter bw = new BinaryWriter(zipFs);
                 bw.Write(versionNeededToExtract);
 
-                _zipFs.Seek((long)_crc32Location + 14, SeekOrigin.Begin);
+                zipFs.Seek((long)_crc32Location + 14, SeekOrigin.Begin);
                 ushort extraFieldLength = 20;
                 bw.Write(extraFieldLength);
 
-                ExpandFile(_zipFs, (long)_extraLocation, posNow, 20);
-                _zipFs.Position = posNow + 20;
+                ExpandFile(zipFs, (long)_extraLocation, posNow, 20);
+                zipFs.Position = posNow + 20;
             }
 
-            private void ExpandFile(Stream stream, long offset, long length, int extraBytes)
+            private static void ExpandFile(Stream stream, long offset, long length, int extraBytes)
             {
                 const int bufferSize = 40960;
                 byte[] buffer = new byte[bufferSize];
@@ -1788,18 +1785,18 @@ namespace Compress.ZipFile
                 }
             }
 
-            private void WriteCompressedSize()
+            private void WriteCompressedSize(Stream zipFs)
             {
                 if (_compressedSize >= 0xffffffff && !Zip64)
                 {
                     Zip64 = true;
-                    FixFileForZip64();
+                    FixFileForZip64(zipFs);
                 }
 
 
-                long posNow = _zipFs.Position;
-                _zipFs.Seek((long)_crc32Location, SeekOrigin.Begin);
-                BinaryWriter bw = new BinaryWriter(_zipFs);
+                long posNow = zipFs.Position;
+                zipFs.Seek((long)_crc32Location, SeekOrigin.Begin);
+                BinaryWriter bw = new BinaryWriter(zipFs);
 
                 uint tCompressedSize;
                 uint tUncompressedSize;
@@ -1825,21 +1822,19 @@ namespace Compress.ZipFile
                 // also need to write extradata
                 if (Zip64)
                 {
-                    _zipFs.Seek((long)_extraLocation, SeekOrigin.Begin);
+                    zipFs.Seek((long)_extraLocation, SeekOrigin.Begin);
                     bw.Write((ushort)0x0001); // id
                     bw.Write((ushort)16); // data length
                     bw.Write(UncompressedSize);
                     bw.Write(_compressedSize);
                 }
 
-                _zipFs.Seek(posNow, SeekOrigin.Begin);
+                zipFs.Seek(posNow, SeekOrigin.Begin);
             }
-
-
-
-            public void LocalFileAddDirectory()
+            
+            public static void LocalFileAddDirectory(Stream zipFs)
             {
-                Stream ds = _zipFs;
+                Stream ds = zipFs;
                 ds.WriteByte(03);
                 ds.WriteByte(00);
             }

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using Compress.Utils;
+using Path = RVIO.Path;
 using FileInfo = RVIO.FileInfo;
 using FileStream = RVIO.FileStream;
 
@@ -10,7 +11,7 @@ namespace Compress.File
     {
         private FileInfo _fileInfo;
         private Stream _inStream;
-        private byte[] _CRC = null;
+        private byte[] _crc;
 
         public string ZipFilename => _fileInfo?.FullName ?? "";
 
@@ -28,7 +29,12 @@ namespace Compress.File
 
         public string Filename(int i)
         {
-            return ZipFilename;
+            return Path.GetFileName(ZipFilename);
+        }
+
+        public bool IsDirectory(int i)
+        {
+            return RVIO.Directory.Exists(ZipFilename);
         }
 
         public ulong UncompressedSize(int i)
@@ -48,7 +54,7 @@ namespace Compress.File
 
         public byte[] CRC32(int i)
         {
-            return _CRC;
+            return _crc;
         }
 
         public ZipReturn ZipFileCreate(string newFilename)
@@ -172,7 +178,7 @@ namespace Compress.File
 
         public ZipReturn ZipFileCloseWriteStream(byte[] crc32)
         {
-            _CRC = crc32;
+            _crc = crc32;
             return ZipReturn.ZipGood;
         }
 

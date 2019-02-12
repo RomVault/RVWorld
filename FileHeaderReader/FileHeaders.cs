@@ -22,7 +22,7 @@ namespace FileHeaderReader
         SNES,
         SPC
     }
-    
+
     public static class FileHeaderReader
     {
         private static readonly List<Detector> Detectors;
@@ -50,6 +50,7 @@ namespace FileHeaderReader
                 new Detector(HeaderFileType.Lynx, 64, 64, "No-Intro_LNX.xml", new Data(0, new byte[] {0x4C, 0x59, 0x4E, 0x58})),
                 new Detector(HeaderFileType.Lynx, 64, 64, "No-Intro_LNX.xml", new Data(6, new byte[] {0x42, 0x53, 0x39})),
                 new Detector(HeaderFileType.NES, 16, 16, "No-Intro_NES.xml", new Data(0, new byte[] {0x4E, 0x45, 0x53, 0x1A})),
+                new Detector(HeaderFileType.NES, 16, 16, "NonGoodNES.xml", new Data(0, new byte[] {0x4E, 0x45, 0x53, 0x1A})),
                 new Detector(HeaderFileType.PCE, 512, 512, "pce.xml", new Data(0, new byte[] {0x40, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xAA, 0xBB, 0x02})),
                 new Detector(HeaderFileType.PSID, 118, 118, "psid.xml", new Data(0, new byte[] {0x50, 0x53, 0x49, 0x44, 0x00, 0x01, 0x00, 0x76})),
                 new Detector(HeaderFileType.PSID, 118, 118, "psid.xml", new Data(0, new byte[] {0x50, 0x53, 0x49, 0x44, 0x00, 0x03, 0x00, 0x7c})),
@@ -111,21 +112,21 @@ namespace FileHeaderReader
             int headerSize = 128;
             if (sIn.Length < headerSize)
             {
-                headerSize = (int) sIn.Length;
+                headerSize = (int)sIn.Length;
             }
 
             byte[] buffer = new byte[headerSize];
 
             sIn.Read(buffer, 0, headerSize);
 
-            return GetType(buffer,headerSize, out offset);
+            return GetType(buffer, headerSize, out offset);
         }
 
-        public static HeaderFileType GetType(byte[] buffer,int headerSize, out int offset)
+        public static HeaderFileType GetType(byte[] buffer, int headerSize, out int offset)
         {
             foreach (Detector detector in Detectors)
             {
-                if (headerSize < detector.HeaderLength)
+                if (headerSize < detector.Data.Value.Length + detector.Data.Offset)
                 {
                     continue;
                 }

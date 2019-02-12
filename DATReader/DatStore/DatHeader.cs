@@ -3,6 +3,7 @@
     public class DatHeader
     {
         public string Filename;
+        public bool MameXML;
         public string Name;
         public string Type;
         public string RootDir;

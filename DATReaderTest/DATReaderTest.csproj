@@ -18,7 +18,7 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
+    <OutputPath>..\..\stage\DATReaderTest\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -58,9 +58,26 @@
     <Compile Include="MameDatTester.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="TestDatRV.cs" />
+    <Compile Include="UDCReader.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+    <None Include="TestDATs\MAME 0.195 CHDs %28merged%29 %28dir2dat%29.dat" />
+    <None Include="TestDATs\MAME 0.196 CHDs %28merged%29 %28dir2dat%29.dat" />
+    <None Include="TestDATs\MAME 0.197 CHDs %28merged%29 %28dir2dat%29.dat" />
+    <None Include="TestDATs\MAME 0.198 CHDs %28merged%29 %28dir2dat%29.dat">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="TestDATs\MAME 0.199 CHDs %28merged%29 %28dir2dat%29.dat">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="TestDATs\MAME 0.200 CHDs %28merged%29 %28dir2dat%29.dat">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="TestDATs\MAME 0.201 CHDs %28merged%29 %28dir2dat%29.dat">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\DATReader\DATReader.csproj">
@@ -73,5 +90,177 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup />
+  <ItemGroup>
+    <Content Include="TestDATs\baddat.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="TestDATs\MAME 0.182 ROMs %28from bin%29.xml" />
+    <Content Include="TestDATs\MAME 0.182 ROMs %28merged%29.xml" />
+    <Content Include="TestDATs\MAME 0.182 ROMs %28non-merged%29.xml" />
+    <Content Include="TestDATs\MAME 0.182 ROMs %28split%29.xml" />
+    <Content Include="TestDATs\MAME 0.183 ROMs %28from bin%29.xml" />
+    <Content Include="TestDATs\MAME 0.183 ROMs %28merged%29.xml" />
+    <Content Include="TestDATs\MAME 0.183 ROMs %28non-merged%29.xml" />
+    <Content Include="TestDATs\MAME 0.183 ROMs %28split%29.xml" />
+    <Content Include="TestDATs\MAME 0.184 ROMs %28from bin%29.xml" />
+    <Content Include="TestDATs\MAME 0.184 ROMs %28merged%29.xml" />
+    <Content Include="TestDATs\MAME 0.184 ROMs %28non-merged%29.xml" />
+    <Content Include="TestDATs\MAME 0.184 ROMs %28split%29.xml" />
+    <Content Include="TestDATs\MAME 0.185 ROMs %28from bin%29.xml" />
+    <Content Include="TestDATs\MAME 0.185 ROMs %28merged%29.xml" />
+    <Content Include="TestDATs\MAME 0.185 ROMs %28non-merged%29.xml" />
+    <Content Include="TestDATs\MAME 0.185 ROMs %28split%29.xml" />
+    <Content Include="TestDATs\MAME 0.186 ROMs %28from bin%29.xml" />
+    <Content Include="TestDATs\MAME 0.186 ROMs %28merged%29.xml" />
+    <Content Include="TestDATs\MAME 0.186 ROMs %28non-merged%29.xml" />
+    <Content Include="TestDATs\MAME 0.186 ROMs %28split%29.xml" />
+    <Content Include="TestDATs\MAME 0.187 ROMs %28from bin%29.xml" />
+    <Content Include="TestDATs\MAME 0.187 ROMs %28merged%29.xml" />
+    <Content Include="TestDATs\MAME 0.187 ROMs %28non-merged%29.xml" />
+    <Content Include="TestDATs\MAME 0.187 ROMs %28split%29.xml" />
+    <Content Include="TestDATs\MAME 0.188 ROMs %28from bin%29.xml" />
+    <Content Include="TestDATs\MAME 0.188 ROMs %28merged%29.xml" />
+    <Content Include="TestDATs\MAME 0.188 ROMs %28non-merged%29.xml" />
+    <Content Include="TestDATs\MAME 0.188 ROMs %28split%29.xml" />
+    <Content Include="TestDATs\MAME 0.189 ROMs %28from bin%29.xml" />
+    <Content Include="TestDATs\MAME 0.189 ROMs %28merged%29.xml" />
+    <Content Include="TestDATs\MAME 0.189 ROMs %28non-merged%29.xml" />
+    <Content Include="TestDATs\MAME 0.189 ROMs %28split%29.xml" />
+    <Content Include="TestDATs\MAME 0.190 ROMs %28from bin%29.xml" />
+    <Content Include="TestDATs\MAME 0.190 ROMs %28merged%29.xml" />
+    <Content Include="TestDATs\MAME 0.190 ROMs %28non-merged%29.xml" />
+    <Content Include="TestDATs\MAME 0.190 ROMs %28split%29.xml" />
+    <Content Include="TestDATs\MAME 0.191 ROMs %28from bin%29.xml" />
+    <Content Include="TestDATs\MAME 0.191 ROMs %28merged%29.xml" />
+    <Content Include="TestDATs\MAME 0.191 ROMs %28non-merged%29.xml" />
+    <Content Include="TestDATs\MAME 0.191 ROMs %28split%29.xml" />
+    <Content Include="TestDATs\MAME 0.192 ROMs %28from bin%29.xml" />
+    <Content Include="TestDATs\MAME 0.192 ROMs %28merged%29.xml" />
+    <Content Include="TestDATs\MAME 0.192 ROMs %28non-merged%29.xml" />
+    <Content Include="TestDATs\MAME 0.192 ROMs %28split%29.xml" />
+    <Content Include="TestDATs\MAME 0.193 CHDs %28merged%29.xml" />
+    <Content Include="TestDATs\MAME 0.193 CHDs %28merged%29N.xml" />
+    <Content Include="TestDATs\MAME 0.193 ROMs %28bios-devices%29.xml" />
+    <Content Include="TestDATs\MAME 0.193 ROMs %28bios-devices%29N.xml" />
+    <Content Include="TestDATs\MAME 0.193 ROMs %28from bin%29.xml" />
+    <Content Include="TestDATs\MAME 0.193 ROMs %28merged%29.xml" />
+    <Content Include="TestDATs\MAME 0.193 ROMs %28merged%29N.xml" />
+    <Content Include="TestDATs\MAME 0.193 ROMs %28non-merged%29.xml" />
+    <Content Include="TestDATs\MAME 0.193 ROMs %28non-merged%29N.xml" />
+    <Content Include="TestDATs\MAME 0.193 ROMs %28split%29.xml" />
+    <Content Include="TestDATs\MAME 0.193 ROMs %28split%29N.xml" />
+    <Content Include="TestDATs\MAME 0.194 CHDs %28merged%29.xml" />
+    <Content Include="TestDATs\MAME 0.194 ROMs %28bios-devices%29.xml" />
+    <Content Include="TestDATs\MAME 0.194 ROMs %28from bin%29.xml" />
+    <Content Include="TestDATs\MAME 0.194 ROMs %28merged%29.xml" />
+    <Content Include="TestDATs\MAME 0.194 ROMs %28non-merged%29.xml" />
+    <Content Include="TestDATs\MAME 0.194 ROMs %28split%29.xml" />
+    <Content Include="TestDATs\MAME 0.194 Software List ROMs %28machines-bios-devices%29.xml" />
+    <Content Include="TestDATs\MAME 0.195 CHDs %28merged%29.xml" />
+    <Content Include="TestDATs\MAME 0.195 ROMs %28bios-devices%29.xml" />
+    <Content Include="TestDATs\MAME 0.195 ROMs %28from bin%29.xml" />
+    <Content Include="TestDATs\MAME 0.195 ROMs %28merged%29.xml" />
+    <Content Include="TestDATs\MAME 0.195 ROMs %28non-merged%29.xml" />
+    <Content Include="TestDATs\MAME 0.195 ROMs %28split%29.xml" />
+    <Content Include="TestDATs\MAME 0.195 Software List ROMs %28machines-bios-devices%29.xml" />
+    <Content Include="TestDATs\MAME 0.196 CHDs %28merged%29.xml" />
+    <Content Include="TestDATs\MAME 0.196 ROMs %28bios-devices%29.xml" />
+    <Content Include="TestDATs\MAME 0.196 ROMs %28from bin%29.xml" />
+    <Content Include="TestDATs\MAME 0.196 ROMs %28merged%29.xml" />
+    <Content Include="TestDATs\MAME 0.196 ROMs %28non-merged%29.xml" />
+    <Content Include="TestDATs\MAME 0.196 ROMs %28split%29.xml" />
+    <Content Include="TestDATs\MAME 0.196 Software List ROMs %28machines-bios-devices%29.xml" />
+    <Content Include="TestDATs\MAME 0.197 CHDs %28merged%29.xml" />
+    <Content Include="TestDATs\MAME 0.197 ROMs %28bios-devices%29.xml" />
+    <Content Include="TestDATs\MAME 0.197 ROMs %28from bin%29.xml" />
+    <Content Include="TestDATs\MAME 0.197 ROMs %28merged%29.xml" />
+    <Content Include="TestDATs\MAME 0.197 ROMs %28non-merged%29.xml" />
+    <Content Include="TestDATs\MAME 0.197 ROMs %28split%29.xml" />
+    <Content Include="TestDATs\MAME 0.197 Software List ROMs %28machines-bios-devices%29.xml" />
+    <Content Include="TestDATs\MAME 0.198 CHDs %28merged%29.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="TestDATs\MAME 0.198 ROMs %28bios-devices%29.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="TestDATs\MAME 0.198 ROMs %28from bin%29.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="TestDATs\MAME 0.198 ROMs %28merged%29.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="TestDATs\MAME 0.198 ROMs %28non-merged%29.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="TestDATs\MAME 0.198 ROMs %28split%29.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="TestDATs\MAME 0.198 Software List ROMs %28machines-bios-devices%29.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="TestDATs\MAME 0.199 CHDs %28merged%29.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="TestDATs\MAME 0.199 ROMs %28bios-devices%29.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="TestDATs\MAME 0.199 ROMs %28from bin%29.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="TestDATs\MAME 0.199 ROMs %28merged%29.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="TestDATs\MAME 0.199 ROMs %28non-merged%29.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="TestDATs\MAME 0.199 ROMs %28split%29.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="TestDATs\MAME 0.199 Software List ROMs %28machines-bios-devices%29.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="TestDATs\MAME 0.200 CHDs %28merged%29.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="TestDATs\MAME 0.200 ROMs %28bios-devices%29.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="TestDATs\MAME 0.200 ROMs %28from bin%29.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="TestDATs\MAME 0.200 ROMs %28merged%29.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="TestDATs\MAME 0.200 ROMs %28non-merged%29.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="TestDATs\MAME 0.200 ROMs %28split%29.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="TestDATs\MAME 0.200 Software List ROMs %28machines-bios-devices%29.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="TestDATs\MAME 0.201 CHDs %28merged%29.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="TestDATs\MAME 0.201 ROMs %28bios-devices%29.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="TestDATs\MAME 0.201 ROMs %28from bin%29.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="TestDATs\MAME 0.201 ROMs %28merged%29.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="TestDATs\MAME 0.201 ROMs %28non-merged%29.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="TestDATs\MAME 0.201 ROMs %28split%29.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="TestDATs\MAME 0.201 Software List ROMs %28machines-bios-devices%29.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

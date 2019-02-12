@@ -16,7 +16,7 @@ namespace TrrntZipUI
             {
                 StatusCallBack = TzStatusCallBack,
                 StatusLogCallBack = TzStatusLogCallBack,
-                ThreadID = ThreadId
+                ThreadId = ThreadId
             };
 
 

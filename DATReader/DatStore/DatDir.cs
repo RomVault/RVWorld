@@ -3,6 +3,11 @@ using System.Collections.Generic;
 
 namespace DATReader.DatStore
 {
+    // if DatFileType is UnSet then we store the children files in List<DatBase> unsorted. (The order they are added from the DAT.)
+    // problem with this is that searching for a child by name would have to be a linear search. (Which gets very slow.)
+    // So for this reason UnSet file lists also use the _childrenNameIndex to store a sorted index.
+    // So the List<DatBase> _children is still the original DAT order, but the List<int> _childrenNameIndex gives a quick way to search for the items.
+   
     public class DatDir : DatBase
     {
         public DatGame DGame;
@@ -30,14 +35,14 @@ namespace DATReader.DatStore
             int index;
             if (DatFileType == DatFileType.UnSet)
             {
-                ChildNameBinarySearch(datItem, true, out int indexsearch);
+                ChildNameBinarySearch(datItem, true, false, out int indexsearch);
                 _children.Add(datItem);
                 index = _children.Count - 1;
                 _childrenNameIndex.Insert(indexsearch, index);
                 return index;
             }
 
-            ChildNameBinarySearch(datItem, false, out index);
+            ChildNameBinarySearch(datItem, false, false, out index);
             _children.Insert(index, datItem);
             return index;
         }
@@ -79,15 +84,15 @@ namespace DATReader.DatStore
         public int ChildNameSearch(DatBase lName, out int index)
         {
             if (DatFileType != DatFileType.UnSet)
-                return ChildNameBinarySearch(lName, false, out index);
+                return ChildNameBinarySearch(lName, false, true, out index);
 
-            int retval = ChildNameBinarySearch(lName, true, out index);
+            int retval = ChildNameBinarySearch(lName, true, true, out index);
             index = retval == 0 ? _childrenNameIndex[index] : -1;
             return retval;
         }
 
 
-        private int ChildNameBinarySearch(DatBase lName, bool useIndex, out int index)
+        private int ChildNameBinarySearch(DatBase lName, bool useIndex, bool findFirst, out int index)
         {
             int intBottom = 0;
             int intTop = _children.Count;
@@ -111,20 +116,50 @@ namespace DATReader.DatStore
             }
             index = intMid;
 
-            // if match was found check up the list for the first match
             if (intRes == 0)
             {
-                int intRes1 = 0;
-                while ((index > 0) && (intRes1 == 0))
+                if (findFirst)
                 {
-                    intRes1 = CompareName(lName, _children[useIndex ? _childrenNameIndex[index - 1] : index - 1]);
-                    if (intRes1 == 0)
+                    // if match found check up the list to the first match
+                    int intRes1 = 0;
+                    while ((index > 0) && (intRes1 == 0))
                     {
-                        index--;
+                        intRes1 = CompareName(lName, _children[useIndex ? _childrenNameIndex[index - 1] : index - 1]);
+                        if (intRes1 == 0)
+                        {
+                            index--;
+                        }
                     }
                 }
+                else
+                {
+                    // if match was found check down the list to point past the last match
+                    // this is used so that if a duplicate is found, we return the next record as the index
+                    // where the duplicate item should be added.
+                    int intRes1 = 0;
+                    while ((index < _children.Count - 1) && (intRes1 == 0))
+                    {
+                        intRes1 = CompareName(lName, _children[useIndex ? _childrenNameIndex[index + 1] : index + 1]);
+                        if (intRes1 == 0)
+                        {
+                            index++;
+                        }
+                    }
+                    // if intRes1 is still 0, then we are at the very end of the list.
+                    // increase index to point past the end so that the item is added on the end of the list.
+                    if (intRes1 == 0)
+                    {
+                        index++;
+                    }
+                }
+
+
+
+
+
+
             }
-            // if the search is greater than the closest match move one up the list
+            // if the search is greater than the closest match move one down the list
             else if (intRes > 0)
             {
                 index++;
@@ -150,14 +185,14 @@ namespace DATReader.DatStore
                 case DatFileType.Dir:
                 case DatFileType.DirTorrentZip:
                     {
-                        int res = Math.Sign(string.Compare(lName.Name, dBase.Name, StringComparison.OrdinalIgnoreCase));
+                        int res = Math.Sign(DatSort.TrrntZipStringCompare(lName.Name, dBase.Name));
                         if (res != 0)
                             return res;
                         break;
                     }
                 case DatFileType.Dir7Zip:
                     {
-                        int res = Math.Sign(string.Compare(lName.Name, dBase.Name, StringComparison.Ordinal));
+                        int res = Math.Sign(DatSort.Trrnt7ZipStringCompare(lName.Name,dBase.Name));
                         if (res != 0)
                             return res;
                         break;

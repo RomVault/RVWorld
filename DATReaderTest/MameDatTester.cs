@@ -11,6 +11,7 @@ namespace Tester
     static class MameDatTester
     {
 
+        private static StreamWriter _file;
         private static void WriteLine()
         {
             Console.WriteLine();
@@ -33,19 +34,14 @@ namespace Tester
             _lastTime = swr;
         }
 
-        private static StreamWriter _file;
         static readonly Stopwatch Sw = new Stopwatch();
         public static void Go()
         {
-            // test DAT files can be downloaded from
-            // www.romvault.com/download/TestDATs.rar
-            // extract this RAR to the same folder as MameDatTester.exe
-
-            _file = new StreamWriter(@"timeout.txt");
+            _file = new StreamWriter(@"D:\timeout.txt");
             //ProcVer("0.194");
             //ProcVer("0.195");
             //ProcVer("0.196");
-            ProcVer("0.199");
+            ProcVer("0.201");
             _file.Close();
         }
 
@@ -63,12 +59,47 @@ namespace Tester
             };
             DatXMLWriter dxw = new DatXMLWriter();
 
+
             WriteLine(ver, "Reading BINDat Set");
             dr.ReadDat(@"TestDATs\MAME " + ver + " ROMS (from bin).xml", out DatHeader dh);
+            dh.Name += " (merged)";
+            dh.Description += " (merged)";
+
+            WriteLine(ver, "Dat read");
+            DatClean.RemoveNonCHD(dh.BaseDir);
+            WriteLine(ver, "CHD removed");
+            DatClean.RemoveNoDumps(dh.BaseDir);
+            WriteLine(ver, "Removed No Dumps");
+
+            DatClean.DatSetMakeMergeSet(dh.BaseDir,false);
+            WriteLine(ver, "Made Merge Set");
+
+            DatClean.RemoveDupes(dh.BaseDir);
+            WriteLine(ver, "Removed Dupes");
+
+            DatClean.RemoveEmptySets(dh.BaseDir);
+            WriteLine(ver, "Removed Empty Sets");
+
+            DatSetCompressionType.SetTorrentZip(dh.BaseDir);
+            WriteLine(ver, "Set TorrentZip");
+            dxw.WriteDat(@"TestDATs\out\MAME " + ver + " CHDs (merged-fromBin).xml", dh);
+
+            WriteLine(ver, "Reading Dat Set");
+            dr.ReadDat(@"TestDATs\MAME " + ver + " CHDs (merged).xml", out dh);
+            DatSetCompressionType.SetTorrentZip(dh.BaseDir);
+            dxw.WriteDat(@"TestDATs\out\MAME " + ver + " CHDs (merged-sorted).xml", dh);
+
+            WriteLine(ver, "Done Set 2");
+
+
+
+
+
+            WriteLine(ver, "Reading BINDat Set");
+            dr.ReadDat(@"TestDATs\MAME " + ver + " ROMS (from bin).xml", out dh);
             dh.Name += " (split)";
             dh.Description += " (split)";
-
-
+            
             WriteLine(ver, "Dat read");
             DatClean.RemoveCHD(dh.BaseDir);
             WriteLine(ver, "CHD removed");
@@ -90,6 +121,7 @@ namespace Tester
             DatSetCompressionType.SetTorrentZip(dh.BaseDir);
             WriteLine(ver, "Set TorrentZip");
             dxw.WriteDat(@"TestDATs\out\MAME " + ver + " ROMS (split-fromBin).xml", dh);
+            
 
             WriteLine(ver, "Reading Dat Set");
             dr.ReadDat(@"TestDATs\MAME " + ver + " ROMs (split).xml", out dh);

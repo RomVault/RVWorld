@@ -111,7 +111,10 @@ namespace DATReader
             XmlNode mame = doc.SelectSingleNode("mame");
             if (mame != null)
             {
-                return dXMLReader.ReadMameDat(doc, fullname, out rvDat);
+                bool ret = dXMLReader.ReadMameDat(doc, fullname, out rvDat);
+                if (rvDat != null)
+                    rvDat.MameXML = true;
+                return ret;
             }
 
             XmlNode head = doc.DocumentElement?.SelectSingleNode("header");

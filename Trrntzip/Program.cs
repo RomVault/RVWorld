@@ -4,6 +4,7 @@
     {
         zip,
         sevenzip,
+        iso,
         both
     }
 

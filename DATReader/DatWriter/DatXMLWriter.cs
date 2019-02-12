@@ -63,7 +63,7 @@ namespace DATReader.DatWriter
                         DatGame g = baseDir.DGame;
                         sw.Write(@"<game");
                         sw.WriteItem("name", baseDir.Name);
-                        if (!g.IsTea)
+                        if (!g.IsEmuArc)
                         {
                             //         sw.WriteItem("cloneof", g.CloneOf);
                             //         sw.WriteItem("romof", g.RomOf);
@@ -71,7 +71,7 @@ namespace DATReader.DatWriter
                         sw.WriteEnd(@">", 1);
 
                         sw.WriteNode("description", g.Description);
-                        if (g.IsTea)
+                        if (g.IsEmuArc)
                         {
                             sw.WriteLine("<tea>", 1);
                             sw.WriteNode("titleid", g.TitleId);

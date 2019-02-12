@@ -44,7 +44,7 @@ namespace DATReader.DatClean
                             for (int j = 0; j < mGame.ChildCount; j++)
                             {
                                 DatFile df1 = (DatFile)mGame.Child(j);
-                                if (ArrByte.bCompare(df0.SHA1, df1.SHA1))
+                                if (ArrByte.bCompare(df0.SHA1, df1.SHA1) && df0.Name==df1.Name)
                                 {
                                     crcFound = true;
                                     break;
@@ -61,8 +61,7 @@ namespace DATReader.DatClean
 
         private static void AddDevice(string device, List<DatDir> devices, DatDir tDat)
         {
-            int found = tDat.ChildNameSearch(new DatDir(tDat.DatFileType) { Name = device }, out int index);
-            if (found != 0)
+            if (tDat.ChildNameSearch(new DatDir(tDat.DatFileType) { Name = device }, out int index) != 0)
                 return;
             DatDir devChild = (DatDir)tDat.Child(index);
             if (devChild == null)

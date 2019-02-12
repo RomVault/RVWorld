@@ -124,8 +124,8 @@ namespace TrrntZipCMD
                     FileInfo[] fileInfo = dirInfo.GetFiles(filename);
                     foreach (FileInfo file in fileInfo)
                     {
-                        string ext = Path.GetExtension(file.FullName);
-                        if (!string.IsNullOrEmpty(ext) && ((ext.ToLower() == ".zip") || (ext.ToLower() == ".7z")))
+                        string ext = Path.GetExtension(file.FullName).ToLower();
+                        if (!string.IsNullOrEmpty(ext) && ((ext == ".zip") || (ext == ".7z") || (ext == ".iso")))
                         {
                             tz.Process(new FileInfo(file.FullName));
                         }
@@ -160,11 +160,11 @@ namespace TrrntZipCMD
 
             DirectoryInfo di = new DirectoryInfo(dirName);
             FileInfo[] fi = di.GetFiles();
-            for (int i = 0; i < fi.Length; i++)
+            foreach (FileInfo f in fi)
             {
-                string filename = fi[i].FullName;
-                string ext = Path.GetExtension(filename);
-                if (!string.IsNullOrEmpty(ext) && ((ext.ToLower() == ".zip") || (ext.ToLower() == ".7z")))
+                string filename = f.FullName;
+                string ext = Path.GetExtension(filename)?.ToLower();
+                if (!string.IsNullOrEmpty(ext) && (ext == ".zip" || ext == ".7z" || ext == ".iso"))
                 {
                     tz.Process(new FileInfo(filename));
                 }

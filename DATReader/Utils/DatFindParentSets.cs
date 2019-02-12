@@ -22,8 +22,7 @@ namespace DATReader.Utils
                 return;
             }
 
-            int intResult = parentDir.ChildNameSearch(new DatDir(searchGame.DatFileType) {Name=  parentName} , out int intIndex);
-            if (intResult != 0)
+            if (parentDir.ChildNameSearch(new DatDir(searchGame.DatFileType) { Name = parentName }, out int intIndex) != 0)
                 return;
 
             DatDir parentGame = (DatDir)parentDir.Child(intIndex);

@@ -255,8 +255,7 @@ namespace DATReader.DatReader
                 int index;
                 DatDir dDir;
                 DatDir searchDir = new DatDir(DatFileType.Dir) { Name = GameName };
-                int found = parentDir.ChildNameSearch(searchDir, out index);
-                if (found != 0)
+                if (parentDir.ChildNameSearch(searchDir, out index) != 0)
                 {
                     dDir = new DatDir(DatFileType.UnSet) { Name = GameName, DGame = new DatGame() };
                     DatGame dGame = dDir.DGame;
@@ -323,8 +322,7 @@ namespace DATReader.DatReader
                 int index;
                 DatDir dDir;
                 DatDir searchDir = new DatDir(DatFileType.Dir) { Name = GameName };
-                int found = parentDir.ChildNameSearch(searchDir, out index);
-                if (found != 0)
+                if (parentDir.ChildNameSearch(searchDir, out index) != 0)
                 {
                     dDir = new DatDir(DatFileType.UnSet) { Name = GameName, DGame = new DatGame() };
                     DatGame dGame = dDir.DGame;

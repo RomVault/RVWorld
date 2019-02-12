@@ -83,9 +83,13 @@ namespace Compress.SevenZip
 
         public void ZipFileAddDirectory(string filename)
         {
+            string fName = filename;
+            if (fName.Substring(fName.Length - 1, 1) == @"/")
+                fName = fName.Substring(0, fName.Length - 1);
+
             LocalFile lf = new LocalFile
             {
-                FileName = filename,
+                FileName = fName,
                 UncompressedSize = 0,
                 IsDirectory = true,
                 StreamOffset = 0
@@ -290,7 +294,7 @@ namespace Compress.SevenZip
 
         private Header _header;
 
-        /*
+        
         // not finalized yet, so do not use
         private void WriteRomVault7Zip(BinaryWriter bw, ulong headerPos, ulong headerLength, uint headerCRC)
         {
@@ -310,7 +314,7 @@ namespace Compress.SevenZip
 
             ZipStatus = ZipStatus.TrrntZip;
         }
-        */
+        
 
         private bool IsRomVault7Z()
         {
@@ -688,7 +692,7 @@ namespace Compress.SevenZip
         }
 
 
-        private ZipReturn ZipFileCreate(string newFilename, bool compressOutput)
+        public ZipReturn ZipFileCreate(string newFilename, bool compressOutput)
         {
             if (ZipOpen != ZipOpenType.Closed)
             {
@@ -786,7 +790,7 @@ namespace Compress.SevenZip
 
             _signatureHeader.WriteFinal(bw, headerpos, (ulong)newHeaderByte.Length, mainHeaderCRC);
 
-            //WriteRomVault7Zip(bw, headerpos, (ulong)newHeaderByte.Length, mainHeaderCRC);
+            WriteRomVault7Zip(bw, headerpos, (ulong)newHeaderByte.Length, mainHeaderCRC);
 
             _zipFs.Flush();
             _zipFs.Close();

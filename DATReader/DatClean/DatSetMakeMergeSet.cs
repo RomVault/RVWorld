@@ -6,7 +6,7 @@ namespace DATReader.DatClean
 {
     public static partial class DatClean
     {
-        public static void DatSetMakeMergeSet(DatDir tDat)
+        public static void DatSetMakeMergeSet(DatDir tDat, bool mergeWithGameName = true)
         {
             // look for merged roms, check if a rom exists in a parent set where the Name,Size and CRC all match.
 
@@ -16,7 +16,7 @@ namespace DATReader.DatClean
 
                 if (mGame.DGame == null)
                 {
-                    DatSetMakeMergeSet(mGame);
+                    DatSetMakeMergeSet(mGame, mergeWithGameName);
                     continue;
                 }
 
@@ -46,8 +46,8 @@ namespace DATReader.DatClean
                         pGames.Add(dd);
                 }
 
-                DatBase[] mGameTest=mGame.ToArray();
-                List<DatBase> mGameKeep=new List<DatBase>();
+                DatBase[] mGameTest = mGame.ToArray();
+                List<DatBase> mGameKeep = new List<DatBase>();
 
                 foreach (DatBase tGame in mGameTest)
                 {
@@ -97,7 +97,7 @@ namespace DATReader.DatClean
                                 continue;
                             }
 
-                            if(((DatFile)tGame).isDisk!=((DatFile)romofGame.Child(r1)).isDisk)
+                            if (((DatFile)tGame).isDisk != ((DatFile)romofGame.Child(r1)).isDisk)
                             {
                                 continue;
                             }
@@ -124,7 +124,7 @@ namespace DATReader.DatClean
                 }
 
                 mGame.ChildrenClear();
-                
+
                 if (pGames.Count == 0)
                 {
                     foreach (DatBase tGame in mGameKeep)
@@ -139,7 +139,8 @@ namespace DATReader.DatClean
 
                 foreach (DatBase tGame in mGameKeep)
                 {
-                    tGame.Name = mGame.Name + "\\" + tGame.Name;
+                    if (mergeWithGameName)
+                        tGame.Name = mGame.Name + "\\" + tGame.Name;
                     romOfTopParent.ChildAdd(tGame);
                 }
             }

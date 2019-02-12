@@ -6,7 +6,7 @@ namespace DATReader.DatClean
 {
     public static partial class DatClean
     {
-        public static void RemoveDupes(DatDir tDat)
+        public static void RemoveDupes(DatDir tDat, bool testName = true)
         {
             for (int g = 0; g < tDat.ChildCount; g++)
             {
@@ -14,7 +14,7 @@ namespace DATReader.DatClean
 
                 if (mGame.DGame == null)
                 {
-                    RemoveDupes(mGame);
+                    RemoveDupes(mGame,testName);
                 }
                 else
                 {
@@ -32,7 +32,18 @@ namespace DATReader.DatClean
                             {
                                 DatFile df1 = (DatFile)mGame.Child(t);
 
-                                if (!ArrByte.bCompare(df0.CRC, df1.CRC))
+                                if (testName && df0.Name!=df1.Name)
+                                    continue;
+                                bool hasCRC = df0.CRC != null && df1.CRC != null;
+                                if (hasCRC && !ArrByte.bCompare(df0.CRC, df1.CRC))
+                                    continue;
+                                bool hasSHA1 = df0.SHA1 != null && df1.SHA1 != null;
+                                if (hasSHA1 && !ArrByte.bCompare(df0.SHA1, df1.SHA1))
+                                    continue;
+                                bool hasMD5 = df0.MD5 != null && df1.MD5 != null;
+                                if (hasMD5 && !ArrByte.bCompare(df0.MD5, df1.MD5))
+                                    continue;
+                                if (!hasCRC && !hasSHA1 && !hasMD5)
                                     continue;
 
                                 found = true;

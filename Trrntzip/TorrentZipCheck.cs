@@ -19,7 +19,7 @@ namespace Trrntzip
 {
     public static class TorrentZipCheck
     {
-        public static TrrntZipStatus CheckZipFiles(ref List<ZippedFile> zippedFiles, int ThreadID, LogCallback StatusLogCallBack)
+        public static TrrntZipStatus CheckZipFiles(ref List<ZippedFile> zippedFiles, int threadId, LogCallback statusLogCallBack)
         {
             TrrntZipStatus tzStatus = TrrntZipStatus.Unknown;
 
@@ -47,7 +47,7 @@ namespace Trrntzip
                     if (!error1 && Program.VerboseLogging)
                     {
                         error1 = true;
-                        StatusLogCallBack?.Invoke(ThreadID, "Incorrect directory separator found");
+                        statusLogCallBack?.Invoke(threadId, "Incorrect directory separator found");
                     }
                 }
                 if (fixDir)
@@ -80,7 +80,7 @@ namespace Trrntzip
                         if (!error2 && Program.VerboseLogging)
                         {
                             error2 = true;
-                            StatusLogCallBack?.Invoke(ThreadID, "Incorrect file order found");
+                            statusLogCallBack?.Invoke(threadId, "Incorrect file order found");
                         }
                     }
                 }
@@ -132,7 +132,7 @@ namespace Trrntzip
                     if (!error3 && Program.VerboseLogging)
                     {
                         error3 = true;
-                        StatusLogCallBack?.Invoke(ThreadID, "Un-needed directory records found");
+                        statusLogCallBack?.Invoke(threadId, "Un-needed directory records found");
                     }
 
                     i--;
@@ -150,7 +150,7 @@ namespace Trrntzip
                     if (!error4 && Program.VerboseLogging)
                     {
                         error4 = true;
-                        StatusLogCallBack?.Invoke(ThreadID, "Duplcate file enteries found");
+                        statusLogCallBack?.Invoke(threadId, "Duplcate file enteries found");
                     }
                 }
             }

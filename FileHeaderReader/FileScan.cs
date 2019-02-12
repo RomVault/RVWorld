@@ -62,11 +62,22 @@ namespace FileHeaderReader
 
         public List<FileResults> Scan(ICompress file, bool testcrc, bool deepScan)
         {
-            List<FileResults> listDsFile = new List<FileResults>();
+            List<FileResults> lstFileResults = new List<FileResults>();
             int fileCount = file.LocalFilesCount();
             for (int i = 0; i < fileCount; i++)
             {
                 FileResults fileResults = new FileResults();
+                if (file.IsDirectory(i))
+                {
+                    fileResults.HeaderFileType = HeaderFileType.Nothing;
+                    fileResults.FileStatus = ZipReturn.ZipGood;
+                    fileResults.Size = 0;
+                    fileResults.CRC = new byte[] { 0, 0, 0, 0 };
+
+                    lstFileResults.Add(fileResults);
+                    continue;
+                }
+
                 ZipReturn zr = file.ZipFileOpenReadStream(i, out Stream fStream, out fileResults.Size);
                 if (zr != ZipReturn.ZipGood)
                     fileResults.FileStatus = zr;
@@ -76,13 +87,15 @@ namespace FileHeaderReader
                     if (res != 0)
                         fileResults.FileStatus = ZipReturn.ZipDecodeError;
                     else
-                        fileResults.FileStatus = testcrc || ByteArrCompare(file.CRC32(i), fileResults.CRC) ? ZipReturn.ZipGood : ZipReturn.ZipCRCDecodeError;
+                    // if we are not testcrc'ing or deepScan'ing then we did not verify the data stream
+                    // so we assume it is good.
+                        fileResults.FileStatus = !(testcrc || deepScan) || ByteArrCompare(file.CRC32(i), fileResults.CRC) ? ZipReturn.ZipGood : ZipReturn.ZipCRCDecodeError;
                 }
 
-                listDsFile.Add(fileResults);
-                file.ZipFileCloseReadStream();
+                lstFileResults.Add(fileResults);
             }
-            return listDsFile;
+            file.ZipFileCloseReadStream();
+            return lstFileResults;
         }
 
 
@@ -125,7 +138,7 @@ namespace FileHeaderReader
             ThreadCRC tcrc32 = null;
             ThreadMD5 tmd5 = null;
             ThreadSHA1 tsha1 = null;
-            
+
             ThreadCRC altCrc32 = null;
             ThreadMD5 altMd5 = null;
             ThreadSHA1 altSha1 = null;

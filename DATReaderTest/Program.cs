@@ -6,7 +6,7 @@ namespace Tester
     {
         static void Main(string[] args)
         {
-            MameDatTester.Go();
+            TestDatRV.test();
             Console.WriteLine("Done");
         }
     }

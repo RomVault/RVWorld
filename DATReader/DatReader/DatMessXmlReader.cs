@@ -160,6 +160,11 @@ namespace DATReader.DatReader
                 DatFile tRom = (DatFile)parentDir.Child(_indexContinue);
                 tRom.Size += VarFix.ULong(romNode.Attributes.GetNamedItem("size"));
             }
+            else if (loadflag.ToLower() == "ignore")
+            {
+                DatFile tRom = (DatFile)parentDir.Child(_indexContinue);
+                tRom.Size += VarFix.ULong(romNode.Attributes.GetNamedItem("size"));
+            }
         }
 
         /*

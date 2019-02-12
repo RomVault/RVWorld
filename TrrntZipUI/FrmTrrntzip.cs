@@ -33,9 +33,8 @@ namespace TrrntZipUI
             DropBox.DragEnter += PDragEnter;
             DropBox.DragDrop += PDragDrop;
 
-            int intVal;
             string sval = AppSettings.ReadSetting("InZip");
-            if (!int.TryParse(sval, out intVal))
+            if (!int.TryParse(sval, out int intVal))
             {
                 intVal = 2;
             }
@@ -174,7 +173,7 @@ namespace TrrntZipUI
         {
             string extn = Path.GetExtension(filename);
             extn = extn.ToLower();
-            if ((extn != ".zip") && (extn != ".7z"))
+            if ((extn != ".zip") && (extn != ".7z") && (extn!=".iso"))
             {
                 return;
             }

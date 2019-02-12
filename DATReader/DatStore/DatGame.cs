@@ -21,7 +21,7 @@ namespace DATReader.DatStore
         public List<string> device_ref;
         public List<string> slot;
 
-        public bool IsTea;
+        public bool IsEmuArc;
         public string TitleId;
         public string Publisher;
         public string Developer;
