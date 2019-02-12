@@ -57,6 +57,7 @@
     <Compile Include="DatClean\DatSetMakeMergeSet.cs" />
     <Compile Include="DatClean\DatSetMakeNonMergeSet.cs" />
     <Compile Include="DatClean\DatSetCompressionType.cs" />
+    <Compile Include="DatSort.cs" />
     <Compile Include="Utils\ArrByte.cs" />
     <Compile Include="Utils\DatFindParentSets.cs" />
     <Compile Include="DatClean\DatSetMakeSplitSet.cs" />

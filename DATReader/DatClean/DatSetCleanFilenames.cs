@@ -1,4 +1,5 @@
 ﻿using DATReader.DatStore;
+using RVIO;
 
 namespace DATReader.DatClean
 {
@@ -18,6 +19,34 @@ namespace DATReader.DatClean
                 }
             }
         }
+        public static void CleanFilenamesFixDupes(DatDir dDir)
+        {
+            DatBase[] arrDir = dDir.ToArray();
+            string lastName = "";
+            int matchCount = 0;
+            foreach (DatBase db in arrDir)
+            {
+                string thisName = db.Name;
+                if (lastName == thisName)
+                {
+                    string path0 = Path.GetFileNameWithoutExtension(thisName);
+                    string path1 = Path.GetExtension(thisName);
+                    db.Name = path0 + "_" + matchCount + path1;
+                    matchCount += 1;
+                }
+                else
+                {
+                    matchCount = 0;
+                    lastName = thisName;
+                }
+
+                if (db is DatDir ddir)
+                {
+                    CleanFilenamesFixDupes(ddir);
+                }
+            }
+        }
+
 
         private static void CleanFilename(DatBase db)
         {
