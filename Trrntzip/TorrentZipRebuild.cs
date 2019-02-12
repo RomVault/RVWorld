@@ -36,10 +36,10 @@ namespace Trrntzip
             int bufferSize = buffer.Length;
 
             string filename = originalZipFile.ZipFilename;
-            string tmpFilename = Path.GetDirectoryName(filename) + Path.DirectorySeparatorChar + Path.GetFileNameWithoutExtension(filename) + ".tmp";
+            string tmpFilename = Path.Combine(Path.GetDirectoryName(filename),Path.GetFileNameWithoutExtension(filename) + ".tmp");
 
             string outExt = outputType == zipType.zip ? ".zip" : ".7z";
-            string outfilename = Path.GetDirectoryName(filename) + Path.DirectorySeparatorChar + Path.GetFileNameWithoutExtension(filename) + outExt;
+            string outfilename = Path.Combine(Path.GetDirectoryName(filename), Path.GetFileNameWithoutExtension(filename) + outExt);
 
             if (inputType != outputType)
             {
