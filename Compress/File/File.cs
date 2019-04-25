@@ -157,12 +157,12 @@ namespace Compress.File
         }
 
 
-        public ZipReturn ZipFileOpen(byte[] zipBytes)
+        public ZipReturn ZipFileOpen(Stream inStream)
         {
             ZipFileClose();
             ZipStatus = ZipStatus.None;
             _fileInfo = null;
-            _inStream = new MemoryStream(zipBytes);
+            _inStream = inStream;
             ZipOpen = ZipOpenType.OpenRead;
 
             //return ZipFileReadHeaders();
@@ -180,11 +180,6 @@ namespace Compress.File
         {
             _crc = crc32;
             return ZipReturn.ZipGood;
-        }
-
-        public ZipReturn ZipFileRollBack()
-        {
-            throw new NotImplementedException();
         }
 
         public void ZipFileCloseFailed()

@@ -117,7 +117,7 @@ namespace FileHeaderReader
 
             byte[] buffer = new byte[headerSize];
 
-            sIn.Read(buffer, 0, headerSize);
+            headerSize = sIn.Read(buffer, 0, headerSize);
 
             return GetType(buffer, headerSize, out offset);
         }

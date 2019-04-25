@@ -53,6 +53,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="File\File.cs" />
+    <Compile Include="gZip\gZip.cs" />
     <Compile Include="ICompress.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SevenZip\Common\ICoder.cs" />

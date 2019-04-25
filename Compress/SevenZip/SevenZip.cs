@@ -18,7 +18,6 @@ namespace Compress.SevenZip
         private List<LocalFile> _localFiles = new List<LocalFile>();
 
         private FileInfo _zipFileInfo;
-        private byte[] _memoryZipFile;
 
         private Stream _zipFs;
 
@@ -65,10 +64,6 @@ namespace Compress.SevenZip
         {
             return _localFiles[i].CRC;
         }
-        public ZipReturn ZipFileRollBack()
-        {
-            throw new NotImplementedException();
-        }
 
         public void ZipFileCloseFailed()
         {
@@ -113,7 +108,6 @@ namespace Compress.SevenZip
         public ZipReturn ZipFileOpen(string filename, long timestamp, bool readHeaders)
         {
             ZipFileClose();
-            _memoryZipFile = null;
             Debug.WriteLine(filename);
             #region open file stream
 
@@ -156,12 +150,11 @@ namespace Compress.SevenZip
             return ZipFileReadHeaders();
         }
 
-        public ZipReturn ZipFileOpen(byte[] zipFileBytes)
+        public ZipReturn ZipFileOpen(Stream inStream)
         {
             ZipFileClose();
             _zipFileInfo = null;
-            _memoryZipFile = zipFileBytes;
-            _zipFs = new MemoryStream(_memoryZipFile, 0, zipFileBytes.Length);
+            _zipFs = inStream;
             ZipOpen = ZipOpenType.OpenRead;
             ZipStatus = ZipStatus.None;
             return ZipFileReadHeaders();
@@ -188,7 +181,7 @@ namespace Compress.SevenZip
 
                 if (signatureHeader.NextHeaderSize != 0)
                 {
-                    _zipFs.Seek(_baseOffset + (long) signatureHeader.NextHeaderOffset, SeekOrigin.Begin);
+                    _zipFs.Seek(_baseOffset + (long)signatureHeader.NextHeaderOffset, SeekOrigin.Begin);
                     ZipReturn zr = Header.ReadHeaderOrPackedHeader(_zipFs, _baseOffset, out _header);
                     if (zr != ZipReturn.ZipGood)
                     {
@@ -279,7 +272,6 @@ namespace Compress.SevenZip
                         _zipFs.Close();
                         _zipFs.Dispose();
                     }
-                    _memoryZipFile = null;
                     ZipOpen = ZipOpenType.Closed;
                     return;
                 case ZipOpenType.OpenWrite:
@@ -294,7 +286,7 @@ namespace Compress.SevenZip
 
         private Header _header;
 
-        
+
         // not finalized yet, so do not use
         private void WriteRomVault7Zip(BinaryWriter bw, ulong headerPos, ulong headerLength, uint headerCRC)
         {
@@ -314,7 +306,7 @@ namespace Compress.SevenZip
 
             ZipStatus = ZipStatus.TrrntZip;
         }
-        
+
 
         private bool IsRomVault7Z()
         {
@@ -627,8 +619,8 @@ namespace Compress.SevenZip
             {
                 case System.IO.FileStream _:
                     return new System.IO.FileStream(ZipFilename, FileMode.Open, FileAccess.Read);
-                case MemoryStream _:
-                    return new MemoryStream(_memoryZipFile);
+                case MemoryStream memStream:
+                    return new MemoryStream(memStream.GetBuffer(), 0, (int)memStream.Length, false);
             }
 
             return null;
@@ -782,7 +774,7 @@ namespace Compress.SevenZip
                 }
             }
 
-            uint mainHeaderCRC = Utils.CRC.CalculateDigest(newHeaderByte, 0, (uint) newHeaderByte.Length);
+            uint mainHeaderCRC = Utils.CRC.CalculateDigest(newHeaderByte, 0, (uint)newHeaderByte.Length);
 
             ulong headerpos = (ulong)_zipFs.Position;
             BinaryWriter bw = new BinaryWriter(_zipFs);

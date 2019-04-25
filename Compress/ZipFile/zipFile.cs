@@ -333,7 +333,7 @@ namespace Compress.ZipFile
                     return ZipReturn.ZipGood;
                 }
             }
-            return ZipReturn.ZipCenteralDirError;
+            return ZipReturn.ZipCentralDirError;
         }
 
 
@@ -558,7 +558,7 @@ namespace Compress.ZipFile
         }
 
 
-        public ZipReturn ZipFileOpen(byte[] zipBytes)
+        public ZipReturn ZipFileOpen(Stream inStream)
         {
             ZipFileClose();
             ZipStatus = ZipStatus.None;
@@ -566,7 +566,7 @@ namespace Compress.ZipFile
             _centerDirStart = 0;
             _centerDirSize = 0;
             _zipFileInfo = null;
-            _zipFs = new MemoryStream(zipBytes);
+            _zipFs = inStream;
 
             ZipOpen = ZipOpenType.OpenRead;
             return ZipFileReadHeaders();
@@ -917,7 +917,7 @@ namespace Compress.ZipFile
                 case ZipReturn.ZipLocalFileHeaderError:
                     ret = "Error reading a zipped file header information";
                     break;
-                case ZipReturn.ZipCenteralDirError:
+                case ZipReturn.ZipCentralDirError:
                     ret = "There is an error in the Zip Centeral Directory";
                     break;
                 case ZipReturn.ZipReadingFromOutputFile:
@@ -1110,7 +1110,7 @@ namespace Compress.ZipFile
                     uint thisSignature = br.ReadUInt32();
                     if (thisSignature != CentralDirectoryHeaderSigniature)
                     {
-                        return ZipReturn.ZipCenteralDirError;
+                        return ZipReturn.ZipCentralDirError;
                     }
 
                     br.ReadUInt16(); // Version Made By
@@ -1189,7 +1189,7 @@ namespace Compress.ZipFile
 
                                 if (nameCRC32 != fCRC)
                                 {
-                                    return ZipReturn.ZipCenteralDirError;
+                                    return ZipReturn.ZipCentralDirError;
                                 }
 
                                 int charLen = blockLength - 5;
@@ -1208,7 +1208,7 @@ namespace Compress.ZipFile
                 }
                 catch
                 {
-                    return ZipReturn.ZipCenteralDirError;
+                    return ZipReturn.ZipCentralDirError;
                 }
             }
 

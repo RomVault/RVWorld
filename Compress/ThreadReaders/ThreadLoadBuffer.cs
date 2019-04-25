@@ -16,6 +16,8 @@ namespace Compress.ThreadReaders
         private bool _finished;
         public bool errorState;
 
+        public int SizeRead;
+
         public ThreadLoadBuffer(Stream ds)
         {
             _waitEvent = new AutoResetEvent(false);
@@ -45,7 +47,7 @@ namespace Compress.ThreadReaders
                 }
                 try
                 {
-                    _ds.Read(_buffer, 0, _size);
+                    SizeRead = _ds.Read(_buffer, 0, _size);
                 }
                 catch (Exception)
                 {

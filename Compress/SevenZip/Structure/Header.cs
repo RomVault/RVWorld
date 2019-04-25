@@ -99,7 +99,7 @@ namespace Compress.SevenZip.Structure
                 }
             }
 
-            return ZipReturn.ZipCenteralDirError;
+            return ZipReturn.ZipCentralDirError;
         }
     }
 }

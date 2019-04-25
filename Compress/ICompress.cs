@@ -17,13 +17,12 @@ namespace Compress
 
         ZipReturn ZipFileOpen(string newFilename, long timestamp =-1, bool readHeaders=true);
 
-        ZipReturn ZipFileOpen(byte[] zipFileBytes);
+        ZipReturn ZipFileOpen(Stream inStream);
         void ZipFileClose();
 
         ZipReturn ZipFileOpenReadStream(int index, out Stream stream, out ulong streamSize);
         ZipReturn ZipFileOpenWriteStream(bool raw, bool trrntzip, string filename, ulong uncompressedSize, ushort compressionMethod, out Stream stream);
         ZipReturn ZipFileCloseReadStream();
-//        void DeepScan();
 
 
         ZipStatus ZipStatus { get; }
@@ -35,7 +34,6 @@ namespace Compress
 
         ZipReturn ZipFileCreate(string newFilename);
         ZipReturn ZipFileCloseWriteStream(byte[] crc32);
-        ZipReturn ZipFileRollBack();
         void ZipFileCloseFailed();
 
     }
