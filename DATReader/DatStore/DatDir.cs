@@ -153,11 +153,6 @@ namespace DATReader.DatStore
                     }
                 }
 
-
-
-
-
-
             }
             // if the search is greater than the closest match move one down the list
             else if (intRes > 0)

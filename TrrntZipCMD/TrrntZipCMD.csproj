@@ -18,7 +18,7 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
+    <OutputPath>..\..\stage\TrrntZipCMD\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -55,7 +55,7 @@
       <Project>{ff8a7a0a-6319-49e0-a6e6-df3754bffdd1}</Project>
       <Name>RVIO</Name>
     </ProjectReference>
-    <ProjectReference Include="..\Trrntzip\Trrntzip.csproj">
+    <ProjectReference Include="..\trrntzip\Trrntzip.csproj">
       <Project>{21822412-a4ce-4a55-bd41-aaea753753f1}</Project>
       <Name>Trrntzip</Name>
     </ProjectReference>

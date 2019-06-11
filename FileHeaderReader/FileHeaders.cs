@@ -47,6 +47,7 @@ namespace FileHeaderReader
                 new Detector(HeaderFileType.FDS, 16, 16, "fds.xml", new Data(0, new byte[] {0x46, 0x44, 0x53, 0x1A, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00})),
                 new Detector(HeaderFileType.FDS, 16, 16, "fds.xml", new Data(0, new byte[] {0x46, 0x44, 0x53, 0x1A, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00})),
                 new Detector(HeaderFileType.FDS, 16, 16, "fds.xml", new Data(0, new byte[] {0x46, 0x44, 0x53, 0x1A, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00})),
+                new Detector(HeaderFileType.FDS, 16, 16, "No-Intro_FDS.xml", new Data(0, new byte[] {0x46, 0x44, 0x53})),
                 new Detector(HeaderFileType.Lynx, 64, 64, "No-Intro_LNX.xml", new Data(0, new byte[] {0x4C, 0x59, 0x4E, 0x58})),
                 new Detector(HeaderFileType.Lynx, 64, 64, "No-Intro_LNX.xml", new Data(6, new byte[] {0x42, 0x53, 0x39})),
                 new Detector(HeaderFileType.NES, 16, 16, "No-Intro_NES.xml", new Data(0, new byte[] {0x4E, 0x45, 0x53, 0x1A})),
@@ -104,7 +105,8 @@ namespace FileHeaderReader
                    (fileType == HeaderFileType.PCE) ||
                    (fileType == HeaderFileType.PSID) ||
                    (fileType == HeaderFileType.SNES) ||
-                   (fileType == HeaderFileType.SPC);
+                   (fileType == HeaderFileType.SPC) ||
+                   (fileType == HeaderFileType.CHD);
         }
 
         public static HeaderFileType GetType(Stream sIn, out int offset)

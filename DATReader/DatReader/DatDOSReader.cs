@@ -1,8 +1,6 @@
 ﻿using System.ComponentModel;
 using DATReader.DatStore;
 using DATReader.Utils;
-using RVIO;
-
 
 namespace DATReader.DatReader
 {
@@ -147,9 +145,9 @@ namespace DATReader.DatReader
             }
             dfl.Gn();
 
-            string snext = dfl.Next.ToLower();
+            string sNext = dfl.Next.ToLower();
 
-            if (snext != "name")
+            if (sNext != "name")
             {
                 _errorReport?.Invoke(dfl.Filename, "Name not found as first object in ( ), on line " + dfl.LineNumber);
                 return false;
@@ -160,7 +158,6 @@ namespace DATReader.DatReader
             dfl.Gn();
 
             DatDir dDir = new DatDir(DatFileType.UnSet) { Name = name, DGame = new DatGame() };
-            DatGame dGame = dDir.DGame;
 
             while (dfl.Next != ")")
             {

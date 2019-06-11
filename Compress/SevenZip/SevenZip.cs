@@ -67,7 +67,29 @@ namespace Compress.SevenZip
 
         public void ZipFileCloseFailed()
         {
-            throw new NotImplementedException();
+            switch (ZipOpen)
+            {
+                case ZipOpenType.Closed:
+                    return;
+                case ZipOpenType.OpenRead:
+                    ZipFileCloseReadStream();
+                    if (_zipFs != null)
+                    {
+                        _zipFs.Close();
+                        _zipFs.Dispose();
+                    }
+                    break;
+                case ZipOpenType.OpenWrite:
+                    _zipFs.Flush();
+                    _zipFs.Close();
+                    _zipFs.Dispose();
+                    if (_zipFileInfo != null)
+                        RVIO.File.Delete(_zipFileInfo.FullName);
+                    _zipFileInfo = null;
+                    break;
+            }
+
+            ZipOpen = ZipOpenType.Closed;
         }
 
         public bool IsDirectory(int i)

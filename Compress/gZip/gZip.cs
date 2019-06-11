@@ -15,9 +15,9 @@ namespace Compress.gZip
         private Stream _zipFs;
         private Stream _compressionStream;
 
-        public byte[] crc { get; private set; }
-        public ulong uncompressedSize { get; private set; }
-        public ulong compressedSize { get; private set; }
+        public byte[] CRC { get; private set; }
+        public ulong UnCompressedSize { get; private set; }
+        public ulong CompressedSize { get; private set; }
 
         private long headerStartPos;
         private long dataStartPos;
@@ -39,12 +39,12 @@ namespace Compress.gZip
 
         public ulong UncompressedSize(int i)
         {
-            return uncompressedSize;
+            return UnCompressedSize;
         }
 
         public byte[] CRC32(int i)
         {
-            return crc;
+            return CRC;
         }
 
         public bool IsDirectory(int i)
@@ -146,23 +146,23 @@ namespace Compress.gZip
                 int XLen = zipBr.ReadInt16();
                 ExtraData = zipBr.ReadBytes(XLen);
 
-                if (XLen == 12)
+                switch (XLen)
                 {
-                    crc = new byte[4];
-                    Array.Copy(ExtraData, 0, crc, 0, 4);
-                    uncompressedSize = BitConverter.ToUInt64(ExtraData, 4);
-                }
-                if (XLen == 28)
-                {
-                    crc = new byte[4];
-                    Array.Copy(ExtraData, 16, crc, 0, 4);
-                    uncompressedSize = BitConverter.ToUInt64(ExtraData, 20);
-                }
-                if (XLen == 77)
-                {
-                    crc = new byte[4];
-                    Array.Copy(ExtraData, 16, crc, 0, 4);
-                    uncompressedSize = BitConverter.ToUInt64(ExtraData, 20);
+                    case 12:
+                        CRC = new byte[4];
+                        Array.Copy(ExtraData, 0, CRC, 0, 4);
+                        UnCompressedSize = BitConverter.ToUInt64(ExtraData, 4);
+                        break;
+                    case 28:
+                        CRC = new byte[4];
+                        Array.Copy(ExtraData, 16, CRC, 0, 4);
+                        UnCompressedSize = BitConverter.ToUInt64(ExtraData, 20);
+                        break;
+                    case 77:
+                        CRC = new byte[4];
+                        Array.Copy(ExtraData, 16, CRC, 0, 4);
+                        UnCompressedSize = BitConverter.ToUInt64(ExtraData, 20);
+                        break;
                 }
             }
 
@@ -186,7 +186,7 @@ namespace Compress.gZip
                 uint crc16 = zipBr.ReadUInt16();
             }
 
-            compressedSize = (ulong)(_zipFs.Length - _zipFs.Position) - 8;
+            CompressedSize = (ulong)(_zipFs.Length - _zipFs.Position) - 8;
 
             dataStartPos = _zipFs.Position;
 
@@ -194,11 +194,11 @@ namespace Compress.gZip
             byte[] gzcrc = zipBr.ReadBytes(4);
             uint gzLength = zipBr.ReadUInt32();
 
-            if (crc != null)
+            if (CRC != null)
             {
                 for (int i = 0; i < 4; i++)
                 {
-                    if (gzcrc[3 - i] == crc[i])
+                    if (gzcrc[3 - i] == CRC[i])
                     {
                         continue;
                     }
@@ -208,12 +208,12 @@ namespace Compress.gZip
             }
             else
             {
-                crc = new[] { gzcrc[3], gzcrc[2], gzcrc[1], gzcrc[0] };
+                CRC = new[] { gzcrc[3], gzcrc[2], gzcrc[1], gzcrc[0] };
             }
 
-            if (uncompressedSize != 0)
+            if (UnCompressedSize != 0)
             {
-                if (gzLength != (uncompressedSize & 0xffffffff))
+                if (gzLength != (UnCompressedSize & 0xffffffff))
                 {
                     _zipFs.Close();
                     return ZipReturn.ZipDecodeError;
@@ -251,7 +251,7 @@ namespace Compress.gZip
 
             _compressionStream = new DeflateStream(_zipFs, CompressionMode.Decompress, true);
             stream = _compressionStream;
-            streamSize = uncompressedSize;
+            streamSize = UnCompressedSize;
 
             return ZipReturn.ZipGood;
         }
@@ -265,7 +265,7 @@ namespace Compress.gZip
         {
             BinaryWriter zipBw = new BinaryWriter(_zipFs);
 
-            uncompressedSize = unCompressedSize;
+            UnCompressedSize = unCompressedSize;
 
             zipBw.Write((byte)0x1f); // ID1 = 0x1f
             zipBw.Write((byte)0x8b); // ID2 = 0x8b
@@ -290,12 +290,7 @@ namespace Compress.gZip
 
 
             dataStartPos = zipBw.BaseStream.Position;
-            if (raw)
-                stream = _zipFs;
-            else
-            {
-                stream = new DeflateStream(_zipFs, CompressionMode.Compress, CompressionLevel.BestCompression, true);
-            }
+            stream = raw ? _zipFs : new DeflateStream(_zipFs, CompressionMode.Compress, CompressionLevel.BestCompression, true);
 
             zipBw.Dispose();
             return ZipReturn.ZipGood;
@@ -352,13 +347,13 @@ namespace Compress.gZip
         {
             BinaryWriter zipBw = new BinaryWriter(_zipFs);
 
-            compressedSize = (ulong)(zipBw.BaseStream.Position - dataStartPos);
+            CompressedSize = (ulong)(zipBw.BaseStream.Position - dataStartPos);
 
-            zipBw.Write(crc[3]);
-            zipBw.Write(crc[2]);
-            zipBw.Write(crc[1]);
-            zipBw.Write(crc[0]);
-            zipBw.Write((uint)uncompressedSize);
+            zipBw.Write(CRC[3]);
+            zipBw.Write(CRC[2]);
+            zipBw.Write(CRC[1]);
+            zipBw.Write(CRC[0]);
+            zipBw.Write((uint)UnCompressedSize);
 
             long endpos = _zipFs.Position;
 
@@ -366,8 +361,8 @@ namespace Compress.gZip
 
             if (ExtraData == null)
             {
-                zipBw.Write(crc); // 4 bytes
-                zipBw.Write(uncompressedSize); // 8 bytes
+                zipBw.Write(CRC); // 4 bytes
+                zipBw.Write(UnCompressedSize); // 8 bytes
             }
             else
             {
@@ -415,8 +410,7 @@ namespace Compress.gZip
         }
 
 
-
-        public static void CreateDirForFile(string sFilename)
+        private static void CreateDirForFile(string sFilename)
         {
             string strTemp = Path.GetDirectoryName(sFilename);
 

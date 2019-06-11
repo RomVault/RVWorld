@@ -93,6 +93,21 @@ namespace DATReader.DatClean
 
         private static bool CheckDir(DatBase db)
         {
+            DatFileType dft = db.DatFileType;
+
+            switch (dft)
+            {
+                // files inside of zips/7zips do not need to be expanded
+                case DatFileType.File7Zip:
+                case DatFileType.FileTorrentZip:
+                    return false;
+                // everything else should be fully expanded
+                default:
+                    return true;
+            }
+
+            /*
+             old method.
             if (db is DatDir)
             {
                 return true;
@@ -105,6 +120,7 @@ namespace DATReader.DatClean
             }
 
             return false;
+            */
         }
     }
 }

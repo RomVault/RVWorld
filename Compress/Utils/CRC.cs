@@ -103,28 +103,11 @@ namespace Compress.Utils
                 return result;
             }
         }
-        public Int32 Crc32Result
-        {
-            get
-            {
-                return unchecked((Int32)(~_crc));
-            }
-        }
-        public uint Crc32ResultU
-        {
-            get
-            {
-                return ~_crc;
-            }
-        }
+        public Int32 Crc32Result => unchecked((Int32)(~_crc));
 
-        public Int64 TotalBytesRead
-        {
-            get
-            {
-                return _totalBytesRead;
-            }
-        }
+        public uint Crc32ResultU => ~_crc;
+
+        public Int64 TotalBytesRead => _totalBytesRead;
 
         public static uint CalculateDigest(byte[] data, uint offset, uint size)
         {

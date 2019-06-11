@@ -1,4 +1,5 @@
-﻿using DATReader.DatStore;
+﻿using System.Diagnostics;
+using DATReader.DatStore;
 using RVIO;
 
 namespace DATReader.DatClean
@@ -19,6 +20,33 @@ namespace DATReader.DatClean
                 }
             }
         }
+
+        private static void CleanFilename(DatBase db)
+        {
+            string name = db.Name;
+            if (string.IsNullOrEmpty(name))
+                return;
+
+            string retName = name;
+            retName = retName.TrimStart();
+            retName = retName.TrimEnd(new[] { '.', ' ' });
+            retName = retName.Replace("/", "\\");
+            retName = retName.Replace("\\ ", "\\");
+            retName = retName.Replace(".\\", "\\");
+
+            char[] charName = retName.ToCharArray();
+            for (int i = 0; i < charName.Length; i++)
+            {
+                int c = charName[i];
+                if (c == ':' || c == '*' || c == '?' || c == '<' || c == '>' || c == '|' || c < 32)
+                    charName[i] = '-';
+            }
+            db.Name = new string(charName);
+        }
+
+
+
+
         public static void CleanFilenamesFixDupes(DatDir dDir)
         {
             DatBase[] arrDir = dDir.ToArray();
@@ -27,11 +55,15 @@ namespace DATReader.DatClean
             foreach (DatBase db in arrDir)
             {
                 string thisName = db.Name;
-                if (lastName == thisName)
+                if (lastName.ToLowerInvariant() == thisName.ToLowerInvariant())
                 {
-                    string path0 = Path.GetFileNameWithoutExtension(thisName);
+                    Debug.WriteLine("Found match = " + lastName + " , " + thisName);
+
                     string path1 = Path.GetExtension(thisName);
+                    string path0 = thisName.Substring(0, thisName.Length - path1.Length);
+
                     db.Name = path0 + "_" + matchCount + path1;
+                    Debug.WriteLine("New filename = " + db.Name);
                     matchCount += 1;
                 }
                 else
@@ -47,27 +79,5 @@ namespace DATReader.DatClean
             }
         }
 
-
-        private static void CleanFilename(DatBase db)
-        {
-            string name = db.Name;
-            if (string.IsNullOrEmpty(name))
-                return;
-
-            string retName = name;
-            retName = retName.TrimStart();
-            retName = retName.TrimEnd(new[]{ '.', ' ' });
-
-            char[] charName = retName.ToCharArray();
-            for (int i = 0; i < charName.Length; i++)
-            {
-                int c = charName[i];
-                if (c == ':' || c == '*' || c == '?' || c == '<' || c == '>' || c == '|' || c < 32)
-                    charName[i] = '-';
-                else if (c == '/')
-                    charName[i] = '\\';
-            }
-            db.Name=new string(charName);
-        }
     }
 }
