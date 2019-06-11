@@ -167,27 +167,27 @@ namespace Compress.ZipFile
 
         public void ZipFileCloseFailed()
         {
-            if (ZipOpen == ZipOpenType.Closed)
+            switch (ZipOpen)
             {
-                return;
-            }
-
-            if (ZipOpen == ZipOpenType.OpenRead)
-            {
-                if (_zipFs != null)
-                {
+                case ZipOpenType.Closed:
+                    return;
+                case ZipOpenType.OpenRead:
+                    if (_zipFs != null)
+                    {
+                        _zipFs.Close();
+                        _zipFs.Dispose();
+                    }
+                    break;
+                case ZipOpenType.OpenWrite:
+                    _zipFs.Flush();
                     _zipFs.Close();
                     _zipFs.Dispose();
-                }
-                ZipOpen = ZipOpenType.Closed;
-                return;
+                    if (_zipFileInfo != null)
+                        RVIO.File.Delete(_zipFileInfo.FullName);
+                    _zipFileInfo = null;
+                    break;
             }
 
-            _zipFs.Flush();
-            _zipFs.Close();
-            _zipFs.Dispose();
-            RVIO.File.Delete(_zipFileInfo.FullName);
-            _zipFileInfo = null;
             ZipOpen = ZipOpenType.Closed;
         }
 
@@ -725,15 +725,14 @@ namespace Compress.ZipFile
             }
         }
 
-        public ZipReturn ZipCreateFake()
+        public void ZipCreateFake()
         {
             if (ZipOpen != ZipOpenType.Closed)
             {
-                return ZipReturn.ZipFileAlreadyOpen;
+                return;
             }
 
             ZipOpen = ZipOpenType.OpenFakeWrite;
-            return ZipReturn.ZipGood;
         }
 
         public void ZipFileCloseFake(ulong fileOffset, out byte[] centeralDir)
@@ -957,7 +956,7 @@ namespace Compress.ZipFile
             char[] charArr = s.ToCharArray();
             foreach (char ch in charArr)
             {
-                if (ch > 255)
+                if (ch > 127)
                 {
                     return true;
                 }
@@ -1831,7 +1830,7 @@ namespace Compress.ZipFile
 
                 zipFs.Seek(posNow, SeekOrigin.Begin);
             }
-            
+
             public static void LocalFileAddDirectory(Stream zipFs)
             {
                 Stream ds = zipFs;
