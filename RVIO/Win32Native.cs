@@ -1,7 +1,7 @@
 ﻿/******************************************************
- *     ROMVault2 is written by Gordon J.              *
+ *     ROMVault3 is written by Gordon J.              *
  *     Contact gordon@romvault.com                    *
- *     Copyright 2014                                 *
+ *     Copyright 2019                                 *
  ******************************************************/
 
 using System;

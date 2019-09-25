@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System.Collections;
+using System.Collections.Generic;
 using System.Diagnostics;
 using Compress;
 using Compress.SevenZip;
@@ -52,16 +53,17 @@ namespace Trrntzip
             // is actually valid, and may invalidate it being a valid trrntzip if any problem is found.
 
             List<ZippedFile> zippedFiles = ReadZipContent(zipFile);
-            tzs |= TorrentZipCheck.CheckZipFiles(ref zippedFiles, ThreadId, StatusLogCallBack);
-
+            
             // check if the compression type has changed
             zipType inputType;
             switch (zipFile)
             {
                 case ZipFile _:
+                    tzs |= TorrentZipCheck.CheckZipFiles(ref zippedFiles, ThreadId, StatusLogCallBack);
                     inputType = zipType.zip;
                     break;
                 case SevenZ _:
+                    tzs |= TorrentZipCheck.CheckSevenZipFiles(ref zippedFiles, ThreadId, StatusLogCallBack);
                     inputType = zipType.sevenzip;
                     break;
                 case File _:
@@ -82,7 +84,21 @@ namespace Trrntzip
             if (((tzs == TrrntZipStatus.ValidTrrntzip) && !compressionChanged && !Program.ForceReZip) || Program.CheckOnly)
             {
                 StatusLogCallBack?.Invoke(ThreadId, "Skipping File");
-                return TrrntZipStatus.ValidTrrntzip;
+                return tzs;
+            }
+
+            // if compressionChanged then the required file order will also have changed to need to re-sort the files.
+            if (compressionChanged)
+            {
+                switch (outputType)
+                {
+                    case zipType.zip:
+                        tzs |= TorrentZipCheck.CheckZipFiles(ref zippedFiles, ThreadId, StatusLogCallBack);
+                        break;
+                    case zipType.sevenzip:
+                        tzs |= TorrentZipCheck.CheckSevenZipFiles(ref zippedFiles, ThreadId, StatusLogCallBack);
+                        break;
+                }
             }
 
             StatusLogCallBack?.Invoke(ThreadId, "TorrentZipping");

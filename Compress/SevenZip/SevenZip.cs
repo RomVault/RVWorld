@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Text;
 using Compress.SevenZip.Compress.BZip2;
 using Compress.SevenZip.Compress.LZMA;
 using Compress.SevenZip.Compress.PPmd;
@@ -53,6 +54,12 @@ namespace Compress.SevenZip
         public ulong UncompressedSize(int i)
         {
             return _localFiles[i].UncompressedSize;
+        }
+
+        public int StreamIndex(int i)
+        {
+            return _localFiles[i].StreamIndex;
+
         }
 
         public ZipReturn FileStatus(int i)
@@ -185,10 +192,9 @@ namespace Compress.SevenZip
         private ZipReturn ZipFileReadHeaders()
         {
             try
-
             {
                 SignatureHeader signatureHeader = new SignatureHeader();
-                if (!signatureHeader.Read(new BinaryReader(_zipFs)))
+                if (!signatureHeader.Read(_zipFs))
                 {
                     return ZipReturn.ZipSignatureError;
                 }
@@ -308,6 +314,20 @@ namespace Compress.SevenZip
 
         private Header _header;
 
+        public StringBuilder HeaderReport()
+        {
+            StringBuilder sb = new StringBuilder();
+
+            if (_header == null)
+            {
+                sb.AppendLine("Null Header");
+                return sb;
+            }
+
+            _header.Report(ref sb);
+
+            return sb;
+        }
 
         // not finalized yet, so do not use
         private void WriteRomVault7Zip(BinaryWriter bw, ulong headerPos, ulong headerLength, uint headerCRC)
@@ -353,10 +373,15 @@ namespace Compress.SevenZip
                 }
             }
 
-            BinaryReader br = new BinaryReader(_zipFs);
-            uint headerCRC = br.ReadUInt32();
-            ulong headerOffset = br.ReadUInt64();
-            ulong headerSize = br.ReadUInt64();
+            uint headerCRC;
+            ulong headerOffset;
+            ulong headerSize;
+            using (BinaryReader br = new BinaryReader(_zipFs, Encoding.UTF8, true))
+            {
+                headerCRC = br.ReadUInt32();
+                headerOffset = br.ReadUInt64();
+                headerSize = br.ReadUInt64();
+            }
 
             if ((ulong)length < headerOffset)
             {
@@ -368,7 +393,9 @@ namespace Compress.SevenZip
             byte[] mainHeader = new byte[headerSize];
             int bytesread = _zipFs.Read(mainHeader, 0, (int)headerSize);
 
-            return ((ulong)bytesread == headerSize) && Utils.CRC.VerifyDigest(headerCRC, mainHeader, 0, (uint)headerSize);
+            return ((ulong)bytesread == headerSize) &&
+                   Utils.CRC.VerifyDigest(headerCRC, mainHeader, 0, (uint)headerSize);
+
         }
 
         private bool Istorrent7Z()
@@ -472,167 +499,176 @@ namespace Compress.SevenZip
             stream = null;
             unCompressedSize = 0;
 
-            if (ZipOpen != ZipOpenType.OpenRead)
+            try
+            {
+                if (ZipOpen != ZipOpenType.OpenRead)
+                {
+                    return ZipReturn.ZipErrorGettingDataStream;
+                }
+
+                if (IsDirectory(index))
+                {
+                    return ZipReturn.ZipTryingToAccessADirectory;
+                }
+
+                unCompressedSize = _localFiles[index].UncompressedSize;
+                int thisStreamIndex = _localFiles[index].StreamIndex;
+                ulong streamOffset = _localFiles[index].StreamOffset;
+
+                if ((thisStreamIndex == _streamIndex) && (streamOffset >= (ulong)_stream.Position))
+                {
+                    stream = _stream;
+                    stream.Seek((long)_localFiles[index].StreamOffset - _stream.Position, SeekOrigin.Current);
+                    return ZipReturn.ZipGood;
+                }
+
+                ZipFileCloseReadStream();
+                _streamIndex = thisStreamIndex;
+
+
+                Folder folder = _header.StreamsInfo.Folders[_streamIndex];
+
+                // first make the List of Decompressors streams
+                int codersNeeded = folder.Coders.Length;
+
+                List<InStreamSourceInfo> allInputStreams = new List<InStreamSourceInfo>();
+                for (int i = 0; i < codersNeeded; i++)
+                {
+                    folder.Coders[i].DecoderStream = null;
+                    allInputStreams.AddRange(folder.Coders[i].InputStreamsSourceInfo);
+                }
+
+                // now use the binding pairs to links the outputs to the inputs
+                int bindPairsCount = folder.BindPairs.Length;
+                for (int i = 0; i < bindPairsCount; i++)
+                {
+                    allInputStreams[(int)folder.BindPairs[i].InIndex].InStreamSource = InStreamSource.CompStreamOutput;
+                    allInputStreams[(int)folder.BindPairs[i].InIndex].InStreamIndex = folder.BindPairs[i].OutIndex;
+                    folder.Coders[(int)folder.BindPairs[i].OutIndex].OutputUsedInternally = true;
+                }
+
+                // next use the stream indises to connect the remaining input streams from the sourcefile
+                int packedStreamsCount = folder.PackedStreamIndices.Length;
+                for (int i = 0; i < packedStreamsCount; i++)
+                {
+                    ulong packedStreamIndex = (ulong)i + folder.PackedStreamIndexBase;
+
+                    // create and open the source file stream if needed
+                    if (_header.StreamsInfo.PackedStreams[packedStreamIndex].PackedStream == null)
+                    {
+                        _header.StreamsInfo.PackedStreams[packedStreamIndex].PackedStream = CloneStream(_zipFs);
+                    }
+                    _header.StreamsInfo.PackedStreams[packedStreamIndex].PackedStream.Seek(
+                        _baseOffset + (long)_header.StreamsInfo.PackedStreams[packedStreamIndex].StreamPosition, SeekOrigin.Begin);
+
+
+                    allInputStreams[(int)folder.PackedStreamIndices[i]].InStreamSource = InStreamSource.FileStream;
+                    allInputStreams[(int)folder.PackedStreamIndices[i]].InStreamIndex = packedStreamIndex;
+                }
+
+                List<Stream> inputCoders = new List<Stream>();
+
+                bool allCodersComplete = false;
+                while (!allCodersComplete)
+                {
+                    allCodersComplete = true;
+                    for (int i = 0; i < codersNeeded; i++)
+                    {
+                        Coder coder = folder.Coders[i];
+
+                        // check is decoder already processed
+                        if (coder.DecoderStream != null)
+                        {
+                            continue;
+                        }
+
+                        inputCoders.Clear();
+                        for (int j = 0; j < (int)coder.NumInStreams; j++)
+                        {
+                            if (coder.InputStreamsSourceInfo[j].InStreamSource == InStreamSource.FileStream)
+                            {
+                                inputCoders.Add(_header.StreamsInfo.PackedStreams[coder.InputStreamsSourceInfo[j].InStreamIndex].PackedStream);
+                            }
+                            else if (coder.InputStreamsSourceInfo[j].InStreamSource == InStreamSource.CompStreamOutput)
+                            {
+                                if (folder.Coders[coder.InputStreamsSourceInfo[j].InStreamIndex].DecoderStream == null)
+                                {
+                                    break;
+                                }
+                                inputCoders.Add(folder.Coders[coder.InputStreamsSourceInfo[j].InStreamIndex].DecoderStream);
+                            }
+                            else
+                            {
+                                // unknown input type so error
+                                return ZipReturn.ZipDecodeError;
+                            }
+                        }
+
+                        if (inputCoders.Count == (int)coder.NumInStreams)
+                        {
+                            // all inputs streams are available to make the decoder stream
+                            switch (coder.DecoderType)
+                            {
+                                case DecompressType.Stored:
+                                    coder.DecoderStream = inputCoders[0];
+                                    break;
+                                case DecompressType.Delta:
+                                    coder.DecoderStream = new Delta(folder.Coders[i].Properties, inputCoders[0]);
+                                    break;
+                                case DecompressType.LZMA:
+                                    coder.DecoderStream = new LzmaStream(folder.Coders[i].Properties, inputCoders[0]);
+                                    break;
+                                case DecompressType.LZMA2:
+                                    coder.DecoderStream = new LzmaStream(folder.Coders[i].Properties, inputCoders[0]);
+                                    break;
+                                case DecompressType.PPMd:
+                                    coder.DecoderStream = new PpmdStream(new PpmdProperties(folder.Coders[i].Properties), inputCoders[0], false);
+                                    break;
+                                case DecompressType.BZip2:
+                                    coder.DecoderStream = new CBZip2InputStream(inputCoders[0], false);
+                                    break;
+                                case DecompressType.BCJ:
+                                    coder.DecoderStream = new BCJFilter(false, inputCoders[0]);
+                                    break;
+                                case DecompressType.BCJ2:
+                                    coder.DecoderStream = new BCJ2Filter(inputCoders[0], inputCoders[1], inputCoders[2], inputCoders[3]);
+                                    break;
+                                default:
+                                    return ZipReturn.ZipDecodeError;
+                            }
+                        }
+
+                        // if skipped a coder need to loop round again
+                        if (coder.DecoderStream == null)
+                        {
+                            allCodersComplete = false;
+                        }
+                    }
+                }
+                // find the final output stream and return it.
+                int outputStream = -1;
+                for (int i = 0; i < codersNeeded; i++)
+                {
+                    Coder coder = folder.Coders[i];
+                    if (!coder.OutputUsedInternally)
+                    {
+                        outputStream = i;
+                    }
+                }
+
+                stream = folder.Coders[outputStream].DecoderStream;
+                stream.Seek((long)_localFiles[index].StreamOffset, SeekOrigin.Current);
+
+                _stream = stream;
+
+                return ZipReturn.ZipGood;
+
+            }
+            catch (Exception e)
             {
                 return ZipReturn.ZipErrorGettingDataStream;
             }
 
-            if (IsDirectory(index))
-            {
-                return ZipReturn.ZipTryingToAccessADirectory;
-            }
-
-            unCompressedSize = _localFiles[index].UncompressedSize;
-            int thisStreamIndex = _localFiles[index].StreamIndex;
-            ulong streamOffset = _localFiles[index].StreamOffset;
-
-            if ((thisStreamIndex == _streamIndex) && (streamOffset >= (ulong)_stream.Position))
-            {
-                stream = _stream;
-                stream.Seek((long)_localFiles[index].StreamOffset - _stream.Position, SeekOrigin.Current);
-                return ZipReturn.ZipGood;
-            }
-
-            ZipFileCloseReadStream();
-            _streamIndex = thisStreamIndex;
-
-
-            Folder folder = _header.StreamsInfo.Folders[_streamIndex];
-
-            // first make the List of Decompressors streams
-            int codersNeeded = folder.Coders.Length;
-
-            List<InStreamSourceInfo> allInputStreams = new List<InStreamSourceInfo>();
-            for (int i = 0; i < codersNeeded; i++)
-            {
-                folder.Coders[i].decoderStream = null;
-                allInputStreams.AddRange(folder.Coders[i].InputStreamsSourceInfo);
-            }
-
-            // now use the binding pairs to links the outputs to the inputs
-            int bindPairsCount = folder.BindPairs.Length;
-            for (int i = 0; i < bindPairsCount; i++)
-            {
-                allInputStreams[(int)folder.BindPairs[i].InIndex].InStreamSource = InStreamSource.CompStreamOutput;
-                allInputStreams[(int)folder.BindPairs[i].InIndex].InStreamIndex = folder.BindPairs[i].OutIndex;
-                folder.Coders[(int)folder.BindPairs[i].OutIndex].OutputUsedInternally = true;
-            }
-
-            // next use the stream indises to connect the remaining input streams from the sourcefile
-            int packedStreamsCount = folder.PackedStreamIndices.Length;
-            for (int i = 0; i < packedStreamsCount; i++)
-            {
-                ulong packedStreamIndex = (ulong)i + folder.PackedStreamIndexBase;
-
-                // create and open the source file stream if needed
-                if (_header.StreamsInfo.PackedStreams[packedStreamIndex].PackedStream == null)
-                {
-                    _header.StreamsInfo.PackedStreams[packedStreamIndex].PackedStream = CloneStream(_zipFs);
-                }
-                _header.StreamsInfo.PackedStreams[packedStreamIndex].PackedStream.Seek(
-                    _baseOffset + (long)_header.StreamsInfo.PackedStreams[packedStreamIndex].StreamPosition, SeekOrigin.Begin);
-
-
-                allInputStreams[(int)folder.PackedStreamIndices[i]].InStreamSource = InStreamSource.FileStream;
-                allInputStreams[(int)folder.PackedStreamIndices[i]].InStreamIndex = packedStreamIndex;
-            }
-
-            List<Stream> inputCoders = new List<Stream>();
-
-            bool allCodersComplete = false;
-            while (!allCodersComplete)
-            {
-                allCodersComplete = true;
-                for (int i = 0; i < codersNeeded; i++)
-                {
-                    Coder coder = folder.Coders[i];
-
-                    // check is decoder already processed
-                    if (coder.decoderStream != null)
-                    {
-                        continue;
-                    }
-
-                    inputCoders.Clear();
-                    for (int j = 0; j < (int)coder.NumInStreams; j++)
-                    {
-                        if (coder.InputStreamsSourceInfo[j].InStreamSource == InStreamSource.FileStream)
-                        {
-                            inputCoders.Add(_header.StreamsInfo.PackedStreams[coder.InputStreamsSourceInfo[j].InStreamIndex].PackedStream);
-                        }
-                        else if (coder.InputStreamsSourceInfo[j].InStreamSource == InStreamSource.CompStreamOutput)
-                        {
-                            if (folder.Coders[coder.InputStreamsSourceInfo[j].InStreamIndex].decoderStream == null)
-                            {
-                                break;
-                            }
-                            inputCoders.Add(folder.Coders[coder.InputStreamsSourceInfo[j].InStreamIndex].decoderStream);
-                        }
-                        else
-                        {
-                            // unknown input type so error
-                            return ZipReturn.ZipDecodeError;
-                        }
-                    }
-
-                    if (inputCoders.Count == (int)coder.NumInStreams)
-                    {
-                        // all inputs streams are available to make the decoder stream
-                        switch (coder.DecoderType)
-                        {
-                            case DecompressType.Stored:
-                                coder.decoderStream = inputCoders[0];
-                                break;
-                            case DecompressType.Delta:
-                                coder.decoderStream = new Delta(folder.Coders[i].Properties, inputCoders[0]);
-                                break;
-                            case DecompressType.LZMA:
-                                coder.decoderStream = new LzmaStream(folder.Coders[i].Properties, inputCoders[0]);
-                                break;
-                            case DecompressType.LZMA2:
-                                coder.decoderStream = new LzmaStream(folder.Coders[i].Properties, inputCoders[0]);
-                                break;
-                            case DecompressType.PPMd:
-                                coder.decoderStream = new PpmdStream(new PpmdProperties(folder.Coders[i].Properties), inputCoders[0], false);
-                                break;
-                            case DecompressType.BZip2:
-                                coder.decoderStream = new CBZip2InputStream(inputCoders[0], false);
-                                break;
-                            case DecompressType.BCJ:
-                                coder.decoderStream = new BCJFilter(false, inputCoders[0]);
-                                break;
-                            case DecompressType.BCJ2:
-                                coder.decoderStream = new BCJ2Filter(inputCoders[0], inputCoders[1], inputCoders[2], inputCoders[3]);
-                                break;
-                            default:
-                                return ZipReturn.ZipDecodeError;
-                        }
-                    }
-
-                    // if skipped a coder need to loop round again
-                    if (coder.decoderStream == null)
-                    {
-                        allCodersComplete = false;
-                    }
-                }
-            }
-            // find the final output stream and return it.
-            int outputStream = -1;
-            for (int i = 0; i < codersNeeded; i++)
-            {
-                Coder coder = folder.Coders[i];
-                if (!coder.OutputUsedInternally)
-                {
-                    outputStream = i;
-                }
-            }
-
-            stream = folder.Coders[outputStream].decoderStream;
-            stream.Seek((long)_localFiles[index].StreamOffset, SeekOrigin.Current);
-
-            _stream = stream;
-
-            return ZipReturn.ZipGood;
         }
 
         private Stream CloneStream(Stream s)
@@ -640,9 +676,17 @@ namespace Compress.SevenZip
             switch (s)
             {
                 case System.IO.FileStream _:
-                    return new System.IO.FileStream(ZipFilename, FileMode.Open, FileAccess.Read);
+                    int errorCode = FileStream.OpenFileRead(ZipFilename, out Stream streamOut);
+                    return errorCode != 0 ? null : streamOut;
+
                 case MemoryStream memStream:
-                    return new MemoryStream(memStream.GetBuffer(), 0, (int)memStream.Length, false);
+                    long pos = memStream.Position;
+                    memStream.Position = 0;
+                    byte[] newStream = new byte[memStream.Length];
+                    memStream.Read(newStream, 0, (int)memStream.Length);
+                    MemoryStream ret = new MemoryStream(newStream, false);
+                    memStream.Position = pos;
+                    return ret;
             }
 
             return null;
@@ -656,14 +700,14 @@ namespace Compress.SevenZip
 
                 foreach (Coder c in folder.Coders)
                 {
-                    Stream ds = c.decoderStream;
+                    Stream ds = c?.DecoderStream;
                     if (ds == null)
                     {
                         continue;
                     }
                     ds.Close();
                     ds.Dispose();
-                    c.decoderStream = null;
+                    c.DecoderStream = null;
                 }
             }
             _streamIndex = -1;
@@ -672,7 +716,7 @@ namespace Compress.SevenZip
             {
                 foreach (PackedStreamInfo psi in _header.StreamsInfo.PackedStreams)
                 {
-                    if (psi.PackedStream == null)
+                    if (psi?.PackedStream == null)
                     {
                         continue;
                     }
@@ -706,7 +750,12 @@ namespace Compress.SevenZip
         }
 
 
-        public ZipReturn ZipFileCreate(string newFilename, bool compressOutput)
+        public ZipReturn ZipFileCreateFromUncompressedSize(string newFilename, ulong unCompressedSize)
+        {
+            return ZipFileCreate(newFilename,true, GetDictionarySizeFromUncompressedSize(unCompressedSize));
+        }
+
+        public ZipReturn ZipFileCreate(string newFilename, bool compressOutput, int dictionarySize = 1 << 24, int numFastBytes = 64)
         {
             if (ZipOpen != ZipOpenType.Closed)
             {
@@ -727,15 +776,17 @@ namespace Compress.SevenZip
             _signatureHeader = new SignatureHeader();
             _header = new Header();
 
-            BinaryWriter bw = new BinaryWriter(_zipFs);
-            _signatureHeader.Write(bw);
+            using (BinaryWriter bw = new BinaryWriter(_zipFs, Encoding.UTF8, true))
+            {
+                _signatureHeader.Write(bw);
+            }
 
             _compressed = compressOutput;
 
             _unpackedStreamSize = 0;
             if (_compressed)
             {
-                LzmaEncoderProperties ep = new LzmaEncoderProperties(true, 1 << 24, 64);
+                LzmaEncoderProperties ep = new LzmaEncoderProperties(true, dictionarySize, numFastBytes);
                 _lzmaStream = new LzmaStream(ep, false, _zipFs);
                 _codeMSbytes = _lzmaStream.Properties;
                 _packStreamStart = (ulong)_zipFs.Position;
@@ -787,7 +838,7 @@ namespace Compress.SevenZip
             byte[] newHeaderByte;
             using (Stream headerMem = new MemoryStream())
             {
-                using (BinaryWriter headerBw = new BinaryWriter(headerMem))
+                using (BinaryWriter headerBw = new BinaryWriter(headerMem, Encoding.UTF8, true))
                 {
                     _header.WriteHeader(headerBw);
                     newHeaderByte = new byte[headerMem.Length];
@@ -799,13 +850,12 @@ namespace Compress.SevenZip
             uint mainHeaderCRC = Utils.CRC.CalculateDigest(newHeaderByte, 0, (uint)newHeaderByte.Length);
 
             ulong headerpos = (ulong)_zipFs.Position;
-            BinaryWriter bw = new BinaryWriter(_zipFs);
-            bw.Write(newHeaderByte);
-
-            _signatureHeader.WriteFinal(bw, headerpos, (ulong)newHeaderByte.Length, mainHeaderCRC);
-
-            WriteRomVault7Zip(bw, headerpos, (ulong)newHeaderByte.Length, mainHeaderCRC);
-
+            using (BinaryWriter bw = new BinaryWriter(_zipFs, Encoding.UTF8, true))
+            {
+                bw.Write(newHeaderByte);
+                _signatureHeader.WriteFinal(bw, headerpos, (ulong)newHeaderByte.Length, mainHeaderCRC);
+                WriteRomVault7Zip(bw, headerpos, (ulong)newHeaderByte.Length, mainHeaderCRC);
+            }
             _zipFs.Flush();
             _zipFs.Close();
             _zipFs.Dispose();
@@ -987,5 +1037,46 @@ namespace Compress.SevenZip
         }
 
         #endregion
+
+
+        private static readonly int[] DictionarySizes =
+        {
+            0x10000,
+            0x18000,
+            0x20000,
+            0x30000,
+            0x40000,
+            0x60000,
+            0x80000,
+            0xc0000,
+
+            0x100000,
+            0x180000,
+            0x200000,
+            0x300000,
+            0x400000,
+            0x600000,
+            0x800000,
+            0xc00000,
+
+            0x1000000,
+            0x1800000,
+            0x2000000,
+            0x3000000,
+            0x4000000,
+            0x6000000
+        };
+
+
+        private static int GetDictionarySizeFromUncompressedSize(ulong unCompressedSize)
+        {
+            foreach (int v in DictionarySizes)
+            {
+                if ((ulong)v >= unCompressedSize)
+                    return v;
+            }
+
+            return DictionarySizes[DictionarySizes.Length - 1];
+        }
     }
 }

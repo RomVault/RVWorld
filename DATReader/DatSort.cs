@@ -52,7 +52,7 @@ namespace DATReader
             int res = Math.Sign(TrrntZipStringCompare1(string1, string2));
             return res != 0 ? res : Math.Sign(string.Compare(string1, string2, StringComparison.Ordinal));
         }
-       
+
         private static void splitFilename(string filename, out string path, out string name, out string ext)
         {
             int dirIndex = filename.LastIndexOf('/');
@@ -84,13 +84,14 @@ namespace DATReader
 
         public static int Trrnt7ZipStringCompare(string string1, string string2)
         {
+
             splitFilename(string1, out string path1, out string name1, out string ext1);
             splitFilename(string2, out string path2, out string name2, out string ext2);
 
             int res = Math.Sign(string.Compare(ext1, ext2, StringComparison.Ordinal));
             if (res != 0)
                 return res;
-            
+
             res = Math.Sign(string.Compare(name1, name2, StringComparison.Ordinal));
             if (res != 0)
                 return res;

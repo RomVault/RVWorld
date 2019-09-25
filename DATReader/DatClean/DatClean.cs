@@ -105,22 +105,6 @@ namespace DATReader.DatClean
                 default:
                     return true;
             }
-
-            /*
-             old method.
-            if (db is DatDir)
-            {
-                return true;
-            }
-
-            if (db is DatFile tFile)
-            {
-                if (tFile.DatFileType == DatFileType.File)
-                    return true;
-            }
-
-            return false;
-            */
         }
     }
 }

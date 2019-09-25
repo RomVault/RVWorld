@@ -30,9 +30,9 @@ using System.IO;
 namespace Compress.ZipFile.ZLib
 {
 
-    internal enum ZlibStreamFlavor { ZLIB = 1950, DEFLATE = 1951, GZIP = 1952 }
+    public enum ZlibStreamFlavor { ZLIB = 1950, DEFLATE = 1951, GZIP = 1952 }
 
-    internal class ZlibBaseStream : System.IO.Stream
+    public class ZlibBaseStream : System.IO.Stream
     {
         protected internal ZlibCodec _z = null; // deferred init... new ZlibCodec();
 
@@ -329,19 +329,6 @@ namespace Compress.ZipFile.ZLib
             _stream.SetLength(value);
         }
 
-
-#if NOT
-        public int Read()
-        {
-            if (Read(_buf1, 0, 1) == 0)
-                return 0;
-            // calculate CRC after reading
-            if (crc!=null)
-                crc.SlurpBlock(_buf1,0,1);
-            return (_buf1[0] & 0xFF);
-        }
-#endif
-
         private bool nomoreinput = false;
 
 
@@ -365,8 +352,10 @@ namespace Compress.ZipFile.ZLib
                 }
             } while (!done);
             byte[] a = list.ToArray();
-            return GZipStream.iso8859dash1.GetString(a, 0, a.Length);
+            return iso8859dash1.GetString(a, 0, a.Length);
         }
+        internal static readonly System.Text.Encoding iso8859dash1 = System.Text.Encoding.GetEncoding("iso-8859-1");
+        internal static readonly System.DateTime _unixEpoch = new System.DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
 
         private int _ReadAndValidateGzipHeader()
@@ -387,7 +376,7 @@ namespace Compress.ZipFile.ZLib
                 throw new ZlibException("Bad GZIP header.");
 
             Int32 timet = BitConverter.ToInt32(header, 4);
-            _GzipMtime = GZipStream._unixEpoch.AddSeconds(timet);
+            _GzipMtime = _unixEpoch.AddSeconds(timet);
             totalBytesRead += n;
             if ((header[3] & 0x04) == 0x04)
             {
@@ -554,72 +543,13 @@ namespace Compress.ZipFile.ZLib
             set { throw new NotImplementedException(); }
         }
 
-        internal enum StreamMode
+        public enum StreamMode
         {
             Writer,
             Reader,
             Undefined,
         }
 
-
-        public static void CompressString(String s, Stream compressor)
-        {
-            byte[] uncompressed = System.Text.Encoding.UTF8.GetBytes(s);
-            using (compressor)
-            {
-                compressor.Write(uncompressed, 0, uncompressed.Length);
-            }
-        }
-
-        public static void CompressBuffer(byte[] b, Stream compressor)
-        {
-            // workitem 8460
-            using (compressor)
-            {
-                compressor.Write(b, 0, b.Length);
-            }
-        }
-
-        public static String UncompressString(byte[] compressed, Stream decompressor)
-        {
-            // workitem 8460
-            byte[] working = new byte[1024];
-            var encoding = System.Text.Encoding.UTF8;
-            using (var output = new MemoryStream())
-            {
-                using (decompressor)
-                {
-                    int n;
-                    while ((n = decompressor.Read(working, 0, working.Length)) != 0)
-                    {
-                        output.Write(working, 0, n);
-                    }
-                }
-
-                // reset to allow read from start
-                output.Seek(0, SeekOrigin.Begin);
-                var sr = new StreamReader(output, encoding);
-                return sr.ReadToEnd();
-            }
-        }
-
-        public static byte[] UncompressBuffer(byte[] compressed, Stream decompressor)
-        {
-            // workitem 8460
-            byte[] working = new byte[1024];
-            using (var output = new MemoryStream())
-            {
-                using (decompressor)
-                {
-                    int n;
-                    while ((n = decompressor.Read(working, 0, working.Length)) != 0)
-                    {
-                        output.Write(working, 0, n);
-                    }
-                }
-                return output.ToArray();
-            }
-        }
 
     }
 

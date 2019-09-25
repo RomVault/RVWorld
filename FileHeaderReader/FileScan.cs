@@ -87,9 +87,16 @@ namespace FileHeaderReader
                     if (res != 0)
                         fileResults.FileStatus = ZipReturn.ZipDecodeError;
                     else
-                    // if we are not testcrc'ing or deepScan'ing then we did not verify the data stream
-                    // so we assume it is good.
-                        fileResults.FileStatus = !(testcrc || deepScan) || ByteArrCompare(file.CRC32(i), fileResults.CRC) ? ZipReturn.ZipGood : ZipReturn.ZipCRCDecodeError;
+                    {
+                        if (!testcrc)
+                            fileResults.CRC = file.CRC32(i);
+                        // if we are not testcrc'ing or deepScan'ing then we did not verify the data stream
+                        // so we assume it is good.
+                        fileResults.FileStatus =
+                            !(testcrc || deepScan) || ByteArrCompare(file.CRC32(i), fileResults.CRC)
+                                ? ZipReturn.ZipGood
+                                : ZipReturn.ZipCRCDecodeError;
+                    }
                 }
 
                 lstFileResults.Add(fileResults);

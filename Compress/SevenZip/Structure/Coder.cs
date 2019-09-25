@@ -1,5 +1,7 @@
 ﻿using System;
 using System.IO;
+using System.Text;
+using Compress.Utils;
 
 namespace Compress.SevenZip.Structure
 {
@@ -42,7 +44,7 @@ namespace Compress.SevenZip.Structure
         public DecompressType DecoderType;
         public bool OutputUsedInternally = false;
         public InStreamSourceInfo[] InputStreamsSourceInfo;
-        public Stream decoderStream;
+        public Stream DecoderStream;
 
         public void Read(BinaryReader br)
         {
@@ -59,11 +61,13 @@ namespace Compress.SevenZip.Structure
                 NumInStreams = 1;
                 NumOutStreams = 1;
             }
+
             if ((flags & 0x20) != 0)
             {
                 ulong propSize = br.ReadEncodedUInt64();
                 Properties = br.ReadBytes((int)propSize);
             }
+
             if ((flags & 0x80) != 0)
             {
                 throw new NotSupportedException("External flag");
@@ -81,11 +85,13 @@ namespace Compress.SevenZip.Structure
             {
                 DecoderType = DecompressType.LZMA;
             }
-            else if ((Method.Length == 4) && (Method[0] == 3) && (Method[1] == 3) && (Method[2] == 1) && (Method[3] == 3))
+            else if ((Method.Length == 4) && (Method[0] == 3) && (Method[1] == 3) && (Method[2] == 1) &&
+                     (Method[3] == 3))
             {
                 DecoderType = DecompressType.BCJ;
             }
-            else if ((Method.Length == 4) && (Method[0] == 3) && (Method[1] == 3) && (Method[2] == 1) && (Method[3] == 27))
+            else if ((Method.Length == 4) && (Method[0] == 3) && (Method[1] == 3) && (Method[2] == 1) &&
+                     (Method[3] == 27))
             {
                 DecoderType = DecompressType.BCJ2;
             }
@@ -116,10 +122,12 @@ namespace Compress.SevenZip.Structure
             {
                 flags = (byte)(flags | 0x10);
             }
+
             if ((Properties != null) && (Properties.Length > 0))
             {
                 flags = (byte)(flags | 0x20);
             }
+
             bw.Write(flags);
 
             bw.Write(Method);
@@ -136,5 +144,16 @@ namespace Compress.SevenZip.Structure
                 bw.Write(Properties);
             }
         }
+
+
+
+        public void Report(ref StringBuilder sb)
+        {
+            sb.AppendLine($"        Method[] = {Method.ToArrayString()}   : {DecoderType}");
+            sb.AppendLine($"        NumInStreams = {NumInStreams}");
+            sb.AppendLine($"        NumOutStreams = {NumOutStreams}");
+            sb.AppendLine($"        Properties[] = {Properties.ToArrayString()}");
+        }
+
     }
 }

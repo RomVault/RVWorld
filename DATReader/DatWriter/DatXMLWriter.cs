@@ -6,7 +6,7 @@ namespace DATReader.DatWriter
 {
     public class DatXMLWriter
     {
-        public void WriteDat(string strFilename, DatHeader datHeader)
+        public void WriteDat(string strFilename, DatHeader datHeader, bool newStyle = false)
         {
             string dir = Path.GetDirectoryName(strFilename);
             if (!Directory.Exists(dir))
@@ -15,13 +15,19 @@ namespace DATReader.DatWriter
             using (dsw sw = new dsw(strFilename))
             {
                 sw.WriteLine("<?xml version=\"1.0\"?>");
-                sw.WriteLine("<datafile>", 1);
+                if (newStyle)
+                    sw.WriteLine("<RVDatFile>", 1);
+                else
+                    sw.WriteLine("<DatFile>", 1);
 
                 WriteHeader(sw, datHeader);
 
-                writeBase(sw, datHeader.BaseDir);
+                writeBase(sw, datHeader.BaseDir, newStyle);
 
-                sw.WriteLine("</datafile>", -1);
+                if (newStyle)
+                    sw.WriteLine("</RVDatFile>", -1);
+                else
+                    sw.WriteLine("</DatFile>", -1);
             }
         }
 
@@ -47,7 +53,7 @@ namespace DATReader.DatWriter
             sw.WriteLine("</header>", -1);
         }
 
-        private void writeBase(dsw sw, DatDir baseDirIn)
+        private void writeBase(dsw sw, DatDir baseDirIn, bool newStyle)
         {
             DatBase[] dirChildren = baseDirIn.ToArray();
 
@@ -61,8 +67,22 @@ namespace DATReader.DatWriter
                     if (baseDir.DGame != null)
                     {
                         DatGame g = baseDir.DGame;
-                        sw.Write(@"<game");
+                        sw.Write(newStyle ? @"<zip" : @"<game");
+
                         sw.WriteItem("name", baseDir.Name);
+
+                        if (newStyle)
+                        {
+                            if (baseDir.DatFileType == DatFileType.DirTorrentZip)
+                            {
+                                sw.WriteItem("type", "trrntzip");
+                            }
+                            else if (baseDir.DatFileType == DatFileType.DirRVZip)
+                            {
+                                sw.WriteItem("type", "rvzip");
+                            }
+                        }
+
                         if (!g.IsEmuArc)
                         {
                             //         sw.WriteItem("cloneof", g.CloneOf);
@@ -97,31 +117,44 @@ namespace DATReader.DatWriter
                             sw.WriteNode("manufacturer", g.Manufacturer);
                         }
 
-                        writeBase(sw, baseDir);
-                        sw.WriteLine(@"</game>", -1);
+                        writeBase(sw, baseDir, newStyle);
+                        sw.WriteLine(newStyle ? @"</zip>" : @"</game>", -1);
                     }
                     else
                     {
                         sw.WriteLine(@"<dir name=""" + Etxt(baseDir.Name) + @""">", 1);
-                        writeBase(sw, baseDir);
+                        writeBase(sw, baseDir, newStyle);
                         sw.WriteLine(@"</dir>", -1);
                     }
                     continue;
                 }
-                DatFile baseRom = baseObj as DatFile;
-                if (baseRom != null)
-                {
-                    sw.Write(@"<rom");
-                    sw.WriteItem("name", baseRom.Name);
-                    //sw.WriteItem("merge", baseRom.Merge);
-                    sw.WriteItem("size", baseRom.Size);
-                    sw.WriteItem("crc", baseRom.CRC);
-                    sw.WriteItem("sha1", baseRom.SHA1);
-                    sw.WriteItem("md5", baseRom.MD5);
-                    if (baseRom.Status.ToLower() != "good")
-                        sw.WriteItem("status", baseRom.Status);
-                    sw.WriteEnd("/>");
 
+                if (baseObj is DatFile baseRom)
+                {
+                    if (baseRom.Name.Substring(baseRom.Name.Length - 1) == "/" && newStyle)
+                    {
+                        sw.Write(@"<dir");
+                        sw.WriteItem("name", baseRom.Name.Substring(0, baseRom.Name.Length - 1));
+                        //sw.WriteItem("merge", baseRom.Merge);
+                        if (baseRom.Date != "1996/12/24 23:32:00")
+                            sw.WriteItem("date", baseRom.Date);
+                        sw.WriteEnd("/>");
+                    }
+                    else
+                    {
+                        sw.Write(newStyle ? @"<file" : @"<rom");
+                        sw.WriteItem("name", baseRom.Name);
+                        //sw.WriteItem("merge", baseRom.Merge);
+                        sw.WriteItem("size", baseRom.Size);
+                        sw.WriteItem("crc", baseRom.CRC);
+                        sw.WriteItem("sha1", baseRom.SHA1);
+                        sw.WriteItem("md5", baseRom.MD5);
+                        if (baseRom.Date != "1996/12/24 23:32:00")
+                            sw.WriteItem("date", baseRom.Date);
+                        if (baseRom.Status != null && baseRom.Status.ToLower() != "good")
+                            sw.WriteItem("status", baseRom.Status);
+                        sw.WriteEnd("/>");
+                    }
                 }
             }
         }

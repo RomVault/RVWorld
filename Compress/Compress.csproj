@@ -43,13 +43,6 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
-    <Reference Include="System.Transactions" />
-    <Reference Include="System.Xml.Linq" />
-    <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="Microsoft.CSharp" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Net.Http" />
-    <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="File\File.cs" />
@@ -96,7 +89,6 @@
     <Compile Include="SevenZip\Compress\RangeCoder\RangeCoderBit.cs" />
     <Compile Include="SevenZip\Compress\RangeCoder\RangeCoderBitTree.cs" />
     <Compile Include="Utils\CRC.cs" />
-    <Compile Include="Utils\CRCHash.cs" />
     <Compile Include="Utils\CRCStream.cs" />
     <Compile Include="Utils\DirUtil.cs" />
     <Compile Include="SevenZip\Filters\BCJ2Filter.cs" />
@@ -118,11 +110,10 @@
     <Compile Include="ThreadReaders\ThreadLoadBuffer.cs" />
     <Compile Include="ThreadReaders\ThreadMD5.cs" />
     <Compile Include="ThreadReaders\ThreadSHA1.cs" />
+    <Compile Include="Utils\Reporter.cs" />
     <Compile Include="ZipEnums.cs" />
     <Compile Include="ZipFile\zipFile.cs" />
     <Compile Include="ZipFile\ZLib\Deflate.cs" />
-    <Compile Include="ZipFile\ZLib\DeflateStream.cs" />
-    <Compile Include="ZipFile\ZLib\GZipStream.cs" />
     <Compile Include="ZipFile\ZLib\Inflate.cs" />
     <Compile Include="ZipFile\ZLib\InfTree.cs" />
     <Compile Include="ZipFile\ZLib\Tree.cs" />
@@ -130,7 +121,6 @@
     <Compile Include="ZipFile\ZLib\ZlibBaseStream.cs" />
     <Compile Include="ZipFile\ZLib\ZlibCodec.cs" />
     <Compile Include="ZipFile\ZLib\ZlibConstants.cs" />
-    <Compile Include="ZipFile\ZLib\ZlibStream.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\RVIO\RVIO.csproj">

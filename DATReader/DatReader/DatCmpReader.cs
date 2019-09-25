@@ -340,6 +340,24 @@ namespace DATReader.DatReader
                         dfl.GnRest();
                         break;
 
+                    case "comment":
+                    case "releaseyear":
+                    case "releasemonth":
+                    case "releaseday":
+                    case "genre":
+                    case "developer":
+                    case "publisher":
+                    case "homepage":
+                    case "users":
+                    case "version":
+                    case "license":
+                        dfl.GnRest();
+                        break;
+
+                    case "name":
+                        string tmpName = dfl.GnRest();
+                        _errorReport?.Invoke(dfl.Filename, "Error: multiple names found in one game '" + tmpName + "' will be ignored, on line " + dfl.LineNumber);
+                        break;
 
                     case "rom":
                         if (!LoadRomFromDat(dfl, dDir))

@@ -1,5 +1,7 @@
 ﻿using System;
 using System.IO;
+using System.Text;
+using Compress.Utils;
 
 namespace Compress.SevenZip.Structure
 {
@@ -60,6 +62,7 @@ namespace Compress.SevenZip.Structure
                         {
                             continue;
                         }
+
                         PackedStreamIndices[pi++] = j;
                         break;
                     }
@@ -106,14 +109,17 @@ namespace Compress.SevenZip.Structure
                     {
                         continue;
                     }
+
                     found = true;
                     break;
                 }
+
                 if (!found)
                 {
                     return UnpackedStreamSizes[j];
                 }
             }
+
             return 0;
         }
 
@@ -145,11 +151,14 @@ namespace Compress.SevenZip.Structure
                                     Folders[i].PackedStreamIndexBase = folderIndex;
                                     folderIndex += (ulong) Folders[i].PackedStreamIndices.Length;
                                 }
+
                                 break;
                             }
+
                             case 1:
                                 throw new NotSupportedException("External flag");
                         }
+
                         continue;
                     }
 
@@ -160,6 +169,7 @@ namespace Compress.SevenZip.Structure
                         {
                             Folders[i].ReadUnpackedStreamSize(br);
                         }
+
                         continue;
                     }
 
@@ -171,8 +181,10 @@ namespace Compress.SevenZip.Structure
                         {
                             Folders[i].UnpackCRC = crcs[i];
                         }
+
                         continue;
                     }
+
                     case HeaderProperty.kEnd:
                         return;
 
@@ -200,8 +212,10 @@ namespace Compress.SevenZip.Structure
                                 Folders[f].UnpackedStreamInfo[i] = new UnpackedStreamInfo();
                             }
                         }
+
                         continue;
                     }
+
                     case HeaderProperty.kSize:
                     {
                         for (int f = 0; f < Folders.Length; f++)
@@ -221,10 +235,13 @@ namespace Compress.SevenZip.Structure
                                 sum += size;
                             }
 
-                            folder.UnpackedStreamInfo[folder.UnpackedStreamInfo.Length - 1].UnpackedSize = folder.GetUnpackSize() - sum;
+                            folder.UnpackedStreamInfo[folder.UnpackedStreamInfo.Length - 1].UnpackedSize =
+                                folder.GetUnpackSize() - sum;
                         }
+
                         continue;
                     }
+
                     case HeaderProperty.kCRC:
                     {
                         ulong numCRC = 0;
@@ -261,8 +278,10 @@ namespace Compress.SevenZip.Structure
                                 }
                             }
                         }
+
                         continue;
                     }
+
                     case HeaderProperty.kEnd:
                         return;
 
@@ -324,6 +343,7 @@ namespace Compress.SevenZip.Structure
                 bw.Write((byte) HeaderProperty.kCRC);
                 throw new NotImplementedException();
             }
+
             bw.Write((byte) HeaderProperty.kEnd);
         }
 
@@ -359,7 +379,56 @@ namespace Compress.SevenZip.Structure
                     bw.Write(Util.uinttobytes(folder.UnpackedStreamInfo[i].Crc));
                 }
             }
+
             bw.Write((byte) HeaderProperty.kEnd);
+        }
+
+
+        public void Report(ref StringBuilder sb)
+        {
+            if (Coders == null)
+            {
+                sb.AppendLine("    Coders[] = null");
+            }
+            else
+            {
+                sb.AppendLine($"    Coders[] = ({Coders.Length})");
+                foreach (Coder c in Coders)
+                {
+                    c.Report(ref sb);
+                }
+            }
+            if (BindPairs == null)
+            {
+                sb.AppendLine("    BindPairs[] = null");
+            }
+            else
+            {
+                sb.AppendLine($"    BindPairs[] = ({BindPairs.Length})");
+                foreach (BindPair bp in BindPairs)
+                {
+                    bp.Report(ref sb);
+                }
+            }
+
+            sb.AppendLine($"    PackedStreamIndexBase = {PackedStreamIndexBase}");
+            sb.AppendLine($"    PackedStreamIndices[] = {PackedStreamIndices.ToArrayString()}");
+            sb.AppendLine($"    UnpackedStreamSizes[] = {UnpackedStreamSizes.ToArrayString()}");
+            sb.AppendLine($"    UnpackCRC             = {UnpackCRC.ToHex()}");
+
+            if (UnpackedStreamInfo == null)
+            {
+                sb.AppendLine("    UnpackedStreamInfo[] = null");
+            }
+            else
+            {
+                sb.AppendLine($"    UnpackedStreamInfo[{UnpackedStreamInfo.Length}]");
+                foreach (UnpackedStreamInfo usi in UnpackedStreamInfo)
+                {
+                    usi.Report(ref sb);
+                }
+            }
+
         }
     }
 }

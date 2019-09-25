@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Text;
 
 namespace Compress.SevenZip.Structure
 {
@@ -60,6 +61,13 @@ namespace Compress.SevenZip.Structure
                         Attributes = Util.ReadUInt32Def(br, size);
                         continue;
 
+                    // don't know what this is.
+                    case HeaderProperty.kAnti:
+                        br.ReadBytes((int)bytessize);
+                        continue;
+
+                    case HeaderProperty.kCreationTime:
+                    case HeaderProperty.kLastAccessTime:
                     case HeaderProperty.kLastWriteTime:
                         br.ReadBytes((int) bytessize);
                         continue;
@@ -83,7 +91,7 @@ namespace Compress.SevenZip.Structure
             byte[] namebyte;
             using (MemoryStream nameMem = new MemoryStream())
             {
-                using (BinaryWriter nameBw = new BinaryWriter(nameMem))
+                using (BinaryWriter nameBw = new BinaryWriter(nameMem,Encoding.UTF8,true))
                 {
                     nameBw.Write((byte) 0); //not external
                     foreach (string name in Names)
@@ -121,5 +129,12 @@ namespace Compress.SevenZip.Structure
 
             bw.Write((byte) HeaderProperty.kEnd);
         }
+
+        public void Report(ref StringBuilder sb)
+        {
+            sb.AppendLine("  FileInfo");
+            sb.AppendLine("  ------");
+        }
+
     }
 }

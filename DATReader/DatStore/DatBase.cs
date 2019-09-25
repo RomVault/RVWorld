@@ -12,6 +12,7 @@
         UnSet, 
 
         Dir,
+        DirRVZip,
         DirTorrentZip,
         Dir7Zip,
 

@@ -7,7 +7,7 @@ namespace DATReader.DatStore
     // problem with this is that searching for a child by name would have to be a linear search. (Which gets very slow.)
     // So for this reason UnSet file lists also use the _childrenNameIndex to store a sorted index.
     // So the List<DatBase> _children is still the original DAT order, but the List<int> _childrenNameIndex gives a quick way to search for the items.
-   
+
     public class DatDir : DatBase
     {
         public DatGame DGame;
@@ -177,6 +177,8 @@ namespace DATReader.DatStore
                         break;
 
                     }
+                case DatFileType.DirRVZip:
+
                 case DatFileType.Dir:
                 case DatFileType.DirTorrentZip:
                     {
@@ -187,7 +189,7 @@ namespace DATReader.DatStore
                     }
                 case DatFileType.Dir7Zip:
                     {
-                        int res = Math.Sign(DatSort.Trrnt7ZipStringCompare(lName.Name,dBase.Name));
+                        int res = Math.Sign(DatSort.Trrnt7ZipStringCompare(lName.Name, dBase.Name));
                         if (res != 0)
                             return res;
                         break;

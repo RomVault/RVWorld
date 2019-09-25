@@ -1,5 +1,7 @@
 ﻿using System;
 using System.IO;
+using System.Text;
+using Compress.Utils;
 
 namespace Compress.SevenZip.Structure
 {
@@ -36,6 +38,7 @@ namespace Compress.SevenZip.Structure
                             packedStreams[i].PackedSize = br.ReadEncodedUInt64();
                             streamPosition += packedStreams[i].PackedSize;
                         }
+
                         continue;
 
                     case HeaderProperty.kCRC:
@@ -43,6 +46,7 @@ namespace Compress.SevenZip.Structure
                         {
                             packedStreams[i].Crc = br.ReadEncodedUInt64();
                         }
+
                         continue;
 
                     case HeaderProperty.kEnd:
@@ -81,6 +85,14 @@ namespace Compress.SevenZip.Structure
             }
 
             bw.Write((byte) HeaderProperty.kEnd);
+        }
+
+
+        public void Report(ref StringBuilder sb)
+        {
+            sb.AppendLine($"    PackedSize     = {PackedSize}");
+            sb.AppendLine($"    Crc            = {Crc.ToHex()}");
+            sb.AppendLine($"    StreamPosition = {StreamPosition}");
         }
     }
 }

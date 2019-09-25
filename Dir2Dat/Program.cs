@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using Compress;
 using Compress.SevenZip;
 using Compress.ZipFile;
+using DATReader.DatClean;
 using DATReader.DatStore;
 using DATReader.DatWriter;
 using FileHeaderReader;
@@ -13,30 +15,32 @@ namespace Dir2Dat
     {
         static void Main(string[] args)
         {
-            string dirSource = @"D:\OmniFloppy";
+            string dirSource = @"\\10.0.4.11\t$\Downloads\eXoDOS V4";
             DatHeader ThisDat = new DatHeader()
             {
                 BaseDir = new DatDir(DatFileType.Dir)
             };
             DirectoryInfo di = new DirectoryInfo(dirSource);
-            ProcessDir(di, ThisDat.BaseDir);
+            ProcessDir(di, ThisDat.BaseDir, false);
 
             DatXMLWriter dWriter = new DatXMLWriter();
-            dWriter.WriteDat(@"D:\achimedes.dat", ThisDat);
+            dWriter.WriteDat(@"D:\out.dat", ThisDat, false);
         }
 
 
-        private static void ProcessDir(DirectoryInfo di, DatDir thisDir)
+        private static void ProcessDir(DirectoryInfo di, DatDir thisDir, bool newStyle)
         {
             DirectoryInfo[] dia = di.GetDirectories();
             foreach (DirectoryInfo d in dia)
             {
                 DatDir nextDir = new DatDir(DatFileType.Dir) { Name = d.Name };
                 thisDir.ChildAdd(nextDir);
-                ProcessDir(d, nextDir);
+                ProcessDir(d, nextDir, newStyle);
+
             }
             FileInfo[] fia = di.GetFiles();
 
+            int fCount = 0;
             foreach (FileInfo f in fia)
             {
                 Console.WriteLine(f.FullName);
@@ -51,15 +55,25 @@ namespace Dir2Dat
                         Add7Zip(f, thisDir);
                         break;
                     default:
-                        AddFile(f, thisDir);
+                        if (newStyle)
+                            AddFile(f, thisDir);
                         break;
                 }
+
+                //fCount++;
+                if (fCount > 10)
+                    break;
             }
         }
 
         private static void AddZip(FileInfo f, DatDir thisDir)
         {
-            DatDir ZipDir = new DatDir(DatFileType.DirTorrentZip)
+
+            ZipFile zf1 = new ZipFile();
+            zf1.ZipFileOpen(f.FullName, -1, true);
+            zf1.ZipStatus = ZipStatus.TrrntZip;
+
+            DatDir ZipDir = new DatDir(zf1.ZipStatus == ZipStatus.TrrntZip ? DatFileType.DirTorrentZip : DatFileType.DirRVZip)
             {
                 Name = Path.GetFileNameWithoutExtension(f.Name),
                 DGame = new DatGame()
@@ -67,10 +81,11 @@ namespace Dir2Dat
             ZipDir.DGame.Description = ZipDir.Name;
             thisDir.ChildAdd(ZipDir);
 
-            ZipFile zf1 = new ZipFile();
-            zf1.ZipFileOpen(f.FullName, -1, true);
+
+
             FileScan fs = new FileScan();
             List<FileScan.FileResults> fr = fs.Scan(zf1, true, true);
+            bool isTorrentZipDate = true;
             for (int i = 0; i < fr.Count; i++)
             {
                 if (fr[i].FileStatus != Compress.ZipReturn.ZipGood)
@@ -81,15 +96,27 @@ namespace Dir2Dat
 
                 DatFile df = new DatFile(DatFileType.FileTorrentZip)
                 {
-                    Name = Path.GetFileNameWithoutExtension(f.Name) + Path.GetExtension(zf1.Filename(i)),
+                    Name = zf1.Filename(i),
                     Size = fr[i].Size,
                     CRC = fr[i].CRC,
-                    SHA1 = fr[i].SHA1
+                    SHA1 = fr[i].SHA1,
+                    Date = zf1.LastModified(i).ToString("yyyy/MM/dd HH:mm:ss")
                     //df.MD5 = zf.MD5(i)
                 };
+                if (zf1.LastModified(i).Ticks != 629870671200000000)
+                    isTorrentZipDate = false;
+
                 ZipDir.ChildAdd(df);
             }
             zf1.ZipFileClose();
+            if (isTorrentZipDate && ZipDir.DatFileType == DatFileType.DirRVZip)
+                ZipDir.DatFileType = DatFileType.DirTorrentZip;
+
+            if (ZipDir.DatFileType == DatFileType.DirTorrentZip)
+            {
+                DatSetCompressionType.SetZip(ZipDir);
+                DatClean.RemoveUnNeededDirectoriesFromZip(ZipDir);
+            }
         }
 
         private static void Add7Zip(FileInfo f, DatDir thisDir)
@@ -124,6 +151,15 @@ namespace Dir2Dat
         }
 
         private static void AddFile(FileInfo F, DatDir thisDir)
-        { }
+        {
+
+            DatFile df = new DatFile(DatFileType.FileTorrentZip)
+            {
+                Name = F.Name,
+                Size = (ulong)F.Length
+            };
+
+            thisDir.ChildAdd(df);
+        }
     }
 }

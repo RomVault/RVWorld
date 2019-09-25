@@ -48,7 +48,7 @@ namespace TrrntZipCMD
                     {
                         case "?":
                             Console.WriteLine("TorrentZip.Net v{0}\n", Assembly.GetExecutingAssembly().GetName().Version);
-                            Console.WriteLine("Copyright (C) 2019 GordonJ");
+                            Console.WriteLine("Copyright (C) 2018 GordonJ");
                             Console.WriteLine("Homepage : http://www.romvault.com/trrntzip\n");
                             Console.WriteLine("Usage: trrntzip [OPTIONS] [PATH/ZIP FILE]\n");
                             Console.WriteLine("Options:\n");

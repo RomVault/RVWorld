@@ -1,5 +1,8 @@
 ﻿using System;
 using System.IO;
+using System.Security.Permissions;
+using System.Text;
+using Compress.Utils;
 
 namespace Compress.SevenZip.Structure
 {
@@ -44,6 +47,38 @@ namespace Compress.SevenZip.Structure
             Folder.WriteUnPackInfo(bw, Folders);
             Folder.WriteSubStreamsInfo(bw, Folders);
             bw.Write((byte) HeaderProperty.kEnd);
+        }
+
+
+        public void Report(ref StringBuilder sb)
+        {
+            sb.AppendLine("  StreamsInfo");
+            sb.AppendLine("  -----------");
+            sb.AppendLine($"  PackPosition = {PackPosition}");
+            if (PackedStreams == null)
+            {
+                sb.AppendLine($"  PackedStreams[] = null");
+            }
+            else
+            {
+                sb.AppendLine($"  PackedStreams[] = ({PackedStreams.Length})");
+                foreach (PackedStreamInfo psi in PackedStreams)
+                {
+                    psi.Report(ref sb);
+                }
+            }
+            if (Folders == null)
+            {
+                sb.AppendLine($"  Folders[] = null");
+            }
+            else
+            {
+                sb.AppendLine($"  Folders[] = ({Folders.Length})");
+                foreach (Folder f in Folders)
+                {
+                    f.Report(ref sb);
+                }
+            }
         }
     }
 }

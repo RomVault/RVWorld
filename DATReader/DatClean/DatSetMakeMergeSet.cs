@@ -40,7 +40,7 @@ namespace DATReader.DatClean
                 List<DatDir> pBios = new List<DatDir>();
                 foreach (DatDir dd in lstParentGames)
                 {
-                    if (dd.DGame.IsBios.ToLower() == "yes")
+                    if (dd.DGame.IsBios?.ToLower() == "yes")
                         pBios.Add(dd);
                     else
                         pGames.Add(dd);
@@ -139,7 +139,7 @@ namespace DATReader.DatClean
 
                 foreach (DatBase tGame in mGameKeep)
                 {
-                    if (mergeWithGameName)
+                    if (mergeWithGameName && !((DatFile)tGame).isDisk)
                         tGame.Name = mGame.Name + "\\" + tGame.Name;
                     romOfTopParent.ChildAdd(tGame);
                 }

@@ -1,5 +1,5 @@
 ﻿using System.IO;
-using Compress.SevenZip.Common;
+using System.Text;
 
 namespace Compress.SevenZip.Structure
 {
@@ -20,32 +20,36 @@ namespace Compress.SevenZip.Structure
         private long _crcOffset;
         public long BaseOffset { get; private set; }
 
-        public bool Read(BinaryReader br)
+        public bool Read(Stream stream)
         {
-            byte[] signatureBytes = br.ReadBytes(6);
-            if (!signatureBytes.Compare(Signature))
+            using (BinaryReader br = new BinaryReader(stream, Encoding.UTF8, true))
             {
-                return false;
+                byte[] signatureBytes = br.ReadBytes(6);
+                if (!signatureBytes.Compare(Signature))
+                {
+                    return false;
+                }
+
+                _major = br.ReadByte();
+                _minor = br.ReadByte();
+
+                _startHeaderCRC = br.ReadUInt32();
+
+                long pos = br.BaseStream.Position;
+                byte[] mainHeader = new byte[8 + 8 + 4];
+                br.BaseStream.Read(mainHeader, 0, mainHeader.Length);
+                if (!Utils.CRC.VerifyDigest(_startHeaderCRC, mainHeader, 0, (uint) mainHeader.Length))
+                {
+                    return false;
+                }
+
+                br.BaseStream.Seek(pos, SeekOrigin.Begin);
+
+                NextHeaderOffset = br.ReadUInt64();
+                NextHeaderSize = br.ReadUInt64();
+                NextHeaderCRC = br.ReadUInt32();
+                return true;
             }
-
-            _major = br.ReadByte();
-            _minor = br.ReadByte();
-
-            _startHeaderCRC = br.ReadUInt32();
-
-            long pos = br.BaseStream.Position;
-            byte[] mainHeader = new byte[8 + 8 + 4];
-            br.BaseStream.Read(mainHeader, 0, mainHeader.Length);
-            if (!Utils.CRC.VerifyDigest(_startHeaderCRC, mainHeader, 0, (uint) mainHeader.Length))
-            {
-                return false;
-            }
-            br.BaseStream.Seek(pos, SeekOrigin.Begin);
-
-            NextHeaderOffset = br.ReadUInt64();
-            NextHeaderSize = br.ReadUInt64();
-            NextHeaderCRC = br.ReadUInt32();
-            return true;
         }
 
         public void Write(BinaryWriter bw)
@@ -82,7 +86,7 @@ namespace Compress.SevenZip.Structure
             byte[] sigHeaderBytes;
             using (MemoryStream sigHeaderMem = new MemoryStream())
             {
-                using (BinaryWriter sigHeaderBw = new BinaryWriter(sigHeaderMem))
+                using (BinaryWriter sigHeaderBw = new BinaryWriter(sigHeaderMem,Encoding.UTF8,true))
                 {
                     sigHeaderBw.Write((ulong) ((long) headerpos - BaseOffset)); //NextHeaderOffset
                     sigHeaderBw.Write(headerLength); //NextHeaderSize

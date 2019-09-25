@@ -1,6 +1,8 @@
 ﻿using System;
 using System.IO;
+using System.Text;
 using Compress.SevenZip.Compress.LZMA;
+using Compress.Utils;
 
 namespace Compress.SevenZip.Structure
 {
@@ -11,9 +13,9 @@ namespace Compress.SevenZip.Structure
 
         public void Read(BinaryReader br)
         {
-            for (;;)
+            for (; ; )
             {
-                HeaderProperty hp = (HeaderProperty) br.ReadByte();
+                HeaderProperty hp = (HeaderProperty)br.ReadByte();
                 switch (hp)
                 {
                     case HeaderProperty.kMainStreamsInfo:
@@ -38,10 +40,10 @@ namespace Compress.SevenZip.Structure
 
         private void Write(BinaryWriter bw)
         {
-            bw.Write((byte) HeaderProperty.kHeader);
+            bw.Write((byte)HeaderProperty.kHeader);
             StreamsInfo.Write(bw);
             FileInfo.Write(bw);
-            bw.Write((byte) HeaderProperty.kEnd);
+            bw.Write((byte)HeaderProperty.kEnd);
         }
 
         public void WriteHeader(BinaryWriter bw)
@@ -53,53 +55,79 @@ namespace Compress.SevenZip.Structure
         {
             header = null;
 
-            BinaryReader br = new BinaryReader(stream);
-
-            HeaderProperty hp = (HeaderProperty) br.ReadByte();
-            switch (hp)
+            using (BinaryReader br = new BinaryReader(stream, Encoding.UTF8, true))
             {
-                case HeaderProperty.kEncodedHeader:
+                HeaderProperty hp = (HeaderProperty)br.ReadByte();
+                switch (hp)
                 {
-                    StreamsInfo streamsInfo = new StreamsInfo();
-                    streamsInfo.Read(br);
-
-                    if (streamsInfo.Folders.Length > 1)
-                    {
-                        return ZipReturn.ZipUnsupportedCompression;
-                    }
-
-                    Folder firstFolder = streamsInfo.Folders[0];
-                    if (firstFolder.Coders.Length > 1)
-                    {
-                        return ZipReturn.ZipUnsupportedCompression;
-                    }
-
-                    byte[] method = firstFolder.Coders[0].Method;
-                    if (!((method.Length == 3) && (method[0] == 3) && (method[1] == 1) && (method[2] == 1))) // LZMA
-                    {
-                        return ZipReturn.ZipUnsupportedCompression;
-                    }
-
-                    stream.Seek(baseOffset + (long) streamsInfo.PackPosition, SeekOrigin.Begin);
-                    using (LzmaStream decoder = new LzmaStream(firstFolder.Coders[0].Properties, stream))
-                    {
-                        ZipReturn zr = ReadHeaderOrPackedHeader(decoder, baseOffset, out header);
-                        if (zr != ZipReturn.ZipGood)
+                    case HeaderProperty.kEncodedHeader:
                         {
-                            return zr;
+                            StreamsInfo streamsInfo = new StreamsInfo();
+                            streamsInfo.Read(br);
+
+                            if (streamsInfo.Folders.Length > 1)
+                            {
+                                return ZipReturn.ZipUnsupportedCompression;
+                            }
+
+                            Folder firstFolder = streamsInfo.Folders[0];
+                            if (firstFolder.Coders.Length > 1)
+                            {
+                                return ZipReturn.ZipUnsupportedCompression;
+                            }
+
+                            byte[] method = firstFolder.Coders[0].Method;
+                            if (!((method.Length == 3) && (method[0] == 3) && (method[1] == 1) && (method[2] == 1))) // LZMA
+                            {
+                                return ZipReturn.ZipUnsupportedCompression;
+                            }
+
+                            stream.Seek(baseOffset + (long)streamsInfo.PackPosition, SeekOrigin.Begin);
+                            using (LzmaStream decoder = new LzmaStream(firstFolder.Coders[0].Properties, stream))
+                            {
+                                ZipReturn zr = ReadHeaderOrPackedHeader(decoder, baseOffset, out header);
+                                if (zr != ZipReturn.ZipGood)
+                                {
+                                    return zr;
+                                }
+                            }
+
+                            return ZipReturn.ZipGood;
                         }
-                    }
-                    return ZipReturn.ZipGood;
+
+                    case HeaderProperty.kHeader:
+                        {
+                            header = new Header();
+                            header.Read(br);
+                            return ZipReturn.ZipGood;
+                        }
                 }
-                case HeaderProperty.kHeader:
-                {
-                    header = new Header();
-                    header.Read(br);
-                    return ZipReturn.ZipGood;
-                }
+
+                return ZipReturn.ZipCentralDirError;
+            }
+        }
+
+        public void Report(ref StringBuilder sb)
+        {
+            sb.AppendLine("Header");
+            sb.AppendLine("------");
+            if (StreamsInfo == null)
+            {
+                sb.AppendLine("StreamsInfo == null");
+            }
+            else
+            {
+                StreamsInfo.Report(ref sb);
             }
 
-            return ZipReturn.ZipCentralDirError;
+            if (FileInfo == null)
+            {
+                sb.AppendLine("FileInfo == null");
+            }
+            else
+            {
+                FileInfo.Report(ref sb);
+            }
         }
     }
 }

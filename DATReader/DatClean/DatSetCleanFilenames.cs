@@ -51,11 +51,14 @@ namespace DATReader.DatClean
         {
             DatBase[] arrDir = dDir.ToArray();
             string lastName = "";
+            DatFileType lastFileType = DatFileType.UnSet;
             int matchCount = 0;
             foreach (DatBase db in arrDir)
             {
                 string thisName = db.Name;
-                if (lastName.ToLowerInvariant() == thisName.ToLowerInvariant())
+                DatFileType fileType = db.DatFileType;
+
+                if (lastFileType==fileType && lastName.ToLowerInvariant() == thisName.ToLowerInvariant())
                 {
                     Debug.WriteLine("Found match = " + lastName + " , " + thisName);
 
@@ -70,6 +73,7 @@ namespace DATReader.DatClean
                 {
                     matchCount = 0;
                     lastName = thisName;
+                    lastFileType = fileType;
                 }
 
                 if (db is DatDir ddir)

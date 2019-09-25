@@ -127,10 +127,10 @@ namespace Tester
                     DatSetCompressionType.SetFile(dh.BaseDir);
                     return;
                 case FileType.SevenZip:
-                    DatSetCompressionType.Set7Zip(dh.BaseDir);
+                    DatSetCompressionType.SetZip(dh.BaseDir,true);
                     return;
                 default:
-                    DatSetCompressionType.SetTorrentZip(dh.BaseDir);
+                    DatSetCompressionType.SetZip(dh.BaseDir);
                     return;
             }
         }

@@ -105,32 +105,31 @@ namespace DATReader.DatReader
                 }
             }
 
-            /*
             for (int iP = 0; iP < partNodeList.Count; iP++)
             {
                 XmlNodeList diskAreaNodeList = partNodeList[iP].SelectNodes("diskarea");
-                if (diskAreaNodeList != null)
-                    for (int iD = 0; iD < diskAreaNodeList.Count; iD++)
+                if (diskAreaNodeList == null)
+                {
+                    continue;
+                }
+                for (int iD = 0; iD < diskAreaNodeList.Count; iD++)
+                {
+                    XmlNodeList romNodeList = diskAreaNodeList[iD].SelectNodes("disk");
+                    if (romNodeList == null)
                     {
-                        XmlNodeList romNodeList = diskAreaNodeList[iD].SelectNodes("disk");
-                        if (romNodeList != null)
-                            for (int iR = 0; iR < romNodeList.Count; iR++)
-                            {
-                                LoadDiskFromDat(dDirCHD, romNodeList[iR]);
-                            }
+                        continue;
                     }
+                    for (int iR = 0; iR < romNodeList.Count; iR++)
+                    {
+                        LoadDiskFromDat(dDir, romNodeList[iR]);
+                    }
+                }
             }
-            */
 
             if (dDir.ChildCount > 0)
             {
                 parentDir.ChildAdd(dDir);
             }
-
-            /*
-            if (tDirCHD.ChildCount > 0)
-                parentDir.ChildAdd(rvGameCHD, index1);
-            */
         }
 
         private void LoadRomFromDat(DatDir parentDir, XmlNode romNode)
@@ -167,23 +166,22 @@ namespace DATReader.DatReader
             }
         }
 
-        /*
         private void LoadDiskFromDat(DatDir parentDir, XmlNode romNode)
         {
             if (romNode.Attributes == null)
+            {
                 return;
-
-            XmlNode name = romNode.Attributes.GetNamedItem("name");
+            }
 
             DatFile dRom = new DatFile(DatFileType.UnSet)
             {
-                Name = VarFix.String(name),
-                SHA1CHD = VarFix.CleanMD5SHA1(romNode.Attributes.GetNamedItem("sha1"), 40),
+                Name = VarFix.String(romNode.Attributes.GetNamedItem("name")) + ".chd",
+                SHA1 = VarFix.CleanMD5SHA1(romNode.Attributes.GetNamedItem("sha1"), 40),
                 Status = VarFix.ToLower(romNode.Attributes.GetNamedItem("status")),
+                isDisk = true
             };
 
             parentDir.ChildAdd(dRom);
         }
-        */
     }
 }

@@ -24,13 +24,19 @@ namespace DATReader
 
             System.Diagnostics.Debug.WriteLine("Reading : " + fullname);
 
-            StreamReader myfile = File.OpenText(fullname, Enc);
             string strLine = null;
-            while (string.IsNullOrWhiteSpace(strLine) && !myfile.EndOfStream)
+            using (StreamReader myfile = File.OpenText(fullname, Enc))
             {
-                strLine = myfile.ReadLine();
+                if (myfile == null)
+                    return false;
+
+                while (string.IsNullOrWhiteSpace(strLine) && !myfile.EndOfStream)
+                {
+                    strLine = myfile.ReadLine();
+                }
+                myfile.Close();
             }
-            myfile.Close();
+
 
             if (strLine == null)
             {

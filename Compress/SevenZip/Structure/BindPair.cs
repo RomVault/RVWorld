@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using System.Text;
 
 namespace Compress.SevenZip.Structure
 {
@@ -17,6 +18,13 @@ namespace Compress.SevenZip.Structure
         {
             bw.WriteEncodedUInt64(InIndex);
             bw.WriteEncodedUInt64(OutIndex);
+        }
+
+
+        public void Report(ref StringBuilder sb)
+        {
+            sb.AppendLine("      InIndex  = " + InIndex);
+            sb.AppendLine("      OutIndex = " + OutIndex);
         }
     }
 }

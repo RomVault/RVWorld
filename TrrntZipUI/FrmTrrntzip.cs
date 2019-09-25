@@ -64,6 +64,7 @@ namespace TrrntZipUI
 
             _fileList = new FileList();
             _threadCount = Environment.ProcessorCount;
+            //_threadCount = 1;
             _threadLabel = new List<Label>();
             _threadProgress = new List<ProgressBar>();
 

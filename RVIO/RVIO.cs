@@ -441,11 +441,13 @@ namespace RVIO
         {
             switch (hr)
             {
+                case 5: return "ERROR_ACCESS_DENIED: Access is denied.";
+                case 32: return "ERROR_FILE_IN_USE: The file is in use by another process.";
                 case 123: return "ERROR_INVALID_NAME: The filename, directory name, or volume label syntax is incorrect.";
                 case 183: return "ERROR_ALREADY_EXISTS: Cannot create a file when that file already exists.";
             }
 
-            return hr.ToString("ERROR_MOVING_FILE. Error Code (" + hr + ")");
+            return hr.ToString();
         }
 
         public static bool SetAttributes(string path, FileAttributes fileAttributes)
@@ -624,6 +626,12 @@ namespace RVIO
         private const uint FILE_ATTRIBUTE_NORMAL = 0x80;
 
         // errorMessage = new Win32Exception(errorCode).Message;
+
+        public static Stream OpenFileRead(string path, out int result)
+        {
+            result = OpenFileRead(path, out Stream stream);
+            return stream;
+        }
 
         public static int OpenFileRead(string path, out Stream stream)
         {
