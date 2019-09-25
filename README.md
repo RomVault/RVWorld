@@ -2,7 +2,8 @@
 
 ## The future home of RomVault 3.0
 
-For now:
+RomVaultX is the DeDup'ed version of RomVault, where everything is stored using the files SHA1
+
 * Compress         --  7Zip & Zip compression libraries
 * DATReader        --  Reads DAT files into a Class structure
 * DATReaderTest    --  Stand alone DATReader Test
