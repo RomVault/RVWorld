@@ -10,7 +10,7 @@ RomVaultX is the DeDup'ed version of RomVault, where everything is stored using 
 * Dir2Dat          --  Use DATReader to perform Dir2Dat (Experimental)
 * FileHeaderReader --  No-Intro File reader code.
 * ROMVault         --  The UI code for ROMVault3
-* ROMCore          --  The Core Engine for ROMVault3
+* RVCore           --  The Core Engine for ROMVault3
 * RVIO             --  File code that enabled long filenames
 * RomVaultX        --  DeDup'ed Sqlite version of RomVault
 * Trrntzip         --  Trrntzip core library code
