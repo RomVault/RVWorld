@@ -5,7 +5,7 @@ namespace DATReader
     public static class DatSort
     {
 
-        private static int TrrntZipStringCompare1(string string1, string string2)
+        public static int TrrntZipStringCompare(string string1, string string2)
         {
             char[] bytes1 = string1.ToCharArray();
             char[] bytes2 = string2.ToCharArray();
@@ -47,9 +47,9 @@ namespace DATReader
             }
         }
 
-        public static int TrrntZipStringCompare(string string1, string string2)
+        public static int TrrntZipStringCompareCase(string string1, string string2)
         {
-            int res = Math.Sign(TrrntZipStringCompare1(string1, string2));
+            int res = Math.Sign(TrrntZipStringCompare(string1, string2));
             return res != 0 ? res : Math.Sign(string.Compare(string1, string2, StringComparison.Ordinal));
         }
 

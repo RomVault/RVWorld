@@ -81,6 +81,14 @@ namespace DATReader.DatWriter
                             {
                                 sw.WriteItem("type", "rvzip");
                             }
+                            else if (baseDir.DatFileType == DatFileType.Dir7Zip)
+                            {
+                                sw.WriteItem("type", "7zip");
+                            }
+                            else if (baseDir.DatFileType == DatFileType.Dir)
+                            {
+                                sw.WriteItem("type", "dir");
+                            }
                         }
 
                         if (!g.IsEmuArc)

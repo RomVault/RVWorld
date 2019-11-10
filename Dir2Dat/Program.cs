@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Compress;
+using Compress.File;
 using Compress.SevenZip;
 using Compress.ZipFile;
 using DATReader.DatClean;
@@ -15,7 +16,8 @@ namespace Dir2Dat
     {
         static void Main(string[] args)
         {
-            string dirSource = @"\\10.0.4.11\t$\Downloads\eXoDOS V4";
+            string dirSource = @"\\10.0.4.11\t$\MameExtra\MAME 0.212 EXTRAs";
+            //string dirSource = @"\\10.0.4.11\t$\Downloads\eXoDOS V4";
             DatHeader ThisDat = new DatHeader()
             {
                 BaseDir = new DatDir(DatFileType.Dir)
@@ -24,7 +26,8 @@ namespace Dir2Dat
             ProcessDir(di, ThisDat.BaseDir, false);
 
             DatXMLWriter dWriter = new DatXMLWriter();
-            dWriter.WriteDat(@"D:\out.dat", ThisDat, false);
+            dWriter.WriteDat(@"D:\out_old.dat", ThisDat, false);
+            dWriter.WriteDat(@"D:\out_new.dat", ThisDat, true);
         }
 
 
@@ -33,10 +36,18 @@ namespace Dir2Dat
             DirectoryInfo[] dia = di.GetDirectories();
             foreach (DirectoryInfo d in dia)
             {
-                DatDir nextDir = new DatDir(DatFileType.Dir) { Name = d.Name };
-                thisDir.ChildAdd(nextDir);
-                ProcessDir(d, nextDir, newStyle);
-
+                bool procAsGame = CheckAddDir(d);
+                if (procAsGame)
+                {
+                    Console.WriteLine(d.FullName + "\\ need to add as game");
+                    AddDirAsGame(d, thisDir);
+                }
+                else
+                {
+                    DatDir nextDir = new DatDir(DatFileType.Dir) { Name = d.Name };
+                    thisDir.ChildAdd(nextDir);
+                    ProcessDir(d, nextDir, newStyle);
+                }
             }
             FileInfo[] fia = di.GetFiles();
 
@@ -64,6 +75,27 @@ namespace Dir2Dat
                 if (fCount > 10)
                     break;
             }
+        }
+
+        private static bool CheckAddDir(DirectoryInfo di)
+        {
+            DirectoryInfo[] dia = di.GetDirectories();
+            if (dia.Length > 0)
+                return false;
+            FileInfo[] fia = di.GetFiles();
+
+            foreach (FileInfo f in fia)
+            {
+                string ext = Path.GetExtension(f.Name).ToLower();
+
+                switch (ext)
+                {
+                    case ".zip":
+                    case ".7z":
+                        return false;
+                }
+            }
+            return true;
         }
 
         private static void AddZip(FileInfo f, DatDir thisDir)
@@ -150,16 +182,48 @@ namespace Dir2Dat
             zf1.ZipFileClose();
         }
 
-        private static void AddFile(FileInfo F, DatDir thisDir)
+        private static void AddDirAsGame(DirectoryInfo di, DatDir thisDir)
         {
-
-            DatFile df = new DatFile(DatFileType.FileTorrentZip)
+            DatDir fDir = new DatDir(DatFileType.Dir)
             {
-                Name = F.Name,
-                Size = (ulong)F.Length
+                Name = Path.GetFileNameWithoutExtension(di.Name),
+                DGame = new DatGame()
+            };
+            fDir.DGame.Description = fDir.Name;
+            thisDir.ChildAdd(fDir);
+
+            FileInfo[] fia = di.GetFiles();
+
+            int fCount = 0;
+            foreach (FileInfo f in fia)
+            {
+                Console.WriteLine(f.FullName);
+                AddFile(f, fDir);
+
+                //fCount++;
+                if (fCount > 10)
+                    break;
+            }
+
+        }
+
+        private static void AddFile(FileInfo f, DatDir thisDir)
+        {
+            Compress.File.File zf1=new Compress.File.File();
+            zf1.ZipFileOpen(f.FullName, -1, true);
+            FileScan fs = new FileScan();
+            List<FileScan.FileResults> fr = fs.Scan(zf1, true, true);
+            
+            DatFile df = new DatFile(DatFileType.File)
+            {
+                Name = f.Name,
+                Size = fr[0].Size,
+                CRC = fr[0].CRC,
+                SHA1 = fr[0].SHA1
             };
 
             thisDir.ChildAdd(df);
+            zf1.ZipFileClose();
         }
     }
 }

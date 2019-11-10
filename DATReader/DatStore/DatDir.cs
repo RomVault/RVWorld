@@ -182,7 +182,7 @@ namespace DATReader.DatStore
                 case DatFileType.Dir:
                 case DatFileType.DirTorrentZip:
                     {
-                        int res = Math.Sign(DatSort.TrrntZipStringCompare(lName.Name, dBase.Name));
+                        int res = Math.Sign(DatSort.TrrntZipStringCompareCase(lName.Name, dBase.Name));
                         if (res != 0)
                             return res;
                         break;

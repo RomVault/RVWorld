@@ -6,13 +6,19 @@
 /Compress/obj
 /DATReader/bin
 /DATReader/obj
+/DATReaderTest/bin
+/DATReaderTest/obj
 /Dir2Dat/bin
 /Dir2Dat/obj
 /FileHeaderReader/bin
 /FileHeaderReader/obj
 /packages
+/RomVault/bin
+/RomVault/obj
 /RomVaultX/bin
 /RomVaultX/obj
+/RVCore/bin
+/RVCore/obj
 /RVIO/bin
 /RVIO/obj
 /Trrntzip/bin
@@ -23,3 +29,5 @@
 /TrrntZipUI/obj
 /.vs/RVWorld/v16/Server/sqlite3
 /.vs/RVWorld/v16/.suo
+/.vs
+*.user

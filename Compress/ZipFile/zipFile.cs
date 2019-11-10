@@ -75,11 +75,20 @@ namespace Compress.ZipFile
 
         public bool IsDirectory(int i)
         {
-            if (_localFiles[i].UncompressedSize != 0)
-                return false;
-            string filename = _localFiles[i].FileName;
-            char lastChar = filename[filename.Length - 1];
-            return lastChar == '/' || lastChar == '\\';
+            try
+            {
+                if (_localFiles[i].UncompressedSize != 0)
+                    return false;
+                string filename = _localFiles[i].FileName;
+                char lastChar = filename[filename.Length - 1];
+                return lastChar == '/' || lastChar == '\\';
+            }
+            catch (Exception ex)
+            {
+                ArgumentException argEx = new ArgumentException("Error in file " + _zipFileInfo?.FullName + " : " + ex.Message, ex.InnerException);
+                throw argEx;
+            }
+
         }
 
         public DateTime LastModified(int i)
