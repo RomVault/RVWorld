@@ -69,65 +69,65 @@ namespace ROMVault
         private float _scaleFactorY = 1;
 
         private Label _labelGameName;
-        private Label _textGameName;
+        private TextBox _textGameName;
 
         private Label _labelGameDescription;
-        private Label _textGameDescription;
+        private TextBox _textGameDescription;
 
         private Label _labelGameManufacturer;
-        private Label _textGameManufacturer;
+        private TextBox _textGameManufacturer;
 
         private Label _labelGameCloneOf;
-        private Label _textGameCloneOf;
+        private TextBox _textGameCloneOf;
 
         private Label _labelGameRomOf;
-        private Label _textGameRomOf;
+        private TextBox _textGameRomOf;
 
         private Label _labelGameYear;
-        private Label _textGameYear;
+        private TextBox _textGameYear;
 
         private Label _labelGameTotalRoms;
-        private Label _textGameTotalRoms;
+        private TextBox _textGameTotalRoms;
 
         //Trurip Extra Data
         private Label _labelTruripPublisher;
-        private Label _textTruripPublisher;
+        private TextBox _textTruripPublisher;
 
         private Label _labelTruripDeveloper;
-        private Label _textTruripDeveloper;
+        private TextBox _textTruripDeveloper;
 
         private Label _labelTruripTitleId;
-        private Label _textTruripTitleId;
+        private TextBox _textTruripTitleId;
 
         private Label _labelTruripSource;
-        private Label _textTruripSource;
+        private TextBox _textTruripSource;
 
         private Label _labelTruripCloneOf;
-        private Label _textTruripCloneOf;
+        private TextBox _textTruripCloneOf;
 
         private Label _labelTruripRelatedTo;
-        private Label _textTruripRelatedTo;
+        private TextBox _textTruripRelatedTo;
 
 
         private Label _labelTruripYear;
-        private Label _textTruripYear;
+        private TextBox _textTruripYear;
 
         private Label _labelTruripPlayers;
-        private Label _textTruripPlayers;
+        private TextBox _textTruripPlayers;
 
 
         private Label _labelTruripGenre;
-        private Label _textTruripGenre;
+        private TextBox _textTruripGenre;
 
         private Label _labelTruripSubGenre;
-        private Label _textTruripSubGenre;
+        private TextBox _textTruripSubGenre;
 
 
         private Label _labelTruripRatings;
-        private Label _textTruripRatings;
+        private TextBox _textTruripRatings;
 
         private Label _labelTruripScore;
-        private Label _textTruripScore;
+        private TextBox _textTruripScore;
 
 
         public FrmMain()
@@ -302,7 +302,7 @@ namespace ROMVault
             _scaleFactorY *= factor.Height;
         }
 
-        private void AddTextBox(int line, string name, int x, int x1, out Label lBox, out Label tBox)
+        private void AddTextBox(int line, string name, int x, int x1, out Label lBox, out TextBox tBox)
         {
             int y = 14 + line * 16;
 
@@ -313,7 +313,7 @@ namespace ROMVault
                 Text = name + @" :",
                 TextAlign = ContentAlignment.TopRight
             };
-            tBox = new Label { Location = SPoint(x1, y), Size = SSize(20, 17), BorderStyle = BorderStyle.FixedSingle };
+            tBox = new TextBox { AutoSize=false, Location = SPoint(x1, y), Size = SSize(20, 17), BorderStyle = BorderStyle.FixedSingle, ReadOnly = true, TabStop = false };
             gbSetInfo.Controls.Add(lBox);
             gbSetInfo.Controls.Add(tBox);
 

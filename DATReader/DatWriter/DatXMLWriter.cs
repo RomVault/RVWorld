@@ -67,7 +67,7 @@ namespace DATReader.DatWriter
                     if (baseDir.DGame != null)
                     {
                         DatGame g = baseDir.DGame;
-                        sw.Write(newStyle ? @"<zip" : @"<game");
+                        sw.Write(newStyle ? @"<set" : @"<game");
 
                         sw.WriteItem("name", baseDir.Name);
 
@@ -126,7 +126,7 @@ namespace DATReader.DatWriter
                         }
 
                         writeBase(sw, baseDir, newStyle);
-                        sw.WriteLine(newStyle ? @"</zip>" : @"</game>", -1);
+                        sw.WriteLine(newStyle ? @"</set>" : @"</game>", -1);
                     }
                     else
                     {

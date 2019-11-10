@@ -167,7 +167,7 @@ namespace ROMVault
             {
                 ShowNewFolderButton = true,
                 Description = "Please select a folder for This Rom Set",
-                RootFolder = Environment.SpecialFolder.MyComputer,
+                //RootFolder = Environment.SpecialFolder.MyComputer,
                 SelectedPath = RvFile.GetPhysicalPath(_rule.DirKey)
             };
             if (browse.ShowDialog() == DialogResult.OK)

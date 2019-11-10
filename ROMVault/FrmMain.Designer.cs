@@ -45,27 +45,27 @@
             this.splitDatInfoTree = new System.Windows.Forms.SplitContainer();
             this.gbDatInfo = new System.Windows.Forms.GroupBox();
             this.lblDIRomsUnknown = new System.Windows.Forms.Label();
-            this.lblROMsGot = new System.Windows.Forms.Label();
-            this.lblDITRomsUnknown = new System.Windows.Forms.Label();
-            this.lblDITRomsFixable = new System.Windows.Forms.Label();
-            this.lblDITRomsMissing = new System.Windows.Forms.Label();
-            this.lblDITRomsGot = new System.Windows.Forms.Label();
-            this.lblDITRomPath = new System.Windows.Forms.Label();
-            this.lblDITPath = new System.Windows.Forms.Label();
+            this.lblDIROMsGot = new System.Windows.Forms.Label();
+            this.lblDITRomsUnknown = new System.Windows.Forms.TextBox();
+            this.lblDITRomsFixable = new System.Windows.Forms.TextBox();
+            this.lblDITRomsMissing = new System.Windows.Forms.TextBox();
+            this.lblDITRomsGot = new System.Windows.Forms.TextBox();
+            this.lblDIRomPath = new System.Windows.Forms.Label();
+            this.lblDITPath = new System.Windows.Forms.TextBox();
             this.lblDIDate = new System.Windows.Forms.Label();
             this.lblDIAuthor = new System.Windows.Forms.Label();
-            this.lblDITDate = new System.Windows.Forms.Label();
-            this.lblDITAuthor = new System.Windows.Forms.Label();
+            this.lblDITDate = new System.Windows.Forms.TextBox();
+            this.lblDITAuthor = new System.Windows.Forms.TextBox();
             this.lblDIVersion = new System.Windows.Forms.Label();
             this.lblDICategory = new System.Windows.Forms.Label();
-            this.lblDITVersion = new System.Windows.Forms.Label();
-            this.lblDITCategory = new System.Windows.Forms.Label();
+            this.lblDITVersion = new System.Windows.Forms.TextBox();
+            this.lblDITCategory = new System.Windows.Forms.TextBox();
             this.lblDIDescription = new System.Windows.Forms.Label();
             this.lblDIName = new System.Windows.Forms.Label();
-            this.lblDITDescription = new System.Windows.Forms.Label();
-            this.lblDITName = new System.Windows.Forms.Label();
+            this.lblDITDescription = new System.Windows.Forms.TextBox();
+            this.lblDITName = new System.Windows.Forms.TextBox();
             this.lblDIRomsFixable = new System.Windows.Forms.Label();
-            this.lblROMsMissing = new System.Windows.Forms.Label();
+            this.lblDIROMsMissing = new System.Windows.Forms.Label();
             this.DirTree = new ROMVault.RvTree();
             this.splitGameInfoLists = new System.Windows.Forms.SplitContainer();
             this.btnClear = new System.Windows.Forms.Button();
@@ -120,6 +120,7 @@
             this.settingsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.romVaultSettingsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.directorySettingsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.registrationSettingsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.reportsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.fixDatReportToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.fullReportToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -130,7 +131,6 @@
             this.dataGridViewImageColumn1 = new System.Windows.Forms.DataGridViewImageColumn();
             this.dataGridViewImageColumn2 = new System.Windows.Forms.DataGridViewImageColumn();
             this.dataGridViewImageColumn3 = new System.Windows.Forms.DataGridViewImageColumn();
-            this.registrationSettingsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             ((System.ComponentModel.ISupportInitialize)(this.splitToolBarMain)).BeginInit();
             this.splitToolBarMain.Panel1.SuspendLayout();
             this.splitToolBarMain.Panel2.SuspendLayout();
@@ -303,12 +303,12 @@
             // gbDatInfo
             // 
             this.gbDatInfo.Controls.Add(this.lblDIRomsUnknown);
-            this.gbDatInfo.Controls.Add(this.lblROMsGot);
+            this.gbDatInfo.Controls.Add(this.lblDIROMsGot);
             this.gbDatInfo.Controls.Add(this.lblDITRomsUnknown);
             this.gbDatInfo.Controls.Add(this.lblDITRomsFixable);
             this.gbDatInfo.Controls.Add(this.lblDITRomsMissing);
             this.gbDatInfo.Controls.Add(this.lblDITRomsGot);
-            this.gbDatInfo.Controls.Add(this.lblDITRomPath);
+            this.gbDatInfo.Controls.Add(this.lblDIRomPath);
             this.gbDatInfo.Controls.Add(this.lblDITPath);
             this.gbDatInfo.Controls.Add(this.lblDIDate);
             this.gbDatInfo.Controls.Add(this.lblDIAuthor);
@@ -323,7 +323,7 @@
             this.gbDatInfo.Controls.Add(this.lblDITDescription);
             this.gbDatInfo.Controls.Add(this.lblDITName);
             this.gbDatInfo.Controls.Add(this.lblDIRomsFixable);
-            this.gbDatInfo.Controls.Add(this.lblROMsMissing);
+            this.gbDatInfo.Controls.Add(this.lblDIROMsMissing);
             this.gbDatInfo.Location = new System.Drawing.Point(5, 0);
             this.gbDatInfo.Name = "gbDatInfo";
             this.gbDatInfo.Size = new System.Drawing.Size(468, 147);
@@ -341,63 +341,78 @@
             this.lblDIRomsUnknown.Text = "ROMs Unknown :";
             this.lblDIRomsUnknown.TextAlign = System.Drawing.ContentAlignment.TopRight;
             // 
-            // lblROMsGot
+            // lblDIROMsGot
             // 
-            this.lblROMsGot.Location = new System.Drawing.Point(10, 105);
-            this.lblROMsGot.Name = "lblROMsGot";
-            this.lblROMsGot.Size = new System.Drawing.Size(75, 13);
-            this.lblROMsGot.TabIndex = 23;
-            this.lblROMsGot.Text = "ROMs Got :";
-            this.lblROMsGot.TextAlign = System.Drawing.ContentAlignment.TopRight;
+            this.lblDIROMsGot.Location = new System.Drawing.Point(10, 105);
+            this.lblDIROMsGot.Name = "lblDIROMsGot";
+            this.lblDIROMsGot.Size = new System.Drawing.Size(75, 13);
+            this.lblDIROMsGot.TabIndex = 23;
+            this.lblDIROMsGot.Text = "ROMs Got :";
+            this.lblDIROMsGot.TextAlign = System.Drawing.ContentAlignment.TopRight;
             // 
             // lblDITRomsUnknown
             // 
             this.lblDITRomsUnknown.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             this.lblDITRomsUnknown.Location = new System.Drawing.Point(311, 120);
             this.lblDITRomsUnknown.Name = "lblDITRomsUnknown";
+            this.lblDITRomsUnknown.ReadOnly = true;
+            this.lblDITRomsUnknown.AutoSize = false;
             this.lblDITRomsUnknown.Size = new System.Drawing.Size(120, 17);
-            this.lblDITRomsUnknown.TabIndex = 21;
+            this.lblDITRomsUnknown.TabIndex = 27;
+            this.lblDITRomsUnknown.TabStop = false;
             // 
             // lblDITRomsFixable
             // 
             this.lblDITRomsFixable.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             this.lblDITRomsFixable.Location = new System.Drawing.Point(311, 104);
             this.lblDITRomsFixable.Name = "lblDITRomsFixable";
+            this.lblDITRomsFixable.ReadOnly = true;
+            this.lblDITRomsFixable.AutoSize = false;
             this.lblDITRomsFixable.Size = new System.Drawing.Size(120, 17);
-            this.lblDITRomsFixable.TabIndex = 20;
+            this.lblDITRomsFixable.TabIndex = 28;
+            this.lblDITRomsFixable.TabStop = false;
             // 
             // lblDITRomsMissing
             // 
             this.lblDITRomsMissing.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             this.lblDITRomsMissing.Location = new System.Drawing.Point(89, 120);
             this.lblDITRomsMissing.Name = "lblDITRomsMissing";
+            this.lblDITRomsMissing.ReadOnly = true;
+            this.lblDITRomsMissing.AutoSize = false;
             this.lblDITRomsMissing.Size = new System.Drawing.Size(120, 17);
-            this.lblDITRomsMissing.TabIndex = 19;
+            this.lblDITRomsMissing.TabIndex = 29;
+            this.lblDITRomsMissing.TabStop = false;
             // 
             // lblDITRomsGot
             // 
             this.lblDITRomsGot.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             this.lblDITRomsGot.Location = new System.Drawing.Point(89, 104);
             this.lblDITRomsGot.Name = "lblDITRomsGot";
+            this.lblDITRomsGot.ReadOnly = true;
+            this.lblDITRomsGot.AutoSize = false;
             this.lblDITRomsGot.Size = new System.Drawing.Size(120, 17);
-            this.lblDITRomsGot.TabIndex = 18;
+            this.lblDITRomsGot.TabIndex = 30;
+            this.lblDITRomsGot.TabStop = false;
             // 
-            // lblDITRomPath
+            // lblDIRomPath
             // 
-            this.lblDITRomPath.Location = new System.Drawing.Point(10, 79);
-            this.lblDITRomPath.Name = "lblDITRomPath";
-            this.lblDITRomPath.Size = new System.Drawing.Size(75, 13);
-            this.lblDITRomPath.TabIndex = 15;
-            this.lblDITRomPath.Text = "ROM Path:";
-            this.lblDITRomPath.TextAlign = System.Drawing.ContentAlignment.TopRight;
+            this.lblDIRomPath.Location = new System.Drawing.Point(10, 79);
+            this.lblDIRomPath.Name = "lblDIRomPath";
+            this.lblDIRomPath.Size = new System.Drawing.Size(75, 13);
+            this.lblDIRomPath.TabIndex = 15;
+            this.lblDIRomPath.Text = "ROM Path :";
+            this.lblDIRomPath.TextAlign = System.Drawing.ContentAlignment.TopRight;
             // 
             // lblDITPath
             // 
             this.lblDITPath.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             this.lblDITPath.Location = new System.Drawing.Point(89, 78);
             this.lblDITPath.Name = "lblDITPath";
+            this.lblDITPath.ReadOnly = true;
+            this.lblDITPath.AutoSize = false;
             this.lblDITPath.Size = new System.Drawing.Size(342, 17);
-            this.lblDITPath.TabIndex = 13;
+            this.lblDITPath.TabIndex = 31;
+            this.lblDITPath.TabStop = false;
             // 
             // lblDIDate
             // 
@@ -422,16 +437,22 @@
             this.lblDITDate.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             this.lblDITDate.Location = new System.Drawing.Point(311, 62);
             this.lblDITDate.Name = "lblDITDate";
+            this.lblDITDate.ReadOnly = true;
+            this.lblDITDate.AutoSize = false;
             this.lblDITDate.Size = new System.Drawing.Size(120, 17);
-            this.lblDITDate.TabIndex = 10;
+            this.lblDITDate.TabIndex = 32;
+            this.lblDITDate.TabStop = false;
             // 
             // lblDITAuthor
             // 
             this.lblDITAuthor.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             this.lblDITAuthor.Location = new System.Drawing.Point(89, 62);
             this.lblDITAuthor.Name = "lblDITAuthor";
+            this.lblDITAuthor.ReadOnly = true;
+            this.lblDITAuthor.AutoSize = false;
             this.lblDITAuthor.Size = new System.Drawing.Size(120, 17);
-            this.lblDITAuthor.TabIndex = 9;
+            this.lblDITAuthor.TabIndex = 33;
+            this.lblDITAuthor.TabStop = false;
             // 
             // lblDIVersion
             // 
@@ -456,16 +477,22 @@
             this.lblDITVersion.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             this.lblDITVersion.Location = new System.Drawing.Point(311, 46);
             this.lblDITVersion.Name = "lblDITVersion";
+            this.lblDITVersion.ReadOnly = true;
+            this.lblDITVersion.AutoSize = false;
             this.lblDITVersion.Size = new System.Drawing.Size(120, 17);
-            this.lblDITVersion.TabIndex = 6;
+            this.lblDITVersion.TabIndex = 34;
+            this.lblDITVersion.TabStop = false;
             // 
             // lblDITCategory
             // 
             this.lblDITCategory.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             this.lblDITCategory.Location = new System.Drawing.Point(89, 46);
             this.lblDITCategory.Name = "lblDITCategory";
+            this.lblDITCategory.ReadOnly = true;
+            this.lblDITCategory.AutoSize = false;
             this.lblDITCategory.Size = new System.Drawing.Size(120, 17);
-            this.lblDITCategory.TabIndex = 5;
+            this.lblDITCategory.TabIndex = 35;
+            this.lblDITCategory.TabStop = false;
             // 
             // lblDIDescription
             // 
@@ -490,16 +517,22 @@
             this.lblDITDescription.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             this.lblDITDescription.Location = new System.Drawing.Point(89, 30);
             this.lblDITDescription.Name = "lblDITDescription";
+            this.lblDITDescription.ReadOnly = true;
+            this.lblDITDescription.AutoSize = false;
             this.lblDITDescription.Size = new System.Drawing.Size(342, 17);
-            this.lblDITDescription.TabIndex = 2;
+            this.lblDITDescription.TabIndex = 36;
+            this.lblDITDescription.TabStop = false;
             // 
             // lblDITName
             // 
             this.lblDITName.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             this.lblDITName.Location = new System.Drawing.Point(89, 14);
             this.lblDITName.Name = "lblDITName";
+            this.lblDITName.ReadOnly = true;
+            this.lblDITName.AutoSize = false;
             this.lblDITName.Size = new System.Drawing.Size(342, 17);
-            this.lblDITName.TabIndex = 1;
+            this.lblDITName.TabIndex = 37;
+            this.lblDITName.TabStop = false;
             // 
             // lblDIRomsFixable
             // 
@@ -510,14 +543,14 @@
             this.lblDIRomsFixable.Text = "ROMs Fixable :";
             this.lblDIRomsFixable.TextAlign = System.Drawing.ContentAlignment.TopRight;
             // 
-            // lblROMsMissing
+            // lblDIROMsMissing
             // 
-            this.lblROMsMissing.Location = new System.Drawing.Point(2, 121);
-            this.lblROMsMissing.Name = "lblROMsMissing";
-            this.lblROMsMissing.Size = new System.Drawing.Size(83, 13);
-            this.lblROMsMissing.TabIndex = 24;
-            this.lblROMsMissing.Text = "ROMs Missing :";
-            this.lblROMsMissing.TextAlign = System.Drawing.ContentAlignment.TopRight;
+            this.lblDIROMsMissing.Location = new System.Drawing.Point(2, 121);
+            this.lblDIROMsMissing.Name = "lblDIROMsMissing";
+            this.lblDIROMsMissing.Size = new System.Drawing.Size(83, 13);
+            this.lblDIROMsMissing.TabIndex = 24;
+            this.lblDIROMsMissing.Text = "ROMs Missing :";
+            this.lblDIROMsMissing.TextAlign = System.Drawing.ContentAlignment.TopRight;
             // 
             // DirTree
             // 
@@ -1145,6 +1178,13 @@
             this.directorySettingsToolStripMenuItem.Text = "Directory Settings";
             this.directorySettingsToolStripMenuItem.Click += new System.EventHandler(this.DirectorySettingsToolStripMenuItem_Click);
             // 
+            // registrationSettingsToolStripMenuItem
+            // 
+            this.registrationSettingsToolStripMenuItem.Name = "registrationSettingsToolStripMenuItem";
+            this.registrationSettingsToolStripMenuItem.Size = new System.Drawing.Size(182, 22);
+            this.registrationSettingsToolStripMenuItem.Text = "Registration Settings";
+            this.registrationSettingsToolStripMenuItem.Click += new System.EventHandler(this.RegistrationSettingsToolStripMenuItem_Click);
+            // 
             // reportsToolStripMenuItem
             // 
             this.reportsToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
@@ -1227,13 +1267,6 @@
             this.dataGridViewImageColumn3.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.Automatic;
             this.dataGridViewImageColumn3.Width = 65;
             // 
-            // registrationSettingsToolStripMenuItem
-            // 
-            this.registrationSettingsToolStripMenuItem.Name = "registrationSettingsToolStripMenuItem";
-            this.registrationSettingsToolStripMenuItem.Size = new System.Drawing.Size(182, 22);
-            this.registrationSettingsToolStripMenuItem.Text = "Registration Settings";
-            this.registrationSettingsToolStripMenuItem.Click += new System.EventHandler(this.RegistrationSettingsToolStripMenuItem_Click);
-            // 
             // FrmMain
             // 
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
@@ -1256,6 +1289,7 @@
             ((System.ComponentModel.ISupportInitialize)(this.splitDatInfoTree)).EndInit();
             this.splitDatInfoTree.ResumeLayout(false);
             this.gbDatInfo.ResumeLayout(false);
+            this.gbDatInfo.PerformLayout();
             this.splitGameInfoLists.Panel1.ResumeLayout(false);
             this.splitGameInfoLists.Panel1.PerformLayout();
             this.splitGameInfoLists.Panel2.ResumeLayout(false);
@@ -1300,32 +1334,32 @@
         private System.Windows.Forms.SplitContainer splitDatInfoTree;
         private System.Windows.Forms.GroupBox gbDatInfo;
         private System.Windows.Forms.Label lblDIRomsUnknown;
-        private System.Windows.Forms.Label lblROMsMissing;
-        private System.Windows.Forms.Label lblROMsGot;
-        private System.Windows.Forms.Label lblDITRomsUnknown;
-        private System.Windows.Forms.Label lblDITRomsMissing;
-        private System.Windows.Forms.Label lblDITRomsGot;
-        private System.Windows.Forms.Label lblDITRomPath;
-        private System.Windows.Forms.Label lblDITPath;
+        private System.Windows.Forms.Label lblDIROMsMissing;
+        private System.Windows.Forms.Label lblDIROMsGot;
+        private System.Windows.Forms.TextBox lblDITRomsUnknown;
+        private System.Windows.Forms.TextBox lblDITRomsMissing;
+        private System.Windows.Forms.TextBox lblDITRomsGot;
+        private System.Windows.Forms.Label lblDIRomPath;
+        private System.Windows.Forms.TextBox lblDITPath;
         private System.Windows.Forms.Label lblDIDate;
         private System.Windows.Forms.Label lblDIAuthor;
-        private System.Windows.Forms.Label lblDITDate;
-        private System.Windows.Forms.Label lblDITAuthor;
+        private System.Windows.Forms.TextBox lblDITDate;
+        private System.Windows.Forms.TextBox lblDITAuthor;
         private System.Windows.Forms.Label lblDIVersion;
         private System.Windows.Forms.Label lblDICategory;
-        private System.Windows.Forms.Label lblDITVersion;
-        private System.Windows.Forms.Label lblDITCategory;
+        private System.Windows.Forms.TextBox lblDITVersion;
+        private System.Windows.Forms.TextBox lblDITCategory;
         private System.Windows.Forms.Label lblDIDescription;
         private System.Windows.Forms.Label lblDIName;
-        private System.Windows.Forms.Label lblDITDescription;
-        private System.Windows.Forms.Label lblDITName;
+        private System.Windows.Forms.TextBox lblDITDescription;
+        private System.Windows.Forms.TextBox lblDITName;
         private System.Windows.Forms.SplitContainer splitGameInfoLists;
         private System.Windows.Forms.CheckBox chkBoxShowMerged;
         private System.Windows.Forms.CheckBox chkBoxShowFixed;
         private System.Windows.Forms.CheckBox chkBoxShowMissing;
         private System.Windows.Forms.CheckBox chkBoxShowCorrect;
         private System.Windows.Forms.GroupBox gbSetInfo;
-       
+
         private System.Windows.Forms.SplitContainer splitGameListRomList;
         private System.Windows.Forms.DataGridView GameGrid;
         private System.Windows.Forms.DataGridView RomGrid;
@@ -1348,7 +1382,7 @@
         private System.Windows.Forms.DataGridViewImageColumn CCorrect;
         private System.Windows.Forms.ToolStripMenuItem FixROMsToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem tsmScanLevel2;
-        private System.Windows.Forms.Label lblDITRomsFixable;
+        private System.Windows.Forms.TextBox lblDITRomsFixable;
         private System.Windows.Forms.Label lblDIRomsFixable;
         private System.Windows.Forms.ToolStripMenuItem reportsToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem fixDatReportToolStripMenuItem;

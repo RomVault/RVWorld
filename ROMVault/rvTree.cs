@@ -158,7 +158,7 @@ namespace ROMVault
                 if (!tDir.IsDir)
                     continue;
 
-                if (tDir.Tree != null)
+                if (tDir.Tree?.UiObject != null)
                 {
                     PaintTree(tDir, g, t);
                 }
@@ -321,7 +321,7 @@ namespace ROMVault
             for (int i = 0; i < pTree.ChildCount; i++)
             {
                 RvFile tDir = pTree.Child(i);
-                if (tDir.IsDir && tDir.Tree != null)
+                if (tDir.IsDir && tDir.Tree?.UiObject != null)
                 {
                     PaintTree(tDir, g, t);
                 }
@@ -402,10 +402,10 @@ namespace ROMVault
             {
                 RvChecked?.Invoke(pTree, mevent);
 
-                if (mevent.Button==MouseButtons.Right)
+                if (mevent.Button == MouseButtons.Right)
                 {
                     _mousehit = true;
-                    if (pTree.FileStatusIs(FileStatus.PrimaryToSort)  || pTree.FileStatusIs(FileStatus.CacheToSort))
+                    if (pTree.FileStatusIs(FileStatus.PrimaryToSort) || pTree.FileStatusIs(FileStatus.CacheToSort))
                         return true;
 
                     SetChecked(pTree, RvTreeRow.TreeSelect.Locked);
