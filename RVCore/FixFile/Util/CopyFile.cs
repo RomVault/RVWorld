@@ -171,13 +171,15 @@ namespace RVCore.FixFile.Util
                         {
                             readStream.Close();
                         }
-
-
+                        
                         writeStream.Flush();
                         writeStream.Close();
-                        File.Delete(filenameOut);
+                        if (filenameOut != null)
+                        {
+                            File.Delete(filenameOut);
+                        }
 
-                        error = "Error in Data Stream";
+                        error ="Unexpected corrupt zip file found:\n"+fileIn.FullName+"\nRun Find Fixes, and Fix to continue fixing correctly.";
                         return ReturnCode.SourceDataStreamCorrupt;
                     }
                     catch (Exception e)
@@ -221,7 +223,7 @@ namespace RVCore.FixFile.Util
                     tsha1?.Finish();
 
                     bCRC = tcrc32.Hash;
-                    bMD5= tmd5?.Hash;
+                    bMD5 = tmd5?.Hash;
                     bSHA1 = tsha1?.Hash;
 
                     tcrc32.Dispose();
