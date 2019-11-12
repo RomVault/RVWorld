@@ -9,6 +9,7 @@ using System.ComponentModel;
 using System.IO;
 using Compress;
 using Compress.SevenZip;
+using Compress.SevenZip.Common;
 using Compress.ThreadReaders;
 using Compress.ZipFile;
 using Compress.ZipFile.ZLib;
@@ -155,36 +156,39 @@ namespace RVCore.FixFile.Util
                     {
                         readStream.Read(_buffer, 0, sizenow);
                     }
-                    catch (ZlibException)
+                    catch (Exception ex)
                     {
-                        if (fileIn.FileType == FileType.ZipFile && zipFileIn != null)
+                        if (ex is ZlibException || ex is DataErrorException)
                         {
-                            ZipReturn zr = zipFileIn.ZipFileCloseReadStream();
-                            if (zr != ZipReturn.ZipGood)
+                            if ((fileIn.FileType == FileType.ZipFile || fileIn.FileType==FileType.SevenZipFile) && zipFileIn != null)
                             {
-                                error = "Error Closing " + zr + " Stream :" + zipFileIn.ZipFilename;
-                                return ReturnCode.FileSystemError;
+                                ZipReturn zr = zipFileIn.ZipFileCloseReadStream();
+                                if (zr != ZipReturn.ZipGood)
+                                {
+                                    error = "Error Closing " + zr + " Stream :" + zipFileIn.ZipFilename;
+                                    return ReturnCode.FileSystemError;
+                                }
+
+                                zipFileIn.ZipFileClose();
                             }
-                            zipFileIn.ZipFileClose();
-                        }
-                        else
-                        {
-                            readStream.Close();
-                        }
-                        
-                        writeStream.Flush();
-                        writeStream.Close();
-                        if (filenameOut != null)
-                        {
-                            File.Delete(filenameOut);
+                            else
+                            {
+                                readStream.Close();
+                            }
+
+                            writeStream.Flush();
+                            writeStream.Close();
+                            if (filenameOut != null)
+                            {
+                                File.Delete(filenameOut);
+                            }
+
+                            error = "Unexpected corrupt archive file found:\n" + fileIn.FullName +
+                                    "\nRun Find Fixes, and Fix to continue fixing correctly.";
+                            return ReturnCode.SourceDataStreamCorrupt;
                         }
 
-                        error ="Unexpected corrupt zip file found:\n"+fileIn.FullName+"\nRun Find Fixes, and Fix to continue fixing correctly.";
-                        return ReturnCode.SourceDataStreamCorrupt;
-                    }
-                    catch (Exception e)
-                    {
-                        error = "Error reading Source File " + e.Message;
+                        error = "Error reading Source File " + ex.Message;
                         return ReturnCode.FileSystemError;
                     }
 
@@ -581,71 +585,76 @@ namespace RVCore.FixFile.Util
 
             fileIn.FileStatusSet(FileStatus.CRCVerified | FileStatus.SizeVerified);
 
-            // check to see if we have a MD5 from the DAT file
-            if (fileIn.FileStatusIs(FileStatus.MD5FromDAT))
+            if (bMD5 != null)
             {
-                if (fileIn.MD5 == null)
+                // check to see if we have a MD5 from the DAT file
+                if (fileIn.FileStatusIs(FileStatus.MD5FromDAT))
                 {
-                    error = "Should have an filein MD5 from Dat but not found. Logic Error.";
-                    return ReturnCode.LogicError;
+                    if (fileIn.MD5 == null)
+                    {
+                        error = "Should have an filein MD5 from Dat but not found. Logic Error.";
+                        return ReturnCode.LogicError;
+                    }
+
+                    if (!ArrByte.BCompare(fileIn.MD5, bMD5))
+                    {
+                        error = "Source file did not match MD5";
+                        return ReturnCode.SourceCheckSumMismatch;
+                    }
+
+                    fileIn.FileStatusSet(FileStatus.MD5Verified);
                 }
-
-                if (!ArrByte.BCompare(fileIn.MD5, bMD5))
+                // check to see if we have an MD5 (not from the DAT) so must be from previously scanning this file.
+                else if (fileIn.MD5 != null)
                 {
-                    error = "Source file did not match MD5";
-                    return ReturnCode.SourceCheckSumMismatch;
+                    if (!ArrByte.BCompare(fileIn.MD5, bMD5))
+                    {
+                        // if we had an MD5 from a preview scan and it now does not match, something has gone really bad.
+                        error = "The MD5 found does not match a previously scanned MD5, this should not happen, unless something got corrupt.";
+                        return ReturnCode.LogicError;
+                    }
                 }
-
-                fileIn.FileStatusSet(FileStatus.MD5Verified);
-            }
-            // check to see if we have an MD5 (not from the DAT) so must be from previously scanning this file.
-            else if (fileIn.MD5 != null)
-            {
-                if (!ArrByte.BCompare(fileIn.MD5, bMD5))
+                else
                 {
-                    // if we had an MD5 from a preview scan and it now does not match, something has gone really bad.
-                    error = "The MD5 found does not match a previously scanned MD5, this should not happen, unless something got corrupt.";
-                    return ReturnCode.LogicError;
-                }
-            }
-            else // (FileIn.MD5 == null)
-            {
-                fileIn.MD5 = bMD5;
-                fileIn.FileStatusSet(FileStatus.MD5Verified);
-            }
-
-
-            // check to see if we have a SHA1 from the DAT file
-            if (fileIn.FileStatusIs(FileStatus.SHA1FromDAT))
-            {
-                if (fileIn.SHA1 == null)
-                {
-                    error = "Should have an filein SHA1 from Dat but not found. Logic Error.";
-                    return ReturnCode.LogicError;
-                }
-
-                if (!ArrByte.BCompare(fileIn.SHA1, bSHA1))
-                {
-                    error = "Source file did not match SHA1";
-                    return ReturnCode.SourceCheckSumMismatch;
-                }
-
-                fileIn.FileStatusSet(FileStatus.SHA1Verified);
-            }
-            // check to see if we have an SHA1 (not from the DAT) so must be from previously scanning this file.
-            else if (fileIn.SHA1 != null)
-            {
-                if (!ArrByte.BCompare(fileIn.SHA1, bSHA1))
-                {
-                    // if we had an SHA1 from a preview scan and it now does not match, something has gone really bad.
-                    error = "The SHA1 found does not match a previously scanned SHA1, this should not happen, unless something got corrupt.";
-                    return ReturnCode.LogicError;
+                    fileIn.MD5 = bMD5;
+                    fileIn.FileStatusSet(FileStatus.MD5Verified);
                 }
             }
-            else // (FileIn.SHA1 == null)
+
+            if (bSHA1 != null)
             {
-                fileIn.SHA1 = bSHA1;
-                fileIn.FileStatusSet(FileStatus.SHA1Verified);
+                // check to see if we have a SHA1 from the DAT file
+                if (fileIn.FileStatusIs(FileStatus.SHA1FromDAT))
+                {
+                    if (fileIn.SHA1 == null)
+                    {
+                        error = "Should have an filein SHA1 from Dat but not found. Logic Error.";
+                        return ReturnCode.LogicError;
+                    }
+
+                    if (!ArrByte.BCompare(fileIn.SHA1, bSHA1))
+                    {
+                        error = "Source file did not match SHA1";
+                        return ReturnCode.SourceCheckSumMismatch;
+                    }
+
+                    fileIn.FileStatusSet(FileStatus.SHA1Verified);
+                }
+                // check to see if we have an SHA1 (not from the DAT) so must be from previously scanning this file.
+                else if (fileIn.SHA1 != null)
+                {
+                    if (!ArrByte.BCompare(fileIn.SHA1, bSHA1))
+                    {
+                        // if we had an SHA1 from a preview scan and it now does not match, something has gone really bad.
+                        error = "The SHA1 found does not match a previously scanned SHA1, this should not happen, unless something got corrupt.";
+                        return ReturnCode.LogicError;
+                    }
+                }
+                else
+                {
+                    fileIn.SHA1 = bSHA1;
+                    fileIn.FileStatusSet(FileStatus.SHA1Verified);
+                }
             }
 
             error = "";
