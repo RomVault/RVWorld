@@ -850,9 +850,9 @@ namespace Compress.SevenZip
             uint mainHeaderCRC = Utils.CRC.CalculateDigest(newHeaderByte, 0, (uint)newHeaderByte.Length);
 
             ulong headerpos = (ulong)_zipFs.Position;
+            _zipFs.Write(newHeaderByte,0,newHeaderByte.Length);
             using (BinaryWriter bw = new BinaryWriter(_zipFs, Encoding.UTF8, true))
             {
-                bw.Write(newHeaderByte);
                 _signatureHeader.WriteFinal(bw, headerpos, (ulong)newHeaderByte.Length, mainHeaderCRC);
                 WriteRomVault7Zip(bw, headerpos, (ulong)newHeaderByte.Length, mainHeaderCRC);
             }

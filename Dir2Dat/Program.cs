@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using Compress;
-using Compress.File;
 using Compress.SevenZip;
 using Compress.ZipFile;
 using DATReader.DatClean;
@@ -16,8 +15,28 @@ namespace Dir2Dat
     {
         static void Main(string[] args)
         {
-            string dirSource = @"\\10.0.4.11\t$\MameExtra\MAME 0.212 EXTRAs";
-            //string dirSource = @"\\10.0.4.11\t$\Downloads\eXoDOS V4";
+            go(@"Y:\MAME 0.184 EXTRAs", @"D:\ExtraDatOut\Mame_Extra_0.184");
+            go(@"Y:\MAME 0.185 EXTRAs", @"D:\ExtraDatOut\Mame_Extra_0.185");
+            go(@"Y:\MAME 0.186 EXTRAs", @"D:\ExtraDatOut\Mame_Extra_0.186");
+            go(@"Y:\MAME 0.187 EXTRAs", @"D:\ExtraDatOut\Mame_Extra_0.187");
+            go(@"Y:\MAME 0.194 EXTRAs", @"D:\ExtraDatOut\Mame_Extra_0.194");
+            go(@"Y:\MAME 0.199 EXTRAs", @"D:\ExtraDatOut\Mame_Extra_0.199");
+            go(@"Y:\MAME 0.200 EXTRAs", @"D:\ExtraDatOut\Mame_Extra_0.200");
+            go(@"Y:\MAME 0.201 EXTRAs", @"D:\ExtraDatOut\Mame_Extra_0.201");
+            go(@"Y:\MAME 0.202 EXTRAs", @"D:\ExtraDatOut\Mame_Extra_0.202");
+            go(@"Y:\MAME 0.205 EXTRAs", @"D:\ExtraDatOut\Mame_Extra_0.205");
+            go(@"Y:\MAME 0.206 EXTRAs", @"D:\ExtraDatOut\Mame_Extra_0.206");
+            go(@"Y:\MAME 0.207 EXTRAs", @"D:\ExtraDatOut\Mame_Extra_0.207");
+            go(@"Y:\MAME 0.208 EXTRAs", @"D:\ExtraDatOut\Mame_Extra_0.208");
+            go(@"Y:\MAME 0.209 EXTRAs", @"D:\ExtraDatOut\Mame_Extra_0.209");
+            go(@"Y:\MAME 0.212 EXTRAs", @"D:\ExtraDatOut\Mame_Extra_0.212");
+            go(@"Y:\MAME 0.213 EXTRAs", @"D:\ExtraDatOut\Mame_Extra_0.213");
+            go(@"Y:\MAME 0.214 EXTRAs", @"D:\ExtraDatOut\Mame_Extra_0.214");
+
+        }
+
+        private static void go(string dirSource,string outfile)
+        {
             DatHeader ThisDat = new DatHeader()
             {
                 BaseDir = new DatDir(DatFileType.Dir)
@@ -26,8 +45,9 @@ namespace Dir2Dat
             ProcessDir(di, ThisDat.BaseDir, false);
 
             DatXMLWriter dWriter = new DatXMLWriter();
-            dWriter.WriteDat(@"D:\out_old.dat", ThisDat, false);
-            dWriter.WriteDat(@"D:\out_new.dat", ThisDat, true);
+            dWriter.WriteDat(outfile+"_old.dat", ThisDat, false);
+            dWriter.WriteDat(outfile+"_new.dat", ThisDat, true);
+
         }
 
 

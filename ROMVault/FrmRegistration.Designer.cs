@@ -43,9 +43,9 @@
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(420, 49);
             this.label1.TabIndex = 0;
-            this.label1.Text = "To make RomVault 3 Beta the best is can be, RomVault 3 Beta will send error repor" +
-    "ts to the author. Please fill out this from so that the Author can contact you i" +
-    "n the case of a crash.";
+            this.label1.Text = "To make RomVault 3 the best is can be, RomVault 3 will send error reports to the " +
+    "author. Please fill out this from so that the Author can contact you in the case" +
+    " of a crash.";
             // 
             // label2
             // 

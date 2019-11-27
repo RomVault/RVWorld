@@ -565,7 +565,7 @@ namespace RVCore.FixFile.Util
         private static void CopyZeroLengthFile(RvFile fileOut, ICompress zipFileOut, out byte[] bCRC, out byte[] bMD5, out byte[] bSHA1)
         {
             // Zero Length File (Directory in a Zip)
-            if (fileOut.FileType == FileType.ZipFile)
+            if (fileOut.FileType == FileType.ZipFile || fileOut.FileType==FileType.SevenZipFile)
             {
                 zipFileOut.ZipFileAddDirectory();
             }

@@ -1,7 +1,12 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using Compress;
 using Compress.SevenZip;
+using Compress.SevenZip.Common;
+using Compress.ThreadReaders;
+using Compress.ZipFile.ZLib;
 using RVCore.RvDB;
+using RVCore.Utils;
 using FileStream = RVIO.FileStream;
 using Path = RVIO.Path;
 using FileInfo = RVIO.FileInfo;
@@ -13,7 +18,7 @@ namespace RVCore.FixFile.Util
     {
         private const int BufferSize = 128 * 4096;
 
-        public static void DecompressSource7ZipFile(RvFile zZipFileIn, bool includeGood)
+        public static ReturnCode DecompressSource7ZipFile(RvFile zZipFileIn, bool includeGood, out string error)
         {
             byte[] buffer = new byte[BufferSize];
 
@@ -24,7 +29,10 @@ namespace RVCore.FixFile.Util
             SevenZ zipFileIn = new SevenZ();
             ZipReturn zr1 = zipFileIn.ZipFileOpen(fileNameIn, zZipFileIn.TimeStamp, true);
             if (zr1 != ZipReturn.ZipGood)
-                return;
+            {
+                error = "Error opening 7zip file for caching";
+                return ReturnCode.RescanNeeded;
+            }
 
             RvFile outDir = new RvFile(FileType.Dir)
             {
@@ -53,10 +61,14 @@ namespace RVCore.FixFile.Util
                     if (zZipFileIn.Child(j).ZipFileIndex != i)
                         continue;
                     thisFile = zZipFileIn.Child(j);
+                    break;
                 }
 
                 if (thisFile == null)
-                    return;
+                {
+                    error = "Error opening 7zip file for caching";
+                    return ReturnCode.RescanNeeded;
+                }
 
                 bool extract = true;
 
@@ -130,6 +142,16 @@ namespace RVCore.FixFile.Util
 
                 string filenameOut = Path.Combine(outDir.FullName, outFile.Name);
 
+                ThreadMD5 tmd5 = null;
+                ThreadSHA1 tsha1 = null;
+
+                ThreadCRC tcrc32 = new ThreadCRC();
+                if (Settings.rvSettings.FixLevel != EFixLevel.Level1 && Settings.rvSettings.FixLevel != EFixLevel.TrrntZipLevel1)
+                {
+                    tmd5 = new ThreadMD5();
+                    tsha1 = new ThreadSHA1();
+                }
+
                 int errorCode = FileStream.OpenFileWrite(filenameOut, out Stream writeStream);
 
                 ulong sizetogo = unCompressedSize;
@@ -137,19 +159,89 @@ namespace RVCore.FixFile.Util
                 {
                     int sizenow = sizetogo > BufferSize ? BufferSize : (int)sizetogo;
 
-                    readStream.Read(buffer, 0, sizenow);
+                    try
+                    {
+                        readStream.Read(buffer, 0, sizenow);
+                    }
+                    catch (Exception ex)
+                    {
+                        if (ex is ZlibException || ex is DataErrorException)
+                        {
+                            ZipReturn zr = zipFileIn.ZipFileCloseReadStream();
+                            if (zr != ZipReturn.ZipGood)
+                            {
+                                error = "Error Closing " + zr + " Stream :" + zipFileIn.ZipFilename;
+                                return ReturnCode.FileSystemError;
+                            }
 
-                    writeStream.Write(buffer, 0, sizenow);
+                            zipFileIn.ZipFileClose();
+                            writeStream.Flush();
+                            writeStream.Close();
+                            if (filenameOut != null)
+                            {
+                                File.Delete(filenameOut);
+                            }
 
+                            thisFile.GotStatus = GotStatus.Corrupt;
+                            error = "Unexpected corrupt archive file found:\n" + zZipFileIn.FullName +
+                                    "\nRun Find Fixes, and Fix to continue fixing correctly.";
+                            return ReturnCode.SourceDataStreamCorrupt;
+                        }
+
+                        error = "Error reading Source File " + ex.Message;
+                        return ReturnCode.FileSystemError;
+                    }
+
+                    tcrc32.Trigger(buffer, sizenow);
+                    tmd5?.Trigger(buffer, sizenow);
+                    tsha1?.Trigger(buffer, sizenow);
+
+                    tcrc32.Wait();
+                    tmd5?.Wait();
+                    tsha1?.Wait();
+
+                    try
+                    {
+                        writeStream.Write(buffer, 0, sizenow);
+                    }
+                    catch (Exception e)
+                    {
+                        error = "Error writing out file. " + Environment.NewLine + e.Message;
+                        return ReturnCode.FileSystemError;
+                    }
                     sizetogo = sizetogo - (ulong)sizenow;
                 }
-
                 writeStream.Flush();
                 writeStream.Close();
                 writeStream.Dispose();
+                
+                tcrc32.Finish();
+                tmd5?.Finish();
+                tsha1?.Finish();
+
+                byte[] bCRC = tcrc32.Hash;
+                byte[] bMD5 = tmd5?.Hash;
+                byte[] bSHA1 = tsha1?.Hash;
+
+                tcrc32.Dispose();
+                tmd5?.Dispose();
+                tsha1?.Dispose();
 
                 FileInfo fi = new FileInfo(filenameOut);
                 outFile.TimeStamp = fi.LastWriteTime;
+
+                if (bCRC != null && thisFile.CRC != null && !ArrByte.BCompare(bCRC, thisFile.CRC))
+                {
+                    // error in file.
+                }
+                if (bMD5 != null && thisFile.MD5 != null && !ArrByte.BCompare(bMD5, thisFile.MD5))
+                {
+                    // error in file.
+                }
+                if (bSHA1 != null && thisFile.SHA1 != null && !ArrByte.BCompare(bSHA1, thisFile.SHA1))
+                {
+                    // error in file.
+                }
 
                 thisFile.FileGroup.Files.Add(outFile);
 
@@ -157,6 +249,9 @@ namespace RVCore.FixFile.Util
             }
 
             zipFileIn.ZipFileClose();
+
+            error = "";
+            return ReturnCode.Good;
         }
 
     }

@@ -56,7 +56,13 @@ namespace RVCore.FixFile
 
                     if (FileIn.FileType == FileType.SevenZipFile)
                     {
-                        Decompress7ZipFile.DecompressSource7ZipFile(fixZip, true);
+                        ReturnCode returnCode1 = Decompress7ZipFile.DecompressSource7ZipFile(fixZip, true, out errorMessage);
+                        if (returnCode1 != ReturnCode.Good)
+                        {
+                            ReportError.LogOut($"DecompressSource7Zip: OutputOutput {fixZip.FileName} return {returnCode1}");
+                            return returnCode1;
+                        }
+
                         fixFiles = FindSourceFile.GetFixFileList(fixZippedFile);
                         FileIn = FindSourceFile.FindSourceToUseForFix(fixZippedFile, fixFiles);
                     }
@@ -156,7 +162,12 @@ namespace RVCore.FixFile
 
                     if (fileIn.FileType == FileType.SevenZipFile)
                     {
-                        Decompress7ZipFile.DecompressSource7ZipFile(fileIn.Parent, false);
+                        ReturnCode returnCode1 = Decompress7ZipFile.DecompressSource7ZipFile(fileIn.Parent, false, out errorMessage);
+                        if (returnCode1 != ReturnCode.Good)
+                        {
+                            ReportError.LogOut($"DecompressSource7Zip: OutputOutput {fixZip.FileName} return {returnCode1}");
+                            return returnCode1;
+                        }
                         lstFixRomTable = FindSourceFile.GetFixFileList(fixZippedFile);
                         fileIn = FindSourceFile.FindSourceToUseForFix(fixZippedFile, lstFixRomTable);
                     }
@@ -197,6 +208,7 @@ namespace RVCore.FixFile
                         {
                             ReportError.LogOut($"CanBeFixed: Source Data Stream Corrupt /  CRC Error");
                             Report.ReportProgress(new bgwShowFixError("CRC Error"));
+                            fileIn.GotStatus = GotStatus.Corrupt;
                             return returnCode;
                         }
                     case ReturnCode.SourceCheckSumMismatch:
@@ -322,7 +334,7 @@ namespace RVCore.FixFile
 
             ReportError.LogOut("Moving File to Corrupt");
             ReportError.LogOut(fixZippedFile);
-            
+
             if (fixZippedFile.FileType == FileType.SevenZipFile)
             {
                 fixZippedFile.GotStatus = GotStatus.NotGot; // Changes RepStatus to Deleted
@@ -402,7 +414,7 @@ namespace RVCore.FixFile
             fixZippedFile.GotStatus = GotStatus.NotGot; // Changes RepStatus to Deleted
         }
 
-        
+
         private static ReturnCode OpenOutputZip(RvFile fixZip, string outputZipFilename, out ICompress outputFixZip, out string errorMessage)
         {
             outputFixZip = null;
@@ -464,7 +476,7 @@ namespace RVCore.FixFile
 
             return uncompressedSize;
         }
-        
+
 
         public static ReturnCode MoveZipToCorrupt(RvFile fixZip, out string errorMessage)
         {
