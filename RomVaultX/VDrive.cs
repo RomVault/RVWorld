@@ -24,7 +24,7 @@ namespace RomVaultX
         public static string romRoot = @"RomRoot";
 
 
-        public NtStatus CreateFile(string fileName, FileAccess access, FileShare share, FileMode mode, FileOptions options, FileAttributes attributes, DokanFileInfo info)
+        public NtStatus CreateFile(string fileName, FileAccess access, FileShare share, FileMode mode, FileOptions options, FileAttributes attributes, IDokanFileInfo info)
         {
             Debug.WriteLine("");
             Debug.WriteLine("-----------CreateFile---------------------------------");
@@ -112,14 +112,14 @@ namespace RomVaultX
             }
         }
 
-        public void Cleanup(string fileName, DokanFileInfo info)
+        public void Cleanup(string fileName, IDokanFileInfo info)
         {
             Debug.WriteLine("");
             Debug.WriteLine("-----------Cleanup---------------------------------");
             Debug.WriteLine("Filename : " + fileName);
         }
 
-        public void CloseFile(string fileName, DokanFileInfo info)
+        public void CloseFile(string fileName, IDokanFileInfo info)
         {
             Debug.WriteLine("");
             Debug.WriteLine("-----------CloseFile---------------------------------");
@@ -137,7 +137,7 @@ namespace RomVaultX
             }
         }
 
-        public NtStatus ReadFile(string fileName, byte[] buffer, out int bytesRead, long offset, DokanFileInfo info)
+        public NtStatus ReadFile(string fileName, byte[] buffer, out int bytesRead, long offset, IDokanFileInfo info)
         {
             bytesRead = 0;
             VFile vfile = (VFile)info.Context;
@@ -170,17 +170,17 @@ namespace RomVaultX
             return NtStatus.Success;
         }
 
-        public NtStatus WriteFile(string fileName, byte[] buffer, out int bytesWritten, long offset, DokanFileInfo info)
+        public NtStatus WriteFile(string fileName, byte[] buffer, out int bytesWritten, long offset, IDokanFileInfo info)
         {
             throw new NotImplementedException();
         }
 
-        public NtStatus FlushFileBuffers(string fileName, DokanFileInfo info)
+        public NtStatus FlushFileBuffers(string fileName, IDokanFileInfo info)
         {
             throw new NotImplementedException();
         }
 
-        public NtStatus GetFileInformation(string fileName, out FileInformation fileInfo, DokanFileInfo info)
+        public NtStatus GetFileInformation(string fileName, out FileInformation fileInfo, IDokanFileInfo info)
         {
             Debug.WriteLine("");
             Debug.WriteLine("-----------GetFileInformation---------------------------------");
@@ -200,7 +200,7 @@ namespace RomVaultX
             return NtStatus.Success;
         }
 
-        public NtStatus FindFiles(string fileName, out IList<FileInformation> files, DokanFileInfo info)
+        public NtStatus FindFiles(string fileName, out IList<FileInformation> files, IDokanFileInfo info)
         {
             Debug.WriteLine("");
             Debug.WriteLine("-----------FindFiles---------------------------------");
@@ -209,7 +209,7 @@ namespace RomVaultX
             return FindFilesWithPattern(fileName, "*", out files, info);
         }
 
-        public NtStatus FindFilesWithPattern(string fileName, string searchPattern, out IList<FileInformation> files, DokanFileInfo info)
+        public NtStatus FindFilesWithPattern(string fileName, string searchPattern, out IList<FileInformation> files, IDokanFileInfo info)
         {
             Debug.WriteLine("");
             Debug.WriteLine("-----------FindFilesWithPattern---------------------------------");
@@ -248,52 +248,52 @@ namespace RomVaultX
         }
 
 
-        public NtStatus SetFileAttributes(string fileName, FileAttributes attributes, DokanFileInfo info)
+        public NtStatus SetFileAttributes(string fileName, FileAttributes attributes, IDokanFileInfo info)
         {
             throw new NotImplementedException();
         }
 
-        public NtStatus SetFileTime(string fileName, DateTime? creationTime, DateTime? lastAccessTime, DateTime? lastWriteTime, DokanFileInfo info)
+        public NtStatus SetFileTime(string fileName, DateTime? creationTime, DateTime? lastAccessTime, DateTime? lastWriteTime, IDokanFileInfo info)
         {
             throw new NotImplementedException();
         }
 
-        public NtStatus DeleteFile(string fileName, DokanFileInfo info)
+        public NtStatus DeleteFile(string fileName, IDokanFileInfo info)
         {
             throw new NotImplementedException();
         }
 
-        public NtStatus DeleteDirectory(string fileName, DokanFileInfo info)
+        public NtStatus DeleteDirectory(string fileName, IDokanFileInfo info)
         {
             throw new NotImplementedException();
         }
 
-        public NtStatus MoveFile(string oldName, string newName, bool replace, DokanFileInfo info)
+        public NtStatus MoveFile(string oldName, string newName, bool replace, IDokanFileInfo info)
         {
             throw new NotImplementedException();
         }
 
-        public NtStatus SetEndOfFile(string fileName, long length, DokanFileInfo info)
+        public NtStatus SetEndOfFile(string fileName, long length, IDokanFileInfo info)
         {
             throw new NotImplementedException();
         }
 
-        public NtStatus SetAllocationSize(string fileName, long length, DokanFileInfo info)
+        public NtStatus SetAllocationSize(string fileName, long length, IDokanFileInfo info)
         {
             throw new NotImplementedException();
         }
 
-        public NtStatus LockFile(string fileName, long offset, long length, DokanFileInfo info)
+        public NtStatus LockFile(string fileName, long offset, long length, IDokanFileInfo info)
         {
             throw new NotImplementedException();
         }
 
-        public NtStatus UnlockFile(string fileName, long offset, long length, DokanFileInfo info)
+        public NtStatus UnlockFile(string fileName, long offset, long length, IDokanFileInfo info)
         {
             throw new NotImplementedException();
         }
 
-        public NtStatus GetDiskFreeSpace(out long freeBytesAvailable, out long totalNumberOfBytes, out long totalNumberOfFreeBytes, DokanFileInfo info)
+        public NtStatus GetDiskFreeSpace(out long freeBytesAvailable, out long totalNumberOfBytes, out long totalNumberOfFreeBytes, IDokanFileInfo info)
         {
             long total = TotalBytes();
             freeBytesAvailable = (long)(total * 0.2);
@@ -302,7 +302,7 @@ namespace RomVaultX
             return DokanResult.Success;
         }
 
-        public NtStatus GetVolumeInformation(out string volumeLabel, out FileSystemFeatures features, out string fileSystemName, out uint maximumComponentLength, DokanFileInfo info)
+        public NtStatus GetVolumeInformation(out string volumeLabel, out FileSystemFeatures features, out string fileSystemName, out uint maximumComponentLength, IDokanFileInfo info)
         {
             volumeLabel = "RomVaultX";
             fileSystemName = "RomVaultX";
@@ -313,7 +313,7 @@ namespace RomVaultX
             return DokanResult.Success;
         }
 
-        public NtStatus GetFileSecurity(string fileName, out FileSystemSecurity security, AccessControlSections sections, DokanFileInfo info)
+        public NtStatus GetFileSecurity(string fileName, out FileSystemSecurity security, AccessControlSections sections, IDokanFileInfo info)
         {
             Debug.WriteLine("");
             Debug.WriteLine("-----------GetFileSecurity---------------------------------");
@@ -323,22 +323,22 @@ namespace RomVaultX
             return NtStatus.Success;
         }
 
-        public NtStatus SetFileSecurity(string fileName, FileSystemSecurity security, AccessControlSections sections, DokanFileInfo info)
+        public NtStatus SetFileSecurity(string fileName, FileSystemSecurity security, AccessControlSections sections, IDokanFileInfo info)
         {
             throw new NotImplementedException();
         }
 
-        public NtStatus Mounted(DokanFileInfo info)
+        public NtStatus Mounted(IDokanFileInfo info)
         {
             return NtStatus.Success;
         }
 
-        public NtStatus Unmounted(DokanFileInfo info)
+        public NtStatus Unmounted(IDokanFileInfo info)
         {
             return NtStatus.Success;
         }
 
-        public NtStatus FindStreams(string fileName, out IList<FileInformation> streams, DokanFileInfo info)
+        public NtStatus FindStreams(string fileName, out IList<FileInformation> streams, IDokanFileInfo info)
         {
             Debug.WriteLine("");
             Debug.WriteLine("-----------FindStreams---------------------------------");
