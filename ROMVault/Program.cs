@@ -10,7 +10,7 @@ namespace ROMVault
     internal static class Program
     {
         private static readonly Version Version = Assembly.GetEntryAssembly().GetName().Version;
-        public static readonly int VNow = Version.Build;
+        private static readonly int VNow = Version.Build;
         public static readonly string StrVersion = $"{Version.Major}.{Version.Minor}.{Version.Build}";
 
         [STAThread]
@@ -57,7 +57,9 @@ namespace ROMVault
                 s.Close();
             }
             catch (Exception ex)
-            { }
+            {
+
+            }
 
             Compress.SevenZip.SevenZ.TestForZstd();
 

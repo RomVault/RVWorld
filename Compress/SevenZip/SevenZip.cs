@@ -833,6 +833,11 @@ namespace Compress.SevenZip
                 UncompressedSize = uncompressedSize,
                 StreamOffset = (ulong)(_zipFs.Position - _signatureHeader.BaseOffset)
             };
+            if (uncompressedSize == 0 && filename.Substring(filename.Length - 1, 1) == "/")
+            {
+                lf.FileName = filename.Substring(0, filename.Length - 1);
+                lf.IsDirectory = true;
+            }
 
             _unpackedStreamSize += uncompressedSize;
 
