@@ -106,6 +106,18 @@ namespace RVCore.FixFile
             return returnCode;
         }
 
+
+        /// <summary>
+        /// Fixed a missing file inside a .ZIP file.
+        /// </summary>
+        /// <param name="fixZip">The RvFile of the actual .ZIP file that is being fixed.</param>
+        /// <param name="fixZippedFile">A temp copy of the RvFile record of the actual compressed file inside the fixZip .zip that is about to be fixed.</param>
+        /// <param name="tempFixZip">Is the new output archive file that is being created to fix this zip, that will become the new zip once done</param>
+        /// <param name="fileProcessQueue"></param>
+        /// <param name="totalFixed"></param>
+        /// <param name="errorMessage"></param>
+        /// <returns></returns>
+
         public static ReturnCode CanBeFixed(RvFile fixZip, RvFile fixZippedFile, ref ICompress tempFixZip, List<RvFile> fileProcessQueue, ref int totalFixed, out string errorMessage)
         {
             if (!(fixZippedFile.DatStatus == DatStatus.InDatCollect && (fixZippedFile.GotStatus == GotStatus.NotGot || fixZippedFile.GotStatus == GotStatus.Corrupt)))

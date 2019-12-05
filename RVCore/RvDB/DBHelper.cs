@@ -164,12 +164,14 @@ namespace RVCore.RvDB
 
         public static bool IsZeroLengthFile(RvFile tFile)
         {
+            bool foundOneMatching = false;
             if (tFile.MD5 != null)
             {
                 if (!ArrByte.BCompare(tFile.MD5, ZeroByteMD5))
                 {
                     return false;
                 }
+                foundOneMatching = true;
             }
 
             if (tFile.SHA1 != null)
@@ -178,6 +180,7 @@ namespace RVCore.RvDB
                 {
                     return false;
                 }
+                foundOneMatching = true;
             }
 
             if (tFile.CRC != null)
@@ -186,7 +189,12 @@ namespace RVCore.RvDB
                 {
                     return false;
                 }
+                foundOneMatching = true;
             }
+
+            // this will assume a null size with at least one matching hash is a zero length file.
+            if (tFile.Size == null && foundOneMatching)
+                return true;
 
             return tFile.Size == 0;
         }

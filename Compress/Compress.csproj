@@ -88,6 +88,9 @@
     <Compile Include="SevenZip\Compress\RangeCoder\RangeCoder.cs" />
     <Compile Include="SevenZip\Compress\RangeCoder\RangeCoderBit.cs" />
     <Compile Include="SevenZip\Compress\RangeCoder\RangeCoderBitTree.cs" />
+    <Compile Include="SevenZip\Compress\ZSTD\ZstandardDictionary.cs" />
+    <Compile Include="SevenZip\Compress\ZSTD\ZstandardInterop.cs" />
+    <Compile Include="SevenZip\Compress\ZSTD\ZstandardStream.cs" />
     <Compile Include="Utils\CRC.cs" />
     <Compile Include="Utils\CRCStream.cs" />
     <Compile Include="Utils\DirUtil.cs" />

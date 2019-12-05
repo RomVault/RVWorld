@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.IO.Compression;
 using System.Text;
 using Compress.SevenZip.Compress.BZip2;
 using Compress.SevenZip.Compress.LZMA;
@@ -9,6 +10,7 @@ using Compress.SevenZip.Compress.PPmd;
 using Compress.SevenZip.Filters;
 using Compress.SevenZip.Structure;
 using Compress.Utils;
+using Zstandard.Net;
 using FileInfo = RVIO.FileInfo;
 using FileStream = RVIO.FileStream;
 
@@ -16,6 +18,18 @@ namespace Compress.SevenZip
 {
     public class SevenZ : ICompress
     {
+        public static bool supportZstd
+        {
+            get;
+            private set;
+        }
+
+        public static void TestForZstd()
+        {
+            supportZstd = RVIO.File.Exists("libzstd.dll");
+        }
+
+
         private List<LocalFile> _localFiles = new List<LocalFile>();
 
         private FileInfo _zipFileInfo;
@@ -633,6 +647,9 @@ namespace Compress.SevenZip
                                 case DecompressType.BCJ2:
                                     coder.DecoderStream = new BCJ2Filter(inputCoders[0], inputCoders[1], inputCoders[2], inputCoders[3]);
                                     break;
+                                case DecompressType.ZSTD:
+                                    coder.DecoderStream = new ZstandardStream(inputCoders[0], CompressionMode.Decompress, true);
+                                    break;
                                 default:
                                     return ZipReturn.ZipDecodeError;
                             }
@@ -732,7 +749,7 @@ namespace Compress.SevenZip
 
         #region write 7z File
 
-        private LzmaStream _lzmaStream;
+        private Stream _lzmaStream;
         private ulong _packStreamStart;
         private ulong _packStreamSize;
         private ulong _unpackedStreamSize;
@@ -752,7 +769,7 @@ namespace Compress.SevenZip
 
         public ZipReturn ZipFileCreateFromUncompressedSize(string newFilename, ulong unCompressedSize)
         {
-            return ZipFileCreate(newFilename,true, GetDictionarySizeFromUncompressedSize(unCompressedSize));
+            return ZipFileCreate(newFilename, true, GetDictionarySizeFromUncompressedSize(unCompressedSize));
         }
 
         public ZipReturn ZipFileCreate(string newFilename, bool compressOutput, int dictionarySize = 1 << 24, int numFastBytes = 64)
@@ -787,8 +804,16 @@ namespace Compress.SevenZip
             if (_compressed)
             {
                 LzmaEncoderProperties ep = new LzmaEncoderProperties(true, dictionarySize, numFastBytes);
-                _lzmaStream = new LzmaStream(ep, false, _zipFs);
-                _codeMSbytes = _lzmaStream.Properties;
+                LzmaStream lzs= new LzmaStream(ep, false, _zipFs);
+                _codeMSbytes = lzs.Properties;
+                _lzmaStream = lzs;
+
+
+                /*
+                ZstandardStream zss = new ZstandardStream(_zipFs, 22, true);
+                _codeMSbytes = new byte[] { 1, 4, 18, 0, 0 };
+                _lzmaStream = zss;
+                */
                 _packStreamStart = (ulong)_zipFs.Position;
             }
 
@@ -850,7 +875,7 @@ namespace Compress.SevenZip
             uint mainHeaderCRC = Utils.CRC.CalculateDigest(newHeaderByte, 0, (uint)newHeaderByte.Length);
 
             ulong headerpos = (ulong)_zipFs.Position;
-            _zipFs.Write(newHeaderByte,0,newHeaderByte.Length);
+            _zipFs.Write(newHeaderByte, 0, newHeaderByte.Length);
             using (BinaryWriter bw = new BinaryWriter(_zipFs, Encoding.UTF8, true))
             {
                 _signatureHeader.WriteFinal(bw, headerpos, (ulong)newHeaderByte.Length, mainHeaderCRC);
@@ -974,6 +999,16 @@ namespace Compress.SevenZip
                     NumOutStreams = 1,
                     Properties = _codeMSbytes
                 };
+                switch (_lzmaStream)
+                {
+                    case LzmaStream _:
+                        folder.Coders[0].Method = new byte[] { 3, 1, 1 };
+                        break;
+                    case ZstandardStream _:
+                        folder.Coders[0].Method = new byte[] { 4, 247, 17, 1 };
+                        break;
+                }
+
                 folder.BindPairs = null;
                 folder.PackedStreamIndices = new[] { (ulong)0 };
                 folder.UnpackedStreamSizes = new[] { _unpackedStreamSize };

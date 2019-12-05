@@ -59,13 +59,15 @@ namespace ROMVault
             catch (Exception ex)
             { }
 
+            Compress.SevenZip.SevenZ.TestForZstd();
+
             ReportError.ErrorForm += ShowErrorForm;
             ReportError.Dialog += ShowDialog;
 
             Settings.rvSettings = new Settings();
 
 #if !DEBUG
-            Application.ThreadException += ReportError.UnhandledExceptionHandler;
+            Application.ThreadException += ReportError.UnhandledExceptionHandler;/*
 #endif
 
             FrmSplashScreen progress = new FrmSplashScreen();
