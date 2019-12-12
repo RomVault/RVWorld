@@ -69,7 +69,7 @@ namespace ROMVault
             Settings.rvSettings = new Settings();
 
 #if !DEBUG
-            Application.ThreadException += ReportError.UnhandledExceptionHandler;/*
+            Application.ThreadException += ReportError.UnhandledExceptionHandler;
 #endif
 
             FrmSplashScreen progress = new FrmSplashScreen();

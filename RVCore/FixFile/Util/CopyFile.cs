@@ -567,7 +567,7 @@ namespace RVCore.FixFile.Util
             // Zero Length File (Directory in a Zip)
             if (fileOut.FileType == FileType.ZipFile || fileOut.FileType==FileType.SevenZipFile)
             {
-                zipFileOut.ZipFileAddDirectory();
+                zipFileOut.ZipFileAddZeroLengthFile();
             }
             bCRC = VarFix.CleanMD5SHA1("00000000", 8);
             bMD5 = VarFix.CleanMD5SHA1("d41d8cd98f00b204e9800998ecf8427e", 32);

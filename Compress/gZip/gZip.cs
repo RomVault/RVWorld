@@ -326,7 +326,7 @@ namespace Compress.gZip
 
         public long TimeStamp => _zipFileInfo?.LastWriteTime ?? 0;
 
-        public void ZipFileAddDirectory()
+        public void ZipFileAddZeroLengthFile()
         {
             throw new NotImplementedException();
         }

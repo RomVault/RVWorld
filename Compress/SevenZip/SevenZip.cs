@@ -756,7 +756,7 @@ namespace Compress.SevenZip
         private byte[] _codeMSbytes;
 
 
-        public void ZipFileAddDirectory()
+        public void ZipFileAddZeroLengthFile()
         {
             // do nothing here for 7zip
         }

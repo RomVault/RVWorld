@@ -30,7 +30,7 @@ namespace Compress
         string ZipFilename { get; }
         long TimeStamp { get; }
 
-        void ZipFileAddDirectory();
+        void ZipFileAddZeroLengthFile();
 
         ZipReturn ZipFileCreate(string newFilename);
         ZipReturn ZipFileCloseWriteStream(byte[] crc32);

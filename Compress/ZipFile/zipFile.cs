@@ -270,9 +270,9 @@ namespace Compress.ZipFile
             return ZipReturn.ZipGood;
         }
 
-        public void ZipFileAddDirectory()
+        public void ZipFileAddZeroLengthFile()
         {
-            LocalFile.LocalFileAddDirectory(_zipFs);
+            LocalFile.LocalFileAddZeroLengthFile(_zipFs);
         }
 
         /*
@@ -1798,7 +1798,7 @@ namespace Compress.ZipFile
 
                 if (_compressedSize == 0 && UncompressedSize == 0)
                 {
-                    LocalFileAddDirectory(zipFs);
+                    LocalFileAddZeroLengthFile(zipFs);
                     _compressedSize = (ulong)zipFs.Position - _dataLocation;
                 }
 
@@ -1891,7 +1891,7 @@ namespace Compress.ZipFile
                 zipFs.Seek(posNow, SeekOrigin.Begin);
             }
 
-            public static void LocalFileAddDirectory(Stream zipFs)
+            public static void LocalFileAddZeroLengthFile(Stream zipFs)
             {
                 zipFs.WriteByte(03);
                 zipFs.WriteByte(00);

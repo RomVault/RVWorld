@@ -86,7 +86,7 @@ namespace ROMVault
             cboMergeType.SelectedIndex = (int)_rule.Merge;
             chkMergeTypeOverride.Checked = _rule.MergeOverrideDAT;
 
-            cboFilterType.SelectedIndex = (int) _rule.Filter;
+            cboFilterType.SelectedIndex = (int)_rule.Filter;
 
             chkSingleArchive.Checked = _rule.SingleArchive;
             chkMultiDatDirOverride.Checked = _rule.MultiDATDirOverride;
@@ -122,7 +122,7 @@ namespace ROMVault
                 }
                 else if (t.DirKey.Length > _rule.DirKey.Length)
                 {
-                    if (t.DirKey.Substring(0, _rule.DirKey.Length+1) == _rule.DirKey+"\\")
+                    if (t.DirKey.Substring(0, _rule.DirKey.Length + 1) == _rule.DirKey + "\\")
                     {
                         DataGridGames.Rows[row].Cells["CDAT"].Style.BackColor = _cYellow;
                         DataGridGames.Rows[row].Cells["CROM"].Style.BackColor = _cYellow;
@@ -186,7 +186,7 @@ namespace ROMVault
             _rule.CompressionOverrideDAT = chkFileTypeOverride.Checked;
             _rule.Merge = (MergeType)cboMergeType.SelectedIndex;
             _rule.MergeOverrideDAT = chkMergeTypeOverride.Checked;
-            _rule.Filter = (FilterType) cboFilterType.SelectedIndex;
+            _rule.Filter = (FilterType)cboFilterType.SelectedIndex;
             _rule.SingleArchive = chkSingleArchive.Checked;
             _rule.MultiDATDirOverride = chkMultiDatDirOverride.Checked;
 
@@ -200,7 +200,7 @@ namespace ROMVault
                     break;
                 }
 
-                if (string.Compare(Settings.rvSettings.DatRules[i].DirKey, _rule.DirKey) > 0)
+                if (string.Compare(Settings.rvSettings.DatRules[i].DirKey, _rule.DirKey, StringComparison.Ordinal) > 0)
                 {
                     break;
                 }
