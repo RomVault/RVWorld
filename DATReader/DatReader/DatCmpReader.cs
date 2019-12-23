@@ -304,42 +304,18 @@ namespace DATReader.DatReader
                     case "history":
                         dGame.History = dfl.GnRest();
                         break;
+                    
                     case "serial":
-                        dfl.GnRest();
-                        break;
                     case "rebuildto":
-                        dfl.GnRest();
-                        break;
-
                     case "sample":
-                        dfl.GnRest();
-                        break;
                     case "biosset":
-                        dfl.GnRest();
-                        break;
-
                     case "chip":
-                        dfl.GnRest();
-                        break;
                     case "video":
-                        dfl.GnRest();
-                        break;
                     case "sound":
-                        dfl.GnRest();
-                        break;
                     case "input":
-                        dfl.GnRest();
-                        break;
                     case "dipswitch":
-                        dfl.GnRest();
-                        break;
                     case "driver":
-                        dfl.GnRest();
-                        break;
                     case "display":
-                        dfl.GnRest();
-                        break;
-
                     case "comment":
                     case "releaseyear":
                     case "releasemonth":
