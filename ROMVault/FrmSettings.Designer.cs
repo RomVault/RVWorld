@@ -46,6 +46,7 @@
             this.chkDoubleCheckDelete = new System.Windows.Forms.CheckBox();
             this.chkRV7z = new System.Windows.Forms.CheckBox();
             this.chk7zDeCompress = new System.Windows.Forms.CheckBox();
+            this.chkDetailedReporting = new System.Windows.Forms.CheckBox();
             ((System.ComponentModel.ISupportInitialize)(this.upTime)).BeginInit();
             this.SuspendLayout();
             // 
@@ -60,17 +61,20 @@
             // 
             // lblDATRoot
             // 
+            this.lblDATRoot.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.lblDATRoot.BackColor = System.Drawing.Color.White;
             this.lblDATRoot.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             this.lblDATRoot.Location = new System.Drawing.Point(123, 14);
             this.lblDATRoot.Name = "lblDATRoot";
-            this.lblDATRoot.Size = new System.Drawing.Size(357, 22);
+            this.lblDATRoot.Size = new System.Drawing.Size(381, 22);
             this.lblDATRoot.TabIndex = 3;
             this.lblDATRoot.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
             // btnDAT
             // 
-            this.btnDAT.Location = new System.Drawing.Point(486, 12);
+            this.btnDAT.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.btnDAT.Location = new System.Drawing.Point(510, 12);
             this.btnDAT.Name = "btnDAT";
             this.btnDAT.Size = new System.Drawing.Size(47, 24);
             this.btnDAT.TabIndex = 6;
@@ -80,7 +84,8 @@
             // 
             // btnOK
             // 
-            this.btnOK.Location = new System.Drawing.Point(167, 314);
+            this.btnOK.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.btnOK.Location = new System.Drawing.Point(362, 433);
             this.btnOK.Name = "btnOK";
             this.btnOK.Size = new System.Drawing.Size(89, 23);
             this.btnOK.TabIndex = 9;
@@ -90,7 +95,8 @@
             // 
             // btnCancel
             // 
-            this.btnCancel.Location = new System.Drawing.Point(280, 314);
+            this.btnCancel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.btnCancel.Location = new System.Drawing.Point(475, 433);
             this.btnCancel.Name = "btnCancel";
             this.btnCancel.Size = new System.Drawing.Size(89, 23);
             this.btnCancel.TabIndex = 10;
@@ -100,11 +106,13 @@
             // 
             // textBox1
             // 
+            this.textBox1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.textBox1.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             this.textBox1.Location = new System.Drawing.Point(123, 111);
             this.textBox1.Multiline = true;
             this.textBox1.Name = "textBox1";
-            this.textBox1.Size = new System.Drawing.Size(357, 136);
+            this.textBox1.Size = new System.Drawing.Size(381, 136);
             this.textBox1.TabIndex = 12;
             // 
             // label4
@@ -118,20 +126,24 @@
             // 
             // cboFixLevel
             // 
+            this.cboFixLevel.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.cboFixLevel.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.cboFixLevel.FormattingEnabled = true;
             this.cboFixLevel.Location = new System.Drawing.Point(123, 75);
             this.cboFixLevel.Name = "cboFixLevel";
-            this.cboFixLevel.Size = new System.Drawing.Size(357, 21);
+            this.cboFixLevel.Size = new System.Drawing.Size(381, 21);
             this.cboFixLevel.TabIndex = 14;
             // 
             // cboScanLevel
             // 
+            this.cboScanLevel.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.cboScanLevel.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.cboScanLevel.FormattingEnabled = true;
             this.cboScanLevel.Location = new System.Drawing.Point(123, 48);
             this.cboScanLevel.Name = "cboScanLevel";
-            this.cboScanLevel.Size = new System.Drawing.Size(357, 21);
+            this.cboScanLevel.Size = new System.Drawing.Size(381, 21);
             this.cboScanLevel.TabIndex = 15;
             // 
             // label2
@@ -155,7 +167,7 @@
             // chkDebugLogs
             // 
             this.chkDebugLogs.AutoSize = true;
-            this.chkDebugLogs.Location = new System.Drawing.Point(279, 261);
+            this.chkDebugLogs.Location = new System.Drawing.Point(125, 416);
             this.chkDebugLogs.Name = "chkDebugLogs";
             this.chkDebugLogs.Size = new System.Drawing.Size(126, 17);
             this.chkDebugLogs.TabIndex = 18;
@@ -221,7 +233,7 @@
             // chkRV7z
             // 
             this.chkRV7z.AutoSize = true;
-            this.chkRV7z.Location = new System.Drawing.Point(411, 261);
+            this.chkRV7z.Location = new System.Drawing.Point(125, 326);
             this.chkRV7z.Name = "chkRV7z";
             this.chkRV7z.Size = new System.Drawing.Size(131, 17);
             this.chkRV7z.TabIndex = 23;
@@ -231,17 +243,28 @@
             // chk7zDeCompress
             // 
             this.chk7zDeCompress.AutoSize = true;
-            this.chk7zDeCompress.Location = new System.Drawing.Point(411, 286);
+            this.chk7zDeCompress.Location = new System.Drawing.Point(125, 349);
             this.chk7zDeCompress.Name = "chk7zDeCompress";
             this.chk7zDeCompress.Size = new System.Drawing.Size(133, 17);
             this.chk7zDeCompress.TabIndex = 24;
             this.chk7zDeCompress.Text = "Cache 7z Decompress";
             this.chk7zDeCompress.UseVisualStyleBackColor = true;
             // 
+            // chkDetailedReporting
+            // 
+            this.chkDetailedReporting.AutoSize = true;
+            this.chkDetailedReporting.Location = new System.Drawing.Point(125, 393);
+            this.chkDetailedReporting.Name = "chkDetailedReporting";
+            this.chkDetailedReporting.Size = new System.Drawing.Size(130, 17);
+            this.chkDetailedReporting.TabIndex = 25;
+            this.chkDetailedReporting.Text = "Detailed Fix Reporting";
+            this.chkDetailedReporting.UseVisualStyleBackColor = true;
+            // 
             // FrmSettings
             // 
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
-            this.ClientSize = new System.Drawing.Size(554, 348);
+            this.ClientSize = new System.Drawing.Size(584, 468);
+            this.Controls.Add(this.chkDetailedReporting);
             this.Controls.Add(this.chk7zDeCompress);
             this.Controls.Add(this.chkRV7z);
             this.Controls.Add(this.chkDoubleCheckDelete);
@@ -291,5 +314,6 @@
         private System.Windows.Forms.CheckBox chkDoubleCheckDelete;
         private System.Windows.Forms.CheckBox chkRV7z;
         private System.Windows.Forms.CheckBox chk7zDeCompress;
+        private System.Windows.Forms.CheckBox chkDetailedReporting;
     }
 }

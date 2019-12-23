@@ -29,6 +29,14 @@ namespace RVCore.FixFile
             ReportError.LogOut("CorrectZipFile:");
             ReportError.LogOut(fixZippedFile);
 
+            if (fixZippedFile.GotStatus == GotStatus.Corrupt && fixZippedFile.FileType == FileType.SevenZipFile)
+            {
+                fixZippedFile.GotStatus = GotStatus.NotGot; // Changes RepStatus to Deleted
+                errorMessage = "";
+                return ReturnCode.Good;
+            }
+
+
             if (tempFixZip == null)
             {
                 string strPath = fixZip.Parent.FullName;
@@ -43,18 +51,18 @@ namespace RVCore.FixFile
 
             bool rawcopy = fixZippedFile.RepStatus == RepStatus.InToSort || fixZippedFile.RepStatus == RepStatus.Corrupt;
 
-            RvFile FileIn = fixZip.Child(iRom);
+            RvFile fileIn = fixZip.Child(iRom);
             if (Settings.rvSettings.UseFileSelection)
             {
-                if (FileIn.FileType == FileType.SevenZipFile)
+                if (fileIn.FileType == FileType.SevenZipFile)
                 {
                     List<RvFile> fixFiles = FindSourceFile.GetFixFileList(fixZippedFile);
                     ReportError.LogOut("CorrectZipFile: picking from");
                     ReportError.ReportList(fixFiles);
 
-                    FileIn = FindSourceFile.FindSourceToUseForFix(fixZippedFile, fixFiles);
+                    fileIn = FindSourceFile.FindSourceToUseForFix(fixZippedFile, fixFiles);
 
-                    if (FileIn.FileType == FileType.SevenZipFile)
+                    if (fileIn.FileType == FileType.SevenZipFile)
                     {
                         ReturnCode returnCode1 = Decompress7ZipFile.DecompressSource7ZipFile(fixZip, true, out errorMessage);
                         if (returnCode1 != ReturnCode.Good)
@@ -64,17 +72,24 @@ namespace RVCore.FixFile
                         }
 
                         fixFiles = FindSourceFile.GetFixFileList(fixZippedFile);
-                        FileIn = FindSourceFile.FindSourceToUseForFix(fixZippedFile, fixFiles);
+                        fileIn = FindSourceFile.FindSourceToUseForFix(fixZippedFile, fixFiles);
                     }
                 }
             }
 
             ReportError.LogOut("Copying from");
-            ReportError.LogOut(FileIn);
+            ReportError.LogOut(fileIn);
 
+            GetSourceDir(fileIn, out string sourceDir, out string sourceFile);
+
+            if (Settings.rvSettings.DetailedFixReporting)
+            {
+                string fixZipFullName = fixZip.TreeFullName;
+                Report.ReportProgress(new bgwShowFix(Path.GetDirectoryName(fixZipFullName), Path.GetFileName(fixZipFullName), fixZippedFile.Name, fixZippedFile.Size, "<<--", sourceDir, sourceFile, fileIn.Name));
+            }
 
             RepStatus originalStatus = fixZippedFile.RepStatus;
-            ReturnCode returnCode = FixFileUtils.CopyFile(FileIn, tempFixZip, null, fixZippedFile, rawcopy, out errorMessage);
+            ReturnCode returnCode = FixFileUtils.CopyFile(fileIn, tempFixZip, null, fixZippedFile, rawcopy, out errorMessage);
 
             switch (returnCode)
             {
@@ -188,22 +203,10 @@ namespace RVCore.FixFile
                 ReportError.LogOut("CanBeFixed: Copying from");
                 ReportError.LogOut(fileIn);
 
-                string ts = fileIn.Parent.FullName;
-                string sourceDir;
-                string sourceFile;
-                if (fileIn.FileType == FileType.ZipFile || fileIn.FileType == FileType.SevenZipFile)
-                {
-                    sourceDir = Path.GetDirectoryName(ts);
-                    sourceFile = Path.GetFileName(ts);
-                }
-                else
-                {
-                    sourceDir = ts;
-                    sourceFile = "";
-                }
+                GetSourceDir(fileIn, out string sourceDir, out string sourceFile);
 
                 string fixZipFullName = fixZip.TreeFullName;
-                Report.ReportProgress(new bgwShowFix(Path.GetDirectoryName(fixZipFullName), Path.GetFileName(fixZipFullName), fixZippedFile.Name, fixZippedFile.Size, "<--", sourceDir, sourceFile, lstFixRomTable[0].Name));
+                Report.ReportProgress(new bgwShowFix(Path.GetDirectoryName(fixZipFullName), Path.GetFileName(fixZipFullName), fixZippedFile.Name, fixZippedFile.Size, "<--", sourceDir, sourceFile, fileIn.Name));
 
                 fixZippedFile.FileTestFix(fileIn);
 
@@ -250,6 +253,22 @@ namespace RVCore.FixFile
             }
             errorMessage = "";
             return ReturnCode.Good;
+        }
+
+        private static void GetSourceDir(RvFile fileIn, out string sourceDir, out string sourceFile)
+        {
+            string ts = fileIn.Parent.FullName;
+            if (fileIn.FileType == FileType.ZipFile || fileIn.FileType == FileType.SevenZipFile)
+            {
+                sourceDir = Path.GetDirectoryName(ts);
+                sourceFile = Path.GetFileName(ts);
+            }
+            else
+            {
+                sourceDir = ts;
+                sourceFile = "";
+            }
+
         }
 
         public static void MovetoSort(RvFile fixZip, RvFile fixZippedFile, ref RvFile toSortGame, ref ICompress toSortZipOut, int iRom)

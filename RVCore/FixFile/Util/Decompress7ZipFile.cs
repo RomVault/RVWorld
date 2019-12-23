@@ -142,6 +142,12 @@ namespace RVCore.FixFile.Util
 
                 string filenameOut = Path.Combine(outDir.FullName, outFile.Name);
 
+                if (Settings.rvSettings.DetailedFixReporting)
+                {
+                    string fixZipFullName = zZipFileIn.TreeFullName;
+                    Report.ReportProgress(new bgwShowFix(Path.GetDirectoryName(fixZipFullName), Path.GetFileName(fixZipFullName), thisFile.Name, thisFile.Size, "-->", outDir.FullName, "", outFile.Name));
+                }
+
                 ThreadMD5 tmd5 = null;
                 ThreadSHA1 tsha1 = null;
 

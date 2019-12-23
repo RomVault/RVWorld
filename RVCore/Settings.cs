@@ -63,6 +63,7 @@ namespace RVCore
 
         public bool DoubleCheckDelete = true;
         public bool DebugLogsEnabled;
+        public bool DetailedFixReporting = false;
         public bool CacheSaveTimerEnabled = true;
         public int CacheSaveTimePeriod = 10;
         public bool ConvertToRV7Z = false;

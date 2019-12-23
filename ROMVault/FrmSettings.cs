@@ -47,6 +47,7 @@ namespace ROMVault
                 textBox1.Text += file + Environment.NewLine;
             }
 
+            chkDetailedReporting.Checked = Settings.rvSettings.DetailedFixReporting;
             chkDoubleCheckDelete.Checked = Settings.rvSettings.DoubleCheckDelete;
             chkCacheSaveTimer.Checked = Settings.rvSettings.CacheSaveTimerEnabled;
             upTime.Value = Settings.rvSettings.CacheSaveTimePeriod;
@@ -80,6 +81,7 @@ namespace ROMVault
                 }
             }
 
+            Settings.rvSettings.DetailedFixReporting = chkDetailedReporting.Checked;
             Settings.rvSettings.DoubleCheckDelete = chkDoubleCheckDelete.Checked;
             Settings.rvSettings.DebugLogsEnabled = chkDebugLogs.Checked;
             Settings.rvSettings.CacheSaveTimerEnabled = chkCacheSaveTimer.Checked;
