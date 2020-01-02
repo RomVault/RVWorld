@@ -26,7 +26,7 @@ namespace RVCore.ReadDat
         }
 
 
-        private static DatRule FindDatRule(string datName)
+        public static DatRule FindDatRule(string datName)
         {
             Debug.WriteLine($"Dat Name in {datName}");
 

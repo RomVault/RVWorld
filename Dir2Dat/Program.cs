@@ -15,27 +15,41 @@ namespace Dir2Dat
     {
         static void Main(string[] args)
         {
-            go(@"Y:\MAME 0.184 EXTRAs", @"D:\ExtraDatOut\Mame_Extra_0.184");
-            go(@"Y:\MAME 0.185 EXTRAs", @"D:\ExtraDatOut\Mame_Extra_0.185");
-            go(@"Y:\MAME 0.186 EXTRAs", @"D:\ExtraDatOut\Mame_Extra_0.186");
-            go(@"Y:\MAME 0.187 EXTRAs", @"D:\ExtraDatOut\Mame_Extra_0.187");
-            go(@"Y:\MAME 0.194 EXTRAs", @"D:\ExtraDatOut\Mame_Extra_0.194");
-            go(@"Y:\MAME 0.199 EXTRAs", @"D:\ExtraDatOut\Mame_Extra_0.199");
-            go(@"Y:\MAME 0.200 EXTRAs", @"D:\ExtraDatOut\Mame_Extra_0.200");
-            go(@"Y:\MAME 0.201 EXTRAs", @"D:\ExtraDatOut\Mame_Extra_0.201");
-            go(@"Y:\MAME 0.202 EXTRAs", @"D:\ExtraDatOut\Mame_Extra_0.202");
-            go(@"Y:\MAME 0.205 EXTRAs", @"D:\ExtraDatOut\Mame_Extra_0.205");
-            go(@"Y:\MAME 0.206 EXTRAs", @"D:\ExtraDatOut\Mame_Extra_0.206");
-            go(@"Y:\MAME 0.207 EXTRAs", @"D:\ExtraDatOut\Mame_Extra_0.207");
-            go(@"Y:\MAME 0.208 EXTRAs", @"D:\ExtraDatOut\Mame_Extra_0.208");
-            go(@"Y:\MAME 0.209 EXTRAs", @"D:\ExtraDatOut\Mame_Extra_0.209");
-            go(@"Y:\MAME 0.212 EXTRAs", @"D:\ExtraDatOut\Mame_Extra_0.212");
-            go(@"Y:\MAME 0.213 EXTRAs", @"D:\ExtraDatOut\Mame_Extra_0.213");
-            go(@"Y:\MAME 0.214 EXTRAs", @"D:\ExtraDatOut\Mame_Extra_0.214");
+            bool style = false;
+            string dir = null;
+            string outfile = null;
+            foreach (string arg in args)
+            {
+                bool isflag = arg.Substring(0, 1) == "-";
+                if (isflag)
+                {
+                    string flag = arg.Substring(1);
+                }
+                else if (dir == null)
+                {
+                    dir = arg;
+                }
+                else if (outfile==null)
+                {
+                    outfile = arg;
+                }
+                else
+                {
+                    Console.WriteLine("Unknown arg: "+arg);
+                    return;
+                }
+            }
 
+            if (dir==null || outfile==null)
+            {
+                Console.WriteLine("Must supply source DIR and destination filename.");
+                return;
+            }
+
+            go(dir,outfile,style);
         }
 
-        private static void go(string dirSource,string outfile)
+        private static void go(string dirSource,string outfile,bool style)
         {
             DatHeader ThisDat = new DatHeader()
             {
@@ -45,9 +59,7 @@ namespace Dir2Dat
             ProcessDir(di, ThisDat.BaseDir, false);
 
             DatXMLWriter dWriter = new DatXMLWriter();
-            dWriter.WriteDat(outfile+"_old.dat", ThisDat, false);
-            dWriter.WriteDat(outfile+"_new.dat", ThisDat, true);
-
+            dWriter.WriteDat(outfile+".dat", ThisDat, style);
         }
 
 

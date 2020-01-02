@@ -408,7 +408,11 @@ namespace RVCore.ReadDat
 
             newDatFile.Dat.AutoAddDirectory = autoAddDirectory;
 
-            if ((autoAddDirectory || !string.IsNullOrEmpty(newDatFile.Dat.GetData(RvDat.DatData.RootDir))) && newDatFile.Dat.GetData(RvDat.DatData.DirSetup) != "noautodir")
+            string datRootFullName = file.GetData(RvDat.DatData.DatRootFullName);
+
+            DatRule datRule =DatReader.FindDatRule(datRootFullName);
+
+            if  (!datRule.MultiDATDirOverride && ((autoAddDirectory || !string.IsNullOrEmpty(newDatFile.Dat.GetData(RvDat.DatData.RootDir))) && newDatFile.Dat.GetData(RvDat.DatData.DirSetup) != "noautodir"))
             {
                 // if we are auto adding extra directories then create a new directory.
 
