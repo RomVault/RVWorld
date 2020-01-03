@@ -683,9 +683,14 @@ namespace ROMVault
             DatSetSelected(DirTree.Selected);
         }
 
-
-        private void BtnFixFilesClick(object sender, EventArgs e)
+        private void btnFixFiles_MouseUp(object sender, MouseEventArgs e)
         {
+            if (e.Button == MouseButtons.Right)
+            {
+                ScanRoms(Settings.rvSettings.ScanLevel);
+                FindFix();
+            }
+
             FixFiles();
         }
 

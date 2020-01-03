@@ -219,7 +219,7 @@
             this.btnFixFiles.Text = "Fix ROMs";
             this.btnFixFiles.TextAlign = System.Drawing.ContentAlignment.BottomCenter;
             this.btnFixFiles.UseVisualStyleBackColor = true;
-            this.btnFixFiles.Click += new System.EventHandler(this.BtnFixFilesClick);
+            this.btnFixFiles.MouseUp += new System.Windows.Forms.MouseEventHandler(this.btnFixFiles_MouseUp);
             // 
             // btnFindFixes
             // 
@@ -356,8 +356,7 @@
             this.lblDITRomsUnknown.Location = new System.Drawing.Point(311, 120);
             this.lblDITRomsUnknown.Name = "lblDITRomsUnknown";
             this.lblDITRomsUnknown.ReadOnly = true;
-            this.lblDITRomsUnknown.AutoSize = false;
-            this.lblDITRomsUnknown.Size = new System.Drawing.Size(120, 17);
+            this.lblDITRomsUnknown.Size = new System.Drawing.Size(120, 20);
             this.lblDITRomsUnknown.TabIndex = 27;
             this.lblDITRomsUnknown.TabStop = false;
             // 
@@ -367,8 +366,7 @@
             this.lblDITRomsFixable.Location = new System.Drawing.Point(311, 104);
             this.lblDITRomsFixable.Name = "lblDITRomsFixable";
             this.lblDITRomsFixable.ReadOnly = true;
-            this.lblDITRomsFixable.AutoSize = false;
-            this.lblDITRomsFixable.Size = new System.Drawing.Size(120, 17);
+            this.lblDITRomsFixable.Size = new System.Drawing.Size(120, 20);
             this.lblDITRomsFixable.TabIndex = 28;
             this.lblDITRomsFixable.TabStop = false;
             // 
@@ -378,8 +376,7 @@
             this.lblDITRomsMissing.Location = new System.Drawing.Point(89, 120);
             this.lblDITRomsMissing.Name = "lblDITRomsMissing";
             this.lblDITRomsMissing.ReadOnly = true;
-            this.lblDITRomsMissing.AutoSize = false;
-            this.lblDITRomsMissing.Size = new System.Drawing.Size(120, 17);
+            this.lblDITRomsMissing.Size = new System.Drawing.Size(120, 20);
             this.lblDITRomsMissing.TabIndex = 29;
             this.lblDITRomsMissing.TabStop = false;
             // 
@@ -389,8 +386,7 @@
             this.lblDITRomsGot.Location = new System.Drawing.Point(89, 104);
             this.lblDITRomsGot.Name = "lblDITRomsGot";
             this.lblDITRomsGot.ReadOnly = true;
-            this.lblDITRomsGot.AutoSize = false;
-            this.lblDITRomsGot.Size = new System.Drawing.Size(120, 17);
+            this.lblDITRomsGot.Size = new System.Drawing.Size(120, 20);
             this.lblDITRomsGot.TabIndex = 30;
             this.lblDITRomsGot.TabStop = false;
             // 
@@ -409,8 +405,7 @@
             this.lblDITPath.Location = new System.Drawing.Point(89, 78);
             this.lblDITPath.Name = "lblDITPath";
             this.lblDITPath.ReadOnly = true;
-            this.lblDITPath.AutoSize = false;
-            this.lblDITPath.Size = new System.Drawing.Size(342, 17);
+            this.lblDITPath.Size = new System.Drawing.Size(342, 20);
             this.lblDITPath.TabIndex = 31;
             this.lblDITPath.TabStop = false;
             // 
@@ -438,8 +433,7 @@
             this.lblDITDate.Location = new System.Drawing.Point(311, 62);
             this.lblDITDate.Name = "lblDITDate";
             this.lblDITDate.ReadOnly = true;
-            this.lblDITDate.AutoSize = false;
-            this.lblDITDate.Size = new System.Drawing.Size(120, 17);
+            this.lblDITDate.Size = new System.Drawing.Size(120, 20);
             this.lblDITDate.TabIndex = 32;
             this.lblDITDate.TabStop = false;
             // 
@@ -449,8 +443,7 @@
             this.lblDITAuthor.Location = new System.Drawing.Point(89, 62);
             this.lblDITAuthor.Name = "lblDITAuthor";
             this.lblDITAuthor.ReadOnly = true;
-            this.lblDITAuthor.AutoSize = false;
-            this.lblDITAuthor.Size = new System.Drawing.Size(120, 17);
+            this.lblDITAuthor.Size = new System.Drawing.Size(120, 20);
             this.lblDITAuthor.TabIndex = 33;
             this.lblDITAuthor.TabStop = false;
             // 
@@ -478,8 +471,7 @@
             this.lblDITVersion.Location = new System.Drawing.Point(311, 46);
             this.lblDITVersion.Name = "lblDITVersion";
             this.lblDITVersion.ReadOnly = true;
-            this.lblDITVersion.AutoSize = false;
-            this.lblDITVersion.Size = new System.Drawing.Size(120, 17);
+            this.lblDITVersion.Size = new System.Drawing.Size(120, 20);
             this.lblDITVersion.TabIndex = 34;
             this.lblDITVersion.TabStop = false;
             // 
@@ -489,8 +481,7 @@
             this.lblDITCategory.Location = new System.Drawing.Point(89, 46);
             this.lblDITCategory.Name = "lblDITCategory";
             this.lblDITCategory.ReadOnly = true;
-            this.lblDITCategory.AutoSize = false;
-            this.lblDITCategory.Size = new System.Drawing.Size(120, 17);
+            this.lblDITCategory.Size = new System.Drawing.Size(120, 20);
             this.lblDITCategory.TabIndex = 35;
             this.lblDITCategory.TabStop = false;
             // 
@@ -518,8 +509,7 @@
             this.lblDITDescription.Location = new System.Drawing.Point(89, 30);
             this.lblDITDescription.Name = "lblDITDescription";
             this.lblDITDescription.ReadOnly = true;
-            this.lblDITDescription.AutoSize = false;
-            this.lblDITDescription.Size = new System.Drawing.Size(342, 17);
+            this.lblDITDescription.Size = new System.Drawing.Size(342, 20);
             this.lblDITDescription.TabIndex = 36;
             this.lblDITDescription.TabStop = false;
             // 
@@ -529,8 +519,7 @@
             this.lblDITName.Location = new System.Drawing.Point(89, 14);
             this.lblDITName.Name = "lblDITName";
             this.lblDITName.ReadOnly = true;
-            this.lblDITName.AutoSize = false;
-            this.lblDITName.Size = new System.Drawing.Size(342, 17);
+            this.lblDITName.Size = new System.Drawing.Size(342, 20);
             this.lblDITName.TabIndex = 37;
             this.lblDITName.TabStop = false;
             // 
