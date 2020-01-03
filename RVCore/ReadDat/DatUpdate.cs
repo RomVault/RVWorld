@@ -406,16 +406,14 @@ namespace RVCore.ReadDat
                 return false;
             }
 
-            newDatFile.Dat.AutoAddDirectory = autoAddDirectory;
 
             string datRootFullName = file.GetData(RvDat.DatData.DatRootFullName);
 
             DatRule datRule =DatReader.FindDatRule(datRootFullName);
 
-            if  (!datRule.MultiDATDirOverride && ((autoAddDirectory || !string.IsNullOrEmpty(newDatFile.Dat.GetData(RvDat.DatData.RootDir))) && newDatFile.Dat.GetData(RvDat.DatData.DirSetup) != "noautodir"))
+            if (!datRule.MultiDATDirOverride && (autoAddDirectory || !string.IsNullOrEmpty(newDatFile.Dat.GetData(RvDat.DatData.RootDir))) && newDatFile.Dat.GetData(RvDat.DatData.DirSetup) != "noautodir")
             {
                 // if we are auto adding extra directories then create a new directory.
-
                 newDatFile.Name = !string.IsNullOrEmpty(newDatFile.Dat.GetData(RvDat.DatData.RootDir)) ?
                     newDatFile.Dat.GetData(RvDat.DatData.RootDir) : newDatFile.Dat.GetData(RvDat.DatData.DatName);
 
@@ -427,6 +425,12 @@ namespace RVCore.ReadDat
                 // add the DAT into this directory
                 newDirectory.ChildAdd(newDatFile);
                 newDatFile = newDirectory;
+
+                newDatFile.Dat.AutoAddDirectory = true;
+            }
+            else
+            {
+                newDatFile.Dat.AutoAddDirectory = false;
             }
 
             if (thisDirectory.Tree == null)

@@ -113,7 +113,8 @@ namespace Compress.SevenZip
                 //StreamsInfo.Folders.Coder
                 // flags 0x23
 
-                Folder folder = new Folder {
+                Folder folder = new Folder
+                {
                     BindPairs = null,
                     Coders = new[] {
                          new Coder {
@@ -166,7 +167,7 @@ namespace Compress.SevenZip
                     {
                         continue;
                     }
-                    
+
                     Folder folder = new Folder
                     {
                         BindPairs = null,
@@ -223,20 +224,18 @@ namespace Compress.SevenZip
 
             uint mainHeaderCRC = CRC.CalculateDigest(newHeaderByte, 0, (uint)newHeaderByte.Length);
 
-            bool packedHeader = false;
-            if (packedHeader)
-            {
-                long packedHeaderPos = _zipFs.Position;
-                LzmaEncoderProperties ep = new LzmaEncoderProperties(true, 0x10000, 64);
-                LzmaStream lzs = new LzmaStream(ep, false, _zipFs);
-                byte[] lzmaStreamProperties = lzs.Properties;
-                lzs.Write(newHeaderByte, 0, newHeaderByte.Length);
-                lzs.Close();
+            #region Header Compression
+            long packedHeaderPos = _zipFs.Position;
+            LzmaEncoderProperties ep = new LzmaEncoderProperties(true, GetDictionarySizeFromUncompressedSize((ulong)newHeaderByte.Length), 64);
+            LzmaStream lzs = new LzmaStream(ep, false, _zipFs);
+            byte[] lzmaStreamProperties = lzs.Properties;
+            lzs.Write(newHeaderByte, 0, newHeaderByte.Length);
+            lzs.Close();
 
-                StreamsInfo streamsInfo = new StreamsInfo
-                {
-                    PackPosition = (ulong)(packedHeaderPos - _baseOffset),
-                    Folders = new[] {
+            StreamsInfo streamsInfo = new StreamsInfo
+            {
+                PackPosition = (ulong)(packedHeaderPos - _baseOffset),
+                Folders = new[] {
                         new Folder {
                             BindPairs = new BindPair[0],
                             Coders = new [] {
@@ -251,30 +250,30 @@ namespace Compress.SevenZip
                             UnpackCRC = mainHeaderCRC
                         }
                     },
-                    PackedStreams = new[] {
+                PackedStreams = new[] {
                         new PackedStreamInfo
                         {
                             PackedSize = (ulong)(_zipFs.Position - packedHeaderPos),
                             StreamPosition = 0
                         }
                     }
-                };
+            };
 
-                using (Stream headerMem = new MemoryStream())
+            using (Stream headerMem = new MemoryStream())
+            {
+                using (BinaryWriter bw = new BinaryWriter(headerMem, Encoding.UTF8, true))
                 {
-                    using (BinaryWriter bw = new BinaryWriter(headerMem, Encoding.UTF8, true))
-                    {
-                        bw.Write((byte)HeaderProperty.kEncodedHeader);
-                        streamsInfo.WriteHeader(bw);
+                    bw.Write((byte)HeaderProperty.kEncodedHeader);
+                    streamsInfo.WriteHeader(bw);
 
-                        newHeaderByte = new byte[headerMem.Length];
-                        headerMem.Position = 0;
-                        headerMem.Read(newHeaderByte, 0, newHeaderByte.Length);
+                    newHeaderByte = new byte[headerMem.Length];
+                    headerMem.Position = 0;
+                    headerMem.Read(newHeaderByte, 0, newHeaderByte.Length);
 
-                    }
                 }
-                mainHeaderCRC = CRC.CalculateDigest(newHeaderByte, 0, (uint)newHeaderByte.Length);
             }
+            mainHeaderCRC = CRC.CalculateDigest(newHeaderByte, 0, (uint)newHeaderByte.Length);
+            #endregion
 
             ulong headerPosition = (ulong)_zipFs.Position;
             _zipFs.Write(newHeaderByte, 0, newHeaderByte.Length);

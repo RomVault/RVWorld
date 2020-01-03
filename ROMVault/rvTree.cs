@@ -79,14 +79,18 @@ namespace ROMVault
             int nodeHeight = 16;
             if (pTree.Tree.TreeExpanded && pTree.DirDatCount > 1)
             {
-                nodeHeight += pTree.DirDatCount * 12;
+                for (int i = 0; i < pTree.DirDatCount; i++)
+                {
+                    if (!pTree.DirDat(i).AutoAddDirectory)
+                        nodeHeight += 12;
+                }
             }
 
             UiTree uTree = new UiTree();
             pTree.Tree.UiObject = uTree;
 
             uTree.TreeBranches = pTreeBranches;
-            
+
             uTree.RTree = new Rectangle(0, _yPos, 1 + nodeDepth * 18, nodeHeight);
             uTree.RExpand = new Rectangle(5 + nodeDepth * 18, _yPos + 4, 9, 9);
             uTree.RChecked = new Rectangle(20 + nodeDepth * 18, _yPos + 2, 13, 13);
@@ -306,7 +310,8 @@ namespace ROMVault
                         datList = new List<string>();
                         for (int i = 0; i < pTree.DirDatCount; i++)
                         {
-                            datList.Add(pTree.DirDat(i).GetData(RvDat.DatData.Description));
+                            if (!pTree.DirDat(i).AutoAddDirectory)
+                                datList.Add(pTree.DirDat(i).GetData(RvDat.DatData.Description));
                         }
                     }
                 }
