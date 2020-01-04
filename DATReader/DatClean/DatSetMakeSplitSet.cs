@@ -22,7 +22,7 @@ namespace DATReader.DatClean
                 {
                     // find all parents of this game
                     List<DatDir> lstParentGames = new List<DatDir>();
-                    DatFindParentSets.FindParentSet(mGame, tDat,true, ref lstParentGames);
+                    DatFindParentSets.FindParentSet(mGame, tDat, true, ref lstParentGames);
 
                     // if no parents are found then just set all children as kept
                     if (lstParentGames.Count == 0)
@@ -35,11 +35,12 @@ namespace DATReader.DatClean
                     }
                     else
                     {
-                        for (int r = 0; r < mGame.ChildCount; r++)
+                        for (int r0 = 0; r0 < mGame.ChildCount; r0++)
                         {
-                            if (((DatFile)mGame.Child(r)).Status == "nodump")
+                            DatFile dr0 = (DatFile)mGame.Child(r0);
+                            if (dr0.Status == "nodump")
                             {
-                                RomCheckCollect((DatFile)mGame.Child(r), false);
+                                RomCheckCollect(dr0, false);
                                 continue;
                             }
 
@@ -48,48 +49,49 @@ namespace DATReader.DatClean
                             {
                                 for (int r1 = 0; r1 < romofGame.ChildCount; r1++)
                                 {
+                                    DatFile dr1 = (DatFile)romofGame.Child(r1);
                                     // size/checksum compare, so name does not need to match
                                     // if (!string.Equals(mGame.Child(r).Name, romofGame.Child(r1).Name, StringComparison.OrdinalIgnoreCase))
                                     // {
                                     //     continue;
                                     // }
 
-                                    ulong? size0 = ((DatFile)mGame.Child(r)).Size;
-                                    ulong? size1 = ((DatFile)romofGame.Child(r1)).Size;
+                                    ulong? size0 = dr0.Size;
+                                    ulong? size1 = dr1.Size;
                                     if ((size0 != null) && (size1 != null) && (size0 != size1))
                                     {
                                         continue;
                                     }
 
-                                    byte[] crc0 = ((DatFile)mGame.Child(r)).CRC;
-                                    byte[] crc1 = ((DatFile)romofGame.Child(r1)).CRC;
+                                    byte[] crc0 = dr0.CRC;
+                                    byte[] crc1 = dr1.CRC;
                                     if ((crc0 != null) && (crc1 != null) && !ArrByte.bCompare(crc0, crc1))
                                     {
                                         continue;
                                     }
 
-                                    byte[] sha0 = ((DatFile)mGame.Child(r)).SHA1;
-                                    byte[] sha1 = ((DatFile)romofGame.Child(r1)).SHA1;
+                                    byte[] sha0 = dr0.SHA1;
+                                    byte[] sha1 = dr1.SHA1;
                                     if ((sha0 != null) && (sha1 != null) && !ArrByte.bCompare(sha0, sha1))
                                     {
                                         continue;
                                     }
 
-                                    byte[] md50 = ((DatFile)mGame.Child(r)).MD5;
-                                    byte[] md51 = ((DatFile)romofGame.Child(r1)).MD5;
+                                    byte[] md50 = dr0.MD5;
+                                    byte[] md51 = dr1.MD5;
                                     if ((md50 != null) && (md51 != null) && !ArrByte.bCompare(md50, md51))
                                     {
                                         continue;
                                     }
 
-                                    if (((DatFile)mGame.Child(r)).isDisk != ((DatFile)romofGame.Child(r1)).isDisk)
+                                    if (dr0.isDisk != dr1.isDisk)
                                     {
                                         continue;
                                     }
 
                                     // not needed as we are now checking for nodumps at the top of this code
                                     // don't merge if only one of the ROM is nodump
-                                    //if (((DatFile)romofGame.Child(r1)).Status == "nodump" != (((DatFile)mGame.Child(r)).Status == "nodump"))
+                                    //if (dr1.Status == "nodump" != (dr0.Status == "nodump"))
                                     //{
                                     //    continue;
                                     //}
@@ -103,7 +105,7 @@ namespace DATReader.DatClean
                                 }
                             }
 
-                            RomCheckCollect((DatFile)mGame.Child(r), found);
+                            RomCheckCollect((DatFile)mGame.Child(r0), found);
                         }
                     }
                 }
