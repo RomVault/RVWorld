@@ -331,6 +331,8 @@ namespace DATReader.DatReader
                 Status = VarFix.ToLower(romNode.Attributes.GetNamedItem("status")),
                 isDisk = true
             };
+            if (!string.IsNullOrWhiteSpace(rvRom.Merge))
+                rvRom.Merge += ".chd";
 
             parentDir.ChildAdd(rvRom);
         }
