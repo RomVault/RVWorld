@@ -1,6 +1,6 @@
 ﻿namespace DATReader.Utils
 {
-    internal static class ArrByte
+    public static class ArrByte
     {
 
         public static byte[] Copy(byte[] b)

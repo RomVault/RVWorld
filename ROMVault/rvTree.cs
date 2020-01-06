@@ -331,20 +331,21 @@ namespace ROMVault
                     thistxt = "";
                 }
 
+                if (pTree.IsInToSort)
+                {
+                    subtxt = "";
+                }
                 if (pTree.FileStatusIs(FileStatus.PrimaryToSort | FileStatus.CacheToSort))
                 {
                     thistxt += " (Primary)";
-                    subtxt = "";
                 }
                 else if (pTree.FileStatusIs(FileStatus.PrimaryToSort))
                 {
                     thistxt += " (Primary)";
-                    subtxt = "";
                 }
                 else if (pTree.FileStatusIs(FileStatus.CacheToSort))
                 {
                     thistxt += " (Cache)";
-                    subtxt = "";
                 }
 
                 Brush textBrush;
@@ -360,14 +361,7 @@ namespace ROMVault
 
                 thistxt += " " + subtxt;
                 g.DrawString(thistxt, tFont, textBrush, uTree.RText.Left - _hScroll, uTree.RText.Top + 1 - _vScroll);
-                /*
-                if (subtxt != "")
-                {
-                    SizeF tSize = g.MeasureString(thistxt, tFont);
-                    g.DrawString(subtxt, tFont1, textBrush, uTree.RText.Left + tSize.Width + 2 - _hScroll, uTree.RText.Top + 2 - _vScroll);
-                }
-                */
-
+                
                 if (datList != null)
                 {
                     for (int i = 0; i < datList.Count; i++)
