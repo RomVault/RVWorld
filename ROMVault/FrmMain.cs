@@ -306,7 +306,15 @@ namespace ROMVault
                 Text = name + @" :",
                 TextAlign = ContentAlignment.TopRight
             };
-            tBox = new TextBox { AutoSize=false, Location = SPoint(x1, y), Size = SSize(20, 17), BorderStyle = BorderStyle.FixedSingle, ReadOnly = true, TabStop = false };
+            tBox = new TextBox
+            {
+                AutoSize=false,
+                Location = SPoint(x1, y), 
+                Size = SSize(20, 17),
+                BorderStyle = BorderStyle.FixedSingle, 
+                ReadOnly = true, 
+                TabStop = false
+            };
             gbSetInfo.Controls.Add(lBox);
             gbSetInfo.Controls.Add(tBox);
 

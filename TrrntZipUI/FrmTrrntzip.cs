@@ -17,7 +17,7 @@ namespace TrrntZipUI
         private readonly FileList _fileList;
         private readonly Counter _fileIndex = new Counter();
 
-        private readonly int _threadCount;
+        private int _threadCount;
         private readonly Stopwatch _sw = new Stopwatch();
 
         private readonly List<Label> _threadLabel;
@@ -61,9 +61,22 @@ namespace TrrntZipUI
             }
             chkFix.Checked = intVal == 1;
 
+            sval = AppSettings.ReadSetting("Nice");
+            if (!int.TryParse(sval, out intVal))
+            {
+                intVal = 1;
+            }
 
+            chkNice.Checked = intVal == 1;
             _fileList = new FileList();
             _threadCount = Environment.ProcessorCount;
+            if (chkNice.Checked == true && _threadCount > 1)
+            {
+                _threadCount = (int)((double)_threadCount * 0.75);
+                if (_threadCount < 1)
+                    _threadCount = 1;
+            }
+                   
             //_threadCount = 1;
             _threadLabel = new List<Label>();
             _threadProgress = new List<ProgressBar>();
@@ -131,7 +144,7 @@ namespace TrrntZipUI
             AppSettings.AddUpdateAppSettings("Fix", chkFix.Checked.ToString());
             AppSettings.AddUpdateAppSettings("InZip", cboInType.SelectedIndex.ToString());
             AppSettings.AddUpdateAppSettings("OutZip", cboOutType.SelectedIndex.ToString());
-
+            AppSettings.AddUpdateAppSettings("Nice", chkNice.Checked.ToString());
 
             StartWorking();
 
@@ -217,12 +230,19 @@ namespace TrrntZipUI
 
         private void StartWorking()
         {
+            _threadCount = Environment.ProcessorCount;
+            if (chkNice.Checked == true && _threadCount > 1)
+            {
+                _threadCount -= 1;
+            }
+
             _working = true;
             DropBox.Enabled = false;
             cboInType.Enabled = false;
             cboOutType.Enabled = false;
             chkForce.Enabled = false;
             chkFix.Enabled = false;
+            chkNice.Enabled = false;
             Application.DoEvents();
         }
 
@@ -234,6 +254,7 @@ namespace TrrntZipUI
             cboOutType.Enabled = true;
             chkForce.Enabled = true;
             chkFix.Enabled = true;
+            chkNice.Enabled = true;
         }
 
         protected override void OnFormClosing(FormClosingEventArgs e)
