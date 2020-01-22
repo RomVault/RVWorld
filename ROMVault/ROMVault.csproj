@@ -111,9 +111,11 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
+    <Reference Include="System.Data" />
     <Reference Include="System.Drawing" />
     <Reference Include="System.ServiceModel" />
     <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Connected Services\RVServices\Reference.cs">
@@ -122,6 +124,15 @@
       <DependentUpon>Reference.svcmap</DependentUpon>
     </Compile>
     <Compile Include="EmuArcHelper.cs" />
+    <Compile Include="FrmMain_Artwork.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="FrmMain_GameGrid.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="FrmMain_RomGrid.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="FrmRegistration.cs">
       <SubType>Form</SubType>
     </Compile>

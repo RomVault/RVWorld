@@ -26,7 +26,7 @@ namespace RVCore.ReadDat
         }
 
 
-        private static DatRule FindDatRule(string datName)
+        public static DatRule FindDatRule(string datName)
         {
             Debug.WriteLine($"Dat Name in {datName}");
 
@@ -76,14 +76,12 @@ namespace RVCore.ReadDat
                 if (dh == null)
                     return null;
 
-
-                string extraPath = !string.IsNullOrEmpty(dh.RootDir) ?
-                   dh.RootDir : dh.Name;
+                string extraPath = !string.IsNullOrEmpty(dh.RootDir) ? dh.RootDir : dh.Name;
 
                 string dirName = Path.GetDirectoryName(datRootFullName) + System.IO.Path.DirectorySeparatorChar + extraPath + System.IO.Path.DirectorySeparatorChar;
 
                 DatRule datRule = FindDatRule(dirName);
-                
+
                 DatClean.CleanFilenames(dh.BaseDir);
 
                 switch (datRule.Filter)
@@ -158,14 +156,11 @@ namespace RVCore.ReadDat
                         break;
                     case MergeType.Split:
                         DatClean.DatSetMakeSplitSet(dh.BaseDir);
-                        //DatClean.RemoveNotCollected(dh.BaseDir);
-                        break;
-                    case MergeType.CHDsMerge:
-                        DatClean.DatSetMakeMergeSet(dh.BaseDir, false);
+                        DatClean.RemoveNotCollected(dh.BaseDir);
                         break;
                 }
 
-                DatClean.RemoveDupes(dh.BaseDir, !dh.MameXML);
+                DatClean.RemoveDupes(dh.BaseDir, !dh.MameXML, mt != MergeType.NonMerged);
                 DatClean.RemoveEmptySets(dh.BaseDir);
             }
 

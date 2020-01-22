@@ -6,7 +6,7 @@ namespace DATReader.DatClean
 {
     public static partial class DatClean
     {
-        public static void RemoveDupes(DatDir tDat, bool testName = true)
+        public static void RemoveDupes(DatDir tDat, bool testName = true, bool testWithMergeName = false)
         {
             for (int g = 0; g < tDat.ChildCount; g++)
             {
@@ -74,7 +74,7 @@ namespace DATReader.DatClean
                                         mGame.ChildRemove(res >= 0 ? df0 : df1);
                                     }
                                 }
-                                else if (name0 == name1)
+                                else if ((name0 == name1) || (testWithMergeName && (name0 == df1.Merge)))
                                 {
                                     mGame.ChildRemove(df1);
                                 }

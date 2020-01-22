@@ -146,24 +146,16 @@ namespace RVCore.FixFile
                             if (!
                                 (
                                     // got the file in the original zip but will be deleting it
-                                    fixZippedFile.DatStatus == DatStatus.NotInDat &&
-                                    fixZippedFile.GotStatus == GotStatus.Got ||
-                                    fixZippedFile.DatStatus == DatStatus.NotInDat &&
-                                    fixZippedFile.GotStatus == GotStatus.Corrupt ||
-                                    fixZippedFile.DatStatus == DatStatus.InDatMerged &&
-                                    fixZippedFile.GotStatus == GotStatus.Got ||
-                                    fixZippedFile.DatStatus == DatStatus.InToSort &&
-                                    fixZippedFile.GotStatus == GotStatus.Got ||
-                                    fixZippedFile.DatStatus == DatStatus.InToSort &&
-                                    fixZippedFile.GotStatus == GotStatus.Corrupt ||
+                                    fixZippedFile.DatStatus == DatStatus.NotInDat && fixZippedFile.GotStatus == GotStatus.Got ||
+                                    fixZippedFile.DatStatus == DatStatus.NotInDat && fixZippedFile.GotStatus == GotStatus.Corrupt ||
+                                    fixZippedFile.DatStatus == DatStatus.InDatMerged && fixZippedFile.GotStatus == GotStatus.Got ||
+                                    fixZippedFile.DatStatus == DatStatus.InToSort && fixZippedFile.GotStatus == GotStatus.Got ||
+                                    fixZippedFile.DatStatus == DatStatus.InToSort && fixZippedFile.GotStatus == GotStatus.Corrupt ||
 
                                     // do not have this file and cannot fix it here
-                                    fixZippedFile.DatStatus == DatStatus.InDatCollect &&
-                                    fixZippedFile.GotStatus == GotStatus.NotGot ||
-                                    fixZippedFile.DatStatus == DatStatus.InDatBad &&
-                                    fixZippedFile.GotStatus == GotStatus.NotGot ||
-                                    fixZippedFile.DatStatus == DatStatus.InDatMerged &&
-                                    fixZippedFile.GotStatus == GotStatus.NotGot
+                                    fixZippedFile.DatStatus == DatStatus.InDatCollect && fixZippedFile.GotStatus == GotStatus.NotGot ||
+                                    fixZippedFile.DatStatus == DatStatus.InDatBad && fixZippedFile.GotStatus == GotStatus.NotGot ||
+                                    fixZippedFile.DatStatus == DatStatus.InDatMerged && fixZippedFile.GotStatus == GotStatus.NotGot
                                 )
                             )
                             {
@@ -173,6 +165,11 @@ namespace RVCore.FixFile
 
                             if (fixZippedFile.RepStatus == RepStatus.Delete)
                             {
+                                if (Settings.rvSettings.DetailedFixReporting)
+                                {
+                                    Report.ReportProgress(new bgwShowFix(Path.GetDirectoryName(fixZipFullName), Path.GetFileName(fixZipFullName), fixZippedFile.Name, fixZippedFile.Size, "Delete", "", "", ""));
+                                }
+
                                 returnCode = FixFileUtils.DoubleCheckDelete(fixZippedFile, out errorMessage);
                                 if (returnCode != ReturnCode.Good)
                                 {
@@ -194,35 +191,35 @@ namespace RVCore.FixFile
                         case RepStatus.InToSort:
                         case RepStatus.NeededForFix:
                         case RepStatus.Corrupt:
-                        {
-                            returnCode = FixAZipFunctions.CorrectZipFile(fixZip, fixZippedFile, ref tempFixZip, iRom,
-                                out errorMessage);
-                            if (returnCode != ReturnCode.Good)
                             {
-                                CloseZipFile(ref tempFixZip);
-                                CloseToSortGame(toSortGame, ref toSortZipOut);
-                                CloseToSortCorruptGame(toSortGame, ref toSortZipOut);
-                                return returnCode;
-                            }
+                                returnCode = FixAZipFunctions.CorrectZipFile(fixZip, fixZippedFile, ref tempFixZip, iRom,
+                                out errorMessage);
+                                if (returnCode != ReturnCode.Good)
+                                {
+                                    CloseZipFile(ref tempFixZip);
+                                    CloseToSortGame(toSortGame, ref toSortZipOut);
+                                    CloseToSortCorruptGame(toSortGame, ref toSortZipOut);
+                                    return returnCode;
+                                }
 
-                            break;
-                        }
+                                break;
+                            }
 
                         case RepStatus.CanBeFixed:
                         case RepStatus.CorruptCanBeFixed:
-                        {
-                            returnCode = FixAZipFunctions.CanBeFixed(fixZip, fixZippedFile, ref tempFixZip,
-                                fileProcessQueue, ref totalFixed, out errorMessage);
-                            if (returnCode != ReturnCode.Good)
                             {
-                                CloseZipFile(ref tempFixZip);
-                                CloseToSortGame(toSortGame, ref toSortZipOut);
-                                CloseToSortCorruptGame(toSortGame, ref toSortZipOut);
-                                return returnCode;
-                            }
+                                returnCode = FixAZipFunctions.CanBeFixed(fixZip, fixZippedFile, ref tempFixZip,
+                                    fileProcessQueue, ref totalFixed, out errorMessage);
+                                if (returnCode != ReturnCode.Good)
+                                {
+                                    CloseZipFile(ref tempFixZip);
+                                    CloseToSortGame(toSortGame, ref toSortZipOut);
+                                    CloseToSortCorruptGame(toSortGame, ref toSortZipOut);
+                                    return returnCode;
+                                }
 
-                            break;
-                        }
+                                break;
+                            }
 
                         case RepStatus.MoveToSort:
                             FixAZipFunctions.MovetoSort(fixZip, fixZippedFile, ref toSortGame, ref toSortZipOut, iRom);

@@ -25,6 +25,11 @@ namespace DATReader.DatStore
             return _children[index];
         }
 
+        public DatBase ChildSorted(int index)
+        {
+            return _children[_childrenNameIndex[index]];
+        }
+
         public DatBase[] ToArray()
         {
             return _children.ToArray();
@@ -171,7 +176,7 @@ namespace DATReader.DatStore
             {
                 case DatFileType.UnSet:
                     {
-                        int res = Math.Sign(string.Compare(lName.Name, dBase.Name, StringComparison.Ordinal));
+                        int res = Math.Sign(string.Compare(lName.Name, dBase.Name, StringComparison.InvariantCulture));
                         if (res != 0)
                             return res;
                         break;

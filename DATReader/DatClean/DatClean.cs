@@ -74,13 +74,14 @@ namespace DATReader.DatClean
                                 dirFind = (DatDir)dDir.Child(index);
                             }
 
-                            dirFind.ChildAdd(db);
+                            if (part1.Length > 0)
+                                dirFind.ChildAdd(db);
                             continue;
                         }
                     }
                     dDir.ChildAdd(db);
                 }
-                
+
                 arrDir = dDir.ToArray();
             }
 

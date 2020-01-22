@@ -91,6 +91,11 @@
     <Compile Include="SevenZip\Compress\ZSTD\ZstandardDictionary.cs" />
     <Compile Include="SevenZip\Compress\ZSTD\ZstandardInterop.cs" />
     <Compile Include="SevenZip\Compress\ZSTD\ZstandardStream.cs" />
+    <Compile Include="SevenZip\SevenZipOpen.cs" />
+    <Compile Include="SevenZip\SevenZipOpenRead.cs" />
+    <Compile Include="SevenZip\SevenZipTorrent.cs" />
+    <Compile Include="SevenZip\SevenZipWrite.cs" />
+    <Compile Include="SevenZip\SevenZipWriteClose.cs" />
     <Compile Include="Utils\CRC.cs" />
     <Compile Include="Utils\CRCStream.cs" />
     <Compile Include="Utils\DirUtil.cs" />

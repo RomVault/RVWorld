@@ -109,6 +109,11 @@ namespace RVCore.FixFile
             string filename = fixFile.FullName;
             if (File.Exists(filename))
             {
+                if (Settings.rvSettings.DetailedFixReporting)
+                {
+                    Report.ReportProgress(new bgwShowFix(Path.GetDirectoryName(filename), "", Path.GetFileName(filename), fixFile.Size, "Delete", "", "", ""));
+                }
+
                 if (!File.SetAttributes(filename, FileAttributes.Normal))
                 {
                     int error = Error.GetLastError();

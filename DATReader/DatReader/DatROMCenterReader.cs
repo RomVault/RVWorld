@@ -11,8 +11,6 @@ namespace DATReader.DatReader
         private ReportError _errorReport;
 
         private string datVersion;
-        private string emulatorVersion;
-        private string refName;
         private string plugin;
 
         public DatROMCenterReader(ReportError errorReport)
@@ -193,10 +191,10 @@ namespace DATReader.DatReader
                 switch (element.ToLower())
                 {
                     case "refname":
-                        refName = value;
+                        datHeader.Name = value;
                         break;
                     case "version":
-                        emulatorVersion = value;
+                        datHeader.Description = value;
                         break;
                     case "category":
                         datHeader.Category = value;

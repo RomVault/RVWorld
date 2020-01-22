@@ -12,7 +12,7 @@ namespace DATReader.DatClean
 
             for (int g = 0; g < tDat.ChildCount; g++)
             {
-                DatDir mGame = (DatDir)tDat.Child(g);
+                DatDir mGame = (DatDir)tDat.ChildSorted(g);
 
                 if (mGame.DGame == null)
                 {

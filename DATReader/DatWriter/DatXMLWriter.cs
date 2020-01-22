@@ -9,7 +9,7 @@ namespace DATReader.DatWriter
         public void WriteDat(string strFilename, DatHeader datHeader, bool newStyle = false)
         {
             string dir = Path.GetDirectoryName(strFilename);
-            if (!Directory.Exists(dir))
+            if (!string.IsNullOrWhiteSpace(dir) && !Directory.Exists(dir))
                 System.IO.Directory.CreateDirectory(dir);
 
             using (dsw sw = new dsw(strFilename))

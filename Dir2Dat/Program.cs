@@ -13,41 +13,100 @@ namespace Dir2Dat
 {
     class Program
     {
+        private static bool testMode = false;
+
         static void Main(string[] args)
-        {
-            go(@"Y:\MAME 0.184 EXTRAs", @"D:\ExtraDatOut\Mame_Extra_0.184");
-            go(@"Y:\MAME 0.185 EXTRAs", @"D:\ExtraDatOut\Mame_Extra_0.185");
-            go(@"Y:\MAME 0.186 EXTRAs", @"D:\ExtraDatOut\Mame_Extra_0.186");
-            go(@"Y:\MAME 0.187 EXTRAs", @"D:\ExtraDatOut\Mame_Extra_0.187");
-            go(@"Y:\MAME 0.194 EXTRAs", @"D:\ExtraDatOut\Mame_Extra_0.194");
-            go(@"Y:\MAME 0.199 EXTRAs", @"D:\ExtraDatOut\Mame_Extra_0.199");
-            go(@"Y:\MAME 0.200 EXTRAs", @"D:\ExtraDatOut\Mame_Extra_0.200");
-            go(@"Y:\MAME 0.201 EXTRAs", @"D:\ExtraDatOut\Mame_Extra_0.201");
-            go(@"Y:\MAME 0.202 EXTRAs", @"D:\ExtraDatOut\Mame_Extra_0.202");
-            go(@"Y:\MAME 0.205 EXTRAs", @"D:\ExtraDatOut\Mame_Extra_0.205");
-            go(@"Y:\MAME 0.206 EXTRAs", @"D:\ExtraDatOut\Mame_Extra_0.206");
-            go(@"Y:\MAME 0.207 EXTRAs", @"D:\ExtraDatOut\Mame_Extra_0.207");
-            go(@"Y:\MAME 0.208 EXTRAs", @"D:\ExtraDatOut\Mame_Extra_0.208");
-            go(@"Y:\MAME 0.209 EXTRAs", @"D:\ExtraDatOut\Mame_Extra_0.209");
-            go(@"Y:\MAME 0.212 EXTRAs", @"D:\ExtraDatOut\Mame_Extra_0.212");
-            go(@"Y:\MAME 0.213 EXTRAs", @"D:\ExtraDatOut\Mame_Extra_0.213");
-            go(@"Y:\MAME 0.214 EXTRAs", @"D:\ExtraDatOut\Mame_Extra_0.214");
-
-        }
-
-        private static void go(string dirSource,string outfile)
         {
             DatHeader ThisDat = new DatHeader()
             {
                 BaseDir = new DatDir(DatFileType.Dir)
             };
+
+            bool style = false;
+            string dirSource = null;
+            string outfile = null;
+
+            for (int i = 0; i < args.Length; i++)
+            {
+                string arg = args[i];
+                bool isflag = arg.Substring(0, 1) == "-";
+                if (isflag)
+                {
+                    string flag = arg.Substring(1);
+                    switch (flag.ToLower())
+                    {
+                        case "name": case "n":
+                            ThisDat.Name = args[++i];
+                            break;
+                        case "description": case "d":
+                            ThisDat.Description = args[++i];
+                            break;
+                        case "category":
+                        case "ca":
+                            ThisDat.Category = args[++i];
+                            break;
+                        case "version":
+                        case "v":
+                            ThisDat.Version = args[++i];
+                            break;
+                        case "date":
+                        case "dt":
+                            ThisDat.Date = args[++i];
+                            break;
+                        case "autodate":
+                        case "ad":
+                            ThisDat.Date = DateTime.Now.ToString("MM/dd/yyyy");
+                            break;
+                        case "author":
+                        case "a":
+                            ThisDat.Author = args[++i];
+                            break;
+                        case "email":
+                        case "e":
+                            ThisDat.Email = args[++i];
+                            break;
+                        case "homepage":
+                        case "hp":
+                            ThisDat.Homepage = args[++i];
+                            break;
+                        case "url":
+                            ThisDat.URL = args[++i];
+                            break;
+                        case "comment":
+                        case "co":
+                            ThisDat.Comment = args[++i];
+                            break;
+                        case "test": case "t":
+                            testMode = true;
+                            break;
+                    }
+                }
+                else if (dirSource == null)
+                {
+                    dirSource = arg;
+                }
+                else if (outfile == null)
+                {
+                    outfile = arg;
+                }
+                else
+                {
+                    Console.WriteLine("Unknown arg: " + arg);
+                    return;
+                }
+            }
+
+            if (dirSource == null || outfile == null)
+            {
+                Console.WriteLine("Must supply source DIR and destination filename.");
+                return;
+            }
+
             DirectoryInfo di = new DirectoryInfo(dirSource);
             ProcessDir(di, ThisDat.BaseDir, false);
 
             DatXMLWriter dWriter = new DatXMLWriter();
-            dWriter.WriteDat(outfile+"_old.dat", ThisDat, false);
-            dWriter.WriteDat(outfile+"_new.dat", ThisDat, true);
-
+            dWriter.WriteDat(outfile + ".dat", ThisDat, style);
         }
 
 
@@ -91,9 +150,12 @@ namespace Dir2Dat
                         break;
                 }
 
-                //fCount++;
-                if (fCount > 10)
-                    break;
+                if (testMode)
+                {
+                    fCount++;
+                    if (fCount > 10)
+                        break;
+                }
             }
         }
 
@@ -220,20 +282,23 @@ namespace Dir2Dat
                 Console.WriteLine(f.FullName);
                 AddFile(f, fDir);
 
-                //fCount++;
-                if (fCount > 10)
-                    break;
+                if (testMode)
+                {
+                    fCount++;
+                    if (fCount > 10)
+                        break;
+                }
             }
 
         }
 
         private static void AddFile(FileInfo f, DatDir thisDir)
         {
-            Compress.File.File zf1=new Compress.File.File();
+            Compress.File.File zf1 = new Compress.File.File();
             zf1.ZipFileOpen(f.FullName, -1, true);
             FileScan fs = new FileScan();
             List<FileScan.FileResults> fr = fs.Scan(zf1, true, true);
-            
+
             DatFile df = new DatFile(DatFileType.File)
             {
                 Name = f.Name,
