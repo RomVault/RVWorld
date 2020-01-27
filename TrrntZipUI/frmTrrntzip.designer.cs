@@ -31,6 +31,7 @@
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(FrmTrrntzip));
             this.splitContainer = new System.Windows.Forms.SplitContainer();
             this.StatusPanel = new System.Windows.Forms.Panel();
+            this.chkNice = new System.Windows.Forms.CheckBox();
             this.pictureBox2 = new System.Windows.Forms.PictureBox();
             this.label3 = new System.Windows.Forms.Label();
             this.label2 = new System.Windows.Forms.Label();
@@ -79,6 +80,7 @@
             // 
             // StatusPanel
             // 
+            this.StatusPanel.Controls.Add(this.chkNice);
             this.StatusPanel.Controls.Add(this.pictureBox2);
             this.StatusPanel.Controls.Add(this.label3);
             this.StatusPanel.Controls.Add(this.label2);
@@ -96,6 +98,18 @@
             this.StatusPanel.Name = "StatusPanel";
             this.StatusPanel.Size = new System.Drawing.Size(250, 446);
             this.StatusPanel.TabIndex = 0;
+            // 
+            // chkNice
+            // 
+            this.chkNice.AutoSize = true;
+            this.chkNice.Checked = true;
+            this.chkNice.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.chkNice.Location = new System.Drawing.Point(100, 185);
+            this.chkNice.Name = "chkNice";
+            this.chkNice.Size = new System.Drawing.Size(73, 17);
+            this.chkNice.TabIndex = 14;
+            this.chkNice.Text = "Less CPU";
+            this.chkNice.UseVisualStyleBackColor = true;
             // 
             // pictureBox2
             // 
@@ -267,7 +281,7 @@
             this.DoubleBuffered = true;
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "FrmTrrntzip";
-            this.Text = "Trrntzip .Net (V2.5.3)";
+            this.Text = "Trrntzip .Net (V2.5.4) Unofficial";
             this.splitContainer.Panel1.ResumeLayout(false);
             this.splitContainer.Panel2.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer)).EndInit();
@@ -301,6 +315,7 @@
         private System.Windows.Forms.Label label3;
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.PictureBox pictureBox2;
+        private System.Windows.Forms.CheckBox chkNice;
     }
 }
 
