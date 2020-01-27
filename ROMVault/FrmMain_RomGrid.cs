@@ -242,7 +242,7 @@ namespace ROMVault
 
                 if (tDir.Game == null)
                 {
-                    AddDir(tDir, pathAdd + tGame.Name + "/");
+                    AddDir(tDir, pathAdd + tDir.Name + "/");
                 }
             }
         }
