@@ -389,7 +389,7 @@ namespace RVCore.FixFile
                 return ReturnCode.Good;
             }
 
-            RvFile fixingFile = Settings.rvSettings.UseFileSelection ? FindSourceFile.FindSourceToUseForFix(fixFile, lstFixRomTable) : lstFixRomTable[0];
+            RvFile fixingFile = FindSourceFile.FindSourceToUseForFix(fixFile, lstFixRomTable);
 
             string fts = fixingFile.FullName;
             Report.ReportProgress(new bgwShowFix(Path.GetDirectoryName(fixFileFullName), "", Path.GetFileName(fixFileFullName), fixFile.Size, "<--", Path.GetDirectoryName(fts), Path.GetFileName(fts), fixingFile.Name));

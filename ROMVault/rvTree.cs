@@ -118,7 +118,9 @@ namespace ROMVault
                     last = i;
 
             }
-            if (!found)
+
+
+            if (!found && pTree.DirDatCount<=1)
             {
                 uTree.RExpand = new Rectangle(0, 0, 0, 0);
             }

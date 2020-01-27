@@ -263,8 +263,7 @@ namespace ROMVault
             _mnuContextToSort.MenuItems.Add(_mnuToSortOpen);
             _mnuContextToSort.MenuItems.Add(_mnuToSortDelete);
             _mnuContextToSort.MenuItems.Add(_mnuToSortSetPrimary);
-            if (Settings.rvSettings.UseFileSelection)
-                _mnuContextToSort.MenuItems.Add(_mnuToSortSetCache);
+            _mnuContextToSort.MenuItems.Add(_mnuToSortSetCache);
 
             _mnuToSortScan.Click += MnuToSortScan;
             _mnuToSortOpen.Click += MnuToSortOpen;
@@ -316,11 +315,11 @@ namespace ROMVault
             };
             tBox = new TextBox
             {
-                AutoSize=false,
-                Location = SPoint(x1, y), 
+                AutoSize = false,
+                Location = SPoint(x1, y),
                 Size = SSize(20, 17),
-                BorderStyle = BorderStyle.FixedSingle, 
-                ReadOnly = true, 
+                BorderStyle = BorderStyle.FixedSingle,
+                ReadOnly = true,
                 TabStop = false
             };
             gbSetInfo.Controls.Add(lBox);
@@ -604,7 +603,7 @@ namespace ROMVault
 
         private void btnReport_MouseUp(object sender, MouseEventArgs e)
         {
-            Report.MakeFixFiles(null,e.Button == MouseButtons.Left);
+            Report.MakeFixFiles(null, e.Button == MouseButtons.Left);
         }
 
         private void fixDatReportToolStripMenuItem_Click(object sender, EventArgs e)

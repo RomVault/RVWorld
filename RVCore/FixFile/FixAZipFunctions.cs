@@ -52,28 +52,26 @@ namespace RVCore.FixFile
             bool rawcopy = fixZippedFile.RepStatus == RepStatus.InToSort || fixZippedFile.RepStatus == RepStatus.Corrupt;
 
             RvFile fileIn = fixZip.Child(iRom);
-            if (Settings.rvSettings.UseFileSelection)
+
+            if (fileIn.FileType == FileType.SevenZipFile)
             {
+                List<RvFile> fixFiles = FindSourceFile.GetFixFileList(fixZippedFile);
+                ReportError.LogOut("CorrectZipFile: picking from");
+                ReportError.ReportList(fixFiles);
+
+                fileIn = FindSourceFile.FindSourceToUseForFix(fixZippedFile, fixFiles);
+
                 if (fileIn.FileType == FileType.SevenZipFile)
                 {
-                    List<RvFile> fixFiles = FindSourceFile.GetFixFileList(fixZippedFile);
-                    ReportError.LogOut("CorrectZipFile: picking from");
-                    ReportError.ReportList(fixFiles);
-
-                    fileIn = FindSourceFile.FindSourceToUseForFix(fixZippedFile, fixFiles);
-
-                    if (fileIn.FileType == FileType.SevenZipFile)
+                    ReturnCode returnCode1 = Decompress7ZipFile.DecompressSource7ZipFile(fixZip, true, out errorMessage);
+                    if (returnCode1 != ReturnCode.Good)
                     {
-                        ReturnCode returnCode1 = Decompress7ZipFile.DecompressSource7ZipFile(fixZip, true, out errorMessage);
-                        if (returnCode1 != ReturnCode.Good)
-                        {
-                            ReportError.LogOut($"DecompressSource7Zip: OutputOutput {fixZip.FileName} return {returnCode1}");
-                            return returnCode1;
-                        }
-
-                        fixFiles = FindSourceFile.GetFixFileList(fixZippedFile);
-                        fileIn = FindSourceFile.FindSourceToUseForFix(fixZippedFile, fixFiles);
+                        ReportError.LogOut($"DecompressSource7Zip: OutputOutput {fixZip.FileName} return {returnCode1}");
+                        return returnCode1;
                     }
+
+                    fixFiles = FindSourceFile.GetFixFileList(fixZippedFile);
+                    fileIn = FindSourceFile.FindSourceToUseForFix(fixZippedFile, fixFiles);
                 }
             }
 
@@ -183,21 +181,18 @@ namespace RVCore.FixFile
             {
                 RvFile fileIn = lstFixRomTable[0];
 
-                if (Settings.rvSettings.UseFileSelection)
-                {
-                    fileIn = FindSourceFile.FindSourceToUseForFix(fixZippedFile, lstFixRomTable);
+                fileIn = FindSourceFile.FindSourceToUseForFix(fixZippedFile, lstFixRomTable);
 
-                    if (fileIn.FileType == FileType.SevenZipFile)
+                if (fileIn.FileType == FileType.SevenZipFile)
+                {
+                    ReturnCode returnCode1 = Decompress7ZipFile.DecompressSource7ZipFile(fileIn.Parent, false, out errorMessage);
+                    if (returnCode1 != ReturnCode.Good)
                     {
-                        ReturnCode returnCode1 = Decompress7ZipFile.DecompressSource7ZipFile(fileIn.Parent, false, out errorMessage);
-                        if (returnCode1 != ReturnCode.Good)
-                        {
-                            ReportError.LogOut($"DecompressSource7Zip: OutputOutput {fixZip.FileName} return {returnCode1}");
-                            return returnCode1;
-                        }
-                        lstFixRomTable = FindSourceFile.GetFixFileList(fixZippedFile);
-                        fileIn = FindSourceFile.FindSourceToUseForFix(fixZippedFile, lstFixRomTable);
+                        ReportError.LogOut($"DecompressSource7Zip: OutputOutput {fixZip.FileName} return {returnCode1}");
+                        return returnCode1;
                     }
+                    lstFixRomTable = FindSourceFile.GetFixFileList(fixZippedFile);
+                    fileIn = FindSourceFile.FindSourceToUseForFix(fixZippedFile, lstFixRomTable);
                 }
 
                 ReportError.LogOut("CanBeFixed: Copying from");
