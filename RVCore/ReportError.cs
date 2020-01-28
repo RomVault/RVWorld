@@ -35,11 +35,12 @@ namespace RVCore
                 SendErrorMessage(message);
                 ErrorForm?.Invoke(message);
 
-
+                Close();
                 Environment.Exit(0);
             }
             catch
             {
+                Close();
                 Environment.Exit(0);
             }
         }
@@ -95,7 +96,7 @@ namespace RVCore
 
         public static void Show(string text, string caption = "RomVault")
         {
-            Dialog?.Invoke(text,caption);
+            Dialog?.Invoke(text, caption);
         }
 
 
@@ -156,6 +157,9 @@ namespace RVCore
             sw.Close();
         }
 
+        private static StreamWriter _logStreamWriter;
+        private static DateTime _lastLogEntry = DateTime.Now;
+
         public static void LogOut(string s)
         {
             if (!Settings.rvSettings.DebugLogsEnabled)
@@ -163,15 +167,21 @@ namespace RVCore
                 return;
             }
 
-            if (_logfilename == null)
+            if ((_lastLogEntry.Day != DateTime.Now.Day) || _logStreamWriter == null)
             {
+                _lastLogEntry = DateTime.Now;
                 OpenLogFile(out string dir, out string now);
-            }
+                if (_logStreamWriter != null)
+                {
+                    _logStreamWriter.Flush();
+                    _logStreamWriter.Close();
+                }
 
-            StreamWriter sw = new StreamWriter(_logfilename, true);
-            sw.WriteLine(s);
-            sw.Flush();
-            sw.Close();
+                _logStreamWriter = new StreamWriter(_logfilename, true);
+
+            }
+            _logStreamWriter.WriteLine(s);
+            _logStreamWriter.Flush();
         }
 
         public static void LogOut(RvFile f)
@@ -181,10 +191,30 @@ namespace RVCore
                 return;
             }
 
-            StreamWriter sw = new StreamWriter(_logfilename, true);
-            ReportFile(sw, f);
-            sw.Flush();
-            sw.Close();
+            if ((_lastLogEntry.Day != DateTime.Now.Day) || _logStreamWriter == null)
+            {
+                _lastLogEntry = DateTime.Now;
+                OpenLogFile(out string dir, out string now);
+                if (_logStreamWriter != null)
+                {
+                    _logStreamWriter.Flush();
+                    _logStreamWriter.Close();
+                }
+
+                _logStreamWriter = new StreamWriter(_logfilename, true);
+
+            }
+            ReportFile(_logStreamWriter, f);
+            _logStreamWriter.Flush();
+        }
+
+        public static void Close()
+        {
+            if (_logStreamWriter == null)
+                return;
+            _logStreamWriter.Flush();
+            _logStreamWriter.Close();
+            _logStreamWriter = null;
         }
     }
 }

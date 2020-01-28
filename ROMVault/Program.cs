@@ -78,6 +78,8 @@ namespace ROMVault
             progress.Dispose();
 
             Application.Run(new FrmMain());
+
+            ReportError.Close();
         }
 
         public static void ShowErrorForm(string message)

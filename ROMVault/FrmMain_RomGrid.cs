@@ -40,6 +40,7 @@ namespace ROMVault
             //AddDir(tGame, "");
 
             gridFiles = fileList.ToArray();
+            RomGrid.RowCount = gridFiles.Length;
             GC.Collect();
 
         }
@@ -265,6 +266,90 @@ namespace ROMVault
             }
         }
 
+        private void RomGrid_CellValueNeeded(object sender, DataGridViewCellValueEventArgs e)
+        {
+            RvFile tFile = gridFiles[e.RowIndex];
+            switch (e.ColumnIndex)
+            {
+                case 0: //CGot
+                    Bitmap bmp = new Bitmap(54, 18);
+                    Graphics g = Graphics.FromImage(bmp);
+                    string bitmapName = "R_" + tFile.DatStatus + "_" + tFile.RepStatus;
+                    Bitmap romIcon = rvImages.GetBitmap(bitmapName);
+                    if (romIcon != null)
+                    {
+                        g.DrawImage(romIcon, 0, 0, 54, 18);
+                        e.Value = bmp;
+                    }
+                    else
+                    {
+                        Debug.WriteLine($"Missing image for {bitmapName}");
+                    }
+
+                    g.Dispose();
+                    break;
+                case 1: //CRom
+                    string fname = /*pathAdd +*/ tFile.Name;
+                    if (!string.IsNullOrEmpty(tFile.FileName))
+                    {
+                        fname += " (Found: " + tFile.FileName + ")";
+                    }
+
+                    if (tFile.CHDVersion != null)
+                    {
+                        fname += " (V" + tFile.CHDVersion + ")";
+                    }
+
+                    if (tFile.HeaderFileType != HeaderFileType.Nothing)
+                    {
+                        fname += " (" + tFile.HeaderFileType + ")";
+                    }
+
+                    e.Value = fname;
+
+                    break;
+                case 2: //CMerge
+                    e.Value = tFile.Merge;
+                    break;
+                case 3: //CSize
+                    e.Value = SetCell(tFile.Size.ToString(), tFile, FileStatus.SizeFromDAT, FileStatus.SizeFromHeader, FileStatus.SizeVerified);
+                    break;
+                case 4: //CCRC32
+                    e.Value = SetCell(tFile.CRC.ToHexString(), tFile, FileStatus.CRCFromDAT, FileStatus.CRCFromHeader, FileStatus.CRCVerified);
+                    break;
+                case 5: //CSHA1
+                    e.Value = SetCell(tFile.SHA1.ToHexString(), tFile, FileStatus.SHA1FromDAT, FileStatus.SHA1FromHeader, FileStatus.SHA1Verified);
+                    break;
+                case 6: //CMD5
+                    e.Value = SetCell(tFile.MD5.ToHexString(), tFile, FileStatus.MD5FromDAT, FileStatus.MD5FromHeader, FileStatus.MD5Verified);
+                    break;
+                case 7: //CAltSize
+                    e.Value = SetCell(tFile.AltSize.ToString(), tFile, FileStatus.AltSizeFromDAT, FileStatus.AltSizeFromHeader, FileStatus.AltSizeVerified);
+                    break;
+                case 8: //CAltCRC32
+                    e.Value = SetCell(tFile.AltCRC.ToHexString(), tFile, FileStatus.AltCRCFromDAT, FileStatus.AltCRCFromHeader, FileStatus.AltCRCVerified);
+                    break;
+                case 9: //CAltSHA1
+                    e.Value = SetCell(tFile.AltSHA1.ToHexString(), tFile, FileStatus.AltSHA1FromDAT, FileStatus.AltSHA1FromHeader, FileStatus.AltSHA1Verified);
+                    break;
+                case 10: //CAltMD5
+                    e.Value = SetCell(tFile.AltMD5.ToHexString(), tFile, FileStatus.AltMD5FromDAT, FileStatus.AltMD5FromHeader, FileStatus.AltMD5Verified);
+                    break;
+                case 11: //CStatus
+                    e.Value = tFile.Status;
+                    break;
+                case 12: // ZipIndex
+                    if (tFile.FileType == FileType.ZipFile)
+                        e.Value = tFile.ZipFileIndex == -1 ? "" : tFile.ZipFileIndex.ToString();
+                    break;
+                case 13: // ZipHeader
+                    if (tFile.FileType == FileType.ZipFile)
+                        e.Value = tFile.ZipFileHeaderPosition == null ? "" : tFile.ZipFileHeaderPosition.ToString();
+                    break;
+            }
+        }
+
+
         private void AddDir(RvFile tGame, string pathAdd)
         {
             for (int l = 0; l < tGame.ChildCount; l++)
@@ -362,6 +447,12 @@ namespace ROMVault
                 cell.Style.ForeColor = Color.FromArgb(0, 0, 255);
         }
 
+
+        private static string SetCell(string txt, RvFile tRomTable, FileStatus dat, FileStatus file, FileStatus verified)
+        {
+            return txt + ShowFlags(tRomTable, dat, file, verified);
+        }
+
         private static string ShowFlags(RvFile tRomTable, FileStatus dat, FileStatus file, FileStatus verified)
         {
             string flags = "";
@@ -390,6 +481,11 @@ namespace ROMVault
 
         private void RomGrid_CellFormatting(object sender, DataGridViewCellFormattingEventArgs e)
         {
+            RvFile tFile = gridFiles[e.RowIndex];
+            e.CellStyle.BackColor = _displayColor[(int)tFile.RepStatus];
+            e.CellStyle.ForeColor = _fontColor[(int)tFile.RepStatus];
+
+            /*
             if (_updatingGameGrid)
             {
                 return;
@@ -419,11 +515,13 @@ namespace ROMVault
                     Debug.WriteLine($"Missing image for {bitmapName}");
                 }
             }
+            */
         }
 
         // Override the default "string" sort of the values in the 'Size' column of the RomGrid
         private void RomGrid_SortCompare(object sender, DataGridViewSortCompareEventArgs e)
         {
+            /*
             try // to sort by 'Size', then by 'Name'.
             {
                 if (e.Column.Index != 2)
@@ -446,10 +544,12 @@ namespace ROMVault
             catch
             {
             }
+            */
         }
 
         private void RomGridMouseUp(object sender, MouseEventArgs e)
         {
+            /*
             if (e == null || e.Button != MouseButtons.Right)
             {
                 return;
@@ -507,6 +607,7 @@ namespace ROMVault
             catch
             {
             }
+            */
         }
 
         private void RomGridSelectionChanged(object sender, EventArgs e)

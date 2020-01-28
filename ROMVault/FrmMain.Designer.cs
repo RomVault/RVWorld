@@ -867,6 +867,7 @@
             this.RomGrid.TabIndex = 21;
             this.RomGrid.VirtualMode = true;
             this.RomGrid.CellFormatting += new System.Windows.Forms.DataGridViewCellFormattingEventHandler(this.RomGrid_CellFormatting);
+            this.RomGrid.CellValueNeeded += new System.Windows.Forms.DataGridViewCellValueEventHandler(this.RomGrid_CellValueNeeded);
             this.RomGrid.SelectionChanged += new System.EventHandler(this.RomGridSelectionChanged);
             this.RomGrid.SortCompare += new System.Windows.Forms.DataGridViewSortCompareEventHandler(this.RomGrid_SortCompare);
             this.RomGrid.MouseUp += new System.Windows.Forms.MouseEventHandler(this.RomGridMouseUp);
