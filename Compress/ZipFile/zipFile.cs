@@ -1801,6 +1801,10 @@ namespace Compress.ZipFile
                     LocalFileAddZeroLengthFile(zipFs);
                     _compressedSize = (ulong)zipFs.Position - _dataLocation;
                 }
+                else if (_compressedSize == 0 && UncompressedSize != 0)
+                {
+                    return ZipReturn.ZipErrorWritingToOutputStream;
+                }
 
                 CRC = crc32;
                 WriteCompressedSize(zipFs);

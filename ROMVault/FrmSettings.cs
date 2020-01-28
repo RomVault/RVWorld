@@ -53,7 +53,6 @@ namespace ROMVault
             upTime.Value = Settings.rvSettings.CacheSaveTimePeriod;
             chkDebugLogs.Checked = Settings.rvSettings.DebugLogsEnabled;
             chkRV7z.Checked = Settings.rvSettings.ConvertToRV7Z;
-            chk7zDeCompress.Checked = Settings.rvSettings.UseFileSelection;
         }
 
         private void BtnCancelClick(object sender, EventArgs e)
@@ -87,8 +86,6 @@ namespace ROMVault
             Settings.rvSettings.CacheSaveTimerEnabled = chkCacheSaveTimer.Checked;
             Settings.rvSettings.CacheSaveTimePeriod = (int) upTime.Value;
             Settings.rvSettings.ConvertToRV7Z = chkRV7z.Checked;
-            Settings.rvSettings.UseFileSelection = chk7zDeCompress.Checked;
-
 
             Settings.WriteConfig(Settings.rvSettings);
             Close();

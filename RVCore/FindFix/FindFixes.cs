@@ -159,7 +159,7 @@ namespace RVCore.FindFix
         private static void MergeGotFiles(RvFile[] gotFilesSortedByCRC, out FileGroup[] fileGroups)
         {
             List<FileGroup> listFileGroupsOut = new List<FileGroup>();
-            
+
 
             // insert a zero byte file.
             RvFile fileZero = MakeFileZero();
@@ -276,9 +276,17 @@ namespace RVCore.FindFix
                         continue;
                 }
 
-                if (f.Size == 0 && f.CRC == null)
+                if (f.CRC == null && f.SHA1 == null && f.MD5 == null)
                 {
-                    mergedCRCFamily[0].MergeFileIntoGroup(f);
+
+                    if (f.Size == 0)
+                    {
+                        mergedCRCFamily[0].MergeFileIntoGroup(f);
+                    }
+                    else if (f.Size == null && f.Name.Length > 1 && f.Name.Substring(f.Name.Length - 1, 1) == "/")
+                    {
+                        mergedCRCFamily[0].MergeFileIntoGroup(f);
+                    }
                 }
             }
         }

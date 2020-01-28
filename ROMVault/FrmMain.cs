@@ -194,6 +194,12 @@ namespace ROMVault
                 Tag = null
             };
 
+            MenuItem mnuFixDat = new MenuItem
+            {
+                Text = @"Create Fix DATs",
+                Tag = null
+            };
+
             MenuItem mnuMakeDat = new MenuItem
             {
                 Text = @"Make Dat with CHDs as disk",
@@ -209,12 +215,14 @@ namespace ROMVault
             _mnuContext.MenuItems.Add(mnuScan);
             _mnuContext.MenuItems.Add(_mnuOpen);
             _mnuContext.MenuItems.Add(mnuFile);
+            _mnuContext.MenuItems.Add(mnuFixDat);
             _mnuContext.MenuItems.Add(mnuMakeDat);
             _mnuContext.MenuItems.Add(mnuMakeDat2);
 
             mnuScan.Click += MnuToSortScan;
             _mnuOpen.Click += MnuOpenClick;
             mnuFile.Click += MnuFileClick;
+            mnuFixDat.Click += MnuMakeFixDatClick;
             mnuMakeDat.Click += MnuMakeDatClick;
             mnuMakeDat2.Click += MnuMakeDat2Click;
 
@@ -255,8 +263,7 @@ namespace ROMVault
             _mnuContextToSort.MenuItems.Add(_mnuToSortOpen);
             _mnuContextToSort.MenuItems.Add(_mnuToSortDelete);
             _mnuContextToSort.MenuItems.Add(_mnuToSortSetPrimary);
-            if (Settings.rvSettings.UseFileSelection)
-                _mnuContextToSort.MenuItems.Add(_mnuToSortSetCache);
+            _mnuContextToSort.MenuItems.Add(_mnuToSortSetCache);
 
             _mnuToSortScan.Click += MnuToSortScan;
             _mnuToSortOpen.Click += MnuToSortOpen;
@@ -315,11 +322,11 @@ namespace ROMVault
             };
             tBox = new TextBox
             {
-                AutoSize=false,
-                Location = SPoint(x1, y), 
+                AutoSize = false,
+                Location = SPoint(x1, y),
                 Size = SSize(20, 17),
-                BorderStyle = BorderStyle.FixedSingle, 
-                ReadOnly = true, 
+                BorderStyle = BorderStyle.FixedSingle,
+                ReadOnly = true,
                 TabStop = false
             };
             gbSetInfo.Controls.Add(lBox);
@@ -415,6 +422,12 @@ namespace ROMVault
             if (Directory.Exists(tDir))
                 Process.Start(tDir);
         }
+
+        private void MnuMakeFixDatClick(object sender, EventArgs e)
+        {
+            Report.MakeFixFiles(_clickedTree);
+        }
+
 
         private void MnuMakeDatClick(object sender, EventArgs e)
         {
@@ -597,7 +610,7 @@ namespace ROMVault
 
         private void btnReport_MouseUp(object sender, MouseEventArgs e)
         {
-            Report.MakeFixFiles(e.Button == MouseButtons.Left);
+            Report.MakeFixFiles(null, e.Button == MouseButtons.Left);
         }
 
         private void fixDatReportToolStripMenuItem_Click(object sender, EventArgs e)

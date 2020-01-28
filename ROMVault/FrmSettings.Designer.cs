@@ -45,7 +45,6 @@
             this.label5 = new System.Windows.Forms.Label();
             this.chkDoubleCheckDelete = new System.Windows.Forms.CheckBox();
             this.chkRV7z = new System.Windows.Forms.CheckBox();
-            this.chk7zDeCompress = new System.Windows.Forms.CheckBox();
             this.chkDetailedReporting = new System.Windows.Forms.CheckBox();
             ((System.ComponentModel.ISupportInitialize)(this.upTime)).BeginInit();
             this.SuspendLayout();
@@ -85,7 +84,7 @@
             // btnOK
             // 
             this.btnOK.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.btnOK.Location = new System.Drawing.Point(362, 433);
+            this.btnOK.Location = new System.Drawing.Point(362, 365);
             this.btnOK.Name = "btnOK";
             this.btnOK.Size = new System.Drawing.Size(89, 23);
             this.btnOK.TabIndex = 9;
@@ -96,7 +95,7 @@
             // btnCancel
             // 
             this.btnCancel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.btnCancel.Location = new System.Drawing.Point(475, 433);
+            this.btnCancel.Location = new System.Drawing.Point(475, 365);
             this.btnCancel.Name = "btnCancel";
             this.btnCancel.Size = new System.Drawing.Size(89, 23);
             this.btnCancel.TabIndex = 10;
@@ -167,7 +166,7 @@
             // chkDebugLogs
             // 
             this.chkDebugLogs.AutoSize = true;
-            this.chkDebugLogs.Location = new System.Drawing.Point(125, 416);
+            this.chkDebugLogs.Location = new System.Drawing.Point(125, 372);
             this.chkDebugLogs.Name = "chkDebugLogs";
             this.chkDebugLogs.Size = new System.Drawing.Size(126, 17);
             this.chkDebugLogs.TabIndex = 18;
@@ -240,20 +239,10 @@
             this.chkRV7z.Text = "Convert all 7z to RV7z";
             this.chkRV7z.UseVisualStyleBackColor = true;
             // 
-            // chk7zDeCompress
-            // 
-            this.chk7zDeCompress.AutoSize = true;
-            this.chk7zDeCompress.Location = new System.Drawing.Point(125, 349);
-            this.chk7zDeCompress.Name = "chk7zDeCompress";
-            this.chk7zDeCompress.Size = new System.Drawing.Size(133, 17);
-            this.chk7zDeCompress.TabIndex = 24;
-            this.chk7zDeCompress.Text = "Cache 7z Decompress";
-            this.chk7zDeCompress.UseVisualStyleBackColor = true;
-            // 
             // chkDetailedReporting
             // 
             this.chkDetailedReporting.AutoSize = true;
-            this.chkDetailedReporting.Location = new System.Drawing.Point(125, 393);
+            this.chkDetailedReporting.Location = new System.Drawing.Point(125, 349);
             this.chkDetailedReporting.Name = "chkDetailedReporting";
             this.chkDetailedReporting.Size = new System.Drawing.Size(130, 17);
             this.chkDetailedReporting.TabIndex = 25;
@@ -263,9 +252,8 @@
             // FrmSettings
             // 
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
-            this.ClientSize = new System.Drawing.Size(584, 468);
+            this.ClientSize = new System.Drawing.Size(584, 400);
             this.Controls.Add(this.chkDetailedReporting);
-            this.Controls.Add(this.chk7zDeCompress);
             this.Controls.Add(this.chkRV7z);
             this.Controls.Add(this.chkDoubleCheckDelete);
             this.Controls.Add(this.label5);
@@ -313,7 +301,6 @@
         private System.Windows.Forms.Label label5;
         private System.Windows.Forms.CheckBox chkDoubleCheckDelete;
         private System.Windows.Forms.CheckBox chkRV7z;
-        private System.Windows.Forms.CheckBox chk7zDeCompress;
         private System.Windows.Forms.CheckBox chkDetailedReporting;
     }
 }

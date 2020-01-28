@@ -53,7 +53,7 @@ namespace RVCore.FixFile.Util
 
             for (int i = 0; i < zipFileIn.LocalFilesCount(); i++)
             {
-                if (zZipFileIn.Child(i).IsDir)
+                if (zipFileIn.IsDirectory(i))
                     continue;
                 RvFile thisFile = null;
                 for (int j = 0; j < zZipFileIn.ChildCount; j++)

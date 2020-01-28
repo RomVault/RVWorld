@@ -7,7 +7,6 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
-using System.Linq;
 using System.Windows.Forms;
 using RVCore;
 using RVCore.FixFile;
@@ -17,8 +16,13 @@ namespace ROMVault
     public partial class FrmProgressWindowFix : Form
     {
         private readonly Form _parentForm;
-
-        private readonly Queue<DataGridViewRow> _rowQueue;
+        private int _rowCount;
+        private readonly List<string[][]> _reportPages;
+        string[][] pageNow;
+        
+        private int _rowDisplay;
+        private string[][] _pageDisplay;
+        private int _pageDisplayIndex;
 
         private bool _bDone;
 
@@ -27,12 +31,18 @@ namespace ROMVault
 
         public FrmProgressWindowFix(Form parentForm)
         {
-            _rowQueue = new Queue<DataGridViewRow>();
+            _rowCount = 0;
+            _rowDisplay = -1;
+            _pageDisplayIndex = -1;
+            _pageDisplay = null;
+
+            _reportPages = new List<string[][]>();
             _parentForm = parentForm;
             InitializeComponent();
-            timer1.Interval = 100;
+            timer1.Interval = 250;
             timer1.Enabled = true;
         }
+
 
 
         protected override CreateParams CreateParams
@@ -49,32 +59,51 @@ namespace ROMVault
 
         private void Timer1Tick(object sender, EventArgs e)
         {
-            lock (_rowQueue)
-            {
-                int rowCount = _rowQueue.Count;
-                if (rowCount == 0)
-                {
-                    return;
-                }
-
-                DataGridViewRow[] dgvr = new DataGridViewRow[rowCount];
-                for (int i = 0; i < rowCount; i++)
-                {
-                    dgvr[i] = _rowQueue.Dequeue();
-                }
-
-                dataGridView1.Rows.AddRange(dgvr);
-            }
-            int iRow = dataGridView1.Rows.Count - 1;
-            dataGridView1.FirstDisplayedScrollingRowIndex = iRow;
+            if (_rowDisplay == _rowCount || _rowCount==0)
+                return;
+            dataGridView1.RowCount = _rowCount;
+            _rowDisplay = _rowCount;
+            dataGridView1.FirstDisplayedScrollingRowIndex = _rowCount - 1;
         }
 
+        private void dataGridView1_CellValueNeeded(object sender, DataGridViewCellValueEventArgs e)
+        {
+            int pageIndex = e.RowIndex / 1000;
+            int rowIndex = e.RowIndex % 1000;
+
+            if (pageIndex != _pageDisplayIndex)
+            {
+                _pageDisplayIndex = pageIndex;
+                _pageDisplay = _reportPages[pageIndex];
+            }
+
+            e.Value = _pageDisplay[rowIndex][e.ColumnIndex];
+        }
+        private void dataGridView1_CellFormatting(object sender, DataGridViewCellFormattingEventArgs e)
+        {
+            int pageIndex = e.RowIndex / 1000;
+            int rowIndex = e.RowIndex % 1000;
+
+            if (pageIndex != _pageDisplayIndex)
+            {
+                _pageDisplayIndex = pageIndex;
+                _pageDisplay = _reportPages[pageIndex];
+            }
+
+            if (_pageDisplay[rowIndex][8] == null)
+                return;
+
+            e.CellStyle.BackColor = Color.Red;
+            e.CellStyle.ForeColor = Color.Black;
+        }
 
         private void FrmProgressWindowFixShown(object sender, EventArgs e)
         {
-            ThWrk = new ThreadWorker(Fix.PerformFixes) {wReport = BgwProgressChanged, wFinal = BgwRunWorkerCompleted};
+            ThWrk = new ThreadWorker(Fix.PerformFixes) { wReport = BgwProgressChanged, wFinal = BgwRunWorkerCompleted };
             ThWrk.StartAsync();
         }
+
+
 
         private void BgwProgressChanged(object e)
         {
@@ -87,40 +116,35 @@ namespace ROMVault
 
             if (e is bgwShowFix bgwSf)
             {
-                DataGridViewRow dgrq = (DataGridViewRow)dataGridView1.RowTemplate.Clone();
-                dgrq.CreateCells(dataGridView1, bgwSf.FixDir, bgwSf.FixZip, bgwSf.FixFile, bgwSf.Size, bgwSf.Dir, bgwSf.SourceDir, bgwSf.SourceZip, bgwSf.SourceFile);
-                lock (_rowQueue)
+                int reportLineIndex = _rowCount % 1000;
+
+                if (reportLineIndex == 0)
                 {
-                    _rowQueue.Enqueue(dgrq);
+                    pageNow=new string[1000][];
+                    _reportPages.Add(pageNow);
                 }
+
+                pageNow[reportLineIndex] =
+                    new[]
+                    {
+                        bgwSf.FixDir, bgwSf.FixZip, bgwSf.FixFile, bgwSf.Size, bgwSf.Dir,
+                        bgwSf.SourceDir, bgwSf.SourceZip, bgwSf.SourceFile,null
+                    };
+                _rowCount += 1;
                 return;
             }
 
             if (e is bgwShowFixError bgwSFE)
             {
-                lock (_rowQueue)
-                {
-                    DataGridViewRow setError;
-                    if (_rowQueue.Count == 0)
-                    {
-                        int iRow = dataGridView1.Rows.Count - 1;
+                int errorRowCount = _rowCount - 1;
+                int pageIndex = errorRowCount / 1000;
+                int rowIndex = errorRowCount % 1000;
 
-                        //this should never happen
-                        if (iRow == -1)
-                            return;
-                        setError = dataGridView1.Rows[iRow];
-                    }
-                    else
-                    {
-                        setError = _rowQueue.Last();
-                        if (setError == null)
-                            return;
-                    }
-                    setError.Cells[4].Style.BackColor = Color.Red;
-                    setError.Cells[4].Style.ForeColor = Color.Black;
-                    setError.Cells[4].Value = bgwSFE.FixError;
-                }
+                string[] errorRow = _reportPages[pageIndex][rowIndex];
+                errorRow[4] = bgwSFE.FixError;
+                errorRow[7] = "error";
 
+                dataGridView1.Refresh();
                 return;
             }
 
@@ -213,5 +237,6 @@ namespace ROMVault
                     return;
             }
         }
+
     }
 }

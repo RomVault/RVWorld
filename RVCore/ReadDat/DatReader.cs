@@ -64,21 +64,18 @@ namespace RVCore.ReadDat
                 _thWrk = thWrk;
 
                 string datRootFullName = datFile.GetData(RvDat.DatData.DatRootFullName);
-
-                DatRead dr = new DatRead
-                {
-                    ErrorReport = ReadError
-                };
                 string fullPath = RvFile.GetDatPhysicalPath(datRootFullName);
                 Debug.WriteLine("Reading Dat " + fullPath);
 
+                DatRead dr = new DatRead { ErrorReport = ReadError };
                 dr.ReadDat(fullPath, out DatHeader dh);
                 if (dh == null)
                     return null;
 
-                string extraPath = !string.IsNullOrEmpty(dh.RootDir) ? dh.RootDir : dh.Name;
 
-                string dirName = Path.GetDirectoryName(datRootFullName) + System.IO.Path.DirectorySeparatorChar + extraPath + System.IO.Path.DirectorySeparatorChar;
+                string extraPath = !string.IsNullOrEmpty(dh.RootDir) ? dh.RootDir : dh.Name;
+                string dirName = Path.GetDirectoryName(datRootFullName) + Path.DirectorySeparatorChar + extraPath + Path.DirectorySeparatorChar;
+
 
                 DatRule datRule = FindDatRule(dirName);
 

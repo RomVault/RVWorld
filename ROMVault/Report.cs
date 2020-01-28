@@ -91,7 +91,7 @@ namespace ROMVault
                         {
                             if (line.Contains("<game "))
                             {
-                                game = new List<string> {line};
+                                game = new List<string> { line };
                             }
                             else if (line.Contains("</game>"))
                             {
@@ -118,7 +118,7 @@ namespace ROMVault
             }
         }
 
-        public static void MakeFixFiles(bool scrubIt = true)
+        public static void MakeFixFiles(RvFile root=null, bool scrubIt = true)
         {
             _tDat = null;
             _ts = null;
@@ -138,7 +138,11 @@ namespace ROMVault
 
             _outdir = browse.SelectedPath;
             _tDat = null;
-            MakeFixFilesRecurse(DB.DirTree.Child(0), true, scrubIt);
+
+            if (root == null)
+                root = DB.DirTree.Child(0);
+
+            MakeFixFilesRecurse(root, true, scrubIt);
 
             if (_ts == null)
             {
@@ -203,7 +207,13 @@ namespace ROMVault
                             {
                                 _ts.WriteLine("\t\t<type>SuperDAT</type>");
                             }
-                            _ts.WriteLine("\t\t<description>fix_" + Etxt(_tDat.GetData(RvDat.DatData.Description)) + "</description>");
+
+                            string description = _tDat.GetData(RvDat.DatData.Description);
+                            if (!string.IsNullOrWhiteSpace(description))
+                            {
+                                _ts.WriteLine("\t\t<description>fix_" + Etxt(description) + "</description>");
+                            }
+                            
                             _ts.WriteLine("\t\t<category>FIXDATFILE</category>");
                             _ts.WriteLine("\t\t<version>" + DateTime.Now.ToString("MM/dd/yyyy HH:mm:ss") + "</version>");
                             _ts.WriteLine("\t\t<date>" + DateTime.Now.ToString("MM/dd/yyyy") + "</date>");
@@ -216,7 +226,7 @@ namespace ROMVault
                         if (tDir.FileType == FileType.Zip || tDir.FileType == FileType.SevenZip)
                             gamename = Path.GetFileNameWithoutExtension(gamename);
 
-                        _ts.WriteLine("\t<game name=\"" +Etxt( gamename) + "\">");
+                        _ts.WriteLine("\t<game name=\"" + Etxt(gamename) + "\">");
                         if (!string.IsNullOrEmpty(tDir.Game.GetData(RvGame.GameData.Description)))
                         {
                             _ts.WriteLine("\t\t<description>" + Etxt(tDir.Game.GetData(RvGame.GameData.Description)) + "</description>");

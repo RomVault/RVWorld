@@ -126,7 +126,7 @@ namespace RVCore.RvDB
             return 0;
         }
 
-        
+
         // find fix files, if the gotFile has been fully scanned check the SHA1/MD5, if not then just return true as the CRC/Size is all we have to go on.
         // this means that if the gotfile has not been fully scanned this will return true even with the source and destination SHA1/MD5 possibly different.
         public static bool CheckIfMissingFileCanBeFixedByGotFile(RvFile missingFile, RvFile gotFile)
@@ -192,11 +192,22 @@ namespace RVCore.RvDB
                 foundOneMatching = true;
             }
 
-            // this will assume a null size with at least one matching hash is a zero length file.
-            if (tFile.Size == null && foundOneMatching)
+            if (tFile.Size != null)
+            {
+                if (tFile.Size != 0)
+                {
+                    return false;
+                }
+                foundOneMatching = true;
+            }
+
+            // if at least one hash,size matched. & nothing failed to match.
+            if (foundOneMatching)
                 return true;
 
-            return tFile.Size == 0;
+            // hashes and size are all null
+            // see if we have a directory
+            return (tFile.Name.Length > 1 && tFile.Name.Substring(tFile.Name.Length - 1, 1) == "/");
         }
 
         public static bool RomFromSameGame(RvFile a, RvFile b)
@@ -213,7 +224,7 @@ namespace RVCore.RvDB
             return a.Parent == b.Parent;
         }
 
-        
+
 
     }
 }

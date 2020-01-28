@@ -68,8 +68,7 @@ namespace RVCore
         public int CacheSaveTimePeriod = 10;
         public bool ConvertToRV7Z = false;
         public bool UseFileMove = false;
-        public bool UseFileSelection = false;
-
+        
         public bool chkBoxShowCorrect = true;
         public bool chkBoxShowMissing = true;
         public bool chkBoxShowFixed = true;
