@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.Globalization;
@@ -25,8 +26,25 @@ namespace ROMVault
             }
 
             RvFile tGame = (RvFile)GameGrid.SelectedRows[0].Tag;
+
             UpdateRomGrid(tGame);
+
+            if (Settings.IsMono && RomGrid.RowCount > 0)
+            {
+                RomGrid.CurrentCell = RomGrid[0, 0];
+            }
+
+            RomGrid.Rows.Clear();
+            List<RvFile> fileList = new List<RvFile>();
+            AddDir(tGame, "", ref fileList);
+            //AddDir(tGame, "");
+
+            gridFiles = fileList.ToArray();
+            GC.Collect();
+
         }
+
+        private RvFile[] gridFiles;
 
         private void UpdateRomGrid(RvFile tGame)
         {
@@ -205,16 +223,46 @@ namespace ROMVault
             {
                 HidePannel();
             }
+        }
 
 
-            if (Settings.IsMono && RomGrid.RowCount > 0)
+        private void AddDir(RvFile tGame, string pathAdd, ref List<RvFile> fileList)
+        {
+            for (int l = 0; l < tGame.ChildCount; l++)
             {
-                RomGrid.CurrentCell = RomGrid[0, 0];
-            }
+                RvFile tBase = tGame.Child(l);
 
-            RomGrid.Rows.Clear();
-            AddDir(tGame, "");
-            GC.Collect();
+                RvFile tFile = tBase;
+                if (tFile.IsFile)
+                {
+                    AddRom(tFile, pathAdd, ref fileList);
+                }
+
+                if (tGame.Dat == null)
+                {
+                    continue;
+                }
+
+                RvFile tDir = tBase;
+                if (!tDir.IsDir)
+                {
+                    continue;
+                }
+
+                if (tDir.Game == null)
+                {
+                    AddDir(tDir, pathAdd + tGame.Name + "/", ref fileList);
+                }
+            }
+        }
+
+        private void AddRom(RvFile tFile, string pathAdd, ref List<RvFile> fileList)
+        {
+            if (tFile.DatStatus != DatStatus.InDatMerged || tFile.RepStatus != RepStatus.NotCollected ||
+                chkBoxShowMerged.Checked)
+            {
+                fileList.Add(tFile);
+            }
         }
 
         private void AddDir(RvFile tGame, string pathAdd)
@@ -247,69 +295,62 @@ namespace ROMVault
             }
         }
 
-        // returns either white or black, depending of quick luminance of the Color " a "
-        // called when the _displayColor is finished, in order to populate the _fontColor table.
-        private static Color Contrasty(Color a)
-        {
-            return (a.R << 1) + a.B + a.G + (a.G << 2) < 1024 ? Color.White : Color.Black;
-        }
 
-        private void AddRom(RvFile tRomTable, string pathAdd)
+        private void AddRom(RvFile tFile, string pathAdd)
         {
-            if (tRomTable.DatStatus != DatStatus.InDatMerged || tRomTable.RepStatus != RepStatus.NotCollected ||
-                chkBoxShowMerged.Checked)
+            if (tFile.DatStatus != DatStatus.InDatMerged || tFile.RepStatus != RepStatus.NotCollected || chkBoxShowMerged.Checked)
             {
                 RomGrid.Rows.Add();
                 int row = RomGrid.Rows.Count - 1;
-                RomGrid.Rows[row].Tag = tRomTable;
+                RomGrid.Rows[row].Tag = tFile;
 
                 for (int i = 0; i < RomGrid.Rows[row].Cells.Count; i++)
                 {
                     DataGridViewCellStyle cs = RomGrid.Rows[row].Cells[i].Style;
-                    cs.BackColor = _displayColor[(int)tRomTable.RepStatus];
-                    cs.ForeColor = _fontColor[(int)tRomTable.RepStatus];
+                    cs.BackColor = _displayColor[(int)tFile.RepStatus];
+                    cs.ForeColor = _fontColor[(int)tFile.RepStatus];
                 }
 
-                string fname = pathAdd + tRomTable.Name;
-                if (!string.IsNullOrEmpty(tRomTable.FileName))
+                string fname = pathAdd + tFile.Name;
+                if (!string.IsNullOrEmpty(tFile.FileName))
                 {
-                    fname += " (Found: " + tRomTable.FileName + ")";
+                    fname += " (Found: " + tFile.FileName + ")";
                 }
 
-                if (tRomTable.CHDVersion != null)
+                if (tFile.CHDVersion != null)
                 {
-                    fname += " (V" + tRomTable.CHDVersion + ")";
+                    fname += " (V" + tFile.CHDVersion + ")";
                 }
 
-                if (tRomTable.HeaderFileType != HeaderFileType.Nothing)
+                if (tFile.HeaderFileType != HeaderFileType.Nothing)
                 {
-                    fname += " (" + tRomTable.HeaderFileType + ")";
+                    fname += " (" + tFile.HeaderFileType + ")";
                 }
 
 
                 RomGrid.Rows[row].Cells["CRom"].Value = fname;
 
-                RomGrid.Rows[row].Cells["CMerge"].Value = tRomTable.Merge;
-                RomGrid.Rows[row].Cells["CStatus"].Value = tRomTable.Status;
+                RomGrid.Rows[row].Cells["CMerge"].Value = tFile.Merge;
+                RomGrid.Rows[row].Cells["CStatus"].Value = tFile.Status;
 
-                SetCell(RomGrid.Rows[row].Cells["CSize"], tRomTable.Size.ToString(), tRomTable, FileStatus.SizeFromDAT, FileStatus.SizeFromHeader, FileStatus.SizeVerified);
-                SetCell(RomGrid.Rows[row].Cells["CCRC32"], tRomTable.CRC.ToHexString(), tRomTable, FileStatus.CRCFromDAT, FileStatus.CRCFromHeader, FileStatus.CRCVerified);
-                SetCell(RomGrid.Rows[row].Cells["CSHA1"], tRomTable.SHA1.ToHexString(), tRomTable, FileStatus.SHA1FromDAT, FileStatus.SHA1FromHeader, FileStatus.SHA1Verified);
-                SetCell(RomGrid.Rows[row].Cells["CMD5"], tRomTable.MD5.ToHexString(), tRomTable, FileStatus.MD5FromDAT, FileStatus.MD5FromHeader, FileStatus.MD5Verified);
+                SetCell(RomGrid.Rows[row].Cells["CSize"], tFile.Size.ToString(), tFile, FileStatus.SizeFromDAT, FileStatus.SizeFromHeader, FileStatus.SizeVerified);
+                SetCell(RomGrid.Rows[row].Cells["CCRC32"], tFile.CRC.ToHexString(), tFile, FileStatus.CRCFromDAT, FileStatus.CRCFromHeader, FileStatus.CRCVerified);
+                SetCell(RomGrid.Rows[row].Cells["CSHA1"], tFile.SHA1.ToHexString(), tFile, FileStatus.SHA1FromDAT, FileStatus.SHA1FromHeader, FileStatus.SHA1Verified);
+                SetCell(RomGrid.Rows[row].Cells["CMD5"], tFile.MD5.ToHexString(), tFile, FileStatus.MD5FromDAT, FileStatus.MD5FromHeader, FileStatus.MD5Verified);
 
-                SetCell(RomGrid.Rows[row].Cells["CAltSize"], tRomTable.AltSize.ToString(), tRomTable, FileStatus.AltSizeFromDAT, FileStatus.AltSizeFromHeader, FileStatus.AltSizeVerified);
-                SetCell(RomGrid.Rows[row].Cells["CAltCRC32"], tRomTable.AltCRC.ToHexString(), tRomTable, FileStatus.AltCRCFromDAT, FileStatus.AltCRCFromHeader, FileStatus.AltCRCVerified);
-                SetCell(RomGrid.Rows[row].Cells["CAltSHA1"], tRomTable.AltSHA1.ToHexString(), tRomTable, FileStatus.AltSHA1FromDAT, FileStatus.AltSHA1FromHeader, FileStatus.AltSHA1Verified);
-                SetCell(RomGrid.Rows[row].Cells["CAltMD5"], tRomTable.AltMD5.ToHexString(), tRomTable, FileStatus.AltMD5FromDAT, FileStatus.AltMD5FromHeader, FileStatus.AltMD5Verified);
+                SetCell(RomGrid.Rows[row].Cells["CAltSize"], tFile.AltSize.ToString(), tFile, FileStatus.AltSizeFromDAT, FileStatus.AltSizeFromHeader, FileStatus.AltSizeVerified);
+                SetCell(RomGrid.Rows[row].Cells["CAltCRC32"], tFile.AltCRC.ToHexString(), tFile, FileStatus.AltCRCFromDAT, FileStatus.AltCRCFromHeader, FileStatus.AltCRCVerified);
+                SetCell(RomGrid.Rows[row].Cells["CAltSHA1"], tFile.AltSHA1.ToHexString(), tFile, FileStatus.AltSHA1FromDAT, FileStatus.AltSHA1FromHeader, FileStatus.AltSHA1Verified);
+                SetCell(RomGrid.Rows[row].Cells["CAltMD5"], tFile.AltMD5.ToHexString(), tFile, FileStatus.AltMD5FromDAT, FileStatus.AltMD5FromHeader, FileStatus.AltMD5Verified);
 
-                if (tRomTable.FileType == FileType.ZipFile)
+                if (tFile.FileType == FileType.ZipFile)
                 {
-                    RomGrid.Rows[row].Cells["ZipIndex"].Value = tRomTable.ZipFileIndex == -1
+                    RomGrid.Rows[row].Cells["ZipIndex"].Value = tFile.ZipFileIndex == -1
                         ? ""
-                        : tRomTable.ZipFileIndex.ToString(CultureInfo.InvariantCulture);
-                    RomGrid.Rows[row].Cells["ZipHeader"].Value = tRomTable.ZipFileHeaderPosition == null
+                        : tFile.ZipFileIndex.ToString(CultureInfo.InvariantCulture);
+                    RomGrid.Rows[row].Cells["ZipHeader"].Value = tFile.ZipFileHeaderPosition == null
                         ? ""
-                        : tRomTable.ZipFileHeaderPosition.ToString();
+                        : tFile.ZipFileHeaderPosition.ToString();
                 }
             }
         }

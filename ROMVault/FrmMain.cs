@@ -275,6 +275,13 @@ namespace ROMVault
         }
 
 
+        // returns either white or black, depending of quick luminance of the Color " a "
+        // called when the _displayColor is finished, in order to populate the _fontColor table.
+        private static Color Contrasty(Color a)
+        {
+            return (a.R << 1) + a.B + a.G + (a.G << 2) < 1024 ? Color.White : Color.Black;
+        }
+
         public sealed override string Text
         {
             get => base.Text;

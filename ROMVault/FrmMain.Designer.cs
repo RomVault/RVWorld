@@ -356,7 +356,7 @@
             this.lblDITRomsUnknown.Location = new System.Drawing.Point(311, 120);
             this.lblDITRomsUnknown.Name = "lblDITRomsUnknown";
             this.lblDITRomsUnknown.ReadOnly = true;
-            this.lblDITRomsUnknown.Size = new System.Drawing.Size(120, 17);
+            this.lblDITRomsUnknown.Size = new System.Drawing.Size(120, 20);
             this.lblDITRomsUnknown.TabIndex = 27;
             this.lblDITRomsUnknown.TabStop = false;
             // 
@@ -366,7 +366,7 @@
             this.lblDITRomsFixable.Location = new System.Drawing.Point(311, 104);
             this.lblDITRomsFixable.Name = "lblDITRomsFixable";
             this.lblDITRomsFixable.ReadOnly = true;
-            this.lblDITRomsFixable.Size = new System.Drawing.Size(120, 17);
+            this.lblDITRomsFixable.Size = new System.Drawing.Size(120, 20);
             this.lblDITRomsFixable.TabIndex = 28;
             this.lblDITRomsFixable.TabStop = false;
             // 
@@ -376,7 +376,7 @@
             this.lblDITRomsMissing.Location = new System.Drawing.Point(89, 120);
             this.lblDITRomsMissing.Name = "lblDITRomsMissing";
             this.lblDITRomsMissing.ReadOnly = true;
-            this.lblDITRomsMissing.Size = new System.Drawing.Size(120, 17);
+            this.lblDITRomsMissing.Size = new System.Drawing.Size(120, 20);
             this.lblDITRomsMissing.TabIndex = 29;
             this.lblDITRomsMissing.TabStop = false;
             // 
@@ -386,7 +386,7 @@
             this.lblDITRomsGot.Location = new System.Drawing.Point(89, 104);
             this.lblDITRomsGot.Name = "lblDITRomsGot";
             this.lblDITRomsGot.ReadOnly = true;
-            this.lblDITRomsGot.Size = new System.Drawing.Size(120, 17);
+            this.lblDITRomsGot.Size = new System.Drawing.Size(120, 20);
             this.lblDITRomsGot.TabIndex = 30;
             this.lblDITRomsGot.TabStop = false;
             // 
@@ -405,7 +405,7 @@
             this.lblDITPath.Location = new System.Drawing.Point(89, 78);
             this.lblDITPath.Name = "lblDITPath";
             this.lblDITPath.ReadOnly = true;
-            this.lblDITPath.Size = new System.Drawing.Size(342, 17);
+            this.lblDITPath.Size = new System.Drawing.Size(342, 20);
             this.lblDITPath.TabIndex = 31;
             this.lblDITPath.TabStop = false;
             // 
@@ -433,7 +433,7 @@
             this.lblDITDate.Location = new System.Drawing.Point(311, 62);
             this.lblDITDate.Name = "lblDITDate";
             this.lblDITDate.ReadOnly = true;
-            this.lblDITDate.Size = new System.Drawing.Size(120, 17);
+            this.lblDITDate.Size = new System.Drawing.Size(120, 20);
             this.lblDITDate.TabIndex = 32;
             this.lblDITDate.TabStop = false;
             // 
@@ -443,7 +443,7 @@
             this.lblDITAuthor.Location = new System.Drawing.Point(89, 62);
             this.lblDITAuthor.Name = "lblDITAuthor";
             this.lblDITAuthor.ReadOnly = true;
-            this.lblDITAuthor.Size = new System.Drawing.Size(120, 17);
+            this.lblDITAuthor.Size = new System.Drawing.Size(120, 20);
             this.lblDITAuthor.TabIndex = 33;
             this.lblDITAuthor.TabStop = false;
             // 
@@ -471,7 +471,7 @@
             this.lblDITVersion.Location = new System.Drawing.Point(311, 46);
             this.lblDITVersion.Name = "lblDITVersion";
             this.lblDITVersion.ReadOnly = true;
-            this.lblDITVersion.Size = new System.Drawing.Size(120, 17);
+            this.lblDITVersion.Size = new System.Drawing.Size(120, 20);
             this.lblDITVersion.TabIndex = 34;
             this.lblDITVersion.TabStop = false;
             // 
@@ -481,7 +481,7 @@
             this.lblDITCategory.Location = new System.Drawing.Point(89, 46);
             this.lblDITCategory.Name = "lblDITCategory";
             this.lblDITCategory.ReadOnly = true;
-            this.lblDITCategory.Size = new System.Drawing.Size(120, 17);
+            this.lblDITCategory.Size = new System.Drawing.Size(120, 20);
             this.lblDITCategory.TabIndex = 35;
             this.lblDITCategory.TabStop = false;
             // 
@@ -520,7 +520,7 @@
             this.lblDITName.Location = new System.Drawing.Point(89, 14);
             this.lblDITName.Name = "lblDITName";
             this.lblDITName.ReadOnly = true;
-            this.lblDITName.Size = new System.Drawing.Size(342, 17);
+            this.lblDITName.Size = new System.Drawing.Size(342, 20);
             this.lblDITName.TabIndex = 37;
             this.lblDITName.TabStop = false;
             // 
@@ -865,6 +865,7 @@
             this.RomGrid.ShowRowErrors = false;
             this.RomGrid.Size = new System.Drawing.Size(544, 315);
             this.RomGrid.TabIndex = 21;
+            this.RomGrid.VirtualMode = true;
             this.RomGrid.CellFormatting += new System.Windows.Forms.DataGridViewCellFormattingEventHandler(this.RomGrid_CellFormatting);
             this.RomGrid.SelectionChanged += new System.EventHandler(this.RomGridSelectionChanged);
             this.RomGrid.SortCompare += new System.Windows.Forms.DataGridViewSortCompareEventHandler(this.RomGrid_SortCompare);
@@ -1279,6 +1280,7 @@
             ((System.ComponentModel.ISupportInitialize)(this.splitDatInfoTree)).EndInit();
             this.splitDatInfoTree.ResumeLayout(false);
             this.gbDatInfo.ResumeLayout(false);
+            this.gbDatInfo.PerformLayout();
             this.splitGameInfoLists.Panel1.ResumeLayout(false);
             this.splitGameInfoLists.Panel1.PerformLayout();
             this.splitGameInfoLists.Panel2.ResumeLayout(false);
