@@ -12,9 +12,9 @@ namespace ROMVault
 {
     public partial class FrmMain
     {
-        private RvFile[] gridFiles;
-        private int sortIndex = -1;
-        private SortOrder sortDir = SortOrder.None;
+        private RvFile[] romGrid;
+        private int romSortIndex = -1;
+        private SortOrder romSortDir = SortOrder.None;
      
         private void UpdateRomGrid(RvFile tGame)
         {
@@ -23,18 +23,18 @@ namespace ROMVault
                 RomGrid.CurrentCell = RomGrid[0, 0];
             }
 
-            if (sortIndex != -1)
-                RomGrid.Columns[sortIndex].HeaderCell.SortGlyphDirection = SortOrder.None;
+            if (romSortIndex != -1)
+                RomGrid.Columns[romSortIndex].HeaderCell.SortGlyphDirection = SortOrder.None;
 
-            sortIndex = -1;
-            sortDir = SortOrder.None;
+            romSortIndex = -1;
+            romSortDir = SortOrder.None;
 
             RomGrid.Rows.Clear();
             List<RvFile> fileList = new List<RvFile>();
             AddDir(tGame, "", ref fileList);
 
-            gridFiles = fileList.ToArray();
-            RomGrid.RowCount = gridFiles.Length;
+            romGrid = fileList.ToArray();
+            RomGrid.RowCount = romGrid.Length;
         }
 
         private void AddDir(RvFile tGame, string pathAdd, ref List<RvFile> fileList)
@@ -79,7 +79,7 @@ namespace ROMVault
 
         private void RomGridCellValueNeeded(object sender, DataGridViewCellValueEventArgs e)
         {
-            RvFile tFile = gridFiles[e.RowIndex];
+            RvFile tFile = romGrid[e.RowIndex];
             switch (e.ColumnIndex)
             {
                 case 0: //CGot
@@ -188,7 +188,7 @@ namespace ROMVault
 
         private void RomGridCellFormatting(object sender, DataGridViewCellFormattingEventArgs e)
         {
-            RvFile tFile = gridFiles[e.RowIndex];
+            RvFile tFile = romGrid[e.RowIndex];
             e.CellStyle.BackColor = _displayColor[(int)tFile.RepStatus];
             e.CellStyle.ForeColor = _fontColor[(int)tFile.RepStatus];
         }
@@ -196,31 +196,31 @@ namespace ROMVault
 
         private void RomGridColumnHeaderMouseClick(object sender, DataGridViewCellMouseEventArgs e)
         {
-            if (gridFiles==null)
+            if (romGrid==null)
                 return;
             
             if (RomGrid.Columns[e.ColumnIndex].SortMode == DataGridViewColumnSortMode.NotSortable)
                 return;
 
-            if (sortIndex != e.ColumnIndex)
+            if (romSortIndex != e.ColumnIndex)
             {
-                if (sortIndex >= 0)
-                    RomGrid.Columns[sortIndex].HeaderCell.SortGlyphDirection = SortOrder.None;
-                sortIndex = e.ColumnIndex;
-                sortDir = SortOrder.Ascending;
+                if (romSortIndex >= 0)
+                    RomGrid.Columns[romSortIndex].HeaderCell.SortGlyphDirection = SortOrder.None;
+                romSortIndex = e.ColumnIndex;
+                romSortDir = SortOrder.Ascending;
             }
             else
             {
-                sortDir = sortDir == SortOrder.Ascending ? SortOrder.Descending : SortOrder.Ascending;
+                romSortDir = romSortDir == SortOrder.Ascending ? SortOrder.Descending : SortOrder.Ascending;
             }
 
-            RomGrid.Columns[sortIndex].HeaderCell.SortGlyphDirection = sortDir;
+            RomGrid.Columns[romSortIndex].HeaderCell.SortGlyphDirection = romSortDir;
 
-            Debug.WriteLine($"Sort in {sortIndex}  dir {sortDir}");
+            Debug.WriteLine($"Sort in {romSortIndex}  dir {romSortDir}");
 
-            IComparer<RvFile> t = new RomUiCompare(e.ColumnIndex, sortDir);
+            IComparer<RvFile> t = new RomUiCompare(e.ColumnIndex, romSortDir);
 
-            Array.Sort(gridFiles, t);
+            Array.Sort(romGrid, t);
             RomGrid.Refresh();
         }
 

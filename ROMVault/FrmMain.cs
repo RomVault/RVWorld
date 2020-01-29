@@ -7,6 +7,7 @@
 using System;
 using System.Diagnostics;
 using System.Drawing;
+using System.Globalization;
 using System.Windows.Forms;
 using RVCore;
 using RVCore.FindFix;
@@ -53,8 +54,6 @@ namespace ROMVault
 
         private bool _updatingGameGrid;
 
-        private int _gameGridSortColumnIndex;
-        private SortOrder _gameGridSortOrder = SortOrder.Descending;
 
         private FrmKey _fk;
 
@@ -701,15 +700,17 @@ namespace ROMVault
             RomGrid.Rows.Clear();
 
             // clear sorting
-            GameGrid.Columns[_gameGridSortColumnIndex].HeaderCell.SortGlyphDirection = SortOrder.None;
-            _gameGridSortColumnIndex = 0;
-            _gameGridSortOrder = SortOrder.Descending;
+            if (gameSortIndex>=0)
+                GameGrid.Columns[gameSortIndex].HeaderCell.SortGlyphDirection = SortOrder.None;
+            gameSortIndex = 0;
+            gameSortDir = SortOrder.Descending;
 
             if (cf == null)
             {
                 return;
             }
 
+            UpdateDatMetaData(cf);
             UpdateGameGrid(cf);
         }
 
@@ -805,6 +806,51 @@ namespace ROMVault
             lblDITRomsUnknown.Width = widthB1;
         }
 
+
+        private void UpdateDatMetaData(RvFile tDir)
+        {
+            lblDITName.Text = tDir.Name;
+            if (tDir.Dat != null)
+            {
+                RvDat tDat = tDir.Dat;
+                lblDITDescription.Text = tDat.GetData(RvDat.DatData.Description);
+                lblDITCategory.Text = tDat.GetData(RvDat.DatData.Category);
+                lblDITVersion.Text = tDat.GetData(RvDat.DatData.Version);
+                lblDITAuthor.Text = tDat.GetData(RvDat.DatData.Author);
+                lblDITDate.Text = tDat.GetData(RvDat.DatData.Date);
+                string header = tDat.GetData(RvDat.DatData.Header);
+                if (!string.IsNullOrWhiteSpace(header))
+                    lblDITName.Text += " (" + header + ")";
+            }
+            else if (tDir.DirDatCount == 1)
+            {
+                RvDat tDat = tDir.DirDat(0);
+                lblDITDescription.Text = tDat.GetData(RvDat.DatData.Description);
+                lblDITCategory.Text = tDat.GetData(RvDat.DatData.Category);
+                lblDITVersion.Text = tDat.GetData(RvDat.DatData.Version);
+                lblDITAuthor.Text = tDat.GetData(RvDat.DatData.Author);
+                lblDITDate.Text = tDat.GetData(RvDat.DatData.Date);
+                string header = tDat.GetData(RvDat.DatData.Header);
+                if (!string.IsNullOrWhiteSpace(header))
+                    lblDITName.Text += " (" + header + ")";
+            }
+            else
+            {
+                lblDITDescription.Text = "";
+                lblDITCategory.Text = "";
+                lblDITVersion.Text = "";
+                lblDITAuthor.Text = "";
+                lblDITDate.Text = "";
+            }
+
+            lblDITPath.Text = tDir.FullName;
+
+            lblDITRomsGot.Text = tDir.DirStatus.CountCorrect().ToString(CultureInfo.InvariantCulture);
+            lblDITRomsMissing.Text = tDir.DirStatus.CountMissing().ToString(CultureInfo.InvariantCulture);
+            lblDITRomsFixable.Text = tDir.DirStatus.CountFixesNeeded().ToString(CultureInfo.InvariantCulture);
+            lblDITRomsUnknown.Text = (tDir.DirStatus.CountUnknown() + tDir.DirStatus.CountInToSort()).ToString(CultureInfo.InvariantCulture);
+        }
+
         #endregion
 
 
@@ -843,8 +889,8 @@ namespace ROMVault
 
         private void TxtFilter_TextChanged(object sender, EventArgs e)
         {
-            if (GameGridDir != null)
-                UpdateGameGrid(GameGridDir);
+            if (gameGridSource != null)
+                UpdateGameGrid(gameGridSource);
         }
 
         private void RomVaultSettingsToolStripMenuItem_Click(object sender, EventArgs e)
