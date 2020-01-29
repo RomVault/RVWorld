@@ -1,9 +1,7 @@
 ﻿using System;
 using System.IO;
-using System.Windows.Forms.VisualStyles;
 using ROMVault.Utils;
 using RVCore.RvDB;
-using Settings = RVCore.Settings;
 
 namespace ROMVault
 {

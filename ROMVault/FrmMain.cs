@@ -61,72 +61,11 @@ namespace ROMVault
         private float _scaleFactorX = 1;
         private float _scaleFactorY = 1;
 
-        private Label _labelGameName;
-        private TextBox _textGameName;
-
-        private Label _labelGameDescription;
-        private TextBox _textGameDescription;
-
-        private Label _labelGameManufacturer;
-        private TextBox _textGameManufacturer;
-
-        private Label _labelGameCloneOf;
-        private TextBox _textGameCloneOf;
-
-        private Label _labelGameRomOf;
-        private TextBox _textGameRomOf;
-
-        private Label _labelGameYear;
-        private TextBox _textGameYear;
-
-        private Label _labelGameTotalRoms;
-        private TextBox _textGameTotalRoms;
-
-        //Trurip Extra Data
-        private Label _labelTruripPublisher;
-        private TextBox _textTruripPublisher;
-
-        private Label _labelTruripDeveloper;
-        private TextBox _textTruripDeveloper;
-
-        private Label _labelTruripTitleId;
-        private TextBox _textTruripTitleId;
-
-        private Label _labelTruripSource;
-        private TextBox _textTruripSource;
-
-        private Label _labelTruripCloneOf;
-        private TextBox _textTruripCloneOf;
-
-        private Label _labelTruripRelatedTo;
-        private TextBox _textTruripRelatedTo;
-
-
-        private Label _labelTruripYear;
-        private TextBox _textTruripYear;
-
-        private Label _labelTruripPlayers;
-        private TextBox _textTruripPlayers;
-
-
-        private Label _labelTruripGenre;
-        private TextBox _textTruripGenre;
-
-        private Label _labelTruripSubGenre;
-        private TextBox _textTruripSubGenre;
-
-
-        private Label _labelTruripRatings;
-        private TextBox _textTruripRatings;
-
-        private Label _labelTruripScore;
-        private TextBox _textTruripScore;
-
 
         public FrmMain()
         {
             InitializeComponent();
-            AddGameGrid();
+            AddGameMetaData();
             Text = $@"RomVault ({Program.StrVersion})  {Application.StartupPath}";
 
             _displayColor = new Color[(int)RepStatus.EndValue];
@@ -814,92 +753,6 @@ namespace ROMVault
             gbSetInfo.Width = chkLeft - gbSetInfo.Left - 10;
         }
 
-
-        private void gbSetInfo_Resize(object sender, EventArgs e)
-        {
-            const int leftPos = 84;
-            int rightPos = gbSetInfo.Width - 15;
-            if (rightPos > 750)
-            {
-                rightPos = 750;
-            }
-
-            int width = rightPos - leftPos;
-
-
-            if (_textGameName == null)
-            {
-                return;
-            }
-
-            {
-                int textWidth = (int)((double)width * 120 / 340);
-                int text2Left = leftPos + width - textWidth;
-                int label2Left = text2Left - 78;
-
-                _textGameName.Width = width;
-                _textGameDescription.Width = width;
-                _textGameManufacturer.Width = width;
-
-                _textGameCloneOf.Width = textWidth;
-
-                _labelGameYear.Left = label2Left;
-                _textGameYear.Left = text2Left;
-                _textGameYear.Width = textWidth;
-
-                _textGameRomOf.Width = textWidth;
-
-                _labelGameTotalRoms.Left = label2Left;
-                _textGameTotalRoms.Left = text2Left;
-                _textGameTotalRoms.Width = textWidth;
-            }
-
-
-
-
-            {
-                int textWidth = (int)(width * 0.20);
-                int text2Left = (int)(width * 0.4 + leftPos);
-                int label2Left = text2Left - 78;
-                int text3Left = leftPos + width - textWidth;
-                int label3Left = text3Left - 78;
-
-                _textTruripPublisher.Width = (int)(width * 0.6);
-                _textTruripDeveloper.Width = (int)(width * 0.6);
-                _textTruripCloneOf.Width = width;
-                _textTruripRelatedTo.Width = width;
-
-                _textTruripYear.Width = textWidth;
-                _textTruripPlayers.Width = textWidth;
-
-                _labelTruripGenre.Left = label2Left;
-                _textTruripGenre.Left = text2Left;
-                _textTruripGenre.Width = textWidth;
-
-                _labelTruripSubGenre.Left = label2Left;
-                _textTruripSubGenre.Left = text2Left;
-                _textTruripSubGenre.Width = textWidth;
-
-
-                _labelTruripTitleId.Left = label3Left;
-                _textTruripTitleId.Left = text3Left;
-                _textTruripTitleId.Width = textWidth;
-
-                _labelTruripSource.Left = label3Left;
-                _textTruripSource.Left = text3Left;
-                _textTruripSource.Width = textWidth;
-
-                _labelTruripRatings.Left = label3Left;
-                _textTruripRatings.Left = text3Left;
-                _textTruripRatings.Width = textWidth;
-
-                _labelTruripScore.Left = label3Left;
-                _textTruripScore.Left = text3Left;
-                _textTruripScore.Width = textWidth;
-
-
-            }
-        }
 
 
         private void gbDatInfo_Resize(object sender, EventArgs e)

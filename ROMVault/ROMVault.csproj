@@ -130,6 +130,9 @@
     <Compile Include="FrmMain_GameGrid.cs">
       <SubType>Form</SubType>
     </Compile>
+    <Compile Include="FrmMain_GameMetaData.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="FrmMain_RomGrid.cs">
       <SubType>Form</SubType>
     </Compile>

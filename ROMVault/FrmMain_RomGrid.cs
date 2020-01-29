@@ -196,6 +196,9 @@ namespace ROMVault
 
         private void RomGridColumnHeaderMouseClick(object sender, DataGridViewCellMouseEventArgs e)
         {
+            if (gridFiles==null)
+                return;
+            
             if (RomGrid.Columns[e.ColumnIndex].SortMode == DataGridViewColumnSortMode.NotSortable)
                 return;
 
@@ -240,6 +243,9 @@ namespace ROMVault
                     case 1:
                         retVal = string.Compare(x.UiDisplayName ?? "", y.UiDisplayName ?? "", StringComparison.Ordinal);
                         break;
+                    case 2:
+                        retVal = string.Compare(x.Merge ?? "", y.Merge ?? "", StringComparison.Ordinal);
+                        break;
                     case 3:
                         retVal = ULong.iCompareNull(x.Size, y.Size);
                         break;
@@ -267,7 +273,6 @@ namespace ROMVault
                     case 11:
                         retVal = string.Compare(x.Status ?? "", y.Status ?? "", StringComparison.Ordinal);
                         break;
-
                 }
                 
                 if (_sortDir == SortOrder.Descending)
