@@ -61,6 +61,7 @@ namespace RVCore.RvDB
 
         public RvTreeRow Tree; // TreeRow for UI
         public RvGame Game; // Game info from DAT
+        public string UiDisplayName;
 
         public ZipStatus ZipStatus; // if Dir is a ZIP, some fix/status of the ZIP
 

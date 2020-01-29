@@ -49,8 +49,188 @@ namespace ROMVault
 
 
             gbSetInfo_Resize(null, new EventArgs());
-            UpdateRomGrid(new RvFile(FileType.Dir));
+            UpdateGameInfo(new RvFile(FileType.Dir));
         }
+
+
+        private void UpdateGameInfo(RvFile tGame)
+        {
+            _labelGameName.Visible = true;
+            _textGameName.Text = tGame.Name;
+            if (tGame.Game == null)
+            {
+                _labelGameDescription.Visible = false;
+                _textGameDescription.Visible = false;
+            }
+
+            if (tGame.Game == null || tGame.Game.GetData(RvGame.GameData.EmuArc) != "yes")
+            {
+                _labelTruripPublisher.Visible = false;
+                _textTruripPublisher.Visible = false;
+
+                _labelTruripDeveloper.Visible = false;
+                _textTruripDeveloper.Visible = false;
+
+                _labelTruripTitleId.Visible = false;
+                _textTruripTitleId.Visible = false;
+
+                _labelTruripSource.Visible = false;
+                _textTruripSource.Visible = false;
+
+                _labelTruripCloneOf.Visible = false;
+                _textTruripCloneOf.Visible = false;
+
+                _labelTruripRelatedTo.Visible = false;
+                _textTruripRelatedTo.Visible = false;
+
+                _labelTruripYear.Visible = false;
+                _textTruripYear.Visible = false;
+
+                _labelTruripPlayers.Visible = false;
+                _textTruripPlayers.Visible = false;
+
+                _labelTruripGenre.Visible = false;
+                _textTruripGenre.Visible = false;
+
+                _labelTruripSubGenre.Visible = false;
+                _textTruripSubGenre.Visible = false;
+
+                _labelTruripRatings.Visible = false;
+                _textTruripRatings.Visible = false;
+
+                _labelTruripScore.Visible = false;
+                _textTruripScore.Visible = false;
+            }
+
+            if (tGame.Game == null || tGame.Game.GetData(RvGame.GameData.EmuArc) == "yes")
+            {
+                _labelGameManufacturer.Visible = false;
+                _textGameManufacturer.Visible = false;
+
+                _labelGameCloneOf.Visible = false;
+                _textGameCloneOf.Visible = false;
+
+                _labelGameRomOf.Visible = false;
+                _textGameRomOf.Visible = false;
+
+                _labelGameYear.Visible = false;
+                _textGameYear.Visible = false;
+
+                _labelGameTotalRoms.Visible = false;
+                _textGameTotalRoms.Visible = false;
+            }
+
+
+            if (tGame.Game != null)
+            {
+                if (tGame.Game.GetData(RvGame.GameData.EmuArc) == "yes")
+                {
+                    _labelGameDescription.Visible = true;
+                    _textGameDescription.Visible = true;
+                    _textGameDescription.Text = tGame.Game.GetData(RvGame.GameData.Description);
+
+                    _labelTruripPublisher.Visible = true;
+                    _textTruripPublisher.Visible = true;
+                    _textTruripPublisher.Text = tGame.Game.GetData(RvGame.GameData.Publisher);
+
+                    _labelTruripDeveloper.Visible = true;
+                    _textTruripDeveloper.Visible = true;
+                    _textTruripDeveloper.Text = tGame.Game.GetData(RvGame.GameData.Developer);
+
+
+                    _labelTruripTitleId.Visible = true;
+                    _textTruripTitleId.Visible = true;
+                    _textTruripTitleId.Text = tGame.Game.GetData(RvGame.GameData.TitleId);
+
+                    _labelTruripSource.Visible = true;
+                    _textTruripSource.Visible = true;
+                    _textTruripSource.Text = tGame.Game.GetData(RvGame.GameData.Source);
+
+                    _labelTruripCloneOf.Visible = true;
+                    _textTruripCloneOf.Visible = true;
+                    _textTruripCloneOf.Text = tGame.Game.GetData(RvGame.GameData.CloneOf);
+
+                    _labelTruripRelatedTo.Visible = true;
+                    _textTruripRelatedTo.Visible = true;
+                    _textTruripRelatedTo.Text = tGame.Game.GetData(RvGame.GameData.RelatedTo);
+
+                    _labelTruripYear.Visible = true;
+                    _textTruripYear.Visible = true;
+                    _textTruripYear.Text = tGame.Game.GetData(RvGame.GameData.Year);
+
+                    _labelTruripPlayers.Visible = true;
+                    _textTruripPlayers.Visible = true;
+                    _textTruripPlayers.Text = tGame.Game.GetData(RvGame.GameData.Players);
+
+                    _labelTruripGenre.Visible = true;
+                    _textTruripGenre.Visible = true;
+                    _textTruripGenre.Text = tGame.Game.GetData(RvGame.GameData.Genre);
+
+                    _labelTruripSubGenre.Visible = true;
+                    _textTruripSubGenre.Visible = true;
+                    _textTruripSubGenre.Text = tGame.Game.GetData(RvGame.GameData.SubGenre);
+
+                    _labelTruripRatings.Visible = true;
+                    _textTruripRatings.Visible = true;
+                    _textTruripRatings.Text = tGame.Game.GetData(RvGame.GameData.Ratings);
+
+                    _labelTruripScore.Visible = true;
+                    _textTruripScore.Visible = true;
+                    _textTruripScore.Text = tGame.Game.GetData(RvGame.GameData.Score);
+
+                    LoadPannels(tGame);
+                }
+                else
+                {
+                    bool found = false;
+                    string path = tGame.Parent.DatTreeFullName;
+                    foreach (EmulatorInfo ei in Settings.rvSettings.EInfo)
+                    {
+                        if (!string.Equals(path, ei.TreeDir, StringComparison.CurrentCultureIgnoreCase))
+                            continue;
+
+                        if (string.IsNullOrWhiteSpace(ei.ExtraPath))
+                            continue;
+
+                        found = true;
+                        LoadMamePannels(tGame, ei.ExtraPath);
+                    }
+
+                    if (!found)
+                        HidePannel();
+
+                    _labelGameDescription.Visible = true;
+                    _textGameDescription.Visible = true;
+                    _textGameDescription.Text = tGame.Game.GetData(RvGame.GameData.Description);
+
+                    _labelGameManufacturer.Visible = true;
+                    _textGameManufacturer.Visible = true;
+                    _textGameManufacturer.Text = tGame.Game.GetData(RvGame.GameData.Manufacturer);
+
+                    _labelGameCloneOf.Visible = true;
+                    _textGameCloneOf.Visible = true;
+                    _textGameCloneOf.Text = tGame.Game.GetData(RvGame.GameData.CloneOf);
+
+                    _labelGameRomOf.Visible = true;
+                    _textGameRomOf.Visible = true;
+                    _textGameRomOf.Text = tGame.Game.GetData(RvGame.GameData.RomOf);
+
+                    _labelGameYear.Visible = true;
+                    _textGameYear.Visible = true;
+                    _textGameYear.Text = tGame.Game.GetData(RvGame.GameData.Year);
+
+                    _labelGameTotalRoms.Visible = true;
+                    _textGameTotalRoms.Visible = true;
+                }
+            }
+            else
+            {
+                HidePannel();
+            }
+        }
+
+
+
 
         private void UpdateGameGrid(RvFile tDir)
         {
@@ -240,7 +420,7 @@ namespace ROMVault
 
             _updatingGameGrid = false;
 
-            UpdateRomGrid(tDir);
+            UpdateGameInfo(tDir);
         }
 
         private static int DigitLength(int number)
@@ -261,6 +441,25 @@ namespace ROMVault
         {
             UpdateSelectedGame();
         }
+
+        private void UpdateSelectedGame()
+        {
+            if (_updatingGameGrid)
+            {
+                return;
+            }
+
+            if (GameGrid.SelectedRows.Count != 1)
+            {
+                return;
+            }
+
+            RvFile tGame = (RvFile)GameGrid.SelectedRows[0].Tag;
+
+            UpdateGameInfo(tGame);
+            UpdateRomGrid(tGame);
+        }
+
 
         private void GameGridMouseDoubleClick(object sender, MouseEventArgs e)
         {
