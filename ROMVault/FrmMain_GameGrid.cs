@@ -110,7 +110,7 @@ namespace ROMVault
                     columnIndex++;
                 }
             }
-            
+
             int t = 0;
             for (int l = 0; l < (int)RepStatus.EndValue; l++)
             {
@@ -124,7 +124,7 @@ namespace ROMVault
 
             _updatingGameGrid = false;
 
-            UpdateGameMetaData(tDir);
+            UpdateSelectedGame();
         }
 
         private static int DigitLength(int number)
@@ -155,6 +155,7 @@ namespace ROMVault
 
             if (GameGrid.SelectedRows.Count != 1)
             {
+                UpdateGameMetaData(new RvFile(FileType.Dir));
                 return;
             }
 
@@ -264,7 +265,7 @@ namespace ROMVault
                         {
                             g.Clear(Color.White);
                             g.TextRenderingHint = TextRenderingHint.SingleBitPerPixelGridFit;
-                         
+
                             Font drawFont = new Font("Arial", 9);
                             SolidBrush drawBrushBlack = new SolidBrush(Color.Black);
 
@@ -392,6 +393,7 @@ namespace ROMVault
 
             Array.Sort(gameGrid, t);
             GameGrid.Refresh();
+            UpdateSelectedGame();
         }
 
         private class GameUiCompare : IComparer<RvFile>
