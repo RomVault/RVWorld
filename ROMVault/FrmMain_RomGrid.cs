@@ -12,10 +12,11 @@ namespace ROMVault
 {
     public partial class FrmMain
     {
+        private bool altFound = false;
         private RvFile[] romGrid;
         private int romSortIndex = -1;
         private SortOrder romSortDir = SortOrder.None;
-     
+
         private void UpdateRomGrid(RvFile tGame)
         {
             if (Settings.IsMono && RomGrid.RowCount > 0)
@@ -30,10 +31,17 @@ namespace ROMVault
             romSortDir = SortOrder.None;
 
             RomGrid.Rows.Clear();
+
             List<RvFile> fileList = new List<RvFile>();
             AddDir(tGame, "", ref fileList);
-
+            altFound = false;
             romGrid = fileList.ToArray();
+            
+            RomGrid.Columns[7].Visible = altFound;
+            RomGrid.Columns[8].Visible = altFound;
+            RomGrid.Columns[9].Visible = altFound;
+            RomGrid.Columns[10].Visible = altFound;
+
             RomGrid.RowCount = romGrid.Length;
         }
 
@@ -74,6 +82,10 @@ namespace ROMVault
             {
                 tFile.UiDisplayName = pathAdd + tFile.Name;
                 fileList.Add(tFile);
+                if (!altFound)
+                {
+                    altFound = (tFile.AltSize != null) || (tFile.AltCRC != null) || (tFile.AltSHA1 != null) || (tFile.AltMD5 != null);
+                }
             }
         }
 
@@ -153,10 +165,6 @@ namespace ROMVault
                     if (tFile.FileType == FileType.ZipFile)
                         e.Value = tFile.ZipFileIndex == -1 ? "" : tFile.ZipFileIndex.ToString();
                     break;
-                case 13: // ZipHeader
-                    if (tFile.FileType == FileType.ZipFile)
-                        e.Value = tFile.ZipFileHeaderPosition == null ? "" : tFile.ZipFileHeaderPosition.ToString();
-                    break;
             }
         }
 
@@ -196,9 +204,9 @@ namespace ROMVault
 
         private void RomGridColumnHeaderMouseClick(object sender, DataGridViewCellMouseEventArgs e)
         {
-            if (romGrid==null)
+            if (romGrid == null)
                 return;
-            
+
             if (RomGrid.Columns[e.ColumnIndex].SortMode == DataGridViewColumnSortMode.NotSortable)
                 return;
 
@@ -274,7 +282,7 @@ namespace ROMVault
                         retVal = string.Compare(x.Status ?? "", y.Status ?? "", StringComparison.Ordinal);
                         break;
                 }
-                
+
                 if (_sortDir == SortOrder.Descending)
                     retVal = -retVal;
 
