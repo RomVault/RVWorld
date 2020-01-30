@@ -514,13 +514,20 @@ namespace ROMVault
 
         private static void SetChecked(RvFile pTree, RvTreeRow.TreeSelect nSelection)
         {
+            RvTreeRow.OpenStream();
+            SetCheckedRecurse(pTree,nSelection);
+            RvTreeRow.CloseStream();
+        }
+
+        private static void SetCheckedRecurse(RvFile pTree, RvTreeRow.TreeSelect nSelection)
+        {
             pTree.Tree.Checked = nSelection;
             for (int i = 0; i < pTree.ChildCount; i++)
             {
                 RvFile d = pTree.Child(i);
                 if (d.IsDir && d.Tree != null)
                 {
-                    SetChecked(d, nSelection);
+                    SetCheckedRecurse(d, nSelection);
                 }
             }
         }
@@ -532,7 +539,7 @@ namespace ROMVault
                 pTree.Tree.TreeExpanded = !pTree.Tree.TreeExpanded;
                 return;
             }
-
+            RvTreeRow.OpenStream();
             // Find the value of the first child node.
             for (int i = 0; i < pTree.ChildCount; i++)
             {
@@ -544,6 +551,7 @@ namespace ROMVault
                 SetExpandedRecurse(pTree, !d.Tree.TreeExpanded);
                 break;
             }
+            RvTreeRow.CloseStream();
         }
 
         private static void SetExpandedRecurse(RvFile pTree, bool expanded)

@@ -70,10 +70,40 @@ namespace RVCore.RvDB
             _pChecked = (TreeSelect)br.ReadByte();
         }
 
+
+        private static FileStream fsl;
+        private static BinaryWriter bwl;
+
+        public static void OpenStream()
+        {
+            fsl = new FileStream(Settings.rvSettings.CacheFile, FileMode.Open, FileAccess.Write);
+            bwl = new BinaryWriter(fsl, Encoding.UTF8, true);
+        }
+
+        public static void CloseStream()
+        {
+            bwl?.Flush();
+            bwl?.Close();
+            bwl?.Dispose();
+            fsl?.Close();
+            fsl?.Dispose();
+            bwl = null;
+            fsl = null;
+        }
+
         private void CacheUpdate()
         {
             if (_filePointer < 0)
                 return;
+
+
+            if (fsl != null && bwl != null)
+            {
+                fsl.Position = _filePointer;
+                bwl.Write(_pTreeExpanded);
+                bwl.Write((byte)_pChecked);
+                return;
+            }
 
             using (FileStream fs = new FileStream(Settings.rvSettings.CacheFile, FileMode.Open, FileAccess.Write))
             {
@@ -81,12 +111,12 @@ namespace RVCore.RvDB
                 {
                     fs.Position = _filePointer;
                     bw.Write(_pTreeExpanded);
-                    bw.Write((byte) _pChecked);
+                    bw.Write((byte)_pChecked);
 
                     bw.Flush();
                     bw.Close();
                 }
-                    
+
                 fs.Close();
             }
         }
