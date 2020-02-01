@@ -15,6 +15,7 @@ namespace RVCore.ReadDat
             newDatFromExternal.TimeStamp = timeStamp;
             newDatFromExternal.Status = DatUpdateStatus.Correct;
             newDatFromExternal.AddData(RvDat.DatData.DatName, datHeaderExternal.Name);
+            newDatFromExternal.AddData(RvDat.DatData.RootDir, datHeaderExternal.RootDir);
             newDatFromExternal.AddData(RvDat.DatData.Description,datHeaderExternal.Description);
             newDatFromExternal.AddData(RvDat.DatData.Category, datHeaderExternal.Category);
             newDatFromExternal.AddData(RvDat.DatData.Version, datHeaderExternal.Version);

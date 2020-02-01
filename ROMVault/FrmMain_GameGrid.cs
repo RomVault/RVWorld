@@ -416,7 +416,9 @@ namespace ROMVault
                         retVal = string.Compare(x.Name ?? "", y.Name ?? "", StringComparison.Ordinal);
                         break;
                     case 2:
-                        retVal = string.Compare(x.Game.GetData(RvGame.GameData.Description) ?? "", y.Game.GetData(RvGame.GameData.Description) ?? "", StringComparison.Ordinal);
+                        retVal = string.Compare(x.Game?.GetData(RvGame.GameData.Description) ?? "", y.Game?.GetData(RvGame.GameData.Description) ?? "", StringComparison.Ordinal);
+                        if (retVal==0)
+                            retVal = string.Compare(x.Name ?? "", y.Name ?? "", StringComparison.Ordinal);
                         break;
                 }
 
