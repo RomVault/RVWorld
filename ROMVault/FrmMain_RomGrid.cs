@@ -32,9 +32,9 @@ namespace ROMVault
 
             RomGrid.Rows.Clear();
 
+            altFound = false;
             List<RvFile> fileList = new List<RvFile>();
             AddDir(tGame, "", ref fileList);
-            altFound = false;
             romGrid = fileList.ToArray();
             
             RomGrid.Columns[7].Visible = altFound;
