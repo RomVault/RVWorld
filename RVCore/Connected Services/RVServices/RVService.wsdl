@@ -18,6 +18,12 @@
   <wsdl:message name="IRVService_StartUpV_OutputMessage">
     <wsdl:part name="parameters" element="tns:StartUpVResponse" />
   </wsdl:message>
+  <wsdl:message name="IRVService_StartUpV2_InputMessage">
+    <wsdl:part name="parameters" element="tns:StartUpV2" />
+  </wsdl:message>
+  <wsdl:message name="IRVService_StartUpV2_OutputMessage">
+    <wsdl:part name="parameters" element="tns:StartUpV2Response" />
+  </wsdl:message>
   <wsdl:message name="IRVService_SendUser_InputMessage">
     <wsdl:part name="parameters" element="tns:SendUser" />
   </wsdl:message>
@@ -42,6 +48,12 @@
   <wsdl:message name="IRVService_GetLatestVersion_OutputMessage">
     <wsdl:part name="parameters" element="tns:GetLatestVersionResponse" />
   </wsdl:message>
+  <wsdl:message name="IRVService_UpdateCheck_InputMessage">
+    <wsdl:part name="parameters" element="tns:UpdateCheck" />
+  </wsdl:message>
+  <wsdl:message name="IRVService_UpdateCheck_OutputMessage">
+    <wsdl:part name="parameters" element="tns:UpdateCheckResponse" />
+  </wsdl:message>
   <wsdl:message name="IRVService_GetUpdateLink_InputMessage">
     <wsdl:part name="parameters" element="tns:GetUpdateLink" />
   </wsdl:message>
@@ -60,6 +72,12 @@
   <wsdl:message name="IRVService_SendErrorMessageV_OutputMessage">
     <wsdl:part name="parameters" element="tns:SendErrorMessageVResponse" />
   </wsdl:message>
+  <wsdl:message name="IRVService_SendErrorMessageV2_InputMessage">
+    <wsdl:part name="parameters" element="tns:SendErrorMessageV2" />
+  </wsdl:message>
+  <wsdl:message name="IRVService_SendErrorMessageV2_OutputMessage">
+    <wsdl:part name="parameters" element="tns:SendErrorMessageV2Response" />
+  </wsdl:message>
   <wsdl:portType name="IRVService">
     <wsdl:operation name="StartUp">
       <wsdl:input wsaw:Action="http://tempuri.org/IRVService/StartUp" message="tns:IRVService_StartUp_InputMessage" />
@@ -68,6 +86,10 @@
     <wsdl:operation name="StartUpV">
       <wsdl:input wsaw:Action="http://tempuri.org/IRVService/StartUpV" message="tns:IRVService_StartUpV_InputMessage" />
       <wsdl:output wsaw:Action="http://tempuri.org/IRVService/StartUpVResponse" message="tns:IRVService_StartUpV_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="StartUpV2">
+      <wsdl:input wsaw:Action="http://tempuri.org/IRVService/StartUpV2" message="tns:IRVService_StartUpV2_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IRVService/StartUpV2Response" message="tns:IRVService_StartUpV2_OutputMessage" />
     </wsdl:operation>
     <wsdl:operation name="SendUser">
       <wsdl:input wsaw:Action="http://tempuri.org/IRVService/SendUser" message="tns:IRVService_SendUser_InputMessage" />
@@ -85,6 +107,10 @@
       <wsdl:input wsaw:Action="http://tempuri.org/IRVService/GetLatestVersion" message="tns:IRVService_GetLatestVersion_InputMessage" />
       <wsdl:output wsaw:Action="http://tempuri.org/IRVService/GetLatestVersionResponse" message="tns:IRVService_GetLatestVersion_OutputMessage" />
     </wsdl:operation>
+    <wsdl:operation name="UpdateCheck">
+      <wsdl:input wsaw:Action="http://tempuri.org/IRVService/UpdateCheck" message="tns:IRVService_UpdateCheck_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IRVService/UpdateCheckResponse" message="tns:IRVService_UpdateCheck_OutputMessage" />
+    </wsdl:operation>
     <wsdl:operation name="GetUpdateLink">
       <wsdl:input wsaw:Action="http://tempuri.org/IRVService/GetUpdateLink" message="tns:IRVService_GetUpdateLink_InputMessage" />
       <wsdl:output wsaw:Action="http://tempuri.org/IRVService/GetUpdateLinkResponse" message="tns:IRVService_GetUpdateLink_OutputMessage" />
@@ -96,6 +122,10 @@
     <wsdl:operation name="SendErrorMessageV">
       <wsdl:input wsaw:Action="http://tempuri.org/IRVService/SendErrorMessageV" message="tns:IRVService_SendErrorMessageV_InputMessage" />
       <wsdl:output wsaw:Action="http://tempuri.org/IRVService/SendErrorMessageVResponse" message="tns:IRVService_SendErrorMessageV_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="SendErrorMessageV2">
+      <wsdl:input wsaw:Action="http://tempuri.org/IRVService/SendErrorMessageV2" message="tns:IRVService_SendErrorMessageV2_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IRVService/SendErrorMessageV2Response" message="tns:IRVService_SendErrorMessageV2_OutputMessage" />
     </wsdl:operation>
   </wsdl:portType>
   <wsdl:binding name="BasicHttpBinding_IRVService" type="tns:IRVService">
@@ -111,6 +141,15 @@
     </wsdl:operation>
     <wsdl:operation name="StartUpV">
       <soap:operation soapAction="http://tempuri.org/IRVService/StartUpV" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="StartUpV2">
+      <soap:operation soapAction="http://tempuri.org/IRVService/StartUpV2" style="document" />
       <wsdl:input>
         <soap:body use="literal" />
       </wsdl:input>
@@ -154,6 +193,15 @@
         <soap:body use="literal" />
       </wsdl:output>
     </wsdl:operation>
+    <wsdl:operation name="UpdateCheck">
+      <soap:operation soapAction="http://tempuri.org/IRVService/UpdateCheck" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
     <wsdl:operation name="GetUpdateLink">
       <soap:operation soapAction="http://tempuri.org/IRVService/GetUpdateLink" style="document" />
       <wsdl:input>
@@ -174,6 +222,15 @@
     </wsdl:operation>
     <wsdl:operation name="SendErrorMessageV">
       <soap:operation soapAction="http://tempuri.org/IRVService/SendErrorMessageV" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="SendErrorMessageV2">
+      <soap:operation soapAction="http://tempuri.org/IRVService/SendErrorMessageV2" style="document" />
       <wsdl:input>
         <soap:body use="literal" />
       </wsdl:input>

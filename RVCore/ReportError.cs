@@ -18,6 +18,10 @@ namespace RVCore
         public static ShowError ErrorForm;
         public static MessageDialog Dialog;
 
+        public static int vMajor;
+        public static int vMinor;
+        public static int vBuild;
+
         public static void UnhandledExceptionHandler(object sender, ThreadExceptionEventArgs e)
         {
             try
@@ -107,7 +111,7 @@ namespace RVCore
             EndpointAddress e = new EndpointAddress(@"http://services.romvault.com/RVService.svc");
             RVServiceClient s = new RVServiceClient(b, e);
 
-            s.SendErrorMessageV(Settings.Username + " : " + Settings.EMail + " : " + Settings.IsUnix, 40, message);
+            s.SendErrorMessageV2(Settings.Username + " : " + Settings.EMail + " : " + Settings.IsUnix, vMajor,vMinor,vBuild, message);
             s.Close();
         }
 

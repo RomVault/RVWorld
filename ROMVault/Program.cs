@@ -34,18 +34,21 @@ namespace ROMVault
                 }
             }
 
-
             try
             {
                 if (!Settings.OptOut)
                 {
                     s.SendUser(Settings.Username, Settings.EMail, VNow);
-                    s.StartUpV(VNow);
+                    s.StartUpV2(Version.Major,Version.Minor,Version.Build);
                 }
 
-                int v = s.GetLatestVersion(VNow);
+                ReportError.vMajor = Version.Major;
+                ReportError.vMinor = Version.Minor;
+                ReportError.vBuild = Version.Build;
 
-                if (v > VNow)
+                bool v = s.UpdateCheck(Version.Major, Version.Minor, Version.Build);
+
+                if (v)
                 {
                     string url = s.GetUpdateLink();
                     MessageBox.Show("There is a new release download now from " + url);

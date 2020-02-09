@@ -27,6 +27,12 @@ namespace ROMVault.RVServices {
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IRVService/StartUpV", ReplyAction="http://tempuri.org/IRVService/StartUpVResponse")]
         System.Threading.Tasks.Task StartUpVAsync(int version);
         
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IRVService/StartUpV2", ReplyAction="http://tempuri.org/IRVService/StartUpV2Response")]
+        void StartUpV2(int vMajor, int vMinor, int vBuild);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IRVService/StartUpV2", ReplyAction="http://tempuri.org/IRVService/StartUpV2Response")]
+        System.Threading.Tasks.Task StartUpV2Async(int vMajor, int vMinor, int vBuild);
+        
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IRVService/SendUser", ReplyAction="http://tempuri.org/IRVService/SendUserResponse")]
         string SendUser(string username, string email, int version);
         
@@ -51,6 +57,12 @@ namespace ROMVault.RVServices {
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IRVService/GetLatestVersion", ReplyAction="http://tempuri.org/IRVService/GetLatestVersionResponse")]
         System.Threading.Tasks.Task<int> GetLatestVersionAsync(int VersionNow);
         
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IRVService/UpdateCheck", ReplyAction="http://tempuri.org/IRVService/UpdateCheckResponse")]
+        bool UpdateCheck(int vMajor, int vMinor, int vBuild);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IRVService/UpdateCheck", ReplyAction="http://tempuri.org/IRVService/UpdateCheckResponse")]
+        System.Threading.Tasks.Task<bool> UpdateCheckAsync(int vMajor, int vMinor, int vBuild);
+        
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IRVService/GetUpdateLink", ReplyAction="http://tempuri.org/IRVService/GetUpdateLinkResponse")]
         string GetUpdateLink();
         
@@ -68,6 +80,12 @@ namespace ROMVault.RVServices {
         
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IRVService/SendErrorMessageV", ReplyAction="http://tempuri.org/IRVService/SendErrorMessageVResponse")]
         System.Threading.Tasks.Task SendErrorMessageVAsync(string username, int version, string error);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IRVService/SendErrorMessageV2", ReplyAction="http://tempuri.org/IRVService/SendErrorMessageV2Response")]
+        void SendErrorMessageV2(string username, int vMajor, int vMinor, int vBuild, string error);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IRVService/SendErrorMessageV2", ReplyAction="http://tempuri.org/IRVService/SendErrorMessageV2Response")]
+        System.Threading.Tasks.Task SendErrorMessageV2Async(string username, int vMajor, int vMinor, int vBuild, string error);
     }
     
     [System.CodeDom.Compiler.GeneratedCodeAttribute("System.ServiceModel", "4.0.0.0")]
@@ -113,6 +131,14 @@ namespace ROMVault.RVServices {
             return base.Channel.StartUpVAsync(version);
         }
         
+        public void StartUpV2(int vMajor, int vMinor, int vBuild) {
+            base.Channel.StartUpV2(vMajor, vMinor, vBuild);
+        }
+        
+        public System.Threading.Tasks.Task StartUpV2Async(int vMajor, int vMinor, int vBuild) {
+            return base.Channel.StartUpV2Async(vMajor, vMinor, vBuild);
+        }
+        
         public string SendUser(string username, string email, int version) {
             return base.Channel.SendUser(username, email, version);
         }
@@ -145,6 +171,14 @@ namespace ROMVault.RVServices {
             return base.Channel.GetLatestVersionAsync(VersionNow);
         }
         
+        public bool UpdateCheck(int vMajor, int vMinor, int vBuild) {
+            return base.Channel.UpdateCheck(vMajor, vMinor, vBuild);
+        }
+        
+        public System.Threading.Tasks.Task<bool> UpdateCheckAsync(int vMajor, int vMinor, int vBuild) {
+            return base.Channel.UpdateCheckAsync(vMajor, vMinor, vBuild);
+        }
+        
         public string GetUpdateLink() {
             return base.Channel.GetUpdateLink();
         }
@@ -167,6 +201,14 @@ namespace ROMVault.RVServices {
         
         public System.Threading.Tasks.Task SendErrorMessageVAsync(string username, int version, string error) {
             return base.Channel.SendErrorMessageVAsync(username, version, error);
+        }
+        
+        public void SendErrorMessageV2(string username, int vMajor, int vMinor, int vBuild, string error) {
+            base.Channel.SendErrorMessageV2(username, vMajor, vMinor, vBuild, error);
+        }
+        
+        public System.Threading.Tasks.Task SendErrorMessageV2Async(string username, int vMajor, int vMinor, int vBuild, string error) {
+            return base.Channel.SendErrorMessageV2Async(username, vMajor, vMinor, vBuild, error);
         }
     }
 }

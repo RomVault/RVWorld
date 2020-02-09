@@ -760,10 +760,7 @@ namespace ROMVault
         {
             const int leftPos = 89;
             int rightPos = (int)(gbDatInfo.Width / _scaleFactorX) - 15;
-            if (rightPos > 600)
-            {
-                rightPos = 600;
-            }
+          
 
             int width = rightPos - leftPos;
             int widthB1 = (int)((double)width * 120 / 340);

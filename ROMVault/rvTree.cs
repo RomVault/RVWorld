@@ -313,7 +313,12 @@ namespace ROMVault
                         for (int i = 0; i < pTree.DirDatCount; i++)
                         {
                             if (!pTree.DirDat(i).AutoAddDirectory)
-                                datList.Add(pTree.DirDat(i).GetData(RvDat.DatData.Description));
+                            {
+                                string title = pTree.DirDat(i).GetData(RvDat.DatData.Description);
+                                if (string.IsNullOrWhiteSpace(title))
+                                    title = pTree.DirDat(i).GetData(RvDat.DatData.DatName);
+                                datList.Add(title);
+                            }
                         }
                     }
                 }
