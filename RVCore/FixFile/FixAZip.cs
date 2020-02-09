@@ -260,10 +260,9 @@ namespace RVCore.FixFile
                     {
                         File.Delete(filename);
                     }
-                    catch (Exception)
+                    catch (Exception e)
                     {
-                        int error = Error.GetLastError();
-                        errorMessage = "Error While trying to delete file " + filename + ". Code " + error;
+                        errorMessage = "Error While trying to delete file " + filename + ". " + e.Message;
 
                         if (tempFixZip != null && tempFixZip.ZipOpen != ZipOpenType.Closed)
                         {

@@ -443,6 +443,8 @@ namespace RVIO
             {
                 case 5: return "ERROR_ACCESS_DENIED: Access is denied.";
                 case 32: return "ERROR_FILE_IN_USE: The file is in use by another process.";
+                case 39: return "ERROR_HANDLE_DISK_FULL: The disk is full.";
+                case 112: return "ERROR_DISK_FULL: There is not enough space on the disk.";
                 case 123: return "ERROR_INVALID_NAME: The filename, directory name, or volume label syntax is incorrect.";
                 case 183: return "ERROR_ALREADY_EXISTS: Cannot create a file when that file already exists.";
             }
