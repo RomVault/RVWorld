@@ -208,8 +208,7 @@ namespace RVCore.FixFile
                         case RepStatus.CanBeFixed:
                         case RepStatus.CorruptCanBeFixed:
                             {
-                                returnCode = FixAZipFunctions.CanBeFixed(fixZip, fixZippedFile, ref tempFixZip,
-                                    fileProcessQueue, ref totalFixed, out errorMessage);
+                                returnCode = FixAZipFunctions.CanBeFixed(fixZip, fixZippedFile, ref tempFixZip, fileProcessQueue, ref totalFixed, out errorMessage);
                                 if (returnCode != ReturnCode.Good)
                                 {
                                     CloseZipFile(ref tempFixZip);

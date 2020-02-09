@@ -14,9 +14,7 @@ namespace RVCore
     {
         public delegate void ShowError(string message);
         public delegate void MessageDialog(string text, string caption);
-
-        private static string _logfilename;
-
+        
         public static ShowError ErrorForm;
         public static MessageDialog Dialog;
 
@@ -113,20 +111,35 @@ namespace RVCore
             s.Close();
         }
 
-        private static void OpenLogFile(out string dir, out string now)
+        private static string GetLogFilname()
         {
-            dir = Path.Combine(Environment.CurrentDirectory, "Logs");
+            string dir = Path.Combine(Environment.CurrentDirectory, "Logs");
             if (!Directory.Exists(dir))
             {
                 Directory.CreateDirectory(dir);
             }
 
-            now = DateTime.Now.ToString(CultureInfo.InvariantCulture);
+            string now = DateTime.Now.ToString(CultureInfo.InvariantCulture);
             now = now.Replace("\\", "-");
             now = now.Replace("/", "-");
             now = now.Replace(":", "-");
 
-            _logfilename = Path.Combine(dir, now + " UpdateLog.txt");
+            return Path.Combine(dir, now + " UpdateLog.txt");
+        }
+        private static void OpenLog()
+        {
+            if ((_lastLogEntry.Day == DateTime.Now.Day) && _logStreamWriter != null) 
+                return;
+
+            if (_logStreamWriter != null)
+            {
+                _logStreamWriter.Flush();
+                _logStreamWriter.Close();
+            }
+
+            _lastLogEntry = DateTime.Now;
+            string logFilename = GetLogFilname();
+            _logStreamWriter = new StreamWriter(logFilename, true);
         }
 
         private static void ReportFile(TextWriter sw, RvFile f)
@@ -141,20 +154,13 @@ namespace RVCore
                 return;
             }
 
-            if (_logfilename == null)
-            {
-                OpenLogFile(out string dir, out string now);
-            }
-
-            TextWriter sw = new StreamWriter(_logfilename, true);
+            OpenLog();
             for (int i = 0; i < files.Count; i++)
             {
                 RvFile f = files[i];
-                ReportFile(sw, f);
+                ReportFile(_logStreamWriter, f);
             }
-
-            sw.Flush();
-            sw.Close();
+            _logStreamWriter.Flush();
         }
 
         private static StreamWriter _logStreamWriter;
@@ -167,19 +173,7 @@ namespace RVCore
                 return;
             }
 
-            if ((_lastLogEntry.Day != DateTime.Now.Day) || _logStreamWriter == null)
-            {
-                _lastLogEntry = DateTime.Now;
-                OpenLogFile(out string dir, out string now);
-                if (_logStreamWriter != null)
-                {
-                    _logStreamWriter.Flush();
-                    _logStreamWriter.Close();
-                }
-
-                _logStreamWriter = new StreamWriter(_logfilename, true);
-
-            }
+            OpenLog();
             _logStreamWriter.WriteLine(s);
             _logStreamWriter.Flush();
         }
@@ -191,22 +185,11 @@ namespace RVCore
                 return;
             }
 
-            if ((_lastLogEntry.Day != DateTime.Now.Day) || _logStreamWriter == null)
-            {
-                _lastLogEntry = DateTime.Now;
-                OpenLogFile(out string dir, out string now);
-                if (_logStreamWriter != null)
-                {
-                    _logStreamWriter.Flush();
-                    _logStreamWriter.Close();
-                }
-
-                _logStreamWriter = new StreamWriter(_logfilename, true);
-
-            }
+            OpenLog();
             ReportFile(_logStreamWriter, f);
             _logStreamWriter.Flush();
         }
+
 
         public static void Close()
         {

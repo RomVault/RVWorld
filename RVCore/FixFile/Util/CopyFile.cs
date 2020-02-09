@@ -323,7 +323,7 @@ namespace RVCore.FixFile.Util
         // Returns True is a raw copy can be used
         // Returns False is a full recompression is required
 
-        private static bool TestRawCopy(RvFile fileIn, RvFile fileOut, bool forceRaw)
+        public static bool TestRawCopy(RvFile fileIn, RvFile fileOut, bool forceRaw)
         {
             if (fileIn == null || fileOut == null)
             {

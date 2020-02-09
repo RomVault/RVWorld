@@ -83,7 +83,9 @@ namespace RVCore.FixFile
             if (Settings.rvSettings.DetailedFixReporting)
             {
                 string fixZipFullName = fixZip.TreeFullName;
-                Report.ReportProgress(new bgwShowFix(Path.GetDirectoryName(fixZipFullName), Path.GetFileName(fixZipFullName), fixZippedFile.Name, fixZippedFile.Size, "<<--", sourceDir, sourceFile, fileIn.Name));
+
+                bool rawCopy = FixFileUtils.TestRawCopy(fileIn, fixZippedFile, rawcopy);
+                Report.ReportProgress(new bgwShowFix(Path.GetDirectoryName(fixZipFullName), Path.GetFileName(fixZipFullName), fixZippedFile.Name, fixZippedFile.Size, rawCopy ? "<<--Raw" : "<<--Compress", sourceDir, sourceFile, fileIn.Name));
             }
 
             RepStatus originalStatus = fixZippedFile.RepStatus;
@@ -201,7 +203,9 @@ namespace RVCore.FixFile
                 GetSourceDir(fileIn, out string sourceDir, out string sourceFile);
 
                 string fixZipFullName = fixZip.TreeFullName;
-                Report.ReportProgress(new bgwShowFix(Path.GetDirectoryName(fixZipFullName), Path.GetFileName(fixZipFullName), fixZippedFile.Name, fixZippedFile.Size, "<--", sourceDir, sourceFile, fileIn.Name));
+
+                bool rawCopy = FixFileUtils.TestRawCopy(fileIn, fixZippedFile, false);
+                Report.ReportProgress(new bgwShowFix(Path.GetDirectoryName(fixZipFullName), Path.GetFileName(fixZipFullName), fixZippedFile.Name, fixZippedFile.Size, rawCopy ? "<--Raw" : "<--Compress", sourceDir, sourceFile, fileIn.Name));
 
                 fixZippedFile.FileTestFix(fileIn);
 
@@ -338,7 +342,8 @@ namespace RVCore.FixFile
 
 
             string fixZipFullName = fixZip.TreeFullName;
-            Report.ReportProgress(new bgwShowFix(Path.GetDirectoryName(fixZipFullName), Path.GetFileName(fixZipFullName), fixZippedFile.Name, fixZippedFile.Size, "-->", Path.GetDirectoryName(toSortFullName), Path.GetFileName(toSortFullName), toSortRom.Name));
+
+            Report.ReportProgress(new bgwShowFix(Path.GetDirectoryName(fixZipFullName), Path.GetFileName(fixZipFullName), fixZippedFile.Name, fixZippedFile.Size, "Raw-->", Path.GetDirectoryName(toSortFullName), Path.GetFileName(toSortFullName), toSortRom.Name));
 
             returnCode = FixFileUtils.CopyFile(fixZip.Child(iRom), toSortZipOut, null, toSortRom, true, out errorMessage);
             switch (returnCode)
@@ -421,7 +426,7 @@ namespace RVCore.FixFile
 
 
             string fixZipFullName = fixZip.TreeFullName;
-            Report.ReportProgress(new bgwShowFix(Path.GetDirectoryName(fixZipFullName), Path.GetFileName(fixZipFullName), fixZippedFile.Name, fixZippedFile.Size, "-->", "Corrupt", Path.GetFileName(toSortFullName), fixZippedFile.Name));
+            Report.ReportProgress(new bgwShowFix(Path.GetDirectoryName(fixZipFullName), Path.GetFileName(fixZipFullName), fixZippedFile.Name, fixZippedFile.Size, "Raw-->", "Corrupt", Path.GetFileName(toSortFullName), fixZippedFile.Name));
 
             ReturnCode returnCode = FixFileUtils.CopyFile(fixZip.Child(iRom), toSortCorruptOut, null, toSortCorruptRom, true, out string errorMessage);
             switch (returnCode)
