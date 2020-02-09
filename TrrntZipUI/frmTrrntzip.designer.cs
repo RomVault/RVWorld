@@ -281,7 +281,7 @@
             this.DoubleBuffered = true;
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "FrmTrrntzip";
-            this.Text = "Trrntzip .Net (V2.5.4) Unofficial";
+            this.Text = "Trrntzip .Net (V2.5.5)";
             this.splitContainer.Panel1.ResumeLayout(false);
             this.splitContainer.Panel2.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer)).EndInit();
