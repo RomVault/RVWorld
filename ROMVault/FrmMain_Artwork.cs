@@ -62,7 +62,7 @@ namespace ROMVault
             TabEmuArc.TabPages.Remove(tabScreens);
             TabEmuArc.TabPages.Remove(tabInfo);
 
-            string[] path = extraPath.Split('/' );
+            string[] path = extraPath.Split('\\' );
 
             RvFile fExtra = DB.DirTree.Child(0);
 
