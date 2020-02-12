@@ -34,7 +34,7 @@ namespace RVCore.ReadDat
                     return;
                 }
 
-                _thWrk.Report( new bgwText("Clearing DB Status"));
+                _thWrk.Report(new bgwText("Clearing DB Status"));
                 RepairStatus.ReportStatusReset(DB.DirTree);
 
                 _datCount = 0;
@@ -105,6 +105,11 @@ namespace RVCore.ReadDat
                 RvDat tDat = new RvDat();
                 tDat.AddData(RvDat.DatData.DatRootFullName, Path.Combine(tDir.DatTreeFullName, file.Name));
                 tDat.TimeStamp = file.LastWriteTime;
+
+                string datRootFullName = tDat.GetData(RvDat.DatData.DatRootFullName);
+                DatRule datRule = DatReader.FindDatRule(datRootFullName);
+                tDat.MultiDatOverride = datRule.MultiDATDirOverride;
+
                 tDir.DirDatAdd(tDat);
             }
 
@@ -116,6 +121,11 @@ namespace RVCore.ReadDat
                 RvDat tDat = new RvDat();
                 tDat.AddData(RvDat.DatData.DatRootFullName, Path.Combine(tDir.DatTreeFullName, file.Name));
                 tDat.TimeStamp = file.LastWriteTime;
+
+                string datRootFullName = tDat.GetData(RvDat.DatData.DatRootFullName);
+                DatRule datRule = DatReader.FindDatRule(datRootFullName);
+                tDat.MultiDatOverride = datRule.MultiDATDirOverride;
+
                 tDir.DirDatAdd(tDat);
             }
 
@@ -123,7 +133,7 @@ namespace RVCore.ReadDat
             {
                 for (int i = 0; i < tDir.DirDatCount; i++)
                 {
-                    tDir.DirDat(i).AutoAddDirectory = true;
+                    tDir.DirDat(i).MultiDatsInDirectory = true;
                 }
             }
 
@@ -321,8 +331,6 @@ namespace RVCore.ReadDat
         /// <param name="tmpDir">A temp directory containing the DAT found in this directory in DatRoot</param>
         private static void AddNewDats(RvFile dbDir, RvFile tmpDir)
         {
-            bool autoAddDirectory = tmpDir.DirDatCount > 1;
-
             int dbIndex = 0;
             int scanIndex = 0;
 
@@ -377,7 +385,7 @@ namespace RVCore.ReadDat
 
 
                         Debug.WriteLine("Adding new DAT");
-                        if (UpdateDatFile(fileDat, autoAddDirectory, dbDir))
+                        if (LoadNewDat(fileDat, dbDir))
                         {
                             dbIndex++;
                         }
@@ -394,24 +402,26 @@ namespace RVCore.ReadDat
         }
 
 
-        private static bool UpdateDatFile(RvDat file, bool autoAddDirectory, RvFile thisDirectory)
+        private static bool LoadNewDat(RvDat fileDat, RvFile thisDirectory)
         {
             // Read the new Dat File into newDatFile
-            RvFile newDatFile = DatReader.ReadInDatFile(file, _thWrk);
+            RvFile newDatFile = DatReader.ReadInDatFile(fileDat, _thWrk);
 
             // If we got a valid Dat File back
             if (newDatFile?.Dat == null)
             {
-                ReportError.Show("Error reading Dat " + file.GetData(RvDat.DatData.DatRootFullName));
+                ReportError.Show("Error reading Dat " + fileDat.GetData(RvDat.DatData.DatRootFullName));
                 return false;
             }
 
-
-            string datRootFullName = file.GetData(RvDat.DatData.DatRootFullName);
-
-            DatRule datRule =DatReader.FindDatRule(datRootFullName);
-
-            if (!datRule.MultiDATDirOverride && (autoAddDirectory || !string.IsNullOrEmpty(newDatFile.Dat.GetData(RvDat.DatData.RootDir))) && newDatFile.Dat.GetData(RvDat.DatData.DirSetup) != "noautodir")
+            if (
+                    !fileDat.MultiDatOverride &&
+                    newDatFile.Dat.GetData(RvDat.DatData.DirSetup) != "noautodir" &&
+                    (
+                        fileDat.MultiDatsInDirectory ||
+                        !string.IsNullOrEmpty(newDatFile.Dat.GetData(RvDat.DatData.RootDir))
+                    )
+                )
             {
                 // if we are auto adding extra directories then create a new directory.
                 newDatFile.Name = !string.IsNullOrEmpty(newDatFile.Dat.GetData(RvDat.DatData.RootDir)) ?
@@ -426,11 +436,11 @@ namespace RVCore.ReadDat
                 newDirectory.ChildAdd(newDatFile);
                 newDatFile = newDirectory;
 
-                newDatFile.Dat.AutoAddDirectory = true;
+                newDatFile.Dat.AutoAddedDirectory = true;
             }
             else
             {
-                newDatFile.Dat.AutoAddDirectory = false;
+                newDatFile.Dat.AutoAddedDirectory = false;
             }
 
             if (thisDirectory.Tree == null)

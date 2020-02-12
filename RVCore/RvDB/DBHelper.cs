@@ -109,15 +109,20 @@ namespace RVCore.RvDB
             {
                 return retv;
             }
-
-
+            
             retv = Math.Sign(var1.TimeStamp.CompareTo(var2.TimeStamp));
             if (retv != 0)
             {
                 return retv;
             }
 
-            retv = Math.Sign(var1.AutoAddDirectory.CompareTo(var2.AutoAddDirectory));
+            retv = Math.Sign(var1.MultiDatsInDirectory.CompareTo(var2.MultiDatsInDirectory));
+            if (retv != 0)
+            {
+                return retv;
+            }
+
+            retv = Math.Sign(var1.MultiDatOverride.CompareTo(var2.MultiDatOverride));
             if (retv != 0)
             {
                 return retv;

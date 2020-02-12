@@ -979,7 +979,7 @@ namespace RVCore.RvDB
 
         private string SuperDatFileName(RvDat dat)
         {
-            if (dat.AutoAddDirectory)
+            if (dat.AutoAddedDirectory)
             {
                 if (Parent?.Parent == null || Parent.Parent.Dat != dat)
                 {

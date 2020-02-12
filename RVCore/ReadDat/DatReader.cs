@@ -109,7 +109,7 @@ namespace RVCore.ReadDat
                 DatClean.CleanFilenamesFixDupes(dh.BaseDir); // you may get repeat filenames inside Zip's / 7Z's and they may not be sorted to find them by now.
 
 
-                RvFile newDir = ExternalDatConverter.ConvertFromExternalDat(dh, datRootFullName, datFile.TimeStamp);
+                RvFile newDir = ExternalDatConverter.ConvertFromExternalDat(dh, datFile);
                 return newDir;
             }
             catch (Exception e)

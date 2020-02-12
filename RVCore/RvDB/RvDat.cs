@@ -43,29 +43,15 @@ namespace RVCore.RvDB
         public DatUpdateStatus Status;
 
         public long TimeStamp;
-        public bool AutoAddDirectory;
-
-
-        /*
-        public JObject WriteJson()
-        {
-            JObject jObj = new JObject();
-            jObj.Add("TimeStamp",TimeStamp);
-            jObj.Add("AutoAddDirectory",AutoAddDirectory);
-
-            foreach (DatMetaData gameMD in _gameMetaData)
-            {
-                jObj.Add(gameMD.Id.ToString(), gameMD.Value);
-            }
-
-            return jObj;
-        }
-        */
+        public bool MultiDatOverride;
+        public bool MultiDatsInDirectory;
+        public bool AutoAddedDirectory;
 
         public void Write(BinaryWriter bw)
         {
             bw.Write(TimeStamp);
-            bw.Write(AutoAddDirectory);
+            byte bools = (byte) ((AutoAddedDirectory ? 1 : 0) | (MultiDatOverride ? 2:0) | (MultiDatsInDirectory ? 4:0));
+            bw.Write(bools);
 
             bw.Write((byte)_gameMetaData.Count);
             foreach (DatMetaData gameMD in _gameMetaData)
@@ -77,7 +63,10 @@ namespace RVCore.RvDB
         public void Read(BinaryReader br)
         {
             TimeStamp = br.ReadInt64();
-            AutoAddDirectory = br.ReadBoolean();
+            byte bools = br.ReadByte();
+            AutoAddedDirectory = (bools & 1) == 1;
+            MultiDatOverride = (bools & 2) == 2;
+            MultiDatsInDirectory = (bools & 4) == 4;
 
             byte c = br.ReadByte();
             _gameMetaData.Clear();

@@ -7,12 +7,12 @@ namespace RVCore.ReadDat
 {
     public static class ExternalDatConverter
     {
-        public static RvFile ConvertFromExternalDat(DatHeader datHeaderExternal, string datRootFullName, long timeStamp)
+        public static RvFile ConvertFromExternalDat(DatHeader datHeaderExternal,RvDat datFile)
         {
             RvFile newDirFromExternal = new RvFile(FileType.Dir);
             RvDat newDatFromExternal = new RvDat();
-            newDatFromExternal.AddData(RvDat.DatData.DatRootFullName, datRootFullName);
-            newDatFromExternal.TimeStamp = timeStamp;
+            newDatFromExternal.AddData(RvDat.DatData.DatRootFullName, datFile.GetData(RvDat.DatData.DatRootFullName));
+            newDatFromExternal.TimeStamp = datFile.TimeStamp;
             newDatFromExternal.Status = DatUpdateStatus.Correct;
             newDatFromExternal.AddData(RvDat.DatData.DatName, datHeaderExternal.Name);
             newDatFromExternal.AddData(RvDat.DatData.RootDir, datHeaderExternal.RootDir);
@@ -26,7 +26,12 @@ namespace RVCore.ReadDat
             newDatFromExternal.AddData(RvDat.DatData.URL, datHeaderExternal.URL);
             newDatFromExternal.AddData(RvDat.DatData.DirSetup, datHeaderExternal.Dir);
             newDatFromExternal.AddData(RvDat.DatData.Header, datHeaderExternal.Header);
+            newDatFromExternal.MultiDatsInDirectory = datFile.MultiDatsInDirectory;
+            newDatFromExternal.MultiDatOverride = datFile.MultiDatOverride;
+
             newDirFromExternal.Dat = newDatFromExternal;
+
+
 
             HeaderFileType headerFileType = FileHeaderReader.FileHeaderReader.GetFileTypeFromHeader(datHeaderExternal.Header);
 

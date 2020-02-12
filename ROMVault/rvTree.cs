@@ -81,7 +81,7 @@ namespace ROMVault
             {
                 for (int i = 0; i < pTree.DirDatCount; i++)
                 {
-                    if (!pTree.DirDat(i).AutoAddDirectory)
+                    if (!pTree.DirDat(i).AutoAddedDirectory)
                         nodeHeight += 12;
                 }
             }
@@ -312,7 +312,7 @@ namespace ROMVault
                         datList = new List<string>();
                         for (int i = 0; i < pTree.DirDatCount; i++)
                         {
-                            if (!pTree.DirDat(i).AutoAddDirectory)
+                            if (!pTree.DirDat(i).AutoAddedDirectory)
                             {
                                 string title = pTree.DirDat(i).GetData(RvDat.DatData.Description);
                                 if (string.IsNullOrWhiteSpace(title))
@@ -324,7 +324,7 @@ namespace ROMVault
                 }
 
                 // pTree.Parent.DirDatCount>1: This should probably be a test like parent contains Dat 
-                else if (pTree.Dat != null && pTree.Dat.AutoAddDirectory && pTree.Parent.DirDatCount > 1)
+                else if (pTree.Dat != null && pTree.Dat.AutoAddedDirectory && pTree.Parent.DirDatCount > 1)
                 {
                     thistxt = pTree.Name + ": ";
                 }
