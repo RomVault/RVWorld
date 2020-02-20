@@ -31,7 +31,7 @@
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(FrmTrrntzip));
             this.splitContainer = new System.Windows.Forms.SplitContainer();
             this.StatusPanel = new System.Windows.Forms.Panel();
-            this.chkNice = new System.Windows.Forms.CheckBox();
+            this.tbProccessors = new System.Windows.Forms.TrackBar();
             this.pictureBox2 = new System.Windows.Forms.PictureBox();
             this.label3 = new System.Windows.Forms.Label();
             this.label2 = new System.Windows.Forms.Label();
@@ -39,7 +39,6 @@
             this.cboOutType = new System.Windows.Forms.ComboBox();
             this.cboInType = new System.Windows.Forms.ComboBox();
             this.chkForce = new System.Windows.Forms.CheckBox();
-            this.lblComplete = new System.Windows.Forms.Label();
             this.label1 = new System.Windows.Forms.Label();
             this.lblTotalStatus = new System.Windows.Forms.Label();
             this.pictureBox1 = new System.Windows.Forms.PictureBox();
@@ -52,6 +51,7 @@
             this.splitContainer.Panel2.SuspendLayout();
             this.splitContainer.SuspendLayout();
             this.StatusPanel.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.tbProccessors)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox2)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.DropBox)).BeginInit();
@@ -80,7 +80,7 @@
             // 
             // StatusPanel
             // 
-            this.StatusPanel.Controls.Add(this.chkNice);
+            this.StatusPanel.Controls.Add(this.tbProccessors);
             this.StatusPanel.Controls.Add(this.pictureBox2);
             this.StatusPanel.Controls.Add(this.label3);
             this.StatusPanel.Controls.Add(this.label2);
@@ -88,7 +88,6 @@
             this.StatusPanel.Controls.Add(this.cboOutType);
             this.StatusPanel.Controls.Add(this.cboInType);
             this.StatusPanel.Controls.Add(this.chkForce);
-            this.StatusPanel.Controls.Add(this.lblComplete);
             this.StatusPanel.Controls.Add(this.label1);
             this.StatusPanel.Controls.Add(this.lblTotalStatus);
             this.StatusPanel.Controls.Add(this.pictureBox1);
@@ -99,17 +98,13 @@
             this.StatusPanel.Size = new System.Drawing.Size(250, 446);
             this.StatusPanel.TabIndex = 0;
             // 
-            // chkNice
+            // tbProccessors
             // 
-            this.chkNice.AutoSize = true;
-            this.chkNice.Checked = true;
-            this.chkNice.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.chkNice.Location = new System.Drawing.Point(100, 185);
-            this.chkNice.Name = "chkNice";
-            this.chkNice.Size = new System.Drawing.Size(73, 17);
-            this.chkNice.TabIndex = 14;
-            this.chkNice.Text = "Less CPU";
-            this.chkNice.UseVisualStyleBackColor = true;
+            this.tbProccessors.Location = new System.Drawing.Point(12, 189);
+            this.tbProccessors.Name = "tbProccessors";
+            this.tbProccessors.Size = new System.Drawing.Size(221, 45);
+            this.tbProccessors.TabIndex = 15;
+            this.tbProccessors.ValueChanged += new System.EventHandler(this.tbProccessors_ValueChanged);
             // 
             // pictureBox2
             // 
@@ -134,7 +129,7 @@
             // label2
             // 
             this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(92, 125);
+            this.label2.Location = new System.Drawing.Point(84, 125);
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(34, 13);
             this.label2.TabIndex = 11;
@@ -151,6 +146,7 @@
             this.chkFix.TabIndex = 10;
             this.chkFix.Text = "Fix";
             this.chkFix.UseVisualStyleBackColor = true;
+            this.chkFix.CheckedChanged += new System.EventHandler(this.chkFix_CheckedChanged);
             // 
             // cboOutType
             // 
@@ -164,6 +160,7 @@
             this.cboOutType.Name = "cboOutType";
             this.cboOutType.Size = new System.Drawing.Size(101, 21);
             this.cboOutType.TabIndex = 9;
+            this.cboOutType.TextChanged += new System.EventHandler(this.cboOutType_TextChanged);
             // 
             // cboInType
             // 
@@ -177,6 +174,7 @@
             this.cboInType.Name = "cboInType";
             this.cboInType.Size = new System.Drawing.Size(101, 21);
             this.cboInType.TabIndex = 8;
+            this.cboInType.TextChanged += new System.EventHandler(this.cboInType_TextChanged);
             // 
             // chkForce
             // 
@@ -187,14 +185,7 @@
             this.chkForce.TabIndex = 7;
             this.chkForce.Text = "Force";
             this.chkForce.UseVisualStyleBackColor = true;
-            // 
-            // lblComplete
-            // 
-            this.lblComplete.AutoSize = true;
-            this.lblComplete.Location = new System.Drawing.Point(97, 127);
-            this.lblComplete.Name = "lblComplete";
-            this.lblComplete.Size = new System.Drawing.Size(0, 13);
-            this.lblComplete.TabIndex = 5;
+            this.chkForce.CheckedChanged += new System.EventHandler(this.chkForce_CheckedChanged);
             // 
             // label1
             // 
@@ -207,12 +198,12 @@
             // 
             // lblTotalStatus
             // 
-            this.lblTotalStatus.Location = new System.Drawing.Point(144, 189);
+            this.lblTotalStatus.Location = new System.Drawing.Point(9, 169);
             this.lblTotalStatus.Name = "lblTotalStatus";
             this.lblTotalStatus.Size = new System.Drawing.Size(89, 14);
             this.lblTotalStatus.TabIndex = 3;
             this.lblTotalStatus.Text = "(0/0)";
-            this.lblTotalStatus.TextAlign = System.Drawing.ContentAlignment.TopRight;
+            this.lblTotalStatus.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
             // pictureBox1
             // 
@@ -281,13 +272,14 @@
             this.DoubleBuffered = true;
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "FrmTrrntzip";
-            this.Text = "Trrntzip .Net (V2.5.5)";
+            this.Text = "Trrntzip .Net (V2.6.0)";
             this.splitContainer.Panel1.ResumeLayout(false);
             this.splitContainer.Panel2.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer)).EndInit();
             this.splitContainer.ResumeLayout(false);
             this.StatusPanel.ResumeLayout(false);
             this.StatusPanel.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.tbProccessors)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox2)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.DropBox)).EndInit();
@@ -307,7 +299,6 @@
         private System.Windows.Forms.DataGridView dataGrid;
         private System.Windows.Forms.DataGridViewTextBoxColumn FileName;
         private System.Windows.Forms.DataGridViewTextBoxColumn Status;
-        private System.Windows.Forms.Label lblComplete;
         private System.Windows.Forms.CheckBox chkForce;
         private System.Windows.Forms.ComboBox cboOutType;
         private System.Windows.Forms.ComboBox cboInType;
@@ -315,7 +306,7 @@
         private System.Windows.Forms.Label label3;
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.PictureBox pictureBox2;
-        private System.Windows.Forms.CheckBox chkNice;
+        private System.Windows.Forms.TrackBar tbProccessors;
     }
 }
 
