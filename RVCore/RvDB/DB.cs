@@ -6,6 +6,7 @@
 
 using System.IO;
 using System.Text;
+using System.Threading;
 using File = RVIO.File;
 using FileStream = System.IO.FileStream;
 
@@ -60,8 +61,17 @@ namespace RVCore.RvDB
                 if (File.Exists(bname))
                 {
                     File.Delete(bname);
+
+                    while (File.Exists(bname))
+                    {
+                        Thread.Sleep(50);
+                    }
                 }
                 File.Move(Settings.rvSettings.CacheFile, bname);
+                while (File.Exists(Settings.rvSettings.CacheFile))
+                {
+                    Thread.Sleep(50);
+                }
             }
             FileStream fs = new FileStream(Settings.rvSettings.CacheFile, FileMode.CreateNew, FileAccess.Write);
             using (BinaryWriter bw = new BinaryWriter(fs, Encoding.UTF8, true))

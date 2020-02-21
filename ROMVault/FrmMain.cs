@@ -888,6 +888,7 @@ namespace ROMVault
         {
             if (gameGridSource != null)
                 UpdateGameGrid(gameGridSource);
+            txtFilter.Focus();
         }
 
         private void RomVaultSettingsToolStripMenuItem_Click(object sender, EventArgs e)

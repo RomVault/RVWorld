@@ -97,6 +97,7 @@ namespace TrrntZipUI
             }
 
             _threadLabel.Clear();
+            _threadProgress.Clear();
             for (int i = 0; i < _threadCount; i++)
             {
                 Label pLabel = new Label();
