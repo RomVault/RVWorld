@@ -128,6 +128,12 @@ namespace RVCore.RvDB
                 return retv;
             }
 
+            retv = Math.Sign(var1.UseDescriptionAsDirName.CompareTo(var2.UseDescriptionAsDirName));
+            if (retv != 0)
+            {
+                return retv;
+            }
+
             return 0;
         }
 

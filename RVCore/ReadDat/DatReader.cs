@@ -72,10 +72,8 @@ namespace RVCore.ReadDat
                 if (dh == null)
                     return null;
 
+                string dirName = Path.GetDirectoryName(datRootFullName) + Path.DirectorySeparatorChar;
 
-                string extraPath = !string.IsNullOrEmpty(dh.RootDir) ? dh.RootDir : dh.Name;
-                string dirName = Path.GetDirectoryName(datRootFullName) + Path.DirectorySeparatorChar + extraPath + Path.DirectorySeparatorChar;
-                
                 DatRule datRule = FindDatRule(dirName);
 
                 DatClean.CleanFilenames(dh.BaseDir);
@@ -95,7 +93,7 @@ namespace RVCore.ReadDat
                 SetMergeType(datRule, dh);
 
                 if (datRule.SingleArchive)
-                    DatClean.MakeDatSingleLevel(dh);
+                    DatClean.MakeDatSingleLevel(dh, datFile.UseDescriptionAsDirName);
 
                 DatClean.RemoveUnNeededDirectories(dh.BaseDir);
 

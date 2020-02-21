@@ -251,6 +251,7 @@ namespace RVCore
 
         public bool SingleArchive;
         public bool MultiDATDirOverride;
+        public bool UseDescriptionAsDirName;
 
         public int CompareTo(DatRule obj)
         {

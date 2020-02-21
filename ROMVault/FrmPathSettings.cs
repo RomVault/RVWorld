@@ -90,6 +90,8 @@ namespace ROMVault
 
             chkSingleArchive.Checked = _rule.SingleArchive;
             chkMultiDatDirOverride.Checked = _rule.MultiDATDirOverride;
+
+            chkUseDescription.Checked = _rule.UseDescriptionAsDirName;
         }
 
 
@@ -189,6 +191,7 @@ namespace ROMVault
             _rule.Filter = (FilterType)cboFilterType.SelectedIndex;
             _rule.SingleArchive = chkSingleArchive.Checked;
             _rule.MultiDATDirOverride = chkMultiDatDirOverride.Checked;
+            _rule.UseDescriptionAsDirName = chkUseDescription.Checked;
 
             bool updatingRule = false;
             int i;
@@ -313,7 +316,8 @@ namespace ROMVault
                     _rule.Merge != MergeType.Split ||
                     _rule.MergeOverrideDAT ||
                     _rule.SingleArchive ||
-                    _rule.MultiDATDirOverride)
+                    _rule.MultiDATDirOverride ||
+                    _rule.UseDescriptionAsDirName)
                     DatUpdate.CheckAllDats(DB.DirTree.Child(0), _rule.DirKey);
             }
 
