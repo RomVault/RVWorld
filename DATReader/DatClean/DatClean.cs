@@ -6,15 +6,23 @@ namespace DATReader.DatClean
 {
     public static partial class DatClean
     {
-        public static void MakeDatSingleLevel(DatHeader tDatHeader)
+        public static void MakeDatSingleLevel(DatHeader tDatHeader,bool useDescription)
         {
             DatBase[] db = tDatHeader.BaseDir.ToArray();
             tDatHeader.Dir = "noautodir";
 
+
+            // if we are auto adding extra directories then create a new directory.
+            string extraDirName="";
+            if (string.IsNullOrEmpty(extraDirName) && useDescription && !string.IsNullOrWhiteSpace(tDatHeader.Description))
+                extraDirName = tDatHeader.Description;
+            if (string.IsNullOrEmpty(extraDirName))
+                extraDirName = tDatHeader.Name;
+
             tDatHeader.BaseDir.ChildrenClear();
             DatDir root = new DatDir(DatFileType.UnSet)
             {
-                Name = tDatHeader.Name,
+                Name = extraDirName,
                 DGame = new DatGame { Description = tDatHeader.Description }
             };
             tDatHeader.BaseDir.ChildAdd(root);

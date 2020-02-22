@@ -91,6 +91,10 @@ namespace DATReader.DatReader
                         return false;
                     }
                     break;
+                case "#": // comments
+
+                    dfl.GnRest();
+                    break;
                 default:
                     _errorReport?.Invoke(dfl.Filename, "Error Keyword " + dfl.Next + " not know in dir, on line " + dfl.LineNumber);
                     break;
@@ -304,7 +308,9 @@ namespace DATReader.DatReader
                     case "history":
                         dGame.History = dfl.GnRest();
                         break;
-                    
+                    case "isdevice":
+                        dGame.IsDevice = dfl.GnRest();
+                        break;
                     case "serial":
                     case "rebuildto":
                     case "sample":
@@ -327,6 +333,11 @@ namespace DATReader.DatReader
                     case "users":
                     case "version":
                     case "license":
+                    case "device_ref":
+                    case "driverstatus":
+                    case "ismechanical":
+                    case "#": // comments
+
                         dfl.GnRest();
                         break;
 

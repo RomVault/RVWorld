@@ -46,11 +46,18 @@ namespace RVCore.RvDB
         public bool MultiDatOverride;
         public bool MultiDatsInDirectory;
         public bool AutoAddedDirectory;
+        public bool UseDescriptionAsDirName;
 
         public void Write(BinaryWriter bw)
         {
             bw.Write(TimeStamp);
-            byte bools = (byte) ((AutoAddedDirectory ? 1 : 0) | (MultiDatOverride ? 2:0) | (MultiDatsInDirectory ? 4:0));
+            byte bools = (byte)
+                (
+                    (AutoAddedDirectory ? 1 : 0) |
+                    (MultiDatOverride ? 2 : 0) |
+                    (MultiDatsInDirectory ? 4 : 0) |
+                    (UseDescriptionAsDirName ? 8 : 0)
+                 );
             bw.Write(bools);
 
             bw.Write((byte)_gameMetaData.Count);
@@ -67,6 +74,7 @@ namespace RVCore.RvDB
             AutoAddedDirectory = (bools & 1) == 1;
             MultiDatOverride = (bools & 2) == 2;
             MultiDatsInDirectory = (bools & 4) == 4;
+            UseDescriptionAsDirName = (bools & 8) == 8;
 
             byte c = br.ReadByte();
             _gameMetaData.Clear();

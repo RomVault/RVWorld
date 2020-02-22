@@ -92,7 +92,7 @@ namespace RVCore.ReadDat
                 SetMergeType(datRule, dh);
 
                 if (datRule.SingleArchive)
-                    DatClean.MakeDatSingleLevel(dh);
+                    DatClean.MakeDatSingleLevel(dh, datFile.UseDescriptionAsDirName);
 
                 DatClean.RemoveUnNeededDirectories(dh.BaseDir);
 

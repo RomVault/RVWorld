@@ -109,6 +109,7 @@ namespace RVCore.ReadDat
                 string datRootFullName = tDat.GetData(RvDat.DatData.DatRootFullName);
                 DatRule datRule = DatReader.FindDatRule(datRootFullName);
                 tDat.MultiDatOverride = datRule.MultiDATDirOverride;
+                tDat.UseDescriptionAsDirName = datRule.UseDescriptionAsDirName;
 
                 tDir.DirDatAdd(tDat);
             }
@@ -125,6 +126,7 @@ namespace RVCore.ReadDat
                 string datRootFullName = tDat.GetData(RvDat.DatData.DatRootFullName);
                 DatRule datRule = DatReader.FindDatRule(datRootFullName);
                 tDat.MultiDatOverride = datRule.MultiDATDirOverride;
+                tDat.UseDescriptionAsDirName = datRule.UseDescriptionAsDirName;
 
                 tDir.DirDatAdd(tDat);
             }
@@ -424,8 +426,14 @@ namespace RVCore.ReadDat
                 )
             {
                 // if we are auto adding extra directories then create a new directory.
-                newDatFile.Name = !string.IsNullOrEmpty(newDatFile.Dat.GetData(RvDat.DatData.RootDir)) ?
-                    newDatFile.Dat.GetData(RvDat.DatData.RootDir) : newDatFile.Dat.GetData(RvDat.DatData.DatName);
+                string dirName = "";
+                if (string.IsNullOrEmpty(dirName) && fileDat.UseDescriptionAsDirName && !string.IsNullOrWhiteSpace(newDatFile.Dat.GetData(RvDat.DatData.Description)))
+                    dirName = newDatFile.Dat.GetData(RvDat.DatData.Description);
+                if (string.IsNullOrEmpty(dirName) && !string.IsNullOrEmpty(newDatFile.Dat.GetData(RvDat.DatData.RootDir)))
+                    dirName = newDatFile.Dat.GetData(RvDat.DatData.RootDir);
+                if (string.IsNullOrEmpty(dirName))
+                    dirName= newDatFile.Dat.GetData(RvDat.DatData.DatName);
+                newDatFile.Name = dirName;
 
                 newDatFile.DatStatus = DatStatus.InDatCollect;
                 newDatFile.Tree = new RvTreeRow();

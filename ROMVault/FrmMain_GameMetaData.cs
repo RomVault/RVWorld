@@ -241,14 +241,25 @@ namespace ROMVault
                     string path = tGame.Parent.DatTreeFullName;
                     foreach (EmulatorInfo ei in Settings.rvSettings.EInfo)
                     {
-                        if (!string.Equals(path, ei.TreeDir, StringComparison.CurrentCultureIgnoreCase))
+                        if (path.Length <= 8)
+                            continue;
+
+                        if (!string.Equals(path.Substring(8), ei.TreeDir, StringComparison.CurrentCultureIgnoreCase))
                             continue;
 
                         if (string.IsNullOrWhiteSpace(ei.ExtraPath))
                             continue;
 
-                        found = true;
-                        LoadMamePannels(tGame, ei.ExtraPath);
+                        if (ei.ExtraPath != null)
+                        {
+                            found = true;
+                            if (ei.ExtraPath.Substring(0, 1) == "%")
+                                LoadMameSLPannels(tGame, ei.ExtraPath.Substring(1));
+                            else
+                                LoadMamePannels(tGame, ei.ExtraPath);
+
+                            break;
+                        }
                     }
 
                     if (!found)

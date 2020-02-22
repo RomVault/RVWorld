@@ -56,30 +56,51 @@ namespace ROMVault
 
         }
 
-        private void LoadMamePannels(RvFile tGame,string extraPath)
+        private void LoadMamePannels(RvFile tGame, string extraPath)
         {
             TabEmuArc.TabPages.Remove(tabArtWork);
             TabEmuArc.TabPages.Remove(tabScreens);
             TabEmuArc.TabPages.Remove(tabInfo);
 
-            string[] path = extraPath.Split('\\' );
+            string[] path = extraPath.Split('\\');
 
             RvFile fExtra = DB.DirTree.Child(0);
 
             foreach (string p in path)
             {
-                if (fExtra.ChildNameSearch(new RvFile(FileType.Dir) {Name = p}, out int pIndex) != 0)
+                if (fExtra.ChildNameSearch(new RvFile(FileType.Dir) { Name = p }, out int pIndex) != 0)
                     return;
                 fExtra = fExtra.Child(pIndex);
             }
 
-            bool screenLoaded = false;
             bool artLoaded = false;
             bool logoLoaded = false;
+
             bool titleLoaded = false;
+            bool screenLoaded = false;
+
             bool storyLoaded = false;
-            
+
             int index;
+
+            if (fExtra.ChildNameSearch(new RvFile(FileType.Zip) { Name = "artpreview.zip" }, out index) == 0)
+            {
+                artLoaded = picArtwork.TryLoadImage(fExtra.Child(index), Path.GetFileNameWithoutExtension(tGame.Name));
+            }
+            else if (fExtra.ChildNameSearch(new RvFile(FileType.Dir) { Name = "artpreviewsnap" }, out index) == 0)
+            {
+                artLoaded = picArtwork.TryLoadImage(fExtra.Child(index), Path.GetFileNameWithoutExtension(tGame.Name));
+            }
+
+            if (fExtra.ChildNameSearch(new RvFile(FileType.Zip) { Name = "marquees.zip" }, out index) == 0)
+            {
+                logoLoaded = picLogo.TryLoadImage(fExtra.Child(index), Path.GetFileNameWithoutExtension(tGame.Name));
+            }
+            else if (fExtra.ChildNameSearch(new RvFile(FileType.Dir) { Name = "marquees" }, out index) == 0)
+            {
+                logoLoaded = picLogo.TryLoadImage(fExtra.Child(index), Path.GetFileNameWithoutExtension(tGame.Name));
+            }
+
 
             if (fExtra.ChildNameSearch(new RvFile(FileType.Zip) { Name = "snap.zip" }, out index) == 0)
             {
@@ -116,6 +137,70 @@ namespace ROMVault
             }
 
         }
+
+        private void LoadMameSLPannels(RvFile tGame, string extraPath)
+        {
+            TabEmuArc.TabPages.Remove(tabArtWork);
+            TabEmuArc.TabPages.Remove(tabScreens);
+            TabEmuArc.TabPages.Remove(tabInfo);
+
+            string[] path = extraPath.Split('\\');
+
+            RvFile fExtra = DB.DirTree.Child(0);
+
+            foreach (string p in path)
+            {
+                if (fExtra.ChildNameSearch(new RvFile(FileType.Dir) { Name = p }, out int pIndex) != 0)
+                    return;
+                fExtra = fExtra.Child(pIndex);
+            }
+
+            bool artLoaded = false;
+            bool logoLoaded = false;
+
+            bool titleLoaded = false;
+            bool screenLoaded = false;
+
+            bool storyLoaded = false;
+
+            int index;
+
+
+
+            string fname = tGame.Parent.Name + "/" + Path.GetFileNameWithoutExtension(tGame.Name);
+
+            if (fExtra.ChildNameSearch(new RvFile(FileType.Zip) { Name = "covers_SL.zip" }, out index) == 0)
+            {
+                artLoaded = picArtwork.TryLoadImage(fExtra.Child(index), fname);
+            }
+
+            if (fExtra.ChildNameSearch(new RvFile(FileType.Zip) { Name = "snap_SL.zip" }, out index) == 0)
+            {
+                logoLoaded = picLogo.TryLoadImage(fExtra.Child(index), fname);
+            }
+
+            if (fExtra.ChildNameSearch(new RvFile(FileType.Zip) { Name = "titles_SL.zip" }, out index) == 0)
+            {
+                screenLoaded = picScreenShot.TryLoadImage(fExtra.Child(index), fname);
+            }
+
+            if (artLoaded || logoLoaded) TabEmuArc.TabPages.Add(tabArtWork);
+            if (titleLoaded || screenLoaded) TabEmuArc.TabPages.Add(tabScreens);
+            if (storyLoaded) TabEmuArc.TabPages.Add(tabInfo);
+
+            if (artLoaded || logoLoaded || titleLoaded || screenLoaded || storyLoaded)
+            {
+                splitListArt.Panel2Collapsed = false;
+                splitListArt.Panel2.Show();
+            }
+            else
+            {
+                splitListArt.Panel2Collapsed = true;
+                splitListArt.Panel2.Hide();
+            }
+
+        }
+
 
         private void LoadPannels(RvFile tGame)
         {

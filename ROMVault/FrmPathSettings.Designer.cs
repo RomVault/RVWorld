@@ -55,6 +55,7 @@
             this.lblDelete = new System.Windows.Forms.Label();
             this.btnClose = new System.Windows.Forms.Button();
             this.btnResetAll = new System.Windows.Forms.Button();
+            this.chkUseDescription = new System.Windows.Forms.CheckBox();
             ((System.ComponentModel.ISupportInitialize)(this.DataGridGames)).BeginInit();
             this.grpBoxAddNew.SuspendLayout();
             this.SuspendLayout();
@@ -110,6 +111,7 @@
             // 
             // grpBoxAddNew
             // 
+            this.grpBoxAddNew.Controls.Add(this.chkUseDescription);
             this.grpBoxAddNew.Controls.Add(this.cboFilterType);
             this.grpBoxAddNew.Controls.Add(this.label3);
             this.grpBoxAddNew.Controls.Add(this.btnDelete);
@@ -348,6 +350,16 @@
             this.btnResetAll.UseVisualStyleBackColor = true;
             this.btnResetAll.Click += new System.EventHandler(this.BtnResetAllClick);
             // 
+            // chkUseDescription
+            // 
+            this.chkUseDescription.CheckAlign = System.Drawing.ContentAlignment.TopRight;
+            this.chkUseDescription.Location = new System.Drawing.Point(393, 135);
+            this.chkUseDescription.Name = "chkUseDescription";
+            this.chkUseDescription.Size = new System.Drawing.Size(178, 17);
+            this.chkUseDescription.TabIndex = 42;
+            this.chkUseDescription.Text = "Use Description for Extra Name";
+            this.chkUseDescription.UseVisualStyleBackColor = true;
+            // 
             // FrmSetDirSettings
             // 
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
@@ -402,5 +414,6 @@
         private System.Windows.Forms.Button btnDelete;
         private System.Windows.Forms.ComboBox cboFilterType;
         private System.Windows.Forms.Label label3;
+        private System.Windows.Forms.CheckBox chkUseDescription;
     }
 }
