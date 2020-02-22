@@ -71,13 +71,9 @@ namespace RVCore.ReadDat
                 dr.ReadDat(fullPath, out DatHeader dh);
                 if (dh == null)
                     return null;
-
-
-                string extraPath = !string.IsNullOrEmpty(dh.RootDir) ? dh.RootDir : dh.Name;
-                string dirName = Path.GetDirectoryName(datRootFullName) + Path.DirectorySeparatorChar + extraPath + Path.DirectorySeparatorChar;
-
-
-                DatRule datRule = FindDatRule(dirName);
+                
+                string dirNameRule = Path.GetDirectoryName(datRootFullName) + Path.DirectorySeparatorChar;
+                DatRule datRule = FindDatRule(dirNameRule);
 
                 DatClean.CleanFilenames(dh.BaseDir);
 

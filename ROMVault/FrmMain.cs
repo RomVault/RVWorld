@@ -42,6 +42,7 @@ namespace ROMVault
         private readonly ContextMenu _mnuContext;
         private readonly ContextMenu _mnuContextToSort;
 
+        private readonly MenuItem _mnuFile;
         private readonly MenuItem _mnuOpen;
 
         private readonly MenuItem _mnuToSortScan;
@@ -120,7 +121,7 @@ namespace ROMVault
                 Tag = null
             };
 
-            MenuItem mnuFile = new MenuItem
+            _mnuFile = new MenuItem
             {
                 Text = @"Set Dir Settings",
                 Tag = null
@@ -152,14 +153,14 @@ namespace ROMVault
 
             _mnuContext.MenuItems.Add(mnuScan);
             _mnuContext.MenuItems.Add(_mnuOpen);
-            _mnuContext.MenuItems.Add(mnuFile);
+            _mnuContext.MenuItems.Add(_mnuFile);
             _mnuContext.MenuItems.Add(mnuFixDat);
             _mnuContext.MenuItems.Add(mnuMakeDat);
             _mnuContext.MenuItems.Add(mnuMakeDat2);
 
             mnuScan.Click += MnuToSortScan;
             _mnuOpen.Click += MnuOpenClick;
-            mnuFile.Click += MnuFileClick;
+            _mnuFile.Click += MnuFileClick;
             mnuFixDat.Click += MnuMakeFixDatClick;
             mnuMakeDat.Click += MnuMakeDatClick;
             mnuMakeDat2.Click += MnuMakeDat2Click;
@@ -321,7 +322,7 @@ namespace ROMVault
             else
             {
                 _mnuOpen.Enabled = Directory.Exists(_clickedTree.FullName);
-
+                _mnuFile.Enabled = _clickedTree.Dat == null;
                 _mnuContext.Show(this, new Point(controLocation.X + e.X - 32, controLocation.Y + e.Y - 10));
             }
         }
