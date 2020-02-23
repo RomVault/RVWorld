@@ -159,7 +159,6 @@ namespace ROMVault
         protected override void OnPaint(PaintEventArgs e)
         {
             Graphics g = e.Graphics;
-            g.TextRenderingHint = TextRenderingHint.AntiAlias;
 
             _hScroll = HorizontalScroll.Value;
             _vScroll = VerticalScroll.Value;

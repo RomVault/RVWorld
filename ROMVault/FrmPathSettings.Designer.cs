@@ -34,6 +34,7 @@
             this.CROM = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.btnDeleteSelected = new System.Windows.Forms.Button();
             this.grpBoxAddNew = new System.Windows.Forms.GroupBox();
+            this.chkUseDescription = new System.Windows.Forms.CheckBox();
             this.cboFilterType = new System.Windows.Forms.ComboBox();
             this.label3 = new System.Windows.Forms.Label();
             this.btnDelete = new System.Windows.Forms.Button();
@@ -55,7 +56,6 @@
             this.lblDelete = new System.Windows.Forms.Label();
             this.btnClose = new System.Windows.Forms.Button();
             this.btnResetAll = new System.Windows.Forms.Button();
-            this.chkUseDescription = new System.Windows.Forms.CheckBox();
             ((System.ComponentModel.ISupportInitialize)(this.DataGridGames)).BeginInit();
             this.grpBoxAddNew.SuspendLayout();
             this.SuspendLayout();
@@ -138,6 +138,15 @@
             this.grpBoxAddNew.TabStop = false;
             this.grpBoxAddNew.Text = "Add New Directory Mapping";
             // 
+            // chkUseDescription
+            // 
+            this.chkUseDescription.Location = new System.Drawing.Point(384, 135);
+            this.chkUseDescription.Name = "chkUseDescription";
+            this.chkUseDescription.Size = new System.Drawing.Size(187, 17);
+            this.chkUseDescription.TabIndex = 42;
+            this.chkUseDescription.Text = "Use Description for Auto Dir";
+            this.chkUseDescription.UseVisualStyleBackColor = true;
+            // 
             // cboFilterType
             // 
             this.cboFilterType.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
@@ -193,20 +202,18 @@
             // 
             // chkMultiDatDirOverride
             // 
-            this.chkMultiDatDirOverride.CheckAlign = System.Drawing.ContentAlignment.TopRight;
-            this.chkMultiDatDirOverride.Location = new System.Drawing.Point(393, 90);
+            this.chkMultiDatDirOverride.Location = new System.Drawing.Point(384, 90);
             this.chkMultiDatDirOverride.Name = "chkMultiDatDirOverride";
-            this.chkMultiDatDirOverride.Size = new System.Drawing.Size(178, 17);
+            this.chkMultiDatDirOverride.Size = new System.Drawing.Size(187, 17);
             this.chkMultiDatDirOverride.TabIndex = 36;
             this.chkMultiDatDirOverride.Text = "Don\'t Add Multi DAT DIRs";
             this.chkMultiDatDirOverride.UseVisualStyleBackColor = true;
             // 
             // chkSingleArchive
             // 
-            this.chkSingleArchive.CheckAlign = System.Drawing.ContentAlignment.TopRight;
-            this.chkSingleArchive.Location = new System.Drawing.Point(393, 112);
+            this.chkSingleArchive.Location = new System.Drawing.Point(384, 112);
             this.chkSingleArchive.Name = "chkSingleArchive";
-            this.chkSingleArchive.Size = new System.Drawing.Size(178, 17);
+            this.chkSingleArchive.Size = new System.Drawing.Size(187, 17);
             this.chkSingleArchive.TabIndex = 35;
             this.chkSingleArchive.Text = "Single Archive";
             this.chkSingleArchive.UseVisualStyleBackColor = true;
@@ -349,16 +356,6 @@
             this.btnResetAll.Text = "Reset All";
             this.btnResetAll.UseVisualStyleBackColor = true;
             this.btnResetAll.Click += new System.EventHandler(this.BtnResetAllClick);
-            // 
-            // chkUseDescription
-            // 
-            this.chkUseDescription.CheckAlign = System.Drawing.ContentAlignment.TopRight;
-            this.chkUseDescription.Location = new System.Drawing.Point(393, 135);
-            this.chkUseDescription.Name = "chkUseDescription";
-            this.chkUseDescription.Size = new System.Drawing.Size(178, 17);
-            this.chkUseDescription.TabIndex = 42;
-            this.chkUseDescription.Text = "Use Description for Extra Name";
-            this.chkUseDescription.UseVisualStyleBackColor = true;
             // 
             // FrmSetDirSettings
             // 
