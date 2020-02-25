@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Drawing;
 using System.Windows.Forms;
-using ROMVault.Utils;
 using RVCore;
 using RVCore.ReadDat;
 using RVCore.RvDB;
@@ -18,6 +17,7 @@ namespace ROMVault
         public bool ChangesMade;
 
         private DatRule _rule;
+        private ToolTip tooltip;
 
         public FrmSetDirSettings()
         {
@@ -38,6 +38,22 @@ namespace ROMVault
             cboFilterType.Items.Add("Roms & CHDs");
             cboFilterType.Items.Add("Roms Only");
             cboFilterType.Items.Add("CHDs Only");
+
+            tooltip = new ToolTip
+            {
+                InitialDelay = 1000, ReshowDelay = 500
+            };
+            tooltip.AutoPopDelay = 32767;
+            
+            tooltip.SetToolTip(btnSetROMLocation,"Select a new Directory mapping location for this path.");
+            tooltip.SetToolTip(btnClearROMLocation,"Use this to clear the directory mapping.\nThis rule will still apply the archive options and checked options below to the selected directory.");
+            
+            tooltip.SetToolTip(chkFileTypeOverride, "Checking this will force the selected archive type to be used.\nIf unchecked and if the DAT specifies an archive type the DATs archive type will override this setting.");
+            tooltip.SetToolTip(chkMergeTypeOverride, "Checking this will force the selected merge type to be used.\nIf unchecked and if the DAT specifies a merge type the DATs merge type will override this setting.");
+
+            tooltip.SetToolTip(chkMultiDatDirOverride,"If two or more DATs share a directory RomVault will automatically\nmake a sub-directory for each DAT so that they do not conflict with each other.\nChecking this will stop sub-directories being automatically added.");
+            tooltip.SetToolTip(chkSingleArchive, "Checking this will turn the DATs in these directories into single archives.\n These archives will contain an internal sub-directories for each set in the DATs.\n(Don't use this with 'File' archive type as it will do nothing useful.)");
+            tooltip.SetToolTip(chkUseDescription, "For the above auto generated directories or single archive DATs\nRomVault will name these using the 'name' in the header of the DAT,\nChecking this will make RomVault use the 'description' in the header.\nIf there is no 'description' the 'name' tag will be used.\nIf there is no 'name' tag, the DAT filename will be used.");
         }
 
         public void SetLocation(string dLocation)

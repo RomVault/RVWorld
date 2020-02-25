@@ -83,7 +83,7 @@ namespace RVCmd
 
         private static void ShowHelp()
         {
-            Console.WriteLine("RomVault 3 Commandline");
+            Console.WriteLine("RomVault 3.1 Commandline");
             Console.WriteLine("-update  -u  : Update DATs");
             Console.WriteLine("-scan    -s  : Scan ROMs");
             Console.WriteLine("-fix     -f  : FindFixes / FixROMs");

@@ -140,7 +140,7 @@
             // 
             // chkUseDescription
             // 
-            this.chkUseDescription.Location = new System.Drawing.Point(384, 135);
+            this.chkUseDescription.Location = new System.Drawing.Point(375, 133);
             this.chkUseDescription.Name = "chkUseDescription";
             this.chkUseDescription.Size = new System.Drawing.Size(187, 17);
             this.chkUseDescription.TabIndex = 42;
@@ -151,7 +151,7 @@
             // 
             this.cboFilterType.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.cboFilterType.FormattingEnabled = true;
-            this.cboFilterType.Location = new System.Drawing.Point(139, 147);
+            this.cboFilterType.Location = new System.Drawing.Point(122, 147);
             this.cboFilterType.Name = "cboFilterType";
             this.cboFilterType.Size = new System.Drawing.Size(102, 21);
             this.cboFilterType.TabIndex = 41;
@@ -202,25 +202,25 @@
             // 
             // chkMultiDatDirOverride
             // 
-            this.chkMultiDatDirOverride.Location = new System.Drawing.Point(384, 90);
+            this.chkMultiDatDirOverride.Location = new System.Drawing.Point(375, 88);
             this.chkMultiDatDirOverride.Name = "chkMultiDatDirOverride";
-            this.chkMultiDatDirOverride.Size = new System.Drawing.Size(187, 17);
+            this.chkMultiDatDirOverride.Size = new System.Drawing.Size(220, 16);
             this.chkMultiDatDirOverride.TabIndex = 36;
-            this.chkMultiDatDirOverride.Text = "Don\'t Add Multi DAT DIRs";
+            this.chkMultiDatDirOverride.Text = "Don\'t Auto Add DAT Directories";
             this.chkMultiDatDirOverride.UseVisualStyleBackColor = true;
             // 
             // chkSingleArchive
             // 
-            this.chkSingleArchive.Location = new System.Drawing.Point(384, 112);
+            this.chkSingleArchive.Location = new System.Drawing.Point(375, 110);
             this.chkSingleArchive.Name = "chkSingleArchive";
             this.chkSingleArchive.Size = new System.Drawing.Size(187, 17);
             this.chkSingleArchive.TabIndex = 35;
-            this.chkSingleArchive.Text = "Single Archive";
+            this.chkSingleArchive.Text = "Make DAT a Single Archive";
             this.chkSingleArchive.UseVisualStyleBackColor = true;
             // 
             // chkMergeTypeOverride
             // 
-            this.chkMergeTypeOverride.Location = new System.Drawing.Point(251, 117);
+            this.chkMergeTypeOverride.Location = new System.Drawing.Point(233, 117);
             this.chkMergeTypeOverride.Name = "chkMergeTypeOverride";
             this.chkMergeTypeOverride.Size = new System.Drawing.Size(110, 17);
             this.chkMergeTypeOverride.TabIndex = 34;
@@ -240,14 +240,14 @@
             // 
             this.cboMergeType.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.cboMergeType.FormattingEnabled = true;
-            this.cboMergeType.Location = new System.Drawing.Point(139, 114);
+            this.cboMergeType.Location = new System.Drawing.Point(122, 114);
             this.cboMergeType.Name = "cboMergeType";
             this.cboMergeType.Size = new System.Drawing.Size(102, 21);
             this.cboMergeType.TabIndex = 32;
             // 
             // chkFileTypeOverride
             // 
-            this.chkFileTypeOverride.Location = new System.Drawing.Point(251, 88);
+            this.chkFileTypeOverride.Location = new System.Drawing.Point(233, 88);
             this.chkFileTypeOverride.Name = "chkFileTypeOverride";
             this.chkFileTypeOverride.Size = new System.Drawing.Size(110, 17);
             this.chkFileTypeOverride.TabIndex = 31;
@@ -259,15 +259,15 @@
             this.label2.AutoSize = true;
             this.label2.Location = new System.Drawing.Point(12, 88);
             this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(114, 13);
+            this.label2.Size = new System.Drawing.Size(86, 13);
             this.label2.TabIndex = 30;
-            this.label2.Text = "Compression Type:";
+            this.label2.Text = "Archive Type:";
             // 
             // cboFileType
             // 
             this.cboFileType.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.cboFileType.FormattingEnabled = true;
-            this.cboFileType.Location = new System.Drawing.Point(139, 85);
+            this.cboFileType.Location = new System.Drawing.Point(122, 85);
             this.cboFileType.Name = "cboFileType";
             this.cboFileType.Size = new System.Drawing.Size(102, 21);
             this.cboFileType.TabIndex = 29;
