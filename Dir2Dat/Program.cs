@@ -35,6 +35,11 @@ namespace Dir2Dat
                     string flag = arg.Substring(1);
                     switch (flag.ToLower())
                     {
+                        case "help":
+                        case "h":
+                        case "?":
+                            ShowHelp();
+                            return;
                         case "name": case "n":
                             ThisDat.Name = args[++i];
                             break;
@@ -76,6 +81,10 @@ namespace Dir2Dat
                         case "co":
                             ThisDat.Comment = args[++i];
                             break;
+                        case "newstyle":
+                        case "ns":
+                            style = true;
+                            break;
                         case "test": case "t":
                             testMode = true;
                             break;
@@ -103,12 +112,39 @@ namespace Dir2Dat
             }
 
             DirectoryInfo di = new DirectoryInfo(dirSource);
-            ProcessDir(di, ThisDat.BaseDir, false);
+            ProcessDir(di, ThisDat.BaseDir, style);
 
             DatXMLWriter dWriter = new DatXMLWriter();
             dWriter.WriteDat(outfile + ".dat", ThisDat, style);
         }
 
+        private static void ShowHelp()
+        {
+            Console.WriteLine("Dir2Dat Commandline");
+            Console.WriteLine("");
+            Console.WriteLine("Copyright (C) 2020 GordonJ");
+            Console.WriteLine("Homepage : https://www.romvault.com/");
+            Console.WriteLine("");
+            Console.WriteLine("Usage: Dir2Dat [SOURCE DIR] [OUTPUT DAT FILENAME] [OPTIONS|VALUE]");
+            Console.WriteLine("");
+            Console.WriteLine("Options:");
+            Console.WriteLine("");
+            Console.WriteLine("-help        -?  : Show this help");
+            Console.WriteLine("-name        -n  : Name for header");
+            Console.WriteLine("-description -d  : Description for header");
+            Console.WriteLine("-category    -c  : Category for header");
+            Console.WriteLine("-version     -v  : Version for header");
+            Console.WriteLine("-date        -dt : Date for header");
+            Console.WriteLine("-autodate    -ad : Auto Set the Date (No parameter needed)");
+            Console.WriteLine("-author      -a  : Author for header");
+            Console.WriteLine("-email       -e  : Email for header");
+            Console.WriteLine("-homepage    -hp : Homepage for header");
+            Console.WriteLine("-url             : URL for header");
+            Console.WriteLine("-comment     -co : Comment for header");
+            Console.WriteLine("");
+            Console.WriteLine("Example:");
+            Console.WriteLine("Dir2Dat C:\\Mame C:\\mameOut.dat -n Mame -d \"Mame Dat\" -ad");
+        }
 
         private static void ProcessDir(DirectoryInfo di, DatDir thisDir, bool newStyle)
         {

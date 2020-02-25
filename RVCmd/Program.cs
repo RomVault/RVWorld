@@ -34,6 +34,11 @@ namespace RVCmd
                     string flag = arg.Substring(1).ToLower();
                     switch (flag)
                     {
+                        case "help":
+                        case "h":
+                        case "?":
+                            ShowHelp();
+                            return;
                         case "update":
                         case "u":
                             doUpdateDATs = true;
@@ -84,6 +89,13 @@ namespace RVCmd
         private static void ShowHelp()
         {
             Console.WriteLine("RomVault 3.1 Commandline");
+            Console.WriteLine("");
+            Console.WriteLine("Copyright (C) 2020 GordonJ");
+            Console.WriteLine("Homepage : https://www.romvault.com/");
+            Console.WriteLine("");
+            Console.WriteLine("Options:");
+            Console.WriteLine("");
+            Console.WriteLine("-help    -?  : Show this help");
             Console.WriteLine("-update  -u  : Update DATs");
             Console.WriteLine("-scan    -s  : Scan ROMs");
             Console.WriteLine("-fix     -f  : FindFixes / FixROMs");

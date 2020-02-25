@@ -47,11 +47,15 @@ namespace TrrntZipCMD
                     switch (arg.Substring(1, 1))
                     {
                         case "?":
-                            Console.WriteLine("TorrentZip.Net v{0}\n", Assembly.GetExecutingAssembly().GetName().Version);
-                            Console.WriteLine("Copyright (C) 2018 GordonJ");
-                            Console.WriteLine("Homepage : http://www.romvault.com/trrntzip\n");
-                            Console.WriteLine("Usage: trrntzip [OPTIONS] [PATH/ZIP FILE]\n");
-                            Console.WriteLine("Options:\n");
+                            Console.WriteLine("TorrentZip.Net v{0}", Assembly.GetExecutingAssembly().GetName().Version);
+                            Console.WriteLine("");
+                            Console.WriteLine("Copyright (C) 2020 GordonJ");
+                            Console.WriteLine("Homepage : http://www.romvault.com/trrntzip");
+                            Console.WriteLine("");
+                            Console.WriteLine("Usage: trrntzip [OPTIONS] [PATH/ZIP FILE]");
+                            Console.WriteLine("");
+                            Console.WriteLine("Options:");
+                            Console.WriteLine("");
                             Console.WriteLine("-? : show this help");
                             Console.WriteLine("-s : prevent sub-directory recursion");
                             Console.WriteLine("-f : force re-zip");
