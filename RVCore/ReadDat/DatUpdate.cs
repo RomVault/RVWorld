@@ -110,6 +110,7 @@ namespace RVCore.ReadDat
                 DatRule datRule = DatReader.FindDatRule(datRootFullName);
                 tDat.MultiDatOverride = datRule.MultiDATDirOverride;
                 tDat.UseDescriptionAsDirName = datRule.UseDescriptionAsDirName;
+                tDat.SingleArchive = datRule.SingleArchive;
 
                 tDir.DirDatAdd(tDat);
             }
@@ -127,6 +128,7 @@ namespace RVCore.ReadDat
                 DatRule datRule = DatReader.FindDatRule(datRootFullName);
                 tDat.MultiDatOverride = datRule.MultiDATDirOverride;
                 tDat.UseDescriptionAsDirName = datRule.UseDescriptionAsDirName;
+                tDat.SingleArchive = datRule.SingleArchive;
 
                 tDir.DirDatAdd(tDat);
             }

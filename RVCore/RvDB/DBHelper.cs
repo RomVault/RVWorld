@@ -133,6 +133,12 @@ namespace RVCore.RvDB
             {
                 return retv;
             }
+            
+            retv = Math.Sign(var1.SingleArchive.CompareTo(var2.SingleArchive));
+            if (retv != 0)
+            {
+                return retv;
+            }
 
             return 0;
         }

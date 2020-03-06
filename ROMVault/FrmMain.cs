@@ -322,7 +322,7 @@ namespace ROMVault
             else
             {
                 _mnuOpen.Enabled = Directory.Exists(_clickedTree.FullName);
-                _mnuFile.Enabled = _clickedTree.Dat == null;
+                //_mnuFile.Enabled = _clickedTree.Dat == null;
                 _mnuContext.Show(this, new Point(controLocation.X + e.X - 32, controLocation.Y + e.Y - 10));
             }
         }
@@ -583,8 +583,14 @@ namespace ROMVault
             UpdateDats();
         }
 
-        private void BtnUpdateDatsClick(object sender, EventArgs e)
+
+        private void btnUpdateDats_MouseUp(object sender, MouseEventArgs e)
         {
+            if (e.Button == MouseButtons.Right && Control.ModifierKeys == Keys.Shift)
+            {
+                DatUpdate.CheckAllDats(DB.DirTree.Child(0), @"DatRoot\");
+
+            }
             UpdateDats();
         }
 
@@ -701,7 +707,7 @@ namespace ROMVault
             RomGrid.Rows.Clear();
 
             // clear sorting
-            if (gameSortIndex>=0)
+            if (gameSortIndex >= 0)
                 GameGrid.Columns[gameSortIndex].HeaderCell.SortGlyphDirection = SortOrder.None;
             gameSortIndex = 0;
             gameSortDir = SortOrder.Descending;
@@ -761,7 +767,7 @@ namespace ROMVault
         {
             const int leftPos = 89;
             int rightPos = (int)(gbDatInfo.Width / _scaleFactorX) - 15;
-          
+
 
             int width = rightPos - leftPos;
             int widthB1 = (int)((double)width * 120 / 340);

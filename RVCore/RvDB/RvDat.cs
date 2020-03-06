@@ -47,6 +47,7 @@ namespace RVCore.RvDB
         public bool MultiDatsInDirectory;
         public bool AutoAddedDirectory;
         public bool UseDescriptionAsDirName;
+        public bool SingleArchive;
 
         public void Write(BinaryWriter bw)
         {
@@ -56,7 +57,8 @@ namespace RVCore.RvDB
                     (AutoAddedDirectory ? 1 : 0) |
                     (MultiDatOverride ? 2 : 0) |
                     (MultiDatsInDirectory ? 4 : 0) |
-                    (UseDescriptionAsDirName ? 8 : 0)
+                    (UseDescriptionAsDirName ? 8 : 0) |
+                    (SingleArchive ? 16 : 0)
                  );
             bw.Write(bools);
 
@@ -75,6 +77,7 @@ namespace RVCore.RvDB
             MultiDatOverride = (bools & 2) == 2;
             MultiDatsInDirectory = (bools & 4) == 4;
             UseDescriptionAsDirName = (bools & 8) == 8;
+            SingleArchive = (bools & 16) == 16;
 
             byte c = br.ReadByte();
             _gameMetaData.Clear();

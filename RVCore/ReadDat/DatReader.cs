@@ -71,8 +71,16 @@ namespace RVCore.ReadDat
                 dr.ReadDat(fullPath, out DatHeader dh);
                 if (dh == null)
                     return null;
+
+                // if we are auto adding extra directories then create a new directory.
+                string extraDirName = "";
+                if (string.IsNullOrEmpty(extraDirName) && datFile.UseDescriptionAsDirName && !string.IsNullOrWhiteSpace(dh.Description))
+                    extraDirName = dh.Description;
+                if (string.IsNullOrEmpty(extraDirName))
+                    extraDirName = !string.IsNullOrEmpty(dh.RootDir) ? dh.RootDir : dh.Name;
+
+                string dirNameRule = Path.GetDirectoryName(datRootFullName) + Path.DirectorySeparatorChar + extraDirName + Path.DirectorySeparatorChar;
                 
-                string dirNameRule = Path.GetDirectoryName(datRootFullName) + Path.DirectorySeparatorChar;
                 DatRule datRule = FindDatRule(dirNameRule);
 
                 DatClean.CleanFilenames(dh.BaseDir);
@@ -91,7 +99,7 @@ namespace RVCore.ReadDat
 
                 SetMergeType(datRule, dh);
 
-                if (datRule.SingleArchive)
+                if (datFile.SingleArchive)
                     DatClean.MakeDatSingleLevel(dh, datFile.UseDescriptionAsDirName);
 
                 DatClean.RemoveUnNeededDirectories(dh.BaseDir);

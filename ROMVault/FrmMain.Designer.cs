@@ -80,6 +80,10 @@
             this.splitListArt = new System.Windows.Forms.SplitContainer();
             this.splitGameListRomList = new System.Windows.Forms.SplitContainer();
             this.GameGrid = new System.Windows.Forms.DataGridView();
+            this.CType = new System.Windows.Forms.DataGridViewImageColumn();
+            this.CGame = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.CDescription = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.CCorrect = new System.Windows.Forms.DataGridViewImageColumn();
             this.RomGrid = new System.Windows.Forms.DataGridView();
             this.CGot = new System.Windows.Forms.DataGridViewImageColumn();
             this.CRom = new System.Windows.Forms.DataGridViewTextBoxColumn();
@@ -126,10 +130,6 @@
             this.dataGridViewImageColumn1 = new System.Windows.Forms.DataGridViewImageColumn();
             this.dataGridViewImageColumn2 = new System.Windows.Forms.DataGridViewImageColumn();
             this.dataGridViewImageColumn3 = new System.Windows.Forms.DataGridViewImageColumn();
-            this.CType = new System.Windows.Forms.DataGridViewImageColumn();
-            this.CGame = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.CDescription = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.CCorrect = new System.Windows.Forms.DataGridViewImageColumn();
             ((System.ComponentModel.ISupportInitialize)(this.splitToolBarMain)).BeginInit();
             this.splitToolBarMain.Panel1.SuspendLayout();
             this.splitToolBarMain.Panel2.SuspendLayout();
@@ -257,7 +257,7 @@
             this.btnUpdateDats.Text = "Update DATs";
             this.btnUpdateDats.TextAlign = System.Drawing.ContentAlignment.BottomCenter;
             this.btnUpdateDats.UseVisualStyleBackColor = true;
-            this.btnUpdateDats.Click += new System.EventHandler(this.BtnUpdateDatsClick);
+            this.btnUpdateDats.MouseUp += new System.Windows.Forms.MouseEventHandler(this.btnUpdateDats_MouseUp);
             // 
             // splitDatInfoGameInfo
             // 
@@ -773,6 +773,41 @@
             this.GameGrid.MouseDoubleClick += new System.Windows.Forms.MouseEventHandler(this.GameGridMouseDoubleClick);
             this.GameGrid.MouseUp += new System.Windows.Forms.MouseEventHandler(this.GameGridMouseUp);
             // 
+            // CType
+            // 
+            this.CType.FillWeight = 40F;
+            this.CType.HeaderText = "Type";
+            this.CType.Name = "CType";
+            this.CType.ReadOnly = true;
+            this.CType.Resizable = System.Windows.Forms.DataGridViewTriState.True;
+            this.CType.Width = 40;
+            // 
+            // CGame
+            // 
+            this.CGame.HeaderText = "Game (Directory / Zip)";
+            this.CGame.Name = "CGame";
+            this.CGame.ReadOnly = true;
+            this.CGame.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.Programmatic;
+            this.CGame.Width = 220;
+            // 
+            // CDescription
+            // 
+            this.CDescription.HeaderText = "Description";
+            this.CDescription.Name = "CDescription";
+            this.CDescription.ReadOnly = true;
+            this.CDescription.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.Programmatic;
+            this.CDescription.Width = 220;
+            // 
+            // CCorrect
+            // 
+            this.CCorrect.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.Fill;
+            this.CCorrect.FillWeight = 450F;
+            this.CCorrect.HeaderText = "ROM Status";
+            this.CCorrect.MinimumWidth = 200;
+            this.CCorrect.Name = "CCorrect";
+            this.CCorrect.ReadOnly = true;
+            this.CCorrect.Resizable = System.Windows.Forms.DataGridViewTriState.True;
+            // 
             // RomGrid
             // 
             this.RomGrid.AllowUserToAddRows = false;
@@ -1235,41 +1270,6 @@
             this.dataGridViewImageColumn3.Resizable = System.Windows.Forms.DataGridViewTriState.True;
             this.dataGridViewImageColumn3.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.Automatic;
             this.dataGridViewImageColumn3.Width = 65;
-            // 
-            // CType
-            // 
-            this.CType.FillWeight = 40F;
-            this.CType.HeaderText = "Type";
-            this.CType.Name = "CType";
-            this.CType.ReadOnly = true;
-            this.CType.Resizable = System.Windows.Forms.DataGridViewTriState.True;
-            this.CType.Width = 40;
-            // 
-            // CGame
-            // 
-            this.CGame.HeaderText = "Game (Directory / Zip)";
-            this.CGame.Name = "CGame";
-            this.CGame.ReadOnly = true;
-            this.CGame.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.Programmatic;
-            this.CGame.Width = 220;
-            // 
-            // CDescription
-            // 
-            this.CDescription.HeaderText = "Description";
-            this.CDescription.Name = "CDescription";
-            this.CDescription.ReadOnly = true;
-            this.CDescription.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.Programmatic;
-            this.CDescription.Width = 220;
-            // 
-            // CCorrect
-            // 
-            this.CCorrect.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.Fill;
-            this.CCorrect.FillWeight = 450F;
-            this.CCorrect.HeaderText = "ROM Status";
-            this.CCorrect.MinimumWidth = 200;
-            this.CCorrect.Name = "CCorrect";
-            this.CCorrect.ReadOnly = true;
-            this.CCorrect.Resizable = System.Windows.Forms.DataGridViewTriState.True;
             // 
             // FrmMain
             // 
