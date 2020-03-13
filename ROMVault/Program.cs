@@ -11,7 +11,7 @@ namespace ROMVault
     {
         private static readonly Version Version = Assembly.GetEntryAssembly().GetName().Version;
         private static readonly int VNow = Version.Build;
-        public static readonly string StrVersion = $"{Version.Major}.{Version.Minor}.{Version.Build}";
+        public static readonly string StrVersion = Version.ToString(3);
 
         [STAThread]
         private static void Main()

@@ -47,7 +47,7 @@ namespace TrrntZipCMD
                     switch (arg.Substring(1, 1))
                     {
                         case "?":
-                            Console.WriteLine("TorrentZip.Net v{0}", Assembly.GetExecutingAssembly().GetName().Version);
+                            Console.WriteLine($"TorrentZip.Net v{Assembly.GetExecutingAssembly().GetName().Version.ToString(3)}", );
                             Console.WriteLine("");
                             Console.WriteLine("Copyright (C) 2020 GordonJ");
                             Console.WriteLine("Homepage : http://www.romvault.com/trrntzip");

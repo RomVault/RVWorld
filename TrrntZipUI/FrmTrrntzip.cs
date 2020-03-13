@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Reflection;
 using System.Threading;
 using System.Windows.Forms;
 using RVIO;
@@ -31,8 +32,11 @@ namespace TrrntZipUI
 
         public FrmTrrntzip()
         {
+
             UiUpdate = true;
             InitializeComponent();
+
+            this.Text = $"Trrntzip .Net ({Assembly.GetExecutingAssembly().GetName().Version.ToString(3)})";
             DropBox.AllowDrop = true;
             DropBox.DragEnter += PDragEnter;
             DropBox.DragDrop += PDragDrop;
