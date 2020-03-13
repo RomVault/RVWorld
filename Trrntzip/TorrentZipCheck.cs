@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Globalization;
 
 /***************************************************************************************************************
 
@@ -306,7 +305,7 @@ namespace Trrntzip
                 {
                     for (int k = 0; k < zippedFiles.Count; k++)
                     {
-                        if (zippedFiles[k].Name == dirSortTest[i].Name)
+                        if (zippedFiles[k] == dirSortTest[i])
                         {
                             zippedFiles.RemoveAt(k);
                             k--;
@@ -356,7 +355,6 @@ namespace Trrntzip
             }
 
 
-
             // check for repeat files
             bool error4 = false;
             for (int i = 0; i < zippedFiles.Count - 1; i++)
@@ -371,11 +369,8 @@ namespace Trrntzip
                     }
                 }
             }
-
-
-
-
-
+            
+            
             return tzStatus;
         }
 

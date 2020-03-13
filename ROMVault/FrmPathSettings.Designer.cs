@@ -34,6 +34,7 @@
             this.CROM = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.btnDeleteSelected = new System.Windows.Forms.Button();
             this.grpBoxAddNew = new System.Windows.Forms.GroupBox();
+            this.label4 = new System.Windows.Forms.Label();
             this.chkUseDescription = new System.Windows.Forms.CheckBox();
             this.cboFilterType = new System.Windows.Forms.ComboBox();
             this.label3 = new System.Windows.Forms.Label();
@@ -111,6 +112,7 @@
             // 
             // grpBoxAddNew
             // 
+            this.grpBoxAddNew.Controls.Add(this.label4);
             this.grpBoxAddNew.Controls.Add(this.chkUseDescription);
             this.grpBoxAddNew.Controls.Add(this.cboFilterType);
             this.grpBoxAddNew.Controls.Add(this.label3);
@@ -138,9 +140,18 @@
             this.grpBoxAddNew.TabStop = false;
             this.grpBoxAddNew.Text = "Add New Directory Mapping";
             // 
+            // label4
+            // 
+            this.label4.AutoSize = true;
+            this.label4.Location = new System.Drawing.Point(351, 88);
+            this.label4.Name = "label4";
+            this.label4.Size = new System.Drawing.Size(112, 13);
+            this.label4.TabIndex = 43;
+            this.label4.Text = "Directory Settings:";
+            // 
             // chkUseDescription
             // 
-            this.chkUseDescription.Location = new System.Drawing.Point(375, 133);
+            this.chkUseDescription.Location = new System.Drawing.Point(354, 153);
             this.chkUseDescription.Name = "chkUseDescription";
             this.chkUseDescription.Size = new System.Drawing.Size(187, 17);
             this.chkUseDescription.TabIndex = 42;
@@ -202,7 +213,7 @@
             // 
             // chkMultiDatDirOverride
             // 
-            this.chkMultiDatDirOverride.Location = new System.Drawing.Point(375, 88);
+            this.chkMultiDatDirOverride.Location = new System.Drawing.Point(354, 108);
             this.chkMultiDatDirOverride.Name = "chkMultiDatDirOverride";
             this.chkMultiDatDirOverride.Size = new System.Drawing.Size(220, 16);
             this.chkMultiDatDirOverride.TabIndex = 36;
@@ -211,7 +222,7 @@
             // 
             // chkSingleArchive
             // 
-            this.chkSingleArchive.Location = new System.Drawing.Point(375, 110);
+            this.chkSingleArchive.Location = new System.Drawing.Point(354, 130);
             this.chkSingleArchive.Name = "chkSingleArchive";
             this.chkSingleArchive.Size = new System.Drawing.Size(187, 17);
             this.chkSingleArchive.TabIndex = 35;
@@ -220,7 +231,7 @@
             // 
             // chkMergeTypeOverride
             // 
-            this.chkMergeTypeOverride.Location = new System.Drawing.Point(233, 117);
+            this.chkMergeTypeOverride.Location = new System.Drawing.Point(233, 116);
             this.chkMergeTypeOverride.Name = "chkMergeTypeOverride";
             this.chkMergeTypeOverride.Size = new System.Drawing.Size(110, 17);
             this.chkMergeTypeOverride.TabIndex = 34;
@@ -247,7 +258,7 @@
             // 
             // chkFileTypeOverride
             // 
-            this.chkFileTypeOverride.Location = new System.Drawing.Point(233, 88);
+            this.chkFileTypeOverride.Location = new System.Drawing.Point(233, 87);
             this.chkFileTypeOverride.Name = "chkFileTypeOverride";
             this.chkFileTypeOverride.Size = new System.Drawing.Size(110, 17);
             this.chkFileTypeOverride.TabIndex = 31;
@@ -412,5 +423,6 @@
         private System.Windows.Forms.ComboBox cboFilterType;
         private System.Windows.Forms.Label label3;
         private System.Windows.Forms.CheckBox chkUseDescription;
+        private System.Windows.Forms.Label label4;
     }
 }

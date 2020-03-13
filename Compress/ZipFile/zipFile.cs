@@ -138,10 +138,6 @@ namespace Compress.ZipFile
             bool lTrrntzip = true;
 
             _centerDirStart = (ulong)_zipFs.Position;
-            if (_centerDirStart >= 0xffffffff)
-            {
-                _zip64 = true;
-            }
 
             using (CrcCalculatorStream crcCs = new CrcCalculatorStream(_zipFs, true))
             {
@@ -160,6 +156,9 @@ namespace Compress.ZipFile
                 _fileComment = lTrrntzip ? GetBytes("TORRENTZIPPED-" + crcCs.Crc.ToString("X8")) : new byte[0];
                 ZipStatus = lTrrntzip ? ZipStatus.TrrntZip : ZipStatus.None;
             }
+            _zip64 |= _centerDirStart >= 0xffffffff;
+            _zip64 |= _centerDirSize >=  0xffffffff;
+            _zip64 |= _localFiles.Count >= 0xffff;
 
             if (_zip64)
             {

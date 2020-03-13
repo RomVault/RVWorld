@@ -4,8 +4,8 @@
     {
         zip,
         sevenzip,
-        iso,
-        both
+        both,
+        iso
     }
 
     public static class Program

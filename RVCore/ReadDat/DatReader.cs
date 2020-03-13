@@ -79,7 +79,7 @@ namespace RVCore.ReadDat
                 if (string.IsNullOrEmpty(extraDirName))
                     extraDirName = !string.IsNullOrEmpty(dh.RootDir) ? dh.RootDir : dh.Name;
 
-                string dirNameRule = Path.GetDirectoryName(datRootFullName) + Path.DirectorySeparatorChar + extraDirName + Path.DirectorySeparatorChar;
+                string dirNameRule = Path.GetDirectoryName(datRootFullName) + Path.DirectorySeparatorChar + VarFix.CleanFileName(extraDirName) + Path.DirectorySeparatorChar;
                 
                 DatRule datRule = FindDatRule(dirNameRule);
 

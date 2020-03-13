@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using RVCore.RvDB;
 using RVCore.Scanner;
+using DATReader.Utils;
 using RVIO;
 
 namespace RVCore.ReadDat
@@ -435,7 +436,7 @@ namespace RVCore.ReadDat
                     dirName = newDatFile.Dat.GetData(RvDat.DatData.RootDir);
                 if (string.IsNullOrEmpty(dirName))
                     dirName= newDatFile.Dat.GetData(RvDat.DatData.DatName);
-                newDatFile.Name = dirName;
+                newDatFile.Name = VarFix.CleanFileName(dirName);
 
                 newDatFile.DatStatus = DatStatus.InDatCollect;
                 newDatFile.Tree = new RvTreeRow();

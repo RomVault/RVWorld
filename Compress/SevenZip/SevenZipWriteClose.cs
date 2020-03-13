@@ -275,14 +275,14 @@ namespace Compress.SevenZip
             mainHeaderCRC = CRC.CalculateDigest(newHeaderByte, 0, (uint)newHeaderByte.Length);
             #endregion
 
-            ulong headerPosition = (ulong)_zipFs.Position;
-            _zipFs.Write(newHeaderByte, 0, newHeaderByte.Length);
-
 
             using (BinaryWriter bw = new BinaryWriter(_zipFs, Encoding.UTF8, true))
             {
-                _signatureHeader.WriteFinal(bw, headerPosition, (ulong)newHeaderByte.Length, mainHeaderCRC);
+                ulong headerPosition = (ulong)_zipFs.Position + 32; //tzip header is 32 bytes
                 WriteRomVault7Zip(bw, headerPosition, (ulong)newHeaderByte.Length, mainHeaderCRC);
+
+                _zipFs.Write(newHeaderByte, 0, newHeaderByte.Length);
+                _signatureHeader.WriteFinal(bw, headerPosition, (ulong)newHeaderByte.Length, mainHeaderCRC);
             }
             _zipFs.Flush();
             _zipFs.Close();

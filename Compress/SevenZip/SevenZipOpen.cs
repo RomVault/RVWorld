@@ -8,7 +8,7 @@ using FileStream = RVIO.FileStream;
 
 namespace Compress.SevenZip
 {
-   public partial class SevenZ
+    public partial class SevenZ
     {
         public ZipReturn ZipFileOpen(string filename, long timestamp, bool readHeaders)
         {
@@ -96,11 +96,11 @@ namespace Compress.SevenZip
                     }
                 }
 
-                _zipFs.Seek(_baseOffset + (long)(signatureHeader.NextHeaderOffset + signatureHeader.NextHeaderSize), SeekOrigin.Begin);
 
                 ZipStatus = ZipStatus.None;
+                ZipStatus |= IsRomVault7Z(_baseOffset, signatureHeader.NextHeaderOffset, signatureHeader.NextHeaderSize, signatureHeader.NextHeaderCRC) ? ZipStatus.TrrntZip : ZipStatus.None;
 
-                ZipStatus |= IsRomVault7Z() ? ZipStatus.TrrntZip : ZipStatus.None;
+                _zipFs.Seek(_baseOffset + (long)(signatureHeader.NextHeaderOffset + signatureHeader.NextHeaderSize), SeekOrigin.Begin);
                 ZipStatus |= Istorrent7Z() ? ZipStatus.Trrnt7Zip : ZipStatus.None;
                 PopulateLocalFiles(out _localFiles);
 

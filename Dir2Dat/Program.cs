@@ -143,7 +143,7 @@ namespace Dir2Dat
             Console.WriteLine("-comment     -co : Comment for header");
             Console.WriteLine("");
             Console.WriteLine("Example:");
-            Console.WriteLine("Dir2Dat C:\\Mame C:\\mameOut.dat -n Mame -d \"Mame Dat\" -ad");
+            Console.WriteLine("Dir2Dat C:\\Mame mameOut -n Mame -d \"Mame Dat\" -ad");
         }
 
         private static void ProcessDir(DirectoryInfo di, DatDir thisDir, bool newStyle)
