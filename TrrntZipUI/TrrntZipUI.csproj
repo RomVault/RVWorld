@@ -109,16 +109,6 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\RVIO\RVIO.csproj">
-      <Project>{ff8a7a0a-6319-49e0-a6e6-df3754bffdd1}</Project>
-      <Name>RVIO</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\Trrntzip\Trrntzip.csproj">
-      <Project>{21822412-a4ce-4a55-bd41-aaea753753f1}</Project>
-      <Name>Trrntzip</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
     <BootstrapperPackage Include=".NETFramework,Version=v4.5.2">
       <Visible>False</Visible>
       <ProductName>Microsoft .NET Framework 4.5.2 %28x86 and x64%29</ProductName>
@@ -132,6 +122,16 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="memory-rom.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\RVIO\RVIO.csproj">
+      <Project>{bbe0dd7a-ed22-4d73-91ae-ebf75401f50a}</Project>
+      <Name>RVIO</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Trrntzip\Trrntzip.csproj">
+      <Project>{a08c2584-77ff-459a-ab2b-2e3042818a8e}</Project>
+      <Name>Trrntzip</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

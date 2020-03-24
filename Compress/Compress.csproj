@@ -1,147 +1,16 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+<Project Sdk="Microsoft.NET.Sdk">
+
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{C30EE098-15D3-40D8-90F6-465D924D9987}</ProjectGuid>
-    <OutputType>Library</OutputType>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Compress</RootNamespace>
-    <AssemblyName>Compress</AssemblyName>
-    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
-    <FileAlignment>512</FileAlignment>
-    <TargetFrameworkProfile />
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <Copyright>Copyright ©  2016</Copyright>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'DebugNewDat|AnyCPU'">
-    <DebugSymbols>true</DebugSymbols>
-    <OutputPath>bin\DebugNewDat\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <DebugType>full</DebugType>
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <ErrorReport>prompt</ErrorReport>
-    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
-  </PropertyGroup>
+
   <ItemGroup>
-    <Reference Include="System" />
-    <Reference Include="System.Core" />
+    <ProjectReference Include="..\RVIO\RVIO.csproj" />
   </ItemGroup>
+
   <ItemGroup>
-    <Compile Include="File\File.cs" />
-    <Compile Include="gZip\gZip.cs" />
-    <Compile Include="ICompress.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="SevenZip\Common\ICoder.cs" />
-    <Compile Include="SevenZip\Compress\BZip2\BZip2Constants.cs" />
-    <Compile Include="SevenZip\Compress\BZip2\CBZip2InputStream.cs" />
-    <Compile Include="SevenZip\Compress\BZip2\CBZip2OutputStream.cs" />
-    <Compile Include="SevenZip\Compress\BZip2\CRC.cs" />
-    <Compile Include="SevenZip\Compress\LZMA\LzmaBase.cs" />
-    <Compile Include="SevenZip\Compress\LZMA\LzmaDecoder.cs" />
-    <Compile Include="SevenZip\Compress\LZMA\LzmaEncoder.cs" />
-    <Compile Include="SevenZip\Compress\LZMA\LzmaEncoderProperties.cs" />
-    <Compile Include="SevenZip\Compress\LZMA\LzmaStream.cs" />
-    <Compile Include="SevenZip\Compress\LZ\LzBinTree.cs" />
-    <Compile Include="SevenZip\Compress\LZ\LzInWindow.cs" />
-    <Compile Include="SevenZip\Compress\LZ\LzOutWindow.cs" />
-    <Compile Include="SevenZip\Compress\PPmd\H\FreqData.cs" />
-    <Compile Include="SevenZip\Compress\PPmd\H\ModelPPM.cs" />
-    <Compile Include="SevenZip\Compress\PPmd\H\Pointer.cs" />
-    <Compile Include="SevenZip\Compress\PPmd\H\PPMContext.cs" />
-    <Compile Include="SevenZip\Compress\PPmd\H\RangeCoder.cs" />
-    <Compile Include="SevenZip\Compress\PPmd\H\RarMemBlock.cs" />
-    <Compile Include="SevenZip\Compress\PPmd\H\RarNode.cs" />
-    <Compile Include="SevenZip\Compress\PPmd\H\SEE2Context.cs" />
-    <Compile Include="SevenZip\Compress\PPmd\H\State.cs" />
-    <Compile Include="SevenZip\Compress\PPmd\H\StateRef.cs" />
-    <Compile Include="SevenZip\Compress\PPmd\H\SubAllocator.cs" />
-    <Compile Include="SevenZip\Compress\PPmd\I1\Allocator.cs" />
-    <Compile Include="SevenZip\Compress\PPmd\I1\Coder.cs" />
-    <Compile Include="SevenZip\Compress\PPmd\I1\MemoryNode.cs" />
-    <Compile Include="SevenZip\Compress\PPmd\I1\Model.cs" />
-    <Compile Include="SevenZip\Compress\PPmd\I1\ModelRestorationMethod.cs" />
-    <Compile Include="SevenZip\Compress\PPmd\I1\Pointer.cs" />
-    <Compile Include="SevenZip\Compress\PPmd\I1\PpmContext.cs" />
-    <Compile Include="SevenZip\Compress\PPmd\I1\PpmState.cs" />
-    <Compile Include="SevenZip\Compress\PPmd\I1\See2Context.cs" />
-    <Compile Include="SevenZip\Compress\PPmd\PpmdProperties.cs" />
-    <Compile Include="SevenZip\Compress\PPmd\PpmdStream.cs" />
-    <Compile Include="SevenZip\Compress\PPmd\Utility.cs" />
-    <Compile Include="SevenZip\Compress\RangeCoder\RangeCoder.cs" />
-    <Compile Include="SevenZip\Compress\RangeCoder\RangeCoderBit.cs" />
-    <Compile Include="SevenZip\Compress\RangeCoder\RangeCoderBitTree.cs" />
-    <Compile Include="SevenZip\Compress\ZSTD\ZstandardDictionary.cs" />
-    <Compile Include="SevenZip\Compress\ZSTD\ZstandardInterop.cs" />
-    <Compile Include="SevenZip\Compress\ZSTD\ZstandardStream.cs" />
-    <Compile Include="SevenZip\SevenZipOpen.cs" />
-    <Compile Include="SevenZip\SevenZipOpenRead.cs" />
-    <Compile Include="SevenZip\SevenZipTorrent.cs" />
-    <Compile Include="SevenZip\SevenZipWrite.cs" />
-    <Compile Include="SevenZip\SevenZipWriteClose.cs" />
-    <Compile Include="Utils\CRC.cs" />
-    <Compile Include="Utils\CRCStream.cs" />
-    <Compile Include="Utils\DirUtil.cs" />
-    <Compile Include="SevenZip\Filters\BCJ2Filter.cs" />
-    <Compile Include="SevenZip\Filters\BCJFilter.cs" />
-    <Compile Include="SevenZip\Filters\Delta.cs" />
-    <Compile Include="SevenZip\Filters\Filter.cs" />
-    <Compile Include="SevenZip\SevenZip.cs" />
-    <Compile Include="SevenZip\Structure\BindPair.cs" />
-    <Compile Include="SevenZip\Structure\Coder.cs" />
-    <Compile Include="SevenZip\Structure\FileInfo.cs" />
-    <Compile Include="SevenZip\Structure\Folder.cs" />
-    <Compile Include="SevenZip\Structure\Header.cs" />
-    <Compile Include="SevenZip\Structure\PackedStreamInfo.cs" />
-    <Compile Include="SevenZip\Structure\SignatureHeader.cs" />
-    <Compile Include="SevenZip\Structure\StreamsInfo.cs" />
-    <Compile Include="SevenZip\Structure\UnpackedStreamInfo.cs" />
-    <Compile Include="SevenZip\Util.cs" />
-    <Compile Include="ThreadReaders\ThreadCRC.cs" />
-    <Compile Include="ThreadReaders\ThreadLoadBuffer.cs" />
-    <Compile Include="ThreadReaders\ThreadMD5.cs" />
-    <Compile Include="ThreadReaders\ThreadSHA1.cs" />
-    <Compile Include="Utils\Reporter.cs" />
-    <Compile Include="ZipEnums.cs" />
-    <Compile Include="ZipFile\zipFile.cs" />
-    <Compile Include="ZipFile\ZLib\Deflate.cs" />
-    <Compile Include="ZipFile\ZLib\Inflate.cs" />
-    <Compile Include="ZipFile\ZLib\InfTree.cs" />
-    <Compile Include="ZipFile\ZLib\Tree.cs" />
-    <Compile Include="ZipFile\ZLib\Zlib.cs" />
-    <Compile Include="ZipFile\ZLib\ZlibBaseStream.cs" />
-    <Compile Include="ZipFile\ZLib\ZlibCodec.cs" />
-    <Compile Include="ZipFile\ZLib\ZlibConstants.cs" />
+    <Folder Include="Properties\" />
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\RVIO\RVIO.csproj">
-      <Project>{ff8a7a0a-6319-49e0-a6e6-df3754bffdd1}</Project>
-      <Name>RVIO</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
-       Other similar extension points exist, see Microsoft.Common.targets.
-  <Target Name="BeforeBuild">
-  </Target>
-  <Target Name="AfterBuild">
-  </Target>
-  -->
+
 </Project>

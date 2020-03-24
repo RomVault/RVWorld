@@ -233,15 +233,19 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Compress\Compress.csproj">
-      <Project>{c30ee098-15d3-40d8-90f6-465d924d9987}</Project>
+      <Project>{27281d47-0f6c-4351-8339-383f7921813b}</Project>
       <Name>Compress</Name>
     </ProjectReference>
     <ProjectReference Include="..\FileHeaderReader\FileHeaderReader.csproj">
-      <Project>{8a90a6cf-f673-4633-829a-8484efdf14fe}</Project>
+      <Project>{7fde42ac-6156-4e36-b361-ff516e245276}</Project>
       <Name>FileHeaderReader</Name>
     </ProjectReference>
+    <ProjectReference Include="..\RVCore\RVCore.csproj">
+      <Project>{4f9327da-825f-44ee-bd09-ceaf2bcccf5c}</Project>
+      <Name>RVCore</Name>
+    </ProjectReference>
     <ProjectReference Include="..\RVIO\RVIO.csproj">
-      <Project>{ff8a7a0a-6319-49e0-a6e6-df3754bffdd1}</Project>
+      <Project>{bbe0dd7a-ed22-4d73-91ae-ebf75401f50a}</Project>
       <Name>RVIO</Name>
     </ProjectReference>
   </ItemGroup>

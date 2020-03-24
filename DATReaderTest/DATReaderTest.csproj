@@ -66,11 +66,11 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\DATReader\DATReader.csproj">
-      <Project>{2ffd495b-2eca-49a5-983b-f2e10d64830e}</Project>
+      <Project>{c987b91a-584e-4daa-a305-d077d1713b38}</Project>
       <Name>DATReader</Name>
     </ProjectReference>
     <ProjectReference Include="..\RVIO\RVIO.csproj">
-      <Project>{ff8a7a0a-6319-49e0-a6e6-df3754bffdd1}</Project>
+      <Project>{bbe0dd7a-ed22-4d73-91ae-ebf75401f50a}</Project>
       <Name>RVIO</Name>
     </ProjectReference>
   </ItemGroup>
