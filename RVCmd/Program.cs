@@ -106,6 +106,7 @@ namespace RVCmd
 
         private static void DoWork()
         {
+            Console.CancelKeyPress += new ConsoleCancelEventHandler(DoCleanShutdown);
 
             Settings.rvSettings = new Settings();
 
@@ -208,6 +209,11 @@ namespace RVCmd
             Console.WriteLine($"Unknown report type {e.GetType()}");
         }
 
+        protected static void DoCleanShutdown(object sender, ConsoleCancelEventArgs args)
+        {
+            Console.WriteLine("\nKeyboard Interrupt Detected\nGraceful Shudown Started");
+            _thWrk.Cancel();
+        }
 
     }
 }
