@@ -115,7 +115,9 @@ namespace Dir2Dat
             ProcessDir(di, ThisDat.BaseDir, style);
 
             DatXMLWriter dWriter = new DatXMLWriter();
-            dWriter.WriteDat(outfile + ".dat", ThisDat, style);
+            if (Path.GetExtension(outfile).ToLower() != ".dat")
+                outfile += ".dat";
+            dWriter.WriteDat(outfile, ThisDat, style);
         }
 
         private static void ShowHelp()
@@ -220,8 +222,11 @@ namespace Dir2Dat
         {
 
             ZipFile zf1 = new ZipFile();
-            zf1.ZipFileOpen(f.FullName, -1, true);
-            zf1.ZipStatus = ZipStatus.TrrntZip;
+            ZipReturn result =zf1.ZipFileOpen(f.FullName, -1, true);
+            if (result != ZipReturn.ZipGood)
+                return;
+
+            //zf1.ZipStatus = ZipStatus.TrrntZip;
 
             DatDir ZipDir = new DatDir(zf1.ZipStatus == ZipStatus.TrrntZip ? DatFileType.DirTorrentZip : DatFileType.DirRVZip)
             {
@@ -238,7 +243,7 @@ namespace Dir2Dat
             bool isTorrentZipDate = true;
             for (int i = 0; i < fr.Count; i++)
             {
-                if (fr[i].FileStatus != Compress.ZipReturn.ZipGood)
+                if (fr[i].FileStatus != ZipReturn.ZipGood)
                 {
                     Console.WriteLine("File Error :" + zf1.Filename(i) + " : " + fr[i].FileStatus);
                     continue;

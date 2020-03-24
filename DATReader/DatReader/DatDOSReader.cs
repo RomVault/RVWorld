@@ -155,6 +155,10 @@ namespace DATReader.DatReader
 
 
             string name = dfl.GnRest();
+            int nameLength = name.Length;
+            if (nameLength > 4 && name.ToLower().Substring(nameLength - 4, 4) == ".zip")
+                name = name.Substring(0, nameLength - 4);
+
             dfl.Gn();
 
             DatDir dDir = new DatDir(DatFileType.UnSet) { Name = name, DGame = new DatGame() };

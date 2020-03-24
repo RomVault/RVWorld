@@ -38,7 +38,7 @@ namespace DATReader.DatClean
             for (int i = 0; i < charName.Length; i++)
             {
                 int c = charName[i];
-                if (c == ':' || c == '*' || c == '?' || c == '<' || c == '>' || c == '|' || c < 32)
+                if (c == ':' || c == '*' || c == '?' || c == '<' || c == '>' || c == '|' || c=='"' || c < 32)
                     charName[i] = '-';
             }
             db.Name = new string(charName);

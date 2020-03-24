@@ -174,7 +174,7 @@ namespace DATReader.Utils
             for (int i = 0; i < charName.Length; i++)
             {
                 int c = charName[i];
-                if ((c == ':') || (c == '*') || (c == '?') || (c == '<') || (c == '>') || (c == '|') || (c < 32))
+                if ((c == ':') || (c == '*') || (c == '?') || (c == '<') || (c == '>') || (c == '|') || (c == '"') || (c < 32))
                 {
                     charName[i] = '-';
                 }
@@ -205,7 +205,7 @@ namespace DATReader.Utils
             for (int i = 0; i < charName.Length; i++)
             {
                 int c = charName[i];
-                if ((c == ':') || (c == '*') || (c == '?') || (c == '<') || (c == '>') || (c == '|') || (c == '\\') || (c == '/') || (c < 32))
+                if ((c == ':') || (c == '*') || (c == '?') || (c == '<') || (c == '>') || (c == '|') || (c == '"') || (c == '\\') || (c == '/') || (c < 32))
                 {
                     charName[i] = crep;
                 }
@@ -272,7 +272,7 @@ namespace DATReader.Utils
             int pos1 = 0;
             int pos2 = 0;
 
-            for (;;)
+            for (; ; )
             {
                 if (pos1 == bytes1.Length)
                 {

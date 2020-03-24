@@ -131,12 +131,12 @@ namespace RomVaultX.Util
                 checksum = "0" + checksum;
             }
 
-            int retL = checksum.Length/2;
+            int retL = checksum.Length / 2;
             byte[] retB = new byte[retL];
 
             for (int i = 0; i < retL; i++)
             {
-                retB[i] = Convert.ToByte(checksum.Substring(i*2, 2), 16);
+                retB[i] = Convert.ToByte(checksum.Substring(i * 2, 2), 16);
             }
 
             return retB;
@@ -163,7 +163,7 @@ namespace RomVaultX.Util
             for (int i = 0; i < charName.Length; i++)
             {
                 int c = charName[i];
-                if ((c == ':') || (c == '*') || (c == '?') || (c == '<') || (c == '>') || (c == '|') || (c < 32))
+                if ((c == ':') || (c == '*') || (c == '?') || (c == '<') || (c == '>') || (c == '|') || (c == '"') || (c < 32))
                 {
                     charName[i] = '-';
                 }
@@ -194,7 +194,7 @@ namespace RomVaultX.Util
             for (int i = 0; i < charName.Length; i++)
             {
                 int c = charName[i];
-                if ((c == ':') || (c == '*') || (c == '?') || (c == '<') || (c == '>') || (c == '|') || (c == '\\') || (c == '/') || (c < 32))
+                if ((c == ':') || (c == '*') || (c == '?') || (c == '<') || (c == '>') || (c == '|') || (c == '\\') || (c == '/') || (c == '"') || (c < 32))
                 {
                     charName[i] = crep;
                 }
@@ -234,22 +234,22 @@ namespace RomVaultX.Util
 
         public static string ToString(byte b)
         {
-            return ToString(new[] {b});
+            return ToString(new[] { b });
         }
 
         public static object ToDBString(byte[] b)
         {
-            return b == null ? DBNull.Value : (object) BitConverter.ToString(b).ToLower().Replace("-", "");
+            return b == null ? DBNull.Value : (object)BitConverter.ToString(b).ToLower().Replace("-", "");
         }
 
         public static ulong? FixLong(object v)
         {
-            return v == DBNull.Value ? null : (ulong?) Convert.ToInt64(v);
+            return v == DBNull.Value ? null : (ulong?)Convert.ToInt64(v);
         }
 
         public static HeaderFileType FixFileType(object v)
         {
-            return v == DBNull.Value ? HeaderFileType.Nothing : (HeaderFileType) Convert.ToInt32(v);
+            return v == DBNull.Value ? HeaderFileType.Nothing : (HeaderFileType)Convert.ToInt32(v);
         }
 
         public static int CompareName(string var1, string var2)
@@ -266,7 +266,7 @@ namespace RomVaultX.Util
             int pos1 = 0;
             int pos2 = 0;
 
-            for (;;)
+            for (; ; )
             {
                 if (pos1 == bytes1.Length)
                 {
