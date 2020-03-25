@@ -20,7 +20,7 @@ namespace DATReader.DatReader
             using (DatFileLoader dfl = new DatFileLoader())
             {
                 datHeader = new DatHeader { BaseDir = new DatDir(DatFileType.UnSet) };
-                int errorCode = dfl.LoadDat(strFilename);
+                int errorCode = dfl.LoadDat(strFilename, System.Text.Encoding.UTF8);
                 if (errorCode != 0)
                 {
                     _errorReport?.Invoke(strFilename, new Win32Exception(errorCode).Message);

@@ -28,7 +28,7 @@ namespace DATReader.DatClean
                 return;
 
             string retName = name;
-            retName = retName.TrimStart();
+            retName = retName.TrimStart(new[] { ' ' });
             retName = retName.TrimEnd(new[] { '.', ' ' });
             retName = retName.Replace("/", "\\");
             retName = retName.Replace("\\ ", "\\");

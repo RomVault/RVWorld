@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Text;
 using RVIO;
 
 namespace DATReader.DatReader
@@ -12,11 +13,10 @@ namespace DATReader.DatReader
 
         public string Filename { get; private set; }
 
-        public int LoadDat(string strFilename)
+        public int LoadDat(string strFilename, Encoding enc)
         {
             Filename = strFilename;
-
-            _streamReader = File.OpenText(strFilename, DatRead.Enc);
+            _streamReader = File.OpenText(strFilename, enc);
             return 0;
         }
 
@@ -42,7 +42,7 @@ namespace DATReader.DatReader
         public string GnNameToSize()
         {
             int sizePos = _line.ToLower().IndexOf("size ");
-            string strret = (sizePos == 0) ? "" : _line.Substring(0, sizePos-1);
+            string strret = (sizePos == 0) ? "" : _line.Substring(0, sizePos - 1);
             _line = _line.Substring(sizePos);
             Next = strret;
             return strret;
@@ -79,13 +79,13 @@ namespace DATReader.DatReader
                 {
                     intS = (_line + "\"").IndexOf("\"", 1, StringComparison.Ordinal);
                     ret = _line.Substring(1, intS - 1);
-                    _line = (_line + " ").Substring(intS + 1).Trim();
+                    _line = (_line + " ").Substring(intS + 1).Trim(new char[] { ' ' });
                 }
                 else
                 {
                     intS = (_line + " ").IndexOf(" ", StringComparison.Ordinal);
                     ret = _line.Substring(0, intS);
-                    _line = (_line + " ").Substring(intS).Trim();
+                    _line = (_line + " ").Substring(intS).Trim(new char[] { ' ' });
                 }
             }
             else
