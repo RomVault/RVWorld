@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Reflection;
+using System.Threading;
 using RVCore;
 using RVCore.FindFix;
 using RVCore.FixFile;
@@ -211,8 +212,18 @@ namespace RVCmd
 
         protected static void DoCleanShutdown(object sender, ConsoleCancelEventArgs args)
         {
-            Console.WriteLine("\nKeyboard Interrupt Detected\nGraceful Shudown Started");
+            Console.WriteLine("\nKeyboard Interrupt Detected. Shudown Started...\nPlease Wait for Worker Theads to Finish\n");
             _thWrk.Cancel();
+
+            var messageLimiter = 0;
+            while (!_thWrk.Finished)
+            {
+                Thread.Sleep(1000);
+                if (messageLimiter++ % 10 == 0)
+                {
+                    Console.WriteLine("Waiting...");
+                }
+            }
         }
 
     }

@@ -47,6 +47,7 @@ namespace RVCore.ReadDat
                 if (!RecursiveDatTree(datRoot, out _datCount))
                 {
                     _thWrk.Report(new bgwText("Dat Update Complete"));
+                    _thWrk.Finished = true;
                     _thWrk = null;
                     return;
                 }
@@ -72,6 +73,7 @@ namespace RVCore.ReadDat
                 DB.Write();
 
                 _thWrk.Report(new bgwText("Dat Update Complete"));
+                _thWrk.Finished = true;
                 _thWrk = null;
             }
             catch (Exception exc)
@@ -82,6 +84,7 @@ namespace RVCore.ReadDat
                 DB.Write();
                 _thWrk?.Report(new bgwText("Complete"));
 
+                _thWrk.Finished = true;
                 _thWrk = null;
             }
         }
