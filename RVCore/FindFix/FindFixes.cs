@@ -90,6 +90,7 @@ namespace RVCore.FindFix
                 FindFixesListCheck.GroupListCheck(fileGroupsCRCSorted);
 
                 _thWrk?.Report(new bgwText("Complete (Unique Files " + totalAfterMerge + ")"));
+                _thWrk.Finished = true;
                 _thWrk = null;
             }
             catch (Exception exc)
@@ -100,6 +101,7 @@ namespace RVCore.FindFix
                 DB.Write();
                 _thWrk?.Report(new bgwText("Complete"));
 
+                _thWrk.Finished = true;
                 _thWrk = null;
             }
         }
