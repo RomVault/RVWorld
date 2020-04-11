@@ -18,6 +18,7 @@ namespace RVCore
         public WorkerReport wReport;
 
         public bool CancellationPending;
+        public bool Finished;
 
         public ThreadWorker(WorkerStart startFunc)
         {

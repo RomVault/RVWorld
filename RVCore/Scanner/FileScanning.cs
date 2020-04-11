@@ -79,6 +79,7 @@ namespace RVCore.Scanner
 
             _thWrk.Report(new bgwText("File Scan Complete"));
 
+            _thWrk.Finished = true;
             _thWrk = null;
 #if !DEBUG
             }
@@ -90,6 +91,7 @@ namespace RVCore.Scanner
                 DB.Write();
                 _thWrk?.Report(new bgwText("Complete"));
 
+                _thWrk.Finished = true;
                 _thWrk = null;
             }
 #endif
