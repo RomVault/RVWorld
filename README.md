@@ -16,3 +16,25 @@ RomVaultX is the DeDup'ed version of RomVault, where everything is stored using 
 * Trrntzip         --  Trrntzip core library code
 * TrrntzipCMD      --  Commandline version of Trrntzip
 * TrrntzipUI       --  UI version of Trrntzip
+
+## Compiling from source on Linux
+
+The project requires [.NET Core 3.1 SDK](https://dotnet.microsoft.com/download/dotnet-core/3.1) to build and the [.NET Core 3.1 Runtime](https://dotnet.microsoft.com/download/dotnet-core/3.1). In addition to this a standard flavor of `make` is required. If you are running Ubuntu or other Debian-based systems `make` is easiest installed via the `build-essential` package.
+
+Compile and create release binaries in the `./out` folder:
+```bash
+$ make
+``` 
+
+Install tools on the local system:
+```bash
+$ sudo make install
+``` 
+This will install the tools `rvcmd` and `trrntzip` in your `/usr/local/bin` folder.
+
+Use the following command to uninstall:
+```bash
+$ sudo make uninstall
+```
+
+We suggest the use of [JetBrains Rider](https://www.jetbrains.com/rider/) for development on Linux. Please note that the GUI applications are dependent on the WinForms libraries and will not build natively on Linux. Multiple users have great success running the .NET Framework binaries with [Mono](https://www.mono-project.com/download/stable/).

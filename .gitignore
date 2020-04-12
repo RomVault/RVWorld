@@ -13,8 +13,8 @@
 /FileHeaderReader/bin
 /FileHeaderReader/obj
 /packages
-/RomVault/bin
-/RomVault/obj
+/ROMVault/bin
+/ROMVault/obj
 /RomVaultX/bin
 /RomVaultX/obj
 /RVCmd/bin
@@ -35,4 +35,4 @@
 *.user
 .idea/
 * - Copy/
-
+out/

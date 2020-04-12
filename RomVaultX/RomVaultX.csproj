@@ -156,7 +156,7 @@
     <Compile Include="frmShowError.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="frmShowError.designer.cs">
+    <Compile Include="frmShowError.Designer.cs">
       <DependentUpon>frmShowError.cs</DependentUpon>
     </Compile>
     <Compile Include="Program.cs" />
@@ -176,7 +176,7 @@
     <Compile Include="rvTree.cs">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="rvTree.designer.cs">
+    <Compile Include="rvTree.Designer.cs">
       <DependentUpon>rvTree.cs</DependentUpon>
     </Compile>
     <Compile Include="rvTreeRow.cs" />
