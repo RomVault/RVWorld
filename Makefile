@@ -1,5 +1,5 @@
 RUNTIME := linux-x64
-PUBLISH_FLAGS := --runtime $(RUNTIME) --no-build -p:PublishSingleFile=true --self-contained=false
+PUBLISH_FLAGS := --runtime $(RUNTIME) --no-build -p:PublishSingleFile=true --self-contained=true
 PUBLISH_DIR := ./out
 
 default: build publish
@@ -32,8 +32,8 @@ uninstall:
 	rm /usr/local/bin/torrentzip
 
 clean:
-	rm -r ./DATReaderTest/obj/
-	rm -r ./Dir2Dat/obj/
-	rm -r ./RVCmd/obj/
-	rm -r ./TrrntZipCMD/obj/
-	rm -r ./out
+	rm -rf ./DATReaderTest/obj/
+	rm -rf ./Dir2Dat/obj/
+	rm -rf ./RVCmd/obj/
+	rm -rf ./TrrntZipCMD/obj/
+	rm -rf ./out
