@@ -12,8 +12,8 @@ build:
 
 build-gui:
 	msbuild -p:OutputPath=../$(PUBLISH_DIR)/RomVault ./ROMVault/ROMVault.csproj 
-	msbuild -p:OutputPath=../$(PUBLISH_DIR)/RomVault ./RomVaultX/RomVaultX.csproj
-	msbuild -p:OutputPath=../$(PUBLISH_DIR)/RomVault ./TrrntZipUI/TrrntZipUI.csproj
+	msbuild -p:OutputPath=../$(PUBLISH_DIR)/RomVaultX ./RomVaultX/RomVaultX.csproj
+	msbuild -p:OutputPath=../$(PUBLISH_DIR)/TrrntZipUI ./TrrntZipUI/TrrntZipUI.csproj
 
 publish:
 	#dotnet publish $(PUBLISH_FLAGS) --output=$(PUBLISH_DIR) ./DATReaderTest/DATReaderTest.csproj
