@@ -206,6 +206,11 @@ namespace RVCmd
             {
                 return;
             }
+            if (e is string message)
+            {
+                Console.WriteLine(message);
+                return;
+            }
 
             Console.WriteLine($"Unknown report type {e.GetType()}");
         }
