@@ -10,6 +10,10 @@ build:
 	dotnet build --runtime $(RUNTIME) ./RVCmd/RVCmd.csproj
 	dotnet build --runtime $(RUNTIME) ./TrrntZipCMD/TrrntZipCMD.csproj
 
+build-gui:
+	msbuild -p:OutputPath=../$(PUBLISH_DIR)/RomVault ./ROMVault/ROMVault.csproj 
+	msbuild -p:OutputPath=../$(PUBLISH_DIR)/RomVault ./RomVaultX/RomVaultX.csproj
+	msbuild -p:OutputPath=../$(PUBLISH_DIR)/RomVault ./TrrntZipUI/TrrntZipUI.csproj
 
 publish:
 	#dotnet publish $(PUBLISH_FLAGS) --output=$(PUBLISH_DIR) ./DATReaderTest/DATReaderTest.csproj
