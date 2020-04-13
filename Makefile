@@ -5,7 +5,6 @@ PUBLISH_DIR := ./out
 default: build publish
 
 build:
-	#dotnet build --runtime $(RUNTIME) ./DATReaderTest/DATReaderTest.csproj
 	dotnet build --runtime $(RUNTIME) ./Dir2Dat/Dir2Dat.csproj
 	dotnet build --runtime $(RUNTIME) ./RVCmd/RVCmd.csproj
 	dotnet build --runtime $(RUNTIME) ./TrrntZipCMD/TrrntZipCMD.csproj
@@ -16,7 +15,6 @@ build-gui:
 	msbuild -p:OutputPath=../$(PUBLISH_DIR)/TrrntZipUI ./TrrntZipUI/TrrntZipUI.csproj
 
 publish:
-	#dotnet publish $(PUBLISH_FLAGS) --output=$(PUBLISH_DIR) ./DATReaderTest/DATReaderTest.csproj
 	dotnet publish $(PUBLISH_FLAGS) --output=$(PUBLISH_DIR) ./Dir2Dat/Dir2Dat.csproj
 	dotnet publish $(PUBLISH_FLAGS) --output=$(PUBLISH_DIR) ./RVCmd/RVCmd.csproj
 	dotnet publish $(PUBLISH_FLAGS) --output=$(PUBLISH_DIR) ./TrrntZipCMD/TrrntZipCMD.csproj
