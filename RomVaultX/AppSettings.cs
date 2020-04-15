@@ -43,4 +43,9 @@ namespace RomVaultX
             }
         }
     }
+
+    public class DllMapConfigSection : ConfigurationSection
+    {
+        //Class to allow for IL Repack to introduce DllMap config.
+    }
 }
