@@ -14,6 +14,7 @@ namespace Dir2Dat
     class Program
     {
         private static bool testMode = false;
+        private static bool quick = false;
 
         static void Main(string[] args)
         {
@@ -40,10 +41,12 @@ namespace Dir2Dat
                         case "?":
                             ShowHelp();
                             return;
-                        case "name": case "n":
+                        case "name":
+                        case "n":
                             ThisDat.Name = args[++i];
                             break;
-                        case "description": case "d":
+                        case "description":
+                        case "d":
                             ThisDat.Description = args[++i];
                             break;
                         case "category":
@@ -85,9 +88,15 @@ namespace Dir2Dat
                         case "ns":
                             style = true;
                             break;
-                        case "test": case "t":
+                        case "quick":
+                        case "q":
+                            quick = true;
+                            break;
+                        case "test":
+                        case "t":
                             testMode = true;
                             break;
+
                     }
                 }
                 else if (dirSource == null)
@@ -171,7 +180,7 @@ namespace Dir2Dat
             int fCount = 0;
             foreach (FileInfo f in fia)
             {
-                Console.WriteLine(f.FullName);
+                //Console.WriteLine(f.FullName);
                 string ext = Path.GetExtension(f.Name).ToLower();
 
                 switch (ext)
@@ -218,17 +227,48 @@ namespace Dir2Dat
             return true;
         }
 
+        private static int zCount = 0;
+        private static int tCount = 0;
+        private static int cCount = 0;
+
         private static void AddZip(FileInfo f, DatDir thisDir)
         {
 
-            ZipFile zf1 = new ZipFile();
-            ZipReturn result =zf1.ZipFileOpen(f.FullName, -1, true);
+            Zip zf1 = new Zip();
+            ZipReturn result = zf1.ZipFileOpen(f.FullName, -1, true);
             if (result != ZipReturn.ZipGood)
                 return;
 
+            zCount += 1;
+            if ((zf1.ZipStatus & ZipStatus.TrrntZip) == ZipStatus.TrrntZip)
+            {
+                tCount += 1;
+
+                Console.WriteLine($"{zCount}   {tCount}    {cCount}");
+            }
+
+            else if (zf1.Filecomment != null && zf1.Filecomment.Length > 0)
+            {
+                string comments = ZipUtils.GetString(zf1.Filecomment);
+
+                if (comments.Length>13 &&  comments.Substring(0, 13) == "TORRENTZIPPED")
+                {
+                    tCount += 1;
+                }
+                else
+                {
+                    cCount += 1;
+                    Console.WriteLine(f.FullName + "   " + zCount);
+                    Console.WriteLine("------------------------");
+                    Console.WriteLine(comments);
+                }
+
+                Console.WriteLine($"{zCount}   {tCount}    {cCount}");
+            }
             //zf1.ZipStatus = ZipStatus.TrrntZip;
 
-            DatDir ZipDir = new DatDir(zf1.ZipStatus == ZipStatus.TrrntZip ? DatFileType.DirTorrentZip : DatFileType.DirRVZip)
+            //DatDir ZipDir = new DatDir(zf1.ZipStatus == ZipStatus.TrrntZip ? DatFileType.DirTorrentZip : DatFileType.DirRVZip)
+            DatDir ZipDir = new DatDir(DatFileType.UnSet)
             {
                 Name = Path.GetFileNameWithoutExtension(f.Name),
                 DGame = new DatGame()
@@ -239,7 +279,7 @@ namespace Dir2Dat
 
 
             FileScan fs = new FileScan();
-            List<FileScan.FileResults> fr = fs.Scan(zf1, true, true);
+            List<FileScan.FileResults> fr = fs.Scan(zf1, !quick, !quick);
             bool isTorrentZipDate = true;
             for (int i = 0; i < fr.Count; i++)
             {
@@ -249,16 +289,18 @@ namespace Dir2Dat
                     continue;
                 }
 
-                DatFile df = new DatFile(DatFileType.FileTorrentZip)
+                DatFile df = new DatFile(DatFileType.UnSet)
                 {
                     Name = zf1.Filename(i),
                     Size = fr[i].Size,
                     CRC = fr[i].CRC,
                     SHA1 = fr[i].SHA1,
-                    Date = zf1.LastModified(i).ToString("yyyy/MM/dd HH:mm:ss")
+                    DateModified = new DateTime(zf1.LastModified(i)).ToString("yyyy/MM/dd HH:mm:ss"),
+                    DateCreated = zf1.Created(i) == null ? null : new DateTime((long)zf1.Created(i)).ToString("yyyy/MM/dd HH:mm:ss"),
+                    DateAccessed = zf1.Accessed(i) == null ? null : new DateTime((long)zf1.Accessed(i)).ToString("yyyy/MM/dd HH:mm:ss")
                     //df.MD5 = zf.MD5(i)
                 };
-                if (zf1.LastModified(i).Ticks != 629870671200000000)
+                if (zf1.LastModified(i) != 629870671200000000)
                     isTorrentZipDate = false;
 
                 ZipDir.ChildAdd(df);

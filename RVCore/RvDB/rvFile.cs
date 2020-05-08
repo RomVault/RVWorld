@@ -43,7 +43,15 @@ namespace RVCore.RvDB
         public string FileName; // Found filename if different from Name (Should only be differences in Case)
         public RvFile Parent; // A link to the Parent Directory
         public RvDat Dat; // the Dat that this item belongs to
-        public long TimeStamp; // TimeStamp to match the filesystem TimeStamp, used to know if the file has been changed.
+        public long FileModTimeStamp; // TimeStamp to match the filesystem TimeStamp, used to know if the file has been changed.
+
+#if dt
+        public long? DatModTimeStamp; // TimeStamp from the DAT if there is one
+        public long? FileCreatedTimeStamp;
+        public long? DatCreatedTimeStamp;
+        public long? FileLastAccessTimeStamp;
+        public long? DatLastAccessTimeStamp;
+#endif  
 
         public bool SearchFound; // ????  used in DatUpdate & FileScanning
 
@@ -99,7 +107,7 @@ namespace RVCore.RvDB
             _children = new List<RvFile>(); // children items of this dir
             DirStatus = new ReportStatus(); // Counts the status of all children for reporting in the UI
         }
-        
+
 
         /// <summary>
         /// Returns the Full recursive Tree name of this RvFile, This should Recurse back up to
@@ -116,7 +124,7 @@ namespace RVCore.RvDB
                 return Path.Combine(Parent.TreeFullName, Name);
             }
         }
-        
+
         /// <summary>
         /// Returns te PhysicalPath of this RvFile, it first calls the above TreeFullName
         /// and then uses the returned string to look in dir DatRules for a remapping
@@ -194,7 +202,7 @@ namespace RVCore.RvDB
             return Settings.rvSettings.DatRoot;
         }
 
-        
+
         /// <summary>
         /// This takes the DatTreeFullname from above and replaces the base Datroot directory with the
         /// Settings.rvSettings.DatRoot location
@@ -297,6 +305,13 @@ namespace RVCore.RvDB
             HasDat = 0x10000,
             HasDirDat = 0x20000,
             HasChildren = 0x40000,
+
+            FileModTimeStamp = 0x100000, // not used always stored
+            DatModTimeStamp = 0x200000,
+            FileCreatedTimeStamp = 0x400000,
+            DatCreatedTimeStamp = 0x800000,
+            FileLastAccessTimeStamp = 0x400000,
+            DatLastAccessTimeStamp = 0x800000,
         }
 
         /*
@@ -400,6 +415,15 @@ namespace RVCore.RvDB
             if (ZipFileHeaderPosition != null) fFlags |= FileFlags.ZipFileHeader;
             if (CHDVersion != null) fFlags |= FileFlags.CHDVersion;
 
+#if dt
+            // FileModTimeStamp  always
+            if (DatModTimeStamp != null) fFlags |= FileFlags.DatModTimeStamp;
+            if (FileCreatedTimeStamp != null) fFlags |= FileFlags.FileCreatedTimeStamp;
+            if (DatCreatedTimeStamp != null) fFlags |= FileFlags.DatCreatedTimeStamp;
+            if (FileLastAccessTimeStamp != null) fFlags |= FileFlags.FileLastAccessTimeStamp;
+            if (DatLastAccessTimeStamp != null) fFlags |= FileFlags.DatLastAccessTimeStamp;
+#endif
+
             bw.Write((uint)fFlags);
 
 
@@ -407,7 +431,16 @@ namespace RVCore.RvDB
 
             bw.Write(DB.Fn(Name));
             bw.Write(DB.Fn(FileName));
-            bw.Write(TimeStamp);
+
+            bw.Write(FileModTimeStamp);
+#if dt
+            if (DatModTimeStamp != null) bw.Write((ulong)DatModTimeStamp);
+            if (FileCreatedTimeStamp != null) bw.Write((ulong)FileCreatedTimeStamp);
+            if (DatCreatedTimeStamp != null) bw.Write((ulong)DatCreatedTimeStamp);
+            if (FileLastAccessTimeStamp != null) bw.Write((ulong)FileLastAccessTimeStamp);
+            if (DatLastAccessTimeStamp != null) bw.Write((ulong)DatLastAccessTimeStamp);
+#endif
+
             if (Dat != null) bw.Write(Dat.DatIndex);
             bw.Write((byte)_datStatus);
             bw.Write((byte)_gotStatus);
@@ -467,7 +500,16 @@ namespace RVCore.RvDB
 
             Name = br.ReadString();
             FileName = br.ReadString();
-            TimeStamp = br.ReadInt64();
+            FileModTimeStamp = br.ReadInt64();
+            if (FileModTimeStamp!=0 && FileModTimeStamp < RVIO.FileParamConvert.FileTimeOffset)
+                FileModTimeStamp += RVIO.FileParamConvert.FileTimeOffset;
+#if dt
+            DatModTimeStamp = (fFlags & FileFlags.DatModTimeStamp) > 0 ? br.ReadInt64() : (long?)null;
+            FileCreatedTimeStamp = (fFlags & FileFlags.FileCreatedTimeStamp) > 0 ? br.ReadInt64() : (long?)null;
+            DatCreatedTimeStamp = (fFlags & FileFlags.DatCreatedTimeStamp) > 0 ? br.ReadInt64() : (long?)null;
+            FileLastAccessTimeStamp = (fFlags & FileFlags.FileLastAccessTimeStamp) > 0 ? br.ReadInt64() : (long?)null;
+            DatLastAccessTimeStamp = (fFlags & FileFlags.DatLastAccessTimeStamp) > 0 ? br.ReadInt64() : (long?)null;
+#endif
 
             Dat = null;
             if ((fFlags & FileFlags.HasDat) > 0)
@@ -603,6 +645,9 @@ namespace RVCore.RvDB
                 FileName = null;
             }
             DatStatus = DatStatus.NotInDat;
+#if dt
+            DatModTimeStamp = null;
+#endif
             return EFile.Keep;
         }
 
@@ -653,6 +698,10 @@ namespace RVCore.RvDB
 
             SetStatus(b.DatStatus, GotStatus.Got);
 
+#if dt
+            DatModTimeStamp = b.DatModTimeStamp;
+#endif
+
             if (Name == b.Name) // case match so all is good
             {
                 FileName = null;
@@ -670,7 +719,7 @@ namespace RVCore.RvDB
 
         private EFile TestRemove()
         {
-            TimeStamp = 0;
+            FileModTimeStamp = 0;
             FileName = null;
 
             GotStatus = Parent.GotStatus == GotStatus.FileLocked ? GotStatus.FileLocked : GotStatus.NotGot;
@@ -767,6 +816,7 @@ namespace RVCore.RvDB
                 return TestRemove();
             }
 
+            FileModTimeStamp = 0;
             // This should never happen, as either IsFile or IsDir should be set.
             GotStatus = GotStatus.NotGot;
             ReportError.SendAndShow("Unknown File Remove Type");
@@ -920,7 +970,7 @@ namespace RVCore.RvDB
             }
 
 
-            TimeStamp = file.TimeStamp;
+            FileModTimeStamp = file.FileModTimeStamp;
             FileCheckName(file);
             if (file.GotStatus == GotStatus.NotGot)
             {
@@ -965,7 +1015,10 @@ namespace RVCore.RvDB
             c.FileName = FileName;
             //c.Parent = Parent;
             c.Dat = Dat;
-            c.TimeStamp = TimeStamp;
+            c.FileModTimeStamp = FileModTimeStamp;
+#if dt
+            c.DatModTimeStamp = DatModTimeStamp;
+#endif
             c._datStatus = _datStatus;
             c._gotStatus = _gotStatus;
             c.RepStatus = RepStatus;

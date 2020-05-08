@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using Compress.SevenZip.Structure;
@@ -29,6 +30,7 @@ namespace Compress.SevenZip
             public byte[] CRC;
             public int StreamIndex;
             public ulong StreamOffset;
+            public long LastModified;
             public ZipReturn FileStatus = ZipReturn.ZipUntested;
         }
 
@@ -87,6 +89,11 @@ namespace Compress.SevenZip
         public byte[] CRC32(int i)
         {
             return _localFiles[i].CRC;
+        }
+
+        public long LastModified(int i)
+        {
+            return _localFiles[i].LastModified;
         }
 
         public void ZipFileCloseFailed()

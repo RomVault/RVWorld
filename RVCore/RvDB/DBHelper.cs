@@ -139,6 +139,11 @@ namespace RVCore.RvDB
             {
                 return retv;
             }
+            retv = Math.Sign(var1.RemoveSubDir.CompareTo(var2.RemoveSubDir));
+            if (retv != 0)
+            {
+                return retv;
+            }
 
             return 0;
         }

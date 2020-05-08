@@ -85,19 +85,6 @@
             this.CDescription = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.CCorrect = new System.Windows.Forms.DataGridViewImageColumn();
             this.RomGrid = new System.Windows.Forms.DataGridView();
-            this.CGot = new System.Windows.Forms.DataGridViewImageColumn();
-            this.CRom = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.CMerge = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.CSize = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.CCRC32 = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.CSHA1 = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.CMD5 = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.CAltSize = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.CAltCRC32 = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.CAltSHA1 = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.CAltMD5 = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.CStatus = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.ZipIndex = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.TabEmuArc = new System.Windows.Forms.TabControl();
             this.tabArtWork = new System.Windows.Forms.TabPage();
             this.picLogo = new System.Windows.Forms.PictureBox();
@@ -130,6 +117,25 @@
             this.dataGridViewImageColumn1 = new System.Windows.Forms.DataGridViewImageColumn();
             this.dataGridViewImageColumn2 = new System.Windows.Forms.DataGridViewImageColumn();
             this.dataGridViewImageColumn3 = new System.Windows.Forms.DataGridViewImageColumn();
+            this.CGot = new System.Windows.Forms.DataGridViewImageColumn();
+            this.CRom = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.CMerge = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.CSize = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.CCRC32 = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.CSHA1 = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.CMD5 = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.CAltSize = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.CAltCRC32 = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.CAltSHA1 = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.CAltMD5 = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.CStatus = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.DatModDate = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.FileModDate = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.DatCreatedDate = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.FileCreatedDate = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.DatAccessDate = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.FileAccessDate = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.ZipIndex = new System.Windows.Forms.DataGridViewTextBoxColumn();
             ((System.ComponentModel.ISupportInitialize)(this.splitToolBarMain)).BeginInit();
             this.splitToolBarMain.Panel1.SuspendLayout();
             this.splitToolBarMain.Panel2.SuspendLayout();
@@ -637,9 +643,9 @@
             this.chkBoxShowFixed.CheckState = System.Windows.Forms.CheckState.Checked;
             this.chkBoxShowFixed.Location = new System.Drawing.Point(547, 48);
             this.chkBoxShowFixed.Name = "chkBoxShowFixed";
-            this.chkBoxShowFixed.Size = new System.Drawing.Size(102, 17);
+            this.chkBoxShowFixed.Size = new System.Drawing.Size(123, 17);
             this.chkBoxShowFixed.TabIndex = 7;
-            this.chkBoxShowFixed.Text = "Show Fix ROMs";
+            this.chkBoxShowFixed.Text = "Show Sets with fixes";
             this.chkBoxShowFixed.UseVisualStyleBackColor = true;
             this.chkBoxShowFixed.CheckedChanged += new System.EventHandler(this.ChkBoxShowFixedCheckedChanged);
             // 
@@ -650,9 +656,9 @@
             this.chkBoxShowMissing.CheckState = System.Windows.Forms.CheckState.Checked;
             this.chkBoxShowMissing.Location = new System.Drawing.Point(547, 32);
             this.chkBoxShowMissing.Name = "chkBoxShowMissing";
-            this.chkBoxShowMissing.Size = new System.Drawing.Size(124, 17);
+            this.chkBoxShowMissing.Size = new System.Drawing.Size(132, 17);
             this.chkBoxShowMissing.TabIndex = 6;
-            this.chkBoxShowMissing.Text = "Show Missing ROMs";
+            this.chkBoxShowMissing.Text = "Show Incomplete Sets";
             this.chkBoxShowMissing.UseVisualStyleBackColor = true;
             this.chkBoxShowMissing.CheckedChanged += new System.EventHandler(this.ChkBoxShowMissingCheckedChanged);
             // 
@@ -663,9 +669,9 @@
             this.chkBoxShowCorrect.CheckState = System.Windows.Forms.CheckState.Checked;
             this.chkBoxShowCorrect.Location = new System.Drawing.Point(547, 16);
             this.chkBoxShowCorrect.Name = "chkBoxShowCorrect";
-            this.chkBoxShowCorrect.Size = new System.Drawing.Size(123, 17);
+            this.chkBoxShowCorrect.Size = new System.Drawing.Size(124, 17);
             this.chkBoxShowCorrect.TabIndex = 5;
-            this.chkBoxShowCorrect.Text = "Show Correct ROMs";
+            this.chkBoxShowCorrect.Text = "Show Complete Sets";
             this.chkBoxShowCorrect.UseVisualStyleBackColor = true;
             this.chkBoxShowCorrect.CheckedChanged += new System.EventHandler(this.ChkBoxShowCorrectCheckedChanged);
             // 
@@ -836,6 +842,12 @@
             this.CAltSHA1,
             this.CAltMD5,
             this.CStatus,
+            this.DatModDate,
+            this.FileModDate,
+            this.DatCreatedDate,
+            this.FileCreatedDate,
+            this.DatAccessDate,
+            this.FileAccessDate,
             this.ZipIndex});
             dataGridViewCellStyle5.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
             dataGridViewCellStyle5.BackColor = System.Drawing.SystemColors.Window;
@@ -873,111 +885,6 @@
             this.RomGrid.ColumnHeaderMouseClick += new System.Windows.Forms.DataGridViewCellMouseEventHandler(this.RomGridColumnHeaderMouseClick);
             this.RomGrid.SelectionChanged += new System.EventHandler(this.RomGridSelectionChanged);
             this.RomGrid.MouseUp += new System.Windows.Forms.MouseEventHandler(this.RomGridMouseUp);
-            // 
-            // CGot
-            // 
-            this.CGot.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.None;
-            this.CGot.HeaderText = "Got";
-            this.CGot.Name = "CGot";
-            this.CGot.ReadOnly = true;
-            this.CGot.Resizable = System.Windows.Forms.DataGridViewTriState.True;
-            this.CGot.Width = 65;
-            // 
-            // CRom
-            // 
-            this.CRom.HeaderText = "ROM (File)";
-            this.CRom.Name = "CRom";
-            this.CRom.ReadOnly = true;
-            this.CRom.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.Programmatic;
-            this.CRom.Width = 150;
-            // 
-            // CMerge
-            // 
-            this.CMerge.HeaderText = "Merge";
-            this.CMerge.Name = "CMerge";
-            this.CMerge.ReadOnly = true;
-            this.CMerge.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.Programmatic;
-            this.CMerge.Width = 60;
-            // 
-            // CSize
-            // 
-            this.CSize.HeaderText = "Size";
-            this.CSize.Name = "CSize";
-            this.CSize.ReadOnly = true;
-            this.CSize.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.Programmatic;
-            this.CSize.Width = 60;
-            // 
-            // CCRC32
-            // 
-            this.CCRC32.HeaderText = "CRC32";
-            this.CCRC32.Name = "CCRC32";
-            this.CCRC32.ReadOnly = true;
-            this.CCRC32.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.Programmatic;
-            // 
-            // CSHA1
-            // 
-            this.CSHA1.HeaderText = "SHA1";
-            this.CSHA1.Name = "CSHA1";
-            this.CSHA1.ReadOnly = true;
-            this.CSHA1.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.Programmatic;
-            this.CSHA1.Width = 150;
-            // 
-            // CMD5
-            // 
-            this.CMD5.HeaderText = "MD5";
-            this.CMD5.Name = "CMD5";
-            this.CMD5.ReadOnly = true;
-            this.CMD5.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.Programmatic;
-            this.CMD5.Width = 150;
-            // 
-            // CAltSize
-            // 
-            this.CAltSize.HeaderText = "AltSize";
-            this.CAltSize.Name = "CAltSize";
-            this.CAltSize.ReadOnly = true;
-            this.CAltSize.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.Programmatic;
-            this.CAltSize.Visible = false;
-            this.CAltSize.Width = 60;
-            // 
-            // CAltCRC32
-            // 
-            this.CAltCRC32.HeaderText = "AltCRC32";
-            this.CAltCRC32.Name = "CAltCRC32";
-            this.CAltCRC32.ReadOnly = true;
-            this.CAltCRC32.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.Programmatic;
-            this.CAltCRC32.Visible = false;
-            // 
-            // CAltSHA1
-            // 
-            this.CAltSHA1.HeaderText = "AltSHA1";
-            this.CAltSHA1.Name = "CAltSHA1";
-            this.CAltSHA1.ReadOnly = true;
-            this.CAltSHA1.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.Programmatic;
-            this.CAltSHA1.Visible = false;
-            this.CAltSHA1.Width = 150;
-            // 
-            // CAltMD5
-            // 
-            this.CAltMD5.HeaderText = "AltMD5";
-            this.CAltMD5.Name = "CAltMD5";
-            this.CAltMD5.ReadOnly = true;
-            this.CAltMD5.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.Programmatic;
-            this.CAltMD5.Visible = false;
-            this.CAltMD5.Width = 150;
-            // 
-            // CStatus
-            // 
-            this.CStatus.HeaderText = "Status";
-            this.CStatus.Name = "CStatus";
-            this.CStatus.ReadOnly = true;
-            this.CStatus.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.Programmatic;
-            // 
-            // ZipIndex
-            // 
-            this.ZipIndex.HeaderText = "ZipIndex";
-            this.ZipIndex.Name = "ZipIndex";
-            this.ZipIndex.ReadOnly = true;
-            this.ZipIndex.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.NotSortable;
             // 
             // TabEmuArc
             // 
@@ -1271,6 +1178,147 @@
             this.dataGridViewImageColumn3.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.Automatic;
             this.dataGridViewImageColumn3.Width = 65;
             // 
+            // CGot
+            // 
+            this.CGot.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.None;
+            this.CGot.HeaderText = "Got";
+            this.CGot.Name = "CGot";
+            this.CGot.ReadOnly = true;
+            this.CGot.Resizable = System.Windows.Forms.DataGridViewTriState.True;
+            this.CGot.Width = 65;
+            // 
+            // CRom
+            // 
+            this.CRom.HeaderText = "ROM (File)";
+            this.CRom.Name = "CRom";
+            this.CRom.ReadOnly = true;
+            this.CRom.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.Programmatic;
+            this.CRom.Width = 150;
+            // 
+            // CMerge
+            // 
+            this.CMerge.HeaderText = "Merge";
+            this.CMerge.Name = "CMerge";
+            this.CMerge.ReadOnly = true;
+            this.CMerge.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.Programmatic;
+            this.CMerge.Width = 60;
+            // 
+            // CSize
+            // 
+            this.CSize.HeaderText = "Size";
+            this.CSize.Name = "CSize";
+            this.CSize.ReadOnly = true;
+            this.CSize.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.Programmatic;
+            this.CSize.Width = 60;
+            // 
+            // CCRC32
+            // 
+            this.CCRC32.HeaderText = "CRC32";
+            this.CCRC32.Name = "CCRC32";
+            this.CCRC32.ReadOnly = true;
+            this.CCRC32.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.Programmatic;
+            // 
+            // CSHA1
+            // 
+            this.CSHA1.HeaderText = "SHA1";
+            this.CSHA1.Name = "CSHA1";
+            this.CSHA1.ReadOnly = true;
+            this.CSHA1.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.Programmatic;
+            this.CSHA1.Width = 150;
+            // 
+            // CMD5
+            // 
+            this.CMD5.HeaderText = "MD5";
+            this.CMD5.Name = "CMD5";
+            this.CMD5.ReadOnly = true;
+            this.CMD5.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.Programmatic;
+            this.CMD5.Width = 150;
+            // 
+            // CAltSize
+            // 
+            this.CAltSize.HeaderText = "AltSize";
+            this.CAltSize.Name = "CAltSize";
+            this.CAltSize.ReadOnly = true;
+            this.CAltSize.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.Programmatic;
+            this.CAltSize.Visible = false;
+            this.CAltSize.Width = 60;
+            // 
+            // CAltCRC32
+            // 
+            this.CAltCRC32.HeaderText = "AltCRC32";
+            this.CAltCRC32.Name = "CAltCRC32";
+            this.CAltCRC32.ReadOnly = true;
+            this.CAltCRC32.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.Programmatic;
+            this.CAltCRC32.Visible = false;
+            // 
+            // CAltSHA1
+            // 
+            this.CAltSHA1.HeaderText = "AltSHA1";
+            this.CAltSHA1.Name = "CAltSHA1";
+            this.CAltSHA1.ReadOnly = true;
+            this.CAltSHA1.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.Programmatic;
+            this.CAltSHA1.Visible = false;
+            this.CAltSHA1.Width = 150;
+            // 
+            // CAltMD5
+            // 
+            this.CAltMD5.HeaderText = "AltMD5";
+            this.CAltMD5.Name = "CAltMD5";
+            this.CAltMD5.ReadOnly = true;
+            this.CAltMD5.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.Programmatic;
+            this.CAltMD5.Visible = false;
+            this.CAltMD5.Width = 150;
+            // 
+            // CStatus
+            // 
+            this.CStatus.HeaderText = "Status";
+            this.CStatus.Name = "CStatus";
+            this.CStatus.ReadOnly = true;
+            this.CStatus.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.Programmatic;
+            // 
+            // DatModDate
+            // 
+            this.DatModDate.HeaderText = "DAT Mod";
+            this.DatModDate.Name = "DatModDate";
+            this.DatModDate.ReadOnly = true;
+            // 
+            // FileModDate
+            // 
+            this.FileModDate.HeaderText = "File Mod";
+            this.FileModDate.Name = "FileModDate";
+            this.FileModDate.ReadOnly = true;
+            // 
+            // DatCreatedDate
+            // 
+            this.DatCreatedDate.HeaderText = "DAT Created";
+            this.DatCreatedDate.Name = "DatCreatedDate";
+            this.DatCreatedDate.ReadOnly = true;
+            // 
+            // FileCreatedDate
+            // 
+            this.FileCreatedDate.HeaderText = "File Created";
+            this.FileCreatedDate.Name = "FileCreatedDate";
+            this.FileCreatedDate.ReadOnly = true;
+            // 
+            // DatAccessDate
+            // 
+            this.DatAccessDate.HeaderText = "DAT Access";
+            this.DatAccessDate.Name = "DatAccessDate";
+            this.DatAccessDate.ReadOnly = true;
+            // 
+            // FileAccessDate
+            // 
+            this.FileAccessDate.HeaderText = "File Access";
+            this.FileAccessDate.Name = "FileAccessDate";
+            this.FileAccessDate.ReadOnly = true;
+            // 
+            // ZipIndex
+            // 
+            this.ZipIndex.HeaderText = "ZipIndex";
+            this.ZipIndex.Name = "ZipIndex";
+            this.ZipIndex.ReadOnly = true;
+            this.ZipIndex.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.NotSortable;
+            // 
             // FrmMain
             // 
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
@@ -1407,6 +1455,10 @@
         private System.Windows.Forms.ToolStripMenuItem romVaultSettingsToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem directorySettingsToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem registrationSettingsToolStripMenuItem;
+        private System.Windows.Forms.DataGridViewImageColumn CType;
+        private System.Windows.Forms.DataGridViewTextBoxColumn CGame;
+        private System.Windows.Forms.DataGridViewTextBoxColumn CDescription;
+        private System.Windows.Forms.DataGridViewImageColumn CCorrect;
         private System.Windows.Forms.DataGridViewImageColumn CGot;
         private System.Windows.Forms.DataGridViewTextBoxColumn CRom;
         private System.Windows.Forms.DataGridViewTextBoxColumn CMerge;
@@ -1419,11 +1471,13 @@
         private System.Windows.Forms.DataGridViewTextBoxColumn CAltSHA1;
         private System.Windows.Forms.DataGridViewTextBoxColumn CAltMD5;
         private System.Windows.Forms.DataGridViewTextBoxColumn CStatus;
+        private System.Windows.Forms.DataGridViewTextBoxColumn DatModDate;
+        private System.Windows.Forms.DataGridViewTextBoxColumn FileModDate;
+        private System.Windows.Forms.DataGridViewTextBoxColumn DatCreatedDate;
+        private System.Windows.Forms.DataGridViewTextBoxColumn FileCreatedDate;
+        private System.Windows.Forms.DataGridViewTextBoxColumn DatAccessDate;
+        private System.Windows.Forms.DataGridViewTextBoxColumn FileAccessDate;
         private System.Windows.Forms.DataGridViewTextBoxColumn ZipIndex;
-        private System.Windows.Forms.DataGridViewImageColumn CType;
-        private System.Windows.Forms.DataGridViewTextBoxColumn CGame;
-        private System.Windows.Forms.DataGridViewTextBoxColumn CDescription;
-        private System.Windows.Forms.DataGridViewImageColumn CCorrect;
     }
 }
 

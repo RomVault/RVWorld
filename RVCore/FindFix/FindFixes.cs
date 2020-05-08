@@ -89,7 +89,7 @@ namespace RVCore.FindFix
                 _thWrk.Report(_progressCounter++);
                 FindFixesListCheck.GroupListCheck(fileGroupsCRCSorted);
 
-                _thWrk?.Report(new bgwText("Complete (Unique Files " + totalAfterMerge + ")"));
+                _thWrk.Report(new bgwText("Complete (Unique Files " + totalAfterMerge + ")"));
                 _thWrk.Finished = true;
                 _thWrk = null;
             }
@@ -100,8 +100,7 @@ namespace RVCore.FindFix
                 _thWrk?.Report(new bgwText("Updating Cache"));
                 DB.Write();
                 _thWrk?.Report(new bgwText("Complete"));
-
-                _thWrk.Finished = true;
+                if (_thWrk != null) _thWrk.Finished = true;
                 _thWrk = null;
             }
         }

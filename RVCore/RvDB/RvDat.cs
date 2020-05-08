@@ -1,7 +1,7 @@
 ﻿/******************************************************
  *     ROMVault3 is written by Gordon J.              *
  *     Contact gordon@romvault.com                    *
- *     Copyright 2019                                 *
+ *     Copyright 2020                                 *
  ******************************************************/
 
 using System.Collections.Generic;
@@ -48,6 +48,7 @@ namespace RVCore.RvDB
         public bool AutoAddedDirectory;
         public bool UseDescriptionAsDirName;
         public bool SingleArchive;
+        public bool RemoveSubDir;
 
         public void Write(BinaryWriter bw)
         {
@@ -58,7 +59,8 @@ namespace RVCore.RvDB
                     (MultiDatOverride ? 2 : 0) |
                     (MultiDatsInDirectory ? 4 : 0) |
                     (UseDescriptionAsDirName ? 8 : 0) |
-                    (SingleArchive ? 16 : 0)
+                    (SingleArchive ? 16 : 0) |
+                    (RemoveSubDir ? 32 :0)
                  );
             bw.Write(bools);
 
@@ -72,12 +74,16 @@ namespace RVCore.RvDB
         public void Read(BinaryReader br)
         {
             TimeStamp = br.ReadInt64();
+            if (TimeStamp < RVIO.FileParamConvert.FileTimeOffset)
+                TimeStamp += RVIO.FileParamConvert.FileTimeOffset;
+
             byte bools = br.ReadByte();
             AutoAddedDirectory = (bools & 1) == 1;
             MultiDatOverride = (bools & 2) == 2;
             MultiDatsInDirectory = (bools & 4) == 4;
             UseDescriptionAsDirName = (bools & 8) == 8;
             SingleArchive = (bools & 16) == 16;
+            RemoveSubDir = (bools & 32) == 32;
 
             byte c = br.ReadByte();
             _gameMetaData.Clear();

@@ -85,7 +85,7 @@ namespace RVCore.FixFile.Util
                             return ReturnCode.RescanNeeded;
                         }
                         FileInfo fi = new FileInfo(fullPathCheckDelete);
-                        if (fi.LastWriteTime != fileToCheck.Parent.TimeStamp)
+                        if (fi.LastWriteTime != fileToCheck.Parent.FileModTimeStamp)
                         {
                             errorMessage = "Deleting " + fileDeleting.FullName + " Correct file timestamp not found. Resan for " + fileToCheck.FullName;
                             return ReturnCode.RescanNeeded;
@@ -101,7 +101,7 @@ namespace RVCore.FixFile.Util
                             return ReturnCode.RescanNeeded;
                         }
                         FileInfo fi = new FileInfo(fullPathCheckDelete);
-                        if (fi.LastWriteTime != fileToCheck.TimeStamp)
+                        if (fi.LastWriteTime != fileToCheck.FileModTimeStamp)
                         {
                             errorMessage = "Deleting " + fileDeleting.FullName + " Correct file timestamp not found. Resan for " + fileToCheck.FullName;
                             return ReturnCode.RescanNeeded;

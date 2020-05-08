@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace Compress.SevenZip.Structure
@@ -10,6 +11,9 @@ namespace Compress.SevenZip.Structure
         public bool[] EmptyStreamFlags;
         public bool[] EmptyFileFlags;
         public uint[] Attributes;
+        public ulong[] TimeCreation;
+        public ulong[] TimeLastAccess;
+        public ulong[] TimeLastWrite;
 
         public void Read(BinaryReader br)
         {
@@ -18,9 +22,9 @@ namespace Compress.SevenZip.Structure
 
             ulong numEmptyFiles = 0;
 
-            for (;;)
+            for (; ; )
             {
-                HeaderProperty hp = (HeaderProperty) br.ReadByte();
+                HeaderProperty hp = (HeaderProperty)br.ReadByte();
                 if (hp == HeaderProperty.kEnd)
                 {
                     return;
@@ -43,7 +47,7 @@ namespace Compress.SevenZip.Structure
                         continue;
 
                     case HeaderProperty.kEmptyStream:
-                        EmptyStreamFlags = Util.ReadBoolFlags(br, (ulong) Names.Length);
+                        EmptyStreamFlags = Util.ReadBoolFlags(br, (ulong)Names.Length);
                         for (ulong i = 0; i < size; i++)
                         {
                             if (EmptyStreamFlags[i])
@@ -67,13 +71,17 @@ namespace Compress.SevenZip.Structure
                         continue;
 
                     case HeaderProperty.kCreationTime:
+                        TimeCreation = Util.ReadUInt64Def(br, size);
+                        continue;
                     case HeaderProperty.kLastAccessTime:
+                        TimeLastAccess = Util.ReadUInt64Def(br, size);
+                        continue;
                     case HeaderProperty.kLastWriteTime:
-                        br.ReadBytes((int) bytessize);
+                        TimeLastWrite = Util.ReadUInt64Def(br, size);
                         continue;
 
                     case HeaderProperty.kDummy:
-                        br.ReadBytes((int) bytessize);
+                        br.ReadBytes((int)bytessize);
                         continue;
 
                     default:
@@ -84,16 +92,16 @@ namespace Compress.SevenZip.Structure
 
         public void Write(BinaryWriter bw)
         {
-            bw.Write((byte) HeaderProperty.kFilesInfo);
-            bw.WriteEncodedUInt64((ulong) Names.Length);
+            bw.Write((byte)HeaderProperty.kFilesInfo);
+            bw.WriteEncodedUInt64((ulong)Names.Length);
 
 
             byte[] namebyte;
             using (MemoryStream nameMem = new MemoryStream())
             {
-                using (BinaryWriter nameBw = new BinaryWriter(nameMem,Encoding.UTF8,true))
+                using (BinaryWriter nameBw = new BinaryWriter(nameMem, Encoding.UTF8, true))
                 {
-                    nameBw.Write((byte) 0); //not external
+                    nameBw.Write((byte)0); //not external
                     foreach (string name in Names)
                     {
                         nameBw.WriteName(name);
@@ -105,29 +113,29 @@ namespace Compress.SevenZip.Structure
                 }
             }
 
-            bw.Write((byte) HeaderProperty.kName);
-            bw.WriteEncodedUInt64((ulong) namebyte.Length);
+            bw.Write((byte)HeaderProperty.kName);
+            bw.WriteEncodedUInt64((ulong)namebyte.Length);
             bw.Write(namebyte);
 
             if (EmptyStreamFlags != null)
             {
-                bw.Write((byte) HeaderProperty.kEmptyStream);
+                bw.Write((byte)HeaderProperty.kEmptyStream);
                 Util.WriteBoolFlags(bw, EmptyStreamFlags);
             }
 
             if (EmptyFileFlags != null)
             {
-                bw.Write((byte) HeaderProperty.kEmptyFile);
+                bw.Write((byte)HeaderProperty.kEmptyFile);
                 Util.WriteBoolFlags(bw, EmptyFileFlags);
             }
 
             if (Attributes != null)
             {
-                bw.Write((byte) HeaderProperty.kWinAttributes);
+                bw.Write((byte)HeaderProperty.kWinAttributes);
                 Util.WriteUint32Def(bw, Attributes);
             }
 
-            bw.Write((byte) HeaderProperty.kEnd);
+            bw.Write((byte)HeaderProperty.kEnd);
         }
 
         public void Report(ref StringBuilder sb)

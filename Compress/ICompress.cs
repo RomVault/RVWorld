@@ -1,4 +1,6 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
+using Compress.Utils;
 
 namespace Compress
 {
@@ -11,17 +13,19 @@ namespace Compress
         ulong UncompressedSize(int i);
         byte[] CRC32(int i);
 
+        long LastModified(int i);
+
         bool IsDirectory(int i);
 
         ZipOpenType ZipOpen { get; }
 
-        ZipReturn ZipFileOpen(string newFilename, long timestamp =-1, bool readHeaders=true);
+        ZipReturn ZipFileOpen(string newFilename, long timestamp = -1, bool readHeaders = true);
 
         ZipReturn ZipFileOpen(Stream inStream);
         void ZipFileClose();
 
         ZipReturn ZipFileOpenReadStream(int index, out Stream stream, out ulong streamSize);
-        ZipReturn ZipFileOpenWriteStream(bool raw, bool trrntzip, string filename, ulong uncompressedSize, ushort compressionMethod, out Stream stream);
+        ZipReturn ZipFileOpenWriteStream(bool raw, bool trrntzip, string filename, ulong uncompressedSize, ushort compressionMethod, out Stream stream, TimeStamps dateTime = null);
         ZipReturn ZipFileCloseReadStream();
 
 

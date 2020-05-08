@@ -57,6 +57,11 @@ namespace Compress.File
             return _crc;
         }
 
+        public long LastModified(int i)
+        {
+            return _fileInfo.LastWriteTime;
+        }
+
         public ZipReturn ZipFileCreate(string newFilename)
         {
             if (ZipOpen != ZipOpenType.Closed)
@@ -195,7 +200,7 @@ namespace Compress.File
             return ZipReturn.ZipGood;
         }
 
-        public ZipReturn ZipFileOpenWriteStream(bool raw, bool trrntzip, string filename, ulong uncompressedSize, ushort compressionMethod, out Stream stream)
+        public ZipReturn ZipFileOpenWriteStream(bool raw, bool trrntzip, string filename, ulong uncompressedSize, ushort compressionMethod, out Stream stream, TimeStamps dateTime)
         {
             _inStream.Position = 0;
             stream = _inStream;

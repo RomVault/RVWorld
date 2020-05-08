@@ -22,8 +22,8 @@ namespace RVCore.Scanner
             DatStatus chechingDatStatus = dbDir.IsInToSort ? DatStatus.InToSort : DatStatus.NotInDat;
 
             string filename = dbDir.FullName;
-            ICompress checkZ = dbDir.FileType == FileType.Zip ? new ZipFile() : (ICompress)new SevenZ();
-            ZipReturn zr = checkZ.ZipFileOpen(filename, dbDir.TimeStamp);
+            ICompress checkZ = dbDir.FileType == FileType.Zip ? new Zip() : (ICompress)new SevenZ();
+            ZipReturn zr = checkZ.ZipFileOpen(filename, dbDir.FileModTimeStamp);
 
             if (zr == ZipReturn.ZipGood)
             {
@@ -52,7 +52,8 @@ namespace RVCore.Scanner
                         ZipFileIndex = i,
                         ZipFileHeaderPosition = checkZ.LocalHeader(i),
                         Size = checkZ.UncompressedSize(i),
-                        CRC = checkZ.CRC32(i)
+                        CRC = checkZ.CRC32(i),
+                        FileModTimeStamp = checkZ.LastModified(i)
                     };
                     // all levels read the CRC from the ZIP header
                     tFile.SetStatus(chechingDatStatus, GotStatus.Got);
@@ -92,7 +93,7 @@ namespace RVCore.Scanner
             else if (zr == ZipReturn.ZipFileLocked)
             {
                 thWrk.Report(new bgwShowError(filename, "Zip File Locked"));
-                dbDir.TimeStamp = 0;
+                dbDir.FileModTimeStamp = 0;
                 dbDir.GotStatus = GotStatus.FileLocked;
             }
             else
@@ -123,7 +124,7 @@ namespace RVCore.Scanner
                 RvFile tDir = new RvFile(FileType.Dir)
                 {
                     Name = dir.Name,
-                    TimeStamp = dir.LastWriteTime
+                    FileModTimeStamp = dir.LastWriteTime
                 };
                 tDir.SetStatus(datStatus, GotStatus.Got);
                 fileDir.ChildAdd(tDir);
@@ -149,12 +150,12 @@ namespace RVCore.Scanner
                 {
                     Name = oFile.Name,
                     Size = (ulong)oFile.Length,
-                    TimeStamp = oFile.LastWriteTime
+                    FileModTimeStamp = oFile.LastWriteTime
                 };
                 tFile.FileStatusSet(FileStatus.SizeVerified);
                 tFile.SetStatus(datStatus, GotStatus.Got);
 
-                if (eScanLevel == EScanLevel.Level3)
+                if (eScanLevel == EScanLevel.Level3 && tFile.FileType==FileType.File)
                 {
                     FromAFile(tFile, fullDir, eScanLevel, bgw, ref fileErrorAbort);
                 }
@@ -219,7 +220,7 @@ namespace RVCore.Scanner
         {
             string filename = Path.Combine(directory, file.Name);
             ICompress fileToScan = new Compress.File.File();
-            ZipReturn zr = fileToScan.ZipFileOpen(filename, file.TimeStamp);
+            ZipReturn zr = fileToScan.ZipFileOpen(filename, file.FileModTimeStamp);
 
             if (zr == ZipReturn.ZipFileLocked)
             {

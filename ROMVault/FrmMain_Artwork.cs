@@ -1,6 +1,5 @@
 ﻿using System;
 using System.IO;
-using ROMVault.Utils;
 using RVCore.RvDB;
 
 namespace ROMVault

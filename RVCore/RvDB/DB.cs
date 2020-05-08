@@ -1,7 +1,7 @@
 ﻿/******************************************************
  *     ROMVault3 is written by Gordon J.              *
  *     Contact gordon@romvault.com                    *
- *     Copyright 2019                                 *
+ *     Copyright 2020                                 *
  ******************************************************/
 
 using System.IO;
@@ -90,15 +90,6 @@ namespace RVCore.RvDB
             fs.Dispose();
 
         }
-
-        /*
-        public static void WriteJson()
-        {
-            string bname = Settings.rvSettings.CacheFile + ".json";
-            JObject outObj = DirTree.WriteJson();
-            System.IO.File.WriteAllText(bname, outObj.ToString());
-        }
-        */
 
         public static void Read(ThreadWorker thWrk)
         {

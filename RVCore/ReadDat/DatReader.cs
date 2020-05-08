@@ -1,7 +1,7 @@
 ﻿/******************************************************
  *     ROMVault3 is written by Gordon J.              *
  *     Contact gordon@romvault.com                    *
- *     Copyright 2019                                 *
+ *     Copyright 2020                                 *
  ******************************************************/
 
 using System;
@@ -100,7 +100,7 @@ namespace RVCore.ReadDat
                 SetMergeType(datRule, dh);
 
                 if (datFile.SingleArchive)
-                    DatClean.MakeDatSingleLevel(dh, datFile.UseDescriptionAsDirName);
+                    DatClean.MakeDatSingleLevel(dh, datFile.UseDescriptionAsDirName,datFile.RemoveSubDir);
 
                 DatClean.RemoveUnNeededDirectories(dh.BaseDir);
 

@@ -146,24 +146,34 @@ namespace RVCore.FixFile
             };
             Report.ReportProgress(new bgwShowFix(Path.GetDirectoryName(fixFileFullName), "", Path.GetFileName(fixFileFullName), fixFile.Size, "-->", outDir.FullName, "", fixFileFullName));
 
-            ReturnCode returnCode = FixFileUtils.CopyFile(fixFile, null, toSortFullName, toSortRom, false, out errorMessage);
+            ReturnCode returnCode = FixFileUtils.MoveFile(fixFile, toSortRom, toSortFullName, out bool fileMoved, out errorMessage);
             if (returnCode != ReturnCode.Good)
                 return returnCode;
 
-            string fixFilePath = fixFile.FullName;
-            if (!File.SetAttributes(fixFilePath, FileAttributes.Normal))
+            if (!fileMoved)
             {
-                int error = Error.GetLastError();
-                Report.ReportProgress(new bgwShowError(fixFilePath, "Error Setting File Attributes to Normal. Before Delete Moving ToSort. Code " + error));
-            }
-            File.Delete(fixFilePath);
+                returnCode = FixFileUtils.CopyFile(fixFile, null, toSortFullName, toSortRom, false, out errorMessage);
+                if (returnCode != ReturnCode.Good)
+                    return returnCode;
 
-            // here we just deleted a file so also delete it from the DB,
-            // and recurse up deleting unnedded DIR's
-            FixFileUtils.CheckDeleteFile(fixFile);
+                string fixFilePath = fixFile.FullName;
+                if (!File.SetAttributes(fixFilePath, FileAttributes.Normal))
+                {
+                    int error = Error.GetLastError();
+                    Report.ReportProgress(new bgwShowError(fixFilePath,
+                        "Error Setting File Attributes to Normal. Before Delete Moving ToSort. Code " + error));
+                }
+
+                File.Delete(fixFilePath);
+
+                // here we just deleted a file so also delete it from the DB,
+                // and recurse up deleting unnedded DIR's
+                FixFileUtils.CheckDeleteFile(fixFile);
+            }
 
             outDir.ChildAdd(toSortRom);
 
+            errorMessage = "";
             return ReturnCode.Good;
         }
 
@@ -200,21 +210,31 @@ namespace RVCore.FixFile
 
             Report.ReportProgress(new bgwShowFix(Path.GetDirectoryName(fixFileFullName), "", Path.GetFileName(fixFileFullName), fixFile.Size, "-->", "Corrupt", "", fixFile.Name));
 
-            ReturnCode returnCode = FixFileUtils.CopyFile(fixFile, null, toSortCorruptFullName, toSortCorruptRom, false, out errorMessage);
+            ReturnCode returnCode = FixFileUtils.MoveFile(fixFile, toSortCorruptRom, toSortCorruptFullName, out bool fileMoved, out errorMessage);
             if (returnCode != ReturnCode.Good)
                 return returnCode;
 
-            string fixFilePath = fixFile.FullName;
-            if (!File.SetAttributes(fixFilePath, FileAttributes.Normal))
+            if (!fileMoved)
             {
-                int error = Error.GetLastError();
-                Report.ReportProgress(new bgwShowError(fixFilePath, "Error Setting File Attributes to Normal. Before Delete Moving ToSort. Code " + error));
-            }
-            File.Delete(fixFilePath);
+                returnCode = FixFileUtils.CopyFile(fixFile, null, toSortCorruptFullName, toSortCorruptRom, false,
+                    out errorMessage);
+                if (returnCode != ReturnCode.Good)
+                    return returnCode;
 
-            // here we just deleted a file so also delete it from the DB,
-            // and recurse up deleting unnedded DIR's
-            FixFileUtils.CheckDeleteFile(fixFile);
+                string fixFilePath = fixFile.FullName;
+                if (!File.SetAttributes(fixFilePath, FileAttributes.Normal))
+                {
+                    int error = Error.GetLastError();
+                    Report.ReportProgress(new bgwShowError(fixFilePath,
+                        "Error Setting File Attributes to Normal. Before Delete Moving ToSort. Code " + error));
+                }
+
+                File.Delete(fixFilePath);
+
+                // here we just deleted a file so also delete it from the DB,
+                // and recurse up deleting unnedded DIR's
+                FixFileUtils.CheckDeleteFile(fixFile);
+            }
 
             RvFile toSort = DB.RvFileToSort();
             RvFile rvCorruptDir = new RvFile(FileType.Dir) { Name = "Corrupt", DatStatus = DatStatus.InToSort };
@@ -227,6 +247,7 @@ namespace RVCore.FixFile
 
             toSort.Child(indexCorrupt).ChildAdd(toSortCorruptRom);
 
+            errorMessage = "";
             return ReturnCode.Good;
         }
 
@@ -383,7 +404,7 @@ namespace RVCore.FixFile
                     return returnCode;
                 }
                 // Check the files that we found that where used to fix this file, and if they not listed as correct files, they can be set to be deleted.
-                FixFileUtils.CheckFilesUsedForFix( lstFixRomTable, fileProcessQueue, true);
+                FixFileUtils.CheckFilesUsedForFix(lstFixRomTable, fileProcessQueue, true);
 
                 totalFixed++;
                 return ReturnCode.Good;
@@ -397,13 +418,16 @@ namespace RVCore.FixFile
             fixFile.FileTestFix(fixingFile);
 
 
-            if (Settings.rvSettings.UseFileMove)
+            returnCode = FixFileUtils.MoveFile(fixingFile, fixFile, null, out bool fileMoved, out errorMessage);
+            if (returnCode != ReturnCode.Good)
+                return returnCode;
+            if (fileMoved)
             {
-                returnCode = FixFileUtils.MoveFile(fixingFile, fixFile, out bool fileMoved, out errorMessage);
-                if (returnCode != ReturnCode.Good)
-                    return returnCode;
-                if (fileMoved)
-                    return returnCode;
+                // Check the files that we found that where used to fix this file, and if they not listed as correct files, they can be set to be deleted.
+                FixFileUtils.CheckFilesUsedForFix(lstFixRomTable, fileProcessQueue, true);
+
+                totalFixed++;
+                return ReturnCode.Good;
             }
 
             returnCode = FixFileUtils.CopyFile(fixingFile, null, fixFile.FullName, fixFile, false, out errorMessage);
@@ -430,10 +454,9 @@ namespace RVCore.FixFile
 
 
             // Check the files that we found that where used to fix this file, and if they not listed as correct files, they can be set to be deleted.
-            FixFileUtils.CheckFilesUsedForFix( lstFixRomTable, fileProcessQueue, true);
+            FixFileUtils.CheckFilesUsedForFix(lstFixRomTable, fileProcessQueue, true);
 
             totalFixed++;
-
             return ReturnCode.Good;
         }
 

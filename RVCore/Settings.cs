@@ -67,7 +67,6 @@ namespace RVCore
         public bool CacheSaveTimerEnabled = true;
         public int CacheSaveTimePeriod = 10;
         public bool ConvertToRV7Z = false;
-        public bool UseFileMove = false;
         
         public bool chkBoxShowCorrect = true;
         public bool chkBoxShowMissing = true;
@@ -250,6 +249,7 @@ namespace RVCore
         public bool MergeOverrideDAT;
 
         public bool SingleArchive;
+        public bool RemoveSubDir;
         public bool MultiDATDirOverride;
         public bool UseDescriptionAsDirName;
 

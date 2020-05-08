@@ -12,7 +12,9 @@
         public byte[] MD5;
         public string Merge;
         public string Status;
-        public string Date;
+        public string DateModified;
+        public string DateCreated;
+        public string DateAccessed;
         public string Region;
         public bool isDisk;
 

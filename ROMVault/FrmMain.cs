@@ -690,27 +690,7 @@ namespace ROMVault
         {
             DirTree.Refresh();
 
-            if (Settings.IsMono)
-            {
-                if (GameGrid.RowCount > 0)
-                {
-                    GameGrid.CurrentCell = GameGrid[0, 0];
-                }
-
-                if (RomGrid.RowCount > 0)
-                {
-                    RomGrid.CurrentCell = RomGrid[0, 0];
-                }
-            }
-
-            GameGrid.Rows.Clear();
-            RomGrid.Rows.Clear();
-
-            // clear sorting
-            if (gameSortIndex >= 0)
-                GameGrid.Columns[gameSortIndex].HeaderCell.SortGlyphDirection = SortOrder.None;
-            gameSortIndex = 0;
-            gameSortDir = SortOrder.Descending;
+            ClearGameGrid();
 
             if (cf == null)
             {

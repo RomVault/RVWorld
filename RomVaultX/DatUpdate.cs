@@ -142,11 +142,11 @@ namespace RomVaultX
 
             FileInfo[] fisDat = di.GetFiles("*.DAT");
             FileInfo[] fisXml = di.GetFiles("*.XML");
-            int datcount = fisDat.Length + fisXml.Length;
+            int datCount = fisDat.Length + fisXml.Length;
 
-            ReadDat(fisDat, subPath, dirId, datcount > 1);
+            ReadDat(fisDat, subPath, dirId, datCount > 1);
 
-            ReadDat(fisXml, subPath, dirId, datcount > 1);
+            ReadDat(fisXml, subPath, dirId, datCount > 1);
         }
 
         private static void ReadDat(FileInfo[] fis, string subPath, uint dirId, bool extraDir)
@@ -740,7 +740,7 @@ namespace RomVaultX
                 sqlUpdateCounts.ExecuteNonQuery();
 
                 object res = sqlNullCount.ExecuteScalar();
-                nullcount = Convert.ToInt32(res);
+                nullcount = System.Convert.ToInt32(res);
             } while (nullcount > 0);
             sqlNullCount.Dispose();
         }

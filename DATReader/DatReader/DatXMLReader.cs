@@ -309,7 +309,10 @@ namespace DATReader.DatReader
                 MD5 = VarFix.CleanMD5SHA1(romNode.Attributes.GetNamedItem("md5"), 32),
                 Merge = VarFix.String(romNode.Attributes.GetNamedItem("merge")),
                 Status = VarFix.ToLower(romNode.Attributes.GetNamedItem("status")),
-                Region = VarFix.ToLower(romNode.Attributes.GetNamedItem("region"))
+                Region = VarFix.ToLower(romNode.Attributes.GetNamedItem("region")),
+                DateModified =VarFix.String(romNode.Attributes.GetNamedItem("date")),
+                //DateCreated = VarFix.String(romNode.Attributes.GetNamedItem("CreationDate")),
+                //DateAccessed = VarFix.String(romNode.Attributes.GetNamedItem("LastAccessDate")),
             };
 
             parentDir.ChildAdd(rvRom);

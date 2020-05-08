@@ -34,6 +34,7 @@
             this.CROM = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.btnDeleteSelected = new System.Windows.Forms.Button();
             this.grpBoxAddNew = new System.Windows.Forms.GroupBox();
+            this.chkRemoveSubDir = new System.Windows.Forms.CheckBox();
             this.label4 = new System.Windows.Forms.Label();
             this.chkUseDescription = new System.Windows.Forms.CheckBox();
             this.cboFilterType = new System.Windows.Forms.ComboBox();
@@ -112,6 +113,7 @@
             // 
             // grpBoxAddNew
             // 
+            this.grpBoxAddNew.Controls.Add(this.chkRemoveSubDir);
             this.grpBoxAddNew.Controls.Add(this.label4);
             this.grpBoxAddNew.Controls.Add(this.chkUseDescription);
             this.grpBoxAddNew.Controls.Add(this.cboFilterType);
@@ -139,6 +141,15 @@
             this.grpBoxAddNew.TabIndex = 14;
             this.grpBoxAddNew.TabStop = false;
             this.grpBoxAddNew.Text = "Add New Directory Mapping";
+            // 
+            // chkRemoveSubDir
+            // 
+            this.chkRemoveSubDir.Location = new System.Drawing.Point(464, 130);
+            this.chkRemoveSubDir.Name = "chkRemoveSubDir";
+            this.chkRemoveSubDir.Size = new System.Drawing.Size(126, 17);
+            this.chkRemoveSubDir.TabIndex = 44;
+            this.chkRemoveSubDir.Text = "Remove Sub Dir";
+            this.chkRemoveSubDir.UseVisualStyleBackColor = true;
             // 
             // label4
             // 
@@ -179,7 +190,7 @@
             // btnDelete
             // 
             this.btnDelete.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.btnDelete.Location = new System.Drawing.Point(579, 109);
+            this.btnDelete.Location = new System.Drawing.Point(596, 109);
             this.btnDelete.Name = "btnDelete";
             this.btnDelete.Size = new System.Drawing.Size(68, 24);
             this.btnDelete.TabIndex = 39;
@@ -191,7 +202,7 @@
             // 
             this.btnClearROMLocation.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.btnClearROMLocation.Image = ((System.Drawing.Image)(resources.GetObject("btnClearROMLocation.Image")));
-            this.btnClearROMLocation.Location = new System.Drawing.Point(614, 51);
+            this.btnClearROMLocation.Location = new System.Drawing.Point(631, 51);
             this.btnClearROMLocation.Margin = new System.Windows.Forms.Padding(1);
             this.btnClearROMLocation.Name = "btnClearROMLocation";
             this.btnClearROMLocation.Size = new System.Drawing.Size(33, 29);
@@ -203,7 +214,7 @@
             // 
             this.btnSetROMLocation.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.btnSetROMLocation.Image = ((System.Drawing.Image)(resources.GetObject("btnSetROMLocation.Image")));
-            this.btnSetROMLocation.Location = new System.Drawing.Point(579, 51);
+            this.btnSetROMLocation.Location = new System.Drawing.Point(596, 51);
             this.btnSetROMLocation.Margin = new System.Windows.Forms.Padding(1);
             this.btnSetROMLocation.Name = "btnSetROMLocation";
             this.btnSetROMLocation.Size = new System.Drawing.Size(33, 29);
@@ -224,10 +235,11 @@
             // 
             this.chkSingleArchive.Location = new System.Drawing.Point(354, 130);
             this.chkSingleArchive.Name = "chkSingleArchive";
-            this.chkSingleArchive.Size = new System.Drawing.Size(187, 17);
+            this.chkSingleArchive.Size = new System.Drawing.Size(109, 17);
             this.chkSingleArchive.TabIndex = 35;
-            this.chkSingleArchive.Text = "Make DAT a Single Archive";
+            this.chkSingleArchive.Text = "Single Archive";
             this.chkSingleArchive.UseVisualStyleBackColor = true;
+            this.chkSingleArchive.CheckedChanged += new System.EventHandler(this.chkSingleArchive_CheckedChanged);
             // 
             // chkMergeTypeOverride
             // 
@@ -286,7 +298,7 @@
             // btnSet
             // 
             this.btnSet.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.btnSet.Location = new System.Drawing.Point(579, 139);
+            this.btnSet.Location = new System.Drawing.Point(596, 140);
             this.btnSet.Name = "btnSet";
             this.btnSet.Size = new System.Drawing.Size(68, 24);
             this.btnSet.TabIndex = 14;
@@ -301,7 +313,7 @@
             this.txtROMLocation.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.txtROMLocation.Location = new System.Drawing.Point(89, 55);
             this.txtROMLocation.Name = "txtROMLocation";
-            this.txtROMLocation.Size = new System.Drawing.Size(484, 22);
+            this.txtROMLocation.Size = new System.Drawing.Size(503, 22);
             this.txtROMLocation.TabIndex = 13;
             this.txtROMLocation.Text = "label2";
             this.txtROMLocation.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
@@ -323,7 +335,7 @@
             this.txtDATLocation.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.txtDATLocation.Location = new System.Drawing.Point(89, 25);
             this.txtDATLocation.Name = "txtDATLocation";
-            this.txtDATLocation.Size = new System.Drawing.Size(515, 22);
+            this.txtDATLocation.Size = new System.Drawing.Size(503, 22);
             this.txtDATLocation.TabIndex = 11;
             this.txtDATLocation.Text = "label2";
             this.txtDATLocation.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
@@ -424,5 +436,6 @@
         private System.Windows.Forms.Label label3;
         private System.Windows.Forms.CheckBox chkUseDescription;
         private System.Windows.Forms.Label label4;
+        private System.Windows.Forms.CheckBox chkRemoveSubDir;
     }
 }

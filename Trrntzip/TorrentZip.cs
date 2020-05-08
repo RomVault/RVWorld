@@ -58,7 +58,7 @@ namespace Trrntzip
             zipType inputType;
             switch (zipFile)
             {
-                case ZipFile _:
+                case Zip _:
                     tzs |= TorrentZipCheck.CheckZipFiles(ref zippedFiles, ThreadId, StatusLogCallBack);
                     inputType = zipType.zip;
                     break;
@@ -119,7 +119,7 @@ namespace Trrntzip
                     zipFile = new SevenZ();
                     break;
                 default:
-                    zipFile = new ZipFile();
+                    zipFile = new Zip();
                     break;
             }
 

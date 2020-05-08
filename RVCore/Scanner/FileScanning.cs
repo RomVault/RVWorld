@@ -78,8 +78,8 @@ namespace RVCore.Scanner
 
 
             _thWrk.Report(new bgwText("File Scan Complete"));
-
             _thWrk.Finished = true;
+
             _thWrk = null;
 #if !DEBUG
             }
@@ -90,8 +90,7 @@ namespace RVCore.Scanner
                 _thWrk?.Report(new bgwText("Updating Cache"));
                 DB.Write();
                 _thWrk?.Report(new bgwText("Complete"));
-
-                _thWrk.Finished = true;
+                if (_thWrk != null) _thWrk.Finished = true;
                 _thWrk = null;
             }
 #endif
@@ -144,7 +143,7 @@ namespace RVCore.Scanner
                     break;
 
                 case FileType.Dir:
-                    fileDir = Populate.FromADir(dbDir, EScanLevel,_thWrk, ref _fileErrorAbort);
+                    fileDir = Populate.FromADir(dbDir, EScanLevel, _thWrk, ref _fileErrorAbort);
                     break;
                 default:
                     ReportError.SendAndShow("Un supported file type in CheckADir " + ft);
@@ -258,53 +257,60 @@ namespace RVCore.Scanner
                             filesCount += 1;
                         }
 
-                        for (int indexfile = 0; indexfile < filesCount; indexfile++)
+                        bool caseTest = files.Count > 1;
+                        // if we only have one file, we don't need to test twice.
+                        // so we need to do a case sensitive match first and then a case insensitive match
+                        // indexCase=0 means do full case filename test
+                        // indexCase=1 means do case insensitive test
+                        for (int indexCase = (caseTest ? 0 : 1); indexCase < 2; indexCase += 1)
                         {
-                            if (files[indexfile].SearchFound)
+                            for (int indexfile = 0; indexfile < filesCount; indexfile++)
                             {
-                                continue;
-                            }
-
-                            for (int indexdb = 0; indexdb < dbsCount; indexdb++)
-                            {
-                                if (dbs[indexdb].SearchFound)
+                                if (files[indexfile].SearchFound)
                                 {
                                     continue;
                                 }
 
-                                bool matched = Scanner.Compare.Phase1Test(dbs[indexdb], files[indexfile], EScanLevel, out bool matchedAlt);
-                                if (!matched)
-                                    continue;
+                                for (int indexdb = 0; indexdb < dbsCount; indexdb++)
+                                {
+                                    if (dbs[indexdb].SearchFound)
+                                    {
+                                        continue;
+                                    }
 
-                                MatchFound(dbs[indexdb], files[indexfile], matchedAlt);
-                                dbs[indexdb].SearchFound = true;
-                                files[indexfile].SearchFound = true;
-                            }
+                                    bool matched = Scanner.Compare.Phase1Test(dbs[indexdb], files[indexfile], EScanLevel, indexCase, out bool matchedAlt);
+                                    if (!matched)
+                                        continue;
 
-                            if (files[indexfile].SearchFound)
-                            {
-                                continue;
-                            }
+                                    MatchFound(dbs[indexdb], files[indexfile], matchedAlt);
+                                    dbs[indexdb].SearchFound = true;
+                                    files[indexfile].SearchFound = true;
+                                }
 
-                            for (int indexdb = 0; indexdb < dbsCount; indexdb++)
-                            {
-                                if (dbs[indexdb].SearchFound)
+                                if (files[indexfile].SearchFound)
                                 {
                                     continue;
                                 }
 
-                                bool matched = Scanner.Compare.Phase2Test(dbs[indexdb], files[indexfile], EScanLevel, fullDir, _thWrk, ref _fileErrorAbort, out bool matchedAlt);
-                                if (!matched)
+                                for (int indexdb = 0; indexdb < dbsCount; indexdb++)
                                 {
-                                    continue;
-                                }
+                                    if (dbs[indexdb].SearchFound)
+                                    {
+                                        continue;
+                                    }
 
-                                MatchFound(dbs[indexdb], files[indexfile], matchedAlt);
-                                dbs[indexdb].SearchFound = true;
-                                files[indexfile].SearchFound = true;
+                                    bool matched = Scanner.Compare.Phase2Test(dbs[indexdb], files[indexfile], EScanLevel, indexCase, fullDir, _thWrk, ref _fileErrorAbort, out bool matchedAlt);
+                                    if (!matched)
+                                    {
+                                        continue;
+                                    }
+
+                                    MatchFound(dbs[indexdb], files[indexfile], matchedAlt);
+                                    dbs[indexdb].SearchFound = true;
+                                    files[indexfile].SearchFound = true;
+                                }
                             }
                         }
-
 
                         for (int indexdb = 0; indexdb < dbsCount; indexdb++)
                         {
@@ -356,7 +362,7 @@ namespace RVCore.Scanner
             {
                 case FileType.Zip:
                 case FileType.SevenZip:
-                    if (dbChild.TimeStamp != fileChild.TimeStamp || EScanLevel == EScanLevel.Level3 || EScanLevel == EScanLevel.Level2 && !Utils.IsDeepScanned(dbChild))
+                    if (dbChild.FileModTimeStamp != fileChild.FileModTimeStamp || EScanLevel == EScanLevel.Level3 || EScanLevel == EScanLevel.Level2 && !Utils.IsDeepScanned(dbChild))
                     {
                         MarkAsMissing(dbChild);
                         dbChild.FileAdd(fileChild, false);
@@ -419,7 +425,7 @@ namespace RVCore.Scanner
                     {
                         if (!Utils.IsDeepScanned(fileChild))
                         {
-                            Populate.FromAFile(fileChild, dbDir.FullName, EScanLevel,_thWrk, ref _fileErrorAbort);
+                            Populate.FromAFile(fileChild, dbDir.FullName, EScanLevel, _thWrk, ref _fileErrorAbort);
                         }
                     }
                     dbDir.ChildAdd(fileChild, dbIndex);

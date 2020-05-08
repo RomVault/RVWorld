@@ -48,7 +48,7 @@ namespace RVCore.FixFile.Util
                     Directory.CreateDirectory(fullpath);
                     DirectoryInfo di =new DirectoryInfo(fullpath);
                     tDir.SetStatus(DatStatus.InToSort,GotStatus.Got);
-                    tDir.TimeStamp = di.LastWriteTime;
+                    tDir.FileModTimeStamp = di.LastWriteTime;
                 }
 
                 dirTree[i] = tDir;

@@ -91,8 +91,8 @@
     <Compile Include="SevenZip\Compress\ZSTD\ZstandardDictionary.cs" />
     <Compile Include="SevenZip\Compress\ZSTD\ZstandardInterop.cs" />
     <Compile Include="SevenZip\Compress\ZSTD\ZstandardStream.cs" />
-    <Compile Include="SevenZip\SevenZipOpen.cs" />
-    <Compile Include="SevenZip\SevenZipOpenRead.cs" />
+    <Compile Include="SevenZip\SevenZipRead.cs" />
+    <Compile Include="SevenZip\SevenZipReadStream.cs" />
     <Compile Include="SevenZip\SevenZipTorrent.cs" />
     <Compile Include="SevenZip\SevenZipWrite.cs" />
     <Compile Include="SevenZip\SevenZipWriteClose.cs" />
@@ -119,8 +119,18 @@
     <Compile Include="ThreadReaders\ThreadMD5.cs" />
     <Compile Include="ThreadReaders\ThreadSHA1.cs" />
     <Compile Include="Utils\Reporter.cs" />
+    <Compile Include="Utils\TimeStamps.cs" />
     <Compile Include="ZipEnums.cs" />
-    <Compile Include="ZipFile\zipFile.cs" />
+    <Compile Include="ZipFile\Zip.cs" />
+    <Compile Include="ZipFile\ZipCentralDir.cs" />
+    <Compile Include="ZipFile\ZipExtraField.cs" />
+    <Compile Include="ZipFile\ZipFake.cs" />
+    <Compile Include="ZipFile\ZipLocalFile.cs" />
+    <Compile Include="ZipFile\ZipRead.cs" />
+    <Compile Include="ZipFile\ZipReadStream.cs" />
+    <Compile Include="ZipFile\ZipUtils.cs" />
+    <Compile Include="ZipFile\ZipWrite.cs" />
+    <Compile Include="ZipFile\ZipWriteStream.cs" />
     <Compile Include="ZipFile\ZLib\Deflate.cs" />
     <Compile Include="ZipFile\ZLib\Inflate.cs" />
     <Compile Include="ZipFile\ZLib\InfTree.cs" />
@@ -135,6 +145,10 @@
       <Project>{ff8a7a0a-6319-49e0-a6e6-df3754bffdd1}</Project>
       <Name>RVIO</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup />
+  <ItemGroup>
+    <Content Include="ZipFile\Explode\Original.c" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

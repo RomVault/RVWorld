@@ -54,7 +54,7 @@ namespace RomVaultX
                 string GameName = reader["name"].ToString();
                 Debug.WriteLine("Game " + GameId + " Name: " + GameName);
 
-                ZipFile memZip = new ZipFile();
+                Zip memZip = new Zip();
                 memZip.ZipCreateFake();
 
                 ulong fileOffset = 0;
@@ -81,7 +81,7 @@ namespace RomVaultX
                         //ZipSetLocalFileHeader(RomId, localHeader, fileOffset);
                         if (romCount == 0)
                         {
-                            ZipFile.CreateDirForFile(outputFile);
+                            ZipUtils.CreateDirForFile(outputFile);
                             int errorCode = FileStream.OpenFileWrite(outputFile, out _zipFs);
                         }
                         _zipFs.Write(localHeader, 0, localHeader.Length);

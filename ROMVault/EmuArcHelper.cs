@@ -9,7 +9,7 @@ using RVCore.RvDB;
 using File = RVIO.File;
 using Path = RVIO.Path;
 
-namespace ROMVault.Utils
+namespace ROMVault
 {
     public static class EmuArcHelper
     {
@@ -45,8 +45,8 @@ namespace ROMVault.Utils
                             if (imagefile.ZipFileHeaderPosition == null)
                                 return false;
 
-                            ZipFile zf = new ZipFile();
-                            if (zf.ZipFileOpen(tGame.FullName, tGame.TimeStamp, false) != ZipReturn.ZipGood)
+                            Zip zf = new Zip();
+                            if (zf.ZipFileOpen(tGame.FullName, tGame.FileModTimeStamp, false) != ZipReturn.ZipGood)
                                 return false;
 
                             if (zf.ZipFileOpenReadStreamQuick((ulong)imagefile.ZipFileHeaderPosition, false,

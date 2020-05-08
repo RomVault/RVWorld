@@ -32,7 +32,7 @@ namespace RomVaultX
                     string GameName = drGame["name"].ToString();
                     Debug.WriteLine("Game " + GameId + " Name: " + GameName);
 
-                    ZipFile memZip = new ZipFile();
+                    Zip memZip = new Zip();
                     memZip.ZipCreateFake();
 
                     ulong fileOffset = 0;

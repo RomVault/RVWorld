@@ -84,7 +84,7 @@ namespace RVCore.ReadDat
                 DB.Write();
                 _thWrk?.Report(new bgwText("Complete"));
 
-                _thWrk.Finished = true;
+                if (_thWrk != null) _thWrk.Finished = true;
                 _thWrk = null;
             }
         }
@@ -115,6 +115,7 @@ namespace RVCore.ReadDat
                 tDat.MultiDatOverride = datRule.MultiDATDirOverride;
                 tDat.UseDescriptionAsDirName = datRule.UseDescriptionAsDirName;
                 tDat.SingleArchive = datRule.SingleArchive;
+                tDat.RemoveSubDir = datRule.RemoveSubDir;
 
                 tDir.DirDatAdd(tDat);
             }
@@ -133,6 +134,7 @@ namespace RVCore.ReadDat
                 tDat.MultiDatOverride = datRule.MultiDATDirOverride;
                 tDat.UseDescriptionAsDirName = datRule.UseDescriptionAsDirName;
                 tDat.SingleArchive = datRule.SingleArchive;
+                tDat.RemoveSubDir = datRule.RemoveSubDir;
 
                 tDir.DirDatAdd(tDat);
             }
@@ -438,7 +440,7 @@ namespace RVCore.ReadDat
                 if (string.IsNullOrEmpty(dirName) && !string.IsNullOrEmpty(newDatFile.Dat.GetData(RvDat.DatData.RootDir)))
                     dirName = newDatFile.Dat.GetData(RvDat.DatData.RootDir);
                 if (string.IsNullOrEmpty(dirName))
-                    dirName= newDatFile.Dat.GetData(RvDat.DatData.DatName);
+                    dirName = newDatFile.Dat.GetData(RvDat.DatData.DatName);
                 newDatFile.Name = VarFix.CleanFileName(dirName);
 
                 newDatFile.DatStatus = DatStatus.InDatCollect;

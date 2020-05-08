@@ -133,7 +133,7 @@ namespace RomVaultX
 
                     //case HeaderFileType.ZIP:
                     default:
-                        fz = new ZipFile();
+                        fz = new Zip();
                         break;
                 }
 

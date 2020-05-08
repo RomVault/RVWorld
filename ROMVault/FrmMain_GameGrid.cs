@@ -21,11 +21,9 @@ namespace ROMVault
         private int gameSortIndex = -1;
         private SortOrder gameSortDir = SortOrder.None;
 
-        private void UpdateGameGrid(RvFile tDir)
-        {
-            gameGridSource = tDir;
 
-            _updatingGameGrid = true;
+        private void ClearGameGrid()
+        {
 
             if (Settings.IsMono)
             {
@@ -44,9 +42,19 @@ namespace ROMVault
             RomGrid.Rows.Clear();
 
             // clear sorting
-            GameGrid.Columns[gameSortIndex].HeaderCell.SortGlyphDirection = SortOrder.None;
+            if (gameSortIndex >= 0)
+                GameGrid.Columns[gameSortIndex].HeaderCell.SortGlyphDirection = SortOrder.None;
             gameSortIndex = 0;
             gameSortDir = SortOrder.Descending;
+
+        }
+
+        private void UpdateGameGrid(RvFile tDir)
+        {
+            gameGridSource = tDir;
+            _updatingGameGrid = true;
+
+            ClearGameGrid();
 
             List<RvFile> gameList = new List<RvFile>();
 
@@ -121,7 +129,8 @@ namespace ROMVault
 
             gameGrid = gameList.ToArray();
             GameGrid.RowCount = gameGrid.Length;
-
+            if (GameGrid.RowCount > 0)
+                GameGrid.Rows[0].Selected = false;
             _updatingGameGrid = false;
 
             UpdateSelectedGame();
@@ -156,6 +165,7 @@ namespace ROMVault
             if (GameGrid.SelectedRows.Count != 1)
             {
                 UpdateGameMetaData(new RvFile(FileType.Dir));
+                UpdateRomGrid(gameGridSource);
                 return;
             }
 
@@ -179,7 +189,7 @@ namespace ROMVault
                         switch (tRvDir.FileType)
                         {
                             case FileType.Zip:
-                                if (tRvDir.RepStatus == RepStatus.DirCorrect && tRvDir.ZipStatus == ZipStatus.TrrntZip)
+                                if ((tRvDir.RepStatus == RepStatus.DirCorrect || tRvDir.RepStatus==RepStatus.DirInToSort) && tRvDir.ZipStatus == ZipStatus.TrrntZip)
                                 {
                                     bitmapName = "ZipTZ";
                                 }
@@ -194,8 +204,7 @@ namespace ROMVault
                                 {
                                     bitmapName = "SevenZipTZ";
                                 }
-                                else if (tRvDir.RepStatus == RepStatus.DirCorrect &&
-                                         tRvDir.ZipStatus == ZipStatus.Trrnt7Zip)
+                                else if ((tRvDir.RepStatus == RepStatus.DirCorrect || tRvDir.RepStatus==RepStatus.DirInToSort) && tRvDir.ZipStatus == ZipStatus.Trrnt7Zip)
                                 {
                                     bitmapName = "SevenZipT7Z";
                                 }
@@ -417,7 +426,7 @@ namespace ROMVault
                         break;
                     case 2:
                         retVal = string.Compare(x.Game?.GetData(RvGame.GameData.Description) ?? "", y.Game?.GetData(RvGame.GameData.Description) ?? "", StringComparison.Ordinal);
-                        if (retVal==0)
+                        if (retVal == 0)
                             retVal = string.Compare(x.Name ?? "", y.Name ?? "", StringComparison.Ordinal);
                         break;
                 }

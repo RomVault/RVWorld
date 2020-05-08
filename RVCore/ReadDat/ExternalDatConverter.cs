@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Globalization;
 using DATReader.DatStore;
 using FileHeaderReader;
 using RVCore.RvDB;
@@ -7,7 +9,8 @@ namespace RVCore.ReadDat
 {
     public static class ExternalDatConverter
     {
-        public static RvFile ConvertFromExternalDat(DatHeader datHeaderExternal,RvDat datFile)
+        private static CultureInfo enUS = new CultureInfo("en-US");
+        public static RvFile ConvertFromExternalDat(DatHeader datHeaderExternal, RvDat datFile)
         {
             RvFile newDirFromExternal = new RvFile(FileType.Dir);
             RvDat newDatFromExternal = new RvDat();
@@ -16,7 +19,7 @@ namespace RVCore.ReadDat
             newDatFromExternal.Status = DatUpdateStatus.Correct;
             newDatFromExternal.AddData(RvDat.DatData.DatName, datHeaderExternal.Name);
             newDatFromExternal.AddData(RvDat.DatData.RootDir, datHeaderExternal.RootDir);
-            newDatFromExternal.AddData(RvDat.DatData.Description,datHeaderExternal.Description);
+            newDatFromExternal.AddData(RvDat.DatData.Description, datHeaderExternal.Description);
             newDatFromExternal.AddData(RvDat.DatData.Category, datHeaderExternal.Category);
             newDatFromExternal.AddData(RvDat.DatData.Version, datHeaderExternal.Version);
             newDatFromExternal.AddData(RvDat.DatData.Date, datHeaderExternal.Date);
@@ -118,16 +121,24 @@ namespace RVCore.ReadDat
                             DatStatus = ConvE(nFile.DatStatus),
                             HeaderFileType = headerFileType
                         };
+#if dt
+                        DateTime dt;
+                        if (!string.IsNullOrEmpty(nFile.DateModified) && DateTime.TryParseExact(nFile.DateModified, "yyyy/MM/dd HH:mm:ss", enUS, DateTimeStyles.None, out dt))
+                            nf.DatModTimeStamp = dt.Ticks;
+                        if (!string.IsNullOrEmpty(nFile.DateCreated) && DateTime.TryParseExact(nFile.DateCreated, "yyyy/MM/dd HH:mm:ss", enUS, DateTimeStyles.None, out dt))
+                            nf.DatCreatedTimeStamp = dt.Ticks;
+                        if (!string.IsNullOrEmpty(nFile.DateAccessed) && DateTime.TryParseExact(nFile.DateAccessed, "yyyy/MM/dd HH:mm:ss", enUS, DateTimeStyles.None, out dt))
+                            nf.DatLastAccessTimeStamp = dt.Ticks;
+#endif
                         if (nFile.isDisk)
-                        {
                             nf.HeaderFileType = HeaderFileType.CHD;
-                        }
 
                         if (nf.HeaderFileType != HeaderFileType.Nothing) nf.FileStatusSet(FileStatus.HeaderFileTypeFromDAT);
                         if (nf.Size != null) nf.FileStatusSet(FileStatus.SizeFromDAT);
                         if (nf.CRC != null) nf.FileStatusSet(FileStatus.CRCFromDAT);
                         if (nf.SHA1 != null) nf.FileStatusSet(FileStatus.SHA1FromDAT);
                         if (nf.MD5 != null) nf.FileStatusSet(FileStatus.MD5FromDAT);
+
 
                         rvD.ChildAdd(nf);
                         break;

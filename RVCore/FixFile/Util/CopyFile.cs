@@ -1,7 +1,7 @@
 ﻿/******************************************************
  *     ROMVault3 is written by Gordon J.              *
  *     Contact gordon@romvault.com                    *
- *     Copyright 2019                                 *
+ *     Copyright 2020                                 *
  ******************************************************/
 
 using System;
@@ -11,6 +11,7 @@ using Compress;
 using Compress.SevenZip;
 using Compress.SevenZip.Common;
 using Compress.ThreadReaders;
+using Compress.Utils;
 using Compress.ZipFile;
 using Compress.ZipFile.ZLib;
 using RVCore.RvDB;
@@ -41,7 +42,7 @@ namespace RVCore.FixFile.Util
 
         // This Function returns:
         // Good            : Everything Worked Correctly
-        // RescanNeeded     : Something unexpectidly changed in the files, so Stop fixing and prompt user to rescan.
+        // RescanNeeded     : Something unexpectedly changed in the files, so Stop fixing and prompt user to rescan.
         // LogicError       : This Should never happen and is a logic problem in the code.
         // FileSystemError  : Something is wrong with the files, like it was locked and could not be opened.
         // SourceDataStreamCorrupt : This happens when either zlib returns ZlibException, or the CRC does not match the extracted zip.
@@ -53,12 +54,12 @@ namespace RVCore.FixFile.Util
         ///     Performs the RomVault File Copy, with the source and destination being files or zipped files
         /// </summary>
         /// <param name="fileIn">This is the file being copied, it may be a zipped file or a regular file system file</param>
-        /// <param name="zipFileOut">This is the zip file that is being writen to.</param>
-        /// <param name="filenameOut">This is the name of the file to be writen to if we are just making a file</param>
+        /// <param name="zipFileOut">This is the zip file that is being written to.</param>
+        /// <param name="filenameOut">This is the name of the file to be written to if we are just making a file</param>
         /// <param name="fileOut">This is the actual output filename</param>
         /// <param name="forceRaw">if true then we will do a raw copy, this is so that we can copy corrupt zips</param>
         /// <param name="error">This is the returned error message if this copy fails</param>
-        /// <returns>ReturnCode.Good is the valid return code otherwire we have an error</returns>
+        /// <returns>ReturnCode.Good is the valid return code otherwise we have an error</returns>
         public static ReturnCode CopyFile(RvFile fileIn, ICompress zipFileOut, string filenameOut, RvFile fileOut, bool forceRaw, out string error)
         {
 
@@ -122,7 +123,7 @@ namespace RVCore.FixFile.Util
             }
 
             //Find and Check/Open Output Files
-            retC = OpenOutputStream(fileOut, fileIn, zipFileOut, filenameOut, compressionMethod, rawCopy, sourceTrrntzip, out Stream writeStream, out error);
+            retC = OpenOutputStream(fileOut, fileIn, zipFileOut, filenameOut, compressionMethod, rawCopy, sourceTrrntzip,null, out Stream writeStream, out error);
             if (retC != ReturnCode.Good)
             {
                 return retC;
@@ -160,7 +161,7 @@ namespace RVCore.FixFile.Util
                     {
                         if (ex is ZlibException || ex is DataErrorException)
                         {
-                            if ((fileIn.FileType == FileType.ZipFile || fileIn.FileType==FileType.SevenZipFile) && zipFileIn != null)
+                            if ((fileIn.FileType == FileType.ZipFile || fileIn.FileType == FileType.SevenZipFile) && zipFileIn != null)
                             {
                                 ZipReturn zr = zipFileIn.ZipFileCloseReadStream();
                                 if (zr != ZipReturn.ZipGood)
@@ -286,13 +287,14 @@ namespace RVCore.FixFile.Util
                 }
                 fileOut.ZipFileIndex = zipFileOut.LocalFilesCount() - 1;
                 fileOut.ZipFileHeaderPosition = zipFileOut.LocalHeader(fileOut.ZipFileIndex);
+                fileOut.FileModTimeStamp = 629870671200000000;
             }
             else
             {
                 writeStream.Flush();
                 writeStream.Close();
                 FileInfo fi = new FileInfo(filenameOut);
-                fileOut.TimeStamp = fi.LastWriteTime;
+                fileOut.FileModTimeStamp = fi.LastWriteTime;
             }
 
             #endregion
@@ -430,13 +432,13 @@ namespace RVCore.FixFile.Util
                 {
                     sourceTrrntzip = false;
                     zipFileIn = new SevenZ();
-                    zr1 = zipFileIn.ZipFileOpen(fileNameIn, zZipFileIn.TimeStamp);
+                    zr1 = zipFileIn.ZipFileOpen(fileNameIn, zZipFileIn.FileModTimeStamp);
                 }
                 else
                 {
                     sourceTrrntzip = (zZipFileIn.ZipStatus & ZipStatus.TrrntZip) == ZipStatus.TrrntZip;
-                    zipFileIn = new ZipFile();
-                    zr1 = zipFileIn.ZipFileOpen(fileNameIn, zZipFileIn.TimeStamp, fileIn.ZipFileHeaderPosition == null);
+                    zipFileIn = new Zip();
+                    zr1 = zipFileIn.ZipFileOpen(fileNameIn, zZipFileIn.FileModTimeStamp, fileIn.ZipFileHeaderPosition == null);
                 }
 
                 switch (zr1)
@@ -462,11 +464,11 @@ namespace RVCore.FixFile.Util
                 {
                     if (fileIn.ZipFileHeaderPosition != null)
                     {
-                        ((ZipFile)zipFileIn).ZipFileOpenReadStreamQuick((ulong)fileIn.ZipFileHeaderPosition, rawCopy, out readStream, out streamSize, out compressionMethod);
+                        ((Zip)zipFileIn).ZipFileOpenReadStreamQuick((ulong)fileIn.ZipFileHeaderPosition, rawCopy, out readStream, out streamSize, out compressionMethod);
                     }
                     else
                     {
-                        ((ZipFile)zipFileIn).ZipFileOpenReadStream(fileIn.ZipFileIndex, rawCopy, out readStream, out streamSize, out compressionMethod);
+                        ((Zip)zipFileIn).ZipFileOpenReadStream(fileIn.ZipFileIndex, rawCopy, out readStream, out streamSize, out compressionMethod);
                     }
                 }
             }
@@ -479,7 +481,7 @@ namespace RVCore.FixFile.Util
                     return ReturnCode.RescanNeeded;
                 }
                 FileInfo fileInInfo = new FileInfo(fileNameIn);
-                if (fileInInfo.LastWriteTime != fileIn.TimeStamp)
+                if (fileInInfo.LastWriteTime != fileIn.FileModTimeStamp)
                 {
                     error = "Rescan needed, File Changed :" + fileNameIn;
                     return ReturnCode.RescanNeeded;
@@ -509,7 +511,7 @@ namespace RVCore.FixFile.Util
 
         // if we are fixing a zip/7z file then we use zipFileOut to open an output compressed stream
         // if we are just making a file then we use filenameOut to open an output filestream
-        private static ReturnCode OpenOutputStream(RvFile fileOut, RvFile fileIn, ICompress zipFileOut, string filenameOut, ushort compressionMethod, bool rawCopy, bool sourceTrrntzip, out Stream writeStream, out string error)
+        private static ReturnCode OpenOutputStream(RvFile fileOut, RvFile fileIn, ICompress zipFileOut, string filenameOut, ushort compressionMethod, bool rawCopy, bool sourceTrrntzip, long? dateTime, out Stream writeStream, out string error)
         {
             writeStream = null;
 
@@ -533,7 +535,13 @@ namespace RVCore.FixFile.Util
                     error = "Null File Size found in Fixing File :" + fileIn.FullName;
                     return ReturnCode.LogicError;
                 }
-                ZipReturn zr = zipFileOut.ZipFileOpenWriteStream(rawCopy, sourceTrrntzip, fileOut.Name, (ulong)fileIn.Size, compressionMethod, out writeStream);
+                TimeStamps ts = null;
+                if (dateTime != null)
+                {
+                    ts = new TimeStamps {ModTime = dateTime};
+                }
+
+                ZipReturn zr = zipFileOut.ZipFileOpenWriteStream(rawCopy, sourceTrrntzip, fileOut.Name, (ulong)fileIn.Size, compressionMethod, out writeStream, ts);
                 if (zr != ZipReturn.ZipGood)
                 {
                     error = "Error Opening Write Stream " + zr;
@@ -565,7 +573,7 @@ namespace RVCore.FixFile.Util
         private static void CopyZeroLengthFile(RvFile fileOut, ICompress zipFileOut, out byte[] bCRC, out byte[] bMD5, out byte[] bSHA1)
         {
             // Zero Length File (Directory in a Zip)
-            if (fileOut.FileType == FileType.ZipFile || fileOut.FileType==FileType.SevenZipFile)
+            if (fileOut.FileType == FileType.ZipFile || fileOut.FileType == FileType.SevenZipFile)
             {
                 zipFileOut.ZipFileAddZeroLengthFile();
             }

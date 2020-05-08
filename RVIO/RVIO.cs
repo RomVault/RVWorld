@@ -81,8 +81,8 @@ namespace RVIO
 
             if (!b || (wIn32FileAttributeData.fileAttributes & Win32Native.FILE_ATTRIBUTE_DIRECTORY) != 0) return;
 
-            Length = Convert.Length(wIn32FileAttributeData.fileSizeHigh, wIn32FileAttributeData.fileSizeLow);
-            LastWriteTime = Convert.Time(wIn32FileAttributeData.ftLastWriteTimeHigh, wIn32FileAttributeData.ftLastWriteTimeLow);
+            Length = FileParamConvert.Length(wIn32FileAttributeData.fileSizeHigh, wIn32FileAttributeData.fileSizeLow);
+            LastWriteTime = FileParamConvert.Time(wIn32FileAttributeData.ftLastWriteTimeHigh, wIn32FileAttributeData.ftLastWriteTimeLow);
         }
 
     }
@@ -116,7 +116,7 @@ namespace RVIO
             bool b = Win32Native.GetFileAttributesEx(fileName, 0, ref wIn32FileAttributeData);
 
             if (!b || (wIn32FileAttributeData.fileAttributes & Win32Native.FILE_ATTRIBUTE_DIRECTORY) == 0) return;
-            LastWriteTime = Convert.Time(wIn32FileAttributeData.ftLastWriteTimeHigh, wIn32FileAttributeData.ftLastWriteTimeLow);
+            LastWriteTime = FileParamConvert.Time(wIn32FileAttributeData.ftLastWriteTimeHigh, wIn32FileAttributeData.ftLastWriteTimeLow);
         }
 
 
@@ -168,7 +168,7 @@ namespace RVIO
                     {
                         Name = currentFileName,
                         FullName = Path.Combine(FullName, currentFileName),
-                        LastWriteTime = Convert.Time(findData.ftLastWriteTimeHigh, findData.ftLastWriteTimeLow)
+                        LastWriteTime = FileParamConvert.Time(findData.ftLastWriteTimeHigh, findData.ftLastWriteTimeLow)
                     };
                     dirs.Add(di);
                 }
@@ -226,8 +226,8 @@ namespace RVIO
                     {
                         Name = currentFileName,
                         FullName = Path.Combine(FullName, currentFileName),
-                        Length = Convert.Length(findData.nFileSizeHigh, findData.nFileSizeLow),
-                        LastWriteTime = Convert.Time(findData.ftLastWriteTimeHigh, findData.ftLastWriteTimeLow)
+                        Length = FileParamConvert.Length(findData.nFileSizeHigh, findData.nFileSizeLow),
+                        LastWriteTime = FileParamConvert.Time(findData.ftLastWriteTimeHigh, findData.ftLastWriteTimeLow)
                     };
                     files.Add(fi);
                 }

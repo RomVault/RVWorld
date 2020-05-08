@@ -40,13 +40,15 @@ namespace RVCore.Scanner
 {
     public static class Compare
     {
-        public static bool Phase1Test(RvFile dbFile, RvFile testFile, EScanLevel eScanLevel, out bool MatchedAlt)
+        public static bool Phase1Test(RvFile dbFile, RvFile testFile, EScanLevel eScanLevel,int indexCase, out bool MatchedAlt)
         {
             MatchedAlt = false;
             //Debug.WriteLine("Comparing Dat File " + dbFile.TreeFullName);
             //Debug.WriteLine("Comparing File     " + testFile.TreeFullName);
 
-            int retv = DBHelper.CompareName(dbFile, testFile);
+            int retv = indexCase == 0 ?
+                dbFile.Name.CompareTo(testFile.Name):
+                DBHelper.CompareName(dbFile, testFile);
             if (retv != 0)
             {
                 return false;
@@ -54,6 +56,7 @@ namespace RVCore.Scanner
 
             FileType dbfileType = dbFile.FileType;
             FileType dbtestFile = testFile.FileType;
+         
             retv = Math.Sign(dbfileType.CompareTo(dbtestFile));
             if (retv != 0)
             {
@@ -83,8 +86,9 @@ namespace RVCore.Scanner
             if (eScanLevel != EScanLevel.Level1 && !Utils.IsDeepScanned(dbFile))
                 return false;
 
-            if (dbFile.TimeStamp != testFile.TimeStamp)
+            if (dbFile.FileModTimeStamp != testFile.FileModTimeStamp)
                 return false;
+      
 
             if (dbFile.Size == testFile.Size)
                 return true;
@@ -96,13 +100,14 @@ namespace RVCore.Scanner
             return true;
         }
 
-        public static bool Phase2Test(RvFile dbFile, RvFile testFile, EScanLevel eScanLevel, string fullDir, ThreadWorker thWrk, ref bool fileErrorAbort, out bool MatchedAlt)
+        public static bool Phase2Test(RvFile dbFile, RvFile testFile, EScanLevel eScanLevel, int indexCase, string fullDir, ThreadWorker thWrk, ref bool fileErrorAbort, out bool MatchedAlt)
         {
             MatchedAlt = false;
             //Debug.WriteLine("Comparing Dat File " + dbFile.TreeFullName);
             //Debug.WriteLine("Comparing File     " + testFile.TreeFullName);
-
-            int retv = DBHelper.CompareName(dbFile, testFile);
+            int retv = indexCase == 0 ?
+               dbFile.Name.CompareTo(testFile.Name) :
+               DBHelper.CompareName(dbFile, testFile);
             if (retv != 0)
             {
                 return false;

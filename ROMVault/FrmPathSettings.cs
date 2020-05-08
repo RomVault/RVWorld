@@ -105,6 +105,10 @@ namespace ROMVault
             cboFilterType.SelectedIndex = (int)_rule.Filter;
 
             chkSingleArchive.Checked = _rule.SingleArchive;
+
+            chkRemoveSubDir.Enabled = chkSingleArchive.Checked;
+            chkRemoveSubDir.Checked = _rule.RemoveSubDir;
+
             chkMultiDatDirOverride.Checked = _rule.MultiDATDirOverride;
 
             chkUseDescription.Checked = _rule.UseDescriptionAsDirName;
@@ -206,6 +210,7 @@ namespace ROMVault
             _rule.MergeOverrideDAT = chkMergeTypeOverride.Checked;
             _rule.Filter = (FilterType)cboFilterType.SelectedIndex;
             _rule.SingleArchive = chkSingleArchive.Checked;
+            _rule.RemoveSubDir = chkRemoveSubDir.Checked;
             _rule.MultiDATDirOverride = chkMultiDatDirOverride.Checked;
             _rule.UseDescriptionAsDirName = chkUseDescription.Checked;
 
@@ -331,6 +336,7 @@ namespace ROMVault
                     _rule.CompressionOverrideDAT ||
                     _rule.Merge != MergeType.Split ||
                     _rule.MergeOverrideDAT ||
+                    _rule.RemoveSubDir ||
                     _rule.SingleArchive ||
                     _rule.MultiDATDirOverride ||
                     _rule.UseDescriptionAsDirName)
@@ -343,5 +349,9 @@ namespace ROMVault
             UpdateGrid();
         }
 
+        private void chkSingleArchive_CheckedChanged(object sender, EventArgs e)
+        {
+            chkRemoveSubDir.Enabled = chkSingleArchive.Checked;
+        }
     }
 }

@@ -27,7 +27,7 @@ namespace RVCore.FixFile.Util
             string fileNameIn = zZipFileIn.FullName;
 
             SevenZ zipFileIn = new SevenZ();
-            ZipReturn zr1 = zipFileIn.ZipFileOpen(fileNameIn, zZipFileIn.TimeStamp, true);
+            ZipReturn zr1 = zipFileIn.ZipFileOpen(fileNameIn, zZipFileIn.FileModTimeStamp, true);
             if (zr1 != ZipReturn.ZipGood)
             {
                 error = "Error opening 7zip file for caching";
@@ -234,7 +234,7 @@ namespace RVCore.FixFile.Util
                 tsha1?.Dispose();
 
                 FileInfo fi = new FileInfo(filenameOut);
-                outFile.TimeStamp = fi.LastWriteTime;
+                outFile.FileModTimeStamp = fi.LastWriteTime;
 
                 if (bCRC != null && thisFile.CRC != null && !ArrByte.BCompare(bCRC, thisFile.CRC))
                 {

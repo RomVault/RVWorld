@@ -6,23 +6,22 @@ namespace DATReader.DatClean
 {
     public static partial class DatClean
     {
-        public static void MakeDatSingleLevel(DatHeader tDatHeader,bool useDescription)
+        public static void MakeDatSingleLevel(DatHeader tDatHeader, bool useDescription, bool removeSubDir)
         {
             DatBase[] db = tDatHeader.BaseDir.ToArray();
             tDatHeader.Dir = "noautodir";
 
-
-            // if we are auto adding extra directories then create a new directory.
-            string extraDirName="";
-            if (string.IsNullOrEmpty(extraDirName) && useDescription && !string.IsNullOrWhiteSpace(tDatHeader.Description))
-                extraDirName = tDatHeader.Description;
-            if (string.IsNullOrEmpty(extraDirName))
-                extraDirName = tDatHeader.Name;
+            string rootDirName = "";
+            if (string.IsNullOrEmpty(rootDirName) && useDescription && !string.IsNullOrWhiteSpace(tDatHeader.Description))
+                rootDirName = tDatHeader.Description;
+            if (string.IsNullOrEmpty(rootDirName))
+                rootDirName = tDatHeader.Name;
 
             tDatHeader.BaseDir.ChildrenClear();
+
             DatDir root = new DatDir(DatFileType.UnSet)
             {
-                Name = extraDirName,
+                Name = rootDirName,
                 DGame = new DatGame { Description = tDatHeader.Description }
             };
             tDatHeader.BaseDir.ChildAdd(root);
@@ -35,7 +34,8 @@ namespace DATReader.DatClean
                 DatBase[] dbr = romSet.ToArray();
                 foreach (DatBase rom in dbr)
                 {
-                    rom.Name = dirName + "\\" + rom.Name;
+                    if (!removeSubDir)
+                        rom.Name = dirName + "\\" + rom.Name;
                     root.ChildAdd(rom);
                 }
             }

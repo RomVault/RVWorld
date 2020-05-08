@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using Compress.SevenZip.Structure;
@@ -159,6 +160,11 @@ namespace Compress.SevenZip
                             lf.FileName += "/";
                         }
                     }
+                }
+
+                if (_header.FileInfo.TimeLastWrite != null)
+                {
+                    lf.LastModified = DateTime.FromFileTimeUtc((long)_header.FileInfo.TimeLastWrite[i]).Ticks;
                 }
 
                 localFiles.Add(lf);

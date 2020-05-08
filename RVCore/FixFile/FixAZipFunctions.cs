@@ -465,7 +465,7 @@ namespace RVCore.FixFile
             ZipReturn zrf;
             if (fixZip.FileType == FileType.Zip)
             {
-                outputFixZip = new ZipFile();
+                outputFixZip = new Zip();
                 zrf = outputFixZip.ZipFileCreate(outputZipFilename);
             }
             else
@@ -520,7 +520,7 @@ namespace RVCore.FixFile
                 return ReturnCode.RescanNeeded;
             }
             FileInfo fi = new FileInfo(fixZipFullName);
-            if (fi.LastWriteTime != fixZip.TimeStamp)
+            if (fi.LastWriteTime != fixZip.FileModTimeStamp)
             {
                 errorMessage = "File for move to corrupt timestamp not correct " + fixZip.FullName;
                 return ReturnCode.RescanNeeded;
@@ -568,7 +568,7 @@ namespace RVCore.FixFile
             {
                 Name = toSortFileName,
                 DatStatus = DatStatus.InToSort,
-                TimeStamp = toSortCorruptFile.LastWriteTime,
+                FileModTimeStamp = toSortCorruptFile.LastWriteTime,
                 GotStatus = GotStatus.Corrupt
             };
             toSort.Child(indexcorrupt).ChildAdd(toSortCorruptGame);

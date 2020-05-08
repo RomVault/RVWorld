@@ -17,7 +17,7 @@ namespace Trrntzip
             zipType inputType;
             switch (originalZipFile)
             {
-                case ZipFile _:
+                case Zip _:
                     inputType = zipType.zip;
                     break;
                 case SevenZ _:
@@ -55,7 +55,7 @@ namespace Trrntzip
                 File.Delete(tmpFilename);
             }
 
-            ICompress zipFileOut = outputType == zipType.zip ? new ZipFile() : (ICompress)new SevenZ();
+            ICompress zipFileOut = outputType == zipType.zip ? new Zip() : (ICompress)new SevenZ();
 
             try
             {
@@ -84,7 +84,7 @@ namespace Trrntzip
                     ZipReturn zrInput = ZipReturn.ZipUntested;
                     switch (originalZipFile)
                     {
-                        case ZipFile z:
+                        case Zip z:
                             zrInput = z.ZipFileOpenReadStream(t.Index, false, out readStream, out streamSize, out ushort _);
                             break;
                         case SevenZ z7:

@@ -10,7 +10,7 @@ namespace RVCore.FixFile.Util
 
     public static partial class FixFileUtils
     {
-        public static ReturnCode MoveFile(RvFile fileIn, RvFile fileOut,out bool fileMoved, out string error)
+        public static ReturnCode MoveFile(RvFile fileIn, RvFile fileOut,string outFilename,out bool fileMoved, out string error)
         {
             error = "";
             fileMoved = false;
@@ -33,14 +33,15 @@ namespace RVCore.FixFile.Util
                 return ReturnCode.RescanNeeded;
             }
             FileInfo fileInInfo = new FileInfo(fileNameIn);
-            if (fileInInfo.LastWriteTime != fileIn.TimeStamp)
+            if (fileInInfo.LastWriteTime != fileIn.FileModTimeStamp)
             {
                 error = "Rescan needed, File Changed :" + fileNameIn;
                 return ReturnCode.RescanNeeded;
             }
 
-            string fileNameOut = fileOut.FullName;
+            string fileNameOut = outFilename??fileOut.FullName;
             File.Move(fileNameIn, fileNameOut);
+
             bCRC = fileIn.CRC.Copy();
             if (fileIn.FileStatusIs(FileStatus.MD5Verified))
             {
@@ -53,22 +54,14 @@ namespace RVCore.FixFile.Util
             }
             
             FileInfo fi = new FileInfo(fileNameOut);
-            fileOut.TimeStamp = fi.LastWriteTime;
-
-            ReturnCode retC = ValidateFileIn(fileIn, bCRC, bSHA1, bMD5, out error);
+            fileOut.FileModTimeStamp = fi.LastWriteTime;
+            
+            ReturnCode retC = ValidateFileOut(fileIn, fileOut, true, bCRC, bSHA1, bMD5, out error);
             if (retC != ReturnCode.Good)
             {
                 return retC;
             }
-
-            // should raw be true?
-            retC = ValidateFileOut(fileIn, fileOut, true, bCRC, bSHA1, bMD5, out error);
-            if (retC != ReturnCode.Good)
-            {
-                return retC;
-            }
-
-
+            
             CheckDeleteFile(fileIn);
 
             fileMoved = true;
@@ -84,7 +77,7 @@ namespace RVCore.FixFile.Util
 
             // now need to do some deep tests
 
-            if (fileIn.RepStatus == RepStatus.NeededForFix)
+            if (fileIn.RepStatus == RepStatus.NeededForFix || fileIn.RepStatus==RepStatus.MoveToSort)
                 return true;
 
             return false;

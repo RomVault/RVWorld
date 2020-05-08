@@ -293,7 +293,7 @@ namespace RVCore.FixFile
                         RvFile tmpZip = new RvFile(FileType.Zip)
                         {
                             Name = Path.GetFileName(filename),
-                            TimeStamp = nFile.LastWriteTime
+                            FileModTimeStamp = nFile.LastWriteTime
                         };
                         tmpZip.SetStatus(fixZip.DatStatus, GotStatus.Got);
 
@@ -408,7 +408,7 @@ namespace RVCore.FixFile
             {
                 toSortZipOut.ZipFileClose();
 
-                toSortGame.TimeStamp = toSortZipOut.TimeStamp;
+                toSortGame.FileModTimeStamp = toSortZipOut.TimeStamp;
                 toSortGame.DatStatus = DatStatus.InToSort;
                 toSortGame.GotStatus = GotStatus.Got;
                 toSortGame.ZipStatus = toSortZipOut.ZipStatus;
@@ -426,7 +426,7 @@ namespace RVCore.FixFile
             {
                 toSortCorruptOut.ZipFileClose();
 
-                toSortCorruptGame.TimeStamp = toSortCorruptOut.TimeStamp;
+                toSortCorruptGame.FileModTimeStamp = toSortCorruptOut.TimeStamp;
                 toSortCorruptGame.DatStatus = DatStatus.InToSort;
                 toSortCorruptGame.GotStatus = GotStatus.Got;
 

@@ -228,7 +228,7 @@ namespace DATReader.DatReader
                         dfl.Gn();
                         break;
                     case "date":
-                        dRom.Date = dfl.Gn() + " " + dfl.Gn();
+                        dRom.DateModified = dfl.Gn() + " " + dfl.Gn();
                         dfl.Gn();
                         break;
                     default:

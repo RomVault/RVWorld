@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Windows.Forms;
-using ROMVault.Utils;
 using RVCore;
 using RVCore.RvDB;
 using RVCore.Utils;
