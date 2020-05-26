@@ -102,28 +102,15 @@ namespace RVCore.ReadDat
 
             DirectoryInfo oDir = new DirectoryInfo(strPath);
 
+            List<FileInfo> lFilesIn = new List<FileInfo>();
+
             FileInfo[] oFilesIn = oDir.GetFiles("*.dat", false);
-            datCount += oFilesIn.Length;
-            foreach (FileInfo file in oFilesIn)
-            {
-                RvDat tDat = new RvDat();
-                tDat.AddData(RvDat.DatData.DatRootFullName, Path.Combine(tDir.DatTreeFullName, file.Name));
-                tDat.TimeStamp = file.LastWriteTime;
-
-                string datRootFullName = tDat.GetData(RvDat.DatData.DatRootFullName);
-                DatRule datRule = DatReader.FindDatRule(datRootFullName);
-                tDat.MultiDatOverride = datRule.MultiDATDirOverride;
-                tDat.UseDescriptionAsDirName = datRule.UseDescriptionAsDirName;
-                tDat.SingleArchive = datRule.SingleArchive;
-                tDat.RemoveSubDir = datRule.RemoveSubDir;
-
-                tDir.DirDatAdd(tDat);
-            }
-
-
+            lFilesIn.AddRange(oFilesIn);
             oFilesIn = oDir.GetFiles("*.xml", false);
-            datCount += oFilesIn.Length;
-            foreach (FileInfo file in oFilesIn)
+            lFilesIn.AddRange(oFilesIn);
+
+            datCount += lFilesIn.Count;
+            foreach (FileInfo file in lFilesIn)
             {
                 RvDat tDat = new RvDat();
                 tDat.AddData(RvDat.DatData.DatRootFullName, Path.Combine(tDir.DatTreeFullName, file.Name));

@@ -104,14 +104,14 @@ namespace ROMVault
 
             cboFilterType.SelectedIndex = (int)_rule.Filter;
 
+            chkMultiDatDirOverride.Checked = _rule.MultiDATDirOverride;
+            chkUseDescription.Checked = _rule.UseDescriptionAsDirName;
+
+
             chkSingleArchive.Checked = _rule.SingleArchive;
 
             chkRemoveSubDir.Enabled = chkSingleArchive.Checked;
             chkRemoveSubDir.Checked = _rule.RemoveSubDir;
-
-            chkMultiDatDirOverride.Checked = _rule.MultiDATDirOverride;
-
-            chkUseDescription.Checked = _rule.UseDescriptionAsDirName;
         }
 
 

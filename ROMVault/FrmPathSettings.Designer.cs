@@ -144,7 +144,7 @@
             // 
             // chkRemoveSubDir
             // 
-            this.chkRemoveSubDir.Location = new System.Drawing.Point(464, 130);
+            this.chkRemoveSubDir.Location = new System.Drawing.Point(464, 153);
             this.chkRemoveSubDir.Name = "chkRemoveSubDir";
             this.chkRemoveSubDir.Size = new System.Drawing.Size(126, 17);
             this.chkRemoveSubDir.TabIndex = 44;
@@ -162,7 +162,7 @@
             // 
             // chkUseDescription
             // 
-            this.chkUseDescription.Location = new System.Drawing.Point(354, 153);
+            this.chkUseDescription.Location = new System.Drawing.Point(354, 130);
             this.chkUseDescription.Name = "chkUseDescription";
             this.chkUseDescription.Size = new System.Drawing.Size(187, 17);
             this.chkUseDescription.TabIndex = 42;
@@ -233,7 +233,7 @@
             // 
             // chkSingleArchive
             // 
-            this.chkSingleArchive.Location = new System.Drawing.Point(354, 130);
+            this.chkSingleArchive.Location = new System.Drawing.Point(354, 153);
             this.chkSingleArchive.Name = "chkSingleArchive";
             this.chkSingleArchive.Size = new System.Drawing.Size(109, 17);
             this.chkSingleArchive.TabIndex = 35;
