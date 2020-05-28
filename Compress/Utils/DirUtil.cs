@@ -18,22 +18,7 @@ namespace Compress.Utils
                 return;
             }
 
-
-            while ((strTemp.Length > 0) && !Directory.Exists(strTemp))
-            {
-                int pos = strTemp.LastIndexOf(Path.DirectorySeparatorChar);
-                if (pos < 0)
-                {
-                    pos = 0;
-                }
-                strTemp = strTemp.Substring(0, pos);
-            }
-
-            while (sFilename.IndexOf(Path.DirectorySeparatorChar, strTemp.Length + 1) > 0)
-            {
-                strTemp = sFilename.Substring(0, sFilename.IndexOf(Path.DirectorySeparatorChar, strTemp.Length + 1));
-                Directory.CreateDirectory(strTemp);
-            }
+            Directory.CreateDirectory(strTemp);
         }
     }
 }

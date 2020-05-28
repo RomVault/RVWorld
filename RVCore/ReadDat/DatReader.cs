@@ -28,7 +28,7 @@ namespace RVCore.ReadDat
 
         public static DatRule FindDatRule(string datName)
         {
-            Debug.WriteLine($"Dat Name in {datName}");
+            ReportError.LogOut($"FindDatRule: Dat Name is {datName}");
 
             DatRule use = null;
             int longest = -1;
@@ -52,8 +52,10 @@ namespace RVCore.ReadDat
                 longest = dirKeyLen;
                 use = s;
             }
-
-            Debug.WriteLine($"Using Rule for Dir {use.DirKey} {use.DirPath}");
+            if (use == null)
+                ReportError.LogOut("Use is Null");
+            else
+                ReportError.LogOut($"Using Rule for Dir {use.DirKey} {use.DirPath}");
             return use;
         }
 
@@ -79,8 +81,10 @@ namespace RVCore.ReadDat
                 if (string.IsNullOrEmpty(extraDirName))
                     extraDirName = !string.IsNullOrEmpty(dh.RootDir) ? dh.RootDir : dh.Name;
 
-                string dirNameRule = Path.GetDirectoryName(datRootFullName) + Path.DirectorySeparatorChar + VarFix.CleanFileName(extraDirName) + Path.DirectorySeparatorChar;
-                
+                string dirNameRule = Path.GetDirectoryName(datRootFullName) + Path.DirSeparatorChar + VarFix.CleanFileName(extraDirName) + Path.DirSeparatorChar;
+
+                ReportError.LogOut($"DatRule {dirNameRule}");
+
                 DatRule datRule = FindDatRule(dirNameRule);
 
                 DatClean.CleanFilenames(dh.BaseDir);

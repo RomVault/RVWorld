@@ -21,7 +21,7 @@ namespace Compress.ZipFile
                 return ZipReturn.ZipFileAlreadyOpen;
             }
 
-            ZipUtils.CreateDirForFile(newFilename);
+            DirUtil.CreateDirForFile(newFilename);
             _zipFileInfo = new FileInfo(newFilename);
 
             int errorCode = FileStream.OpenFileWrite(newFilename, out _zipFs);

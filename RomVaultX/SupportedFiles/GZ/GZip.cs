@@ -385,7 +385,7 @@ namespace RomVaultX.SupportedFiles.GZ
 
         public ZipReturn WriteGZip(string filename, Stream sInput, bool isCompressedStream)
         {
-            CreateDirForFile(filename);
+            Compress.Utils.DirUtil.CreateDirForFile(filename);
 
             Stream _zipFs;
             FileStream.OpenFileWrite(filename, out _zipFs);
@@ -480,38 +480,6 @@ namespace RomVaultX.SupportedFiles.GZ
             _zipFs.Close();
 
             return ZipReturn.ZipGood;
-        }
-
-        private static void CreateDirForFile(string sFilename)
-        {
-            string strTemp = Path.GetDirectoryName(sFilename);
-
-            if (string.IsNullOrEmpty(strTemp))
-            {
-                return;
-            }
-
-            if (Directory.Exists(strTemp))
-            {
-                return;
-            }
-
-
-            while ((strTemp.Length > 0) && !Directory.Exists(strTemp))
-            {
-                int pos = strTemp.LastIndexOf(Path.DirectorySeparatorChar);
-                if (pos < 0)
-                {
-                    pos = 0;
-                }
-                strTemp = strTemp.Substring(0, pos);
-            }
-
-            while (sFilename.IndexOf(Path.DirectorySeparatorChar, strTemp.Length + 1) > 0)
-            {
-                strTemp = sFilename.Substring(0, sFilename.IndexOf(Path.DirectorySeparatorChar, strTemp.Length + 1));
-                Directory.CreateDirectory(strTemp);
-            }
         }
     }
 }

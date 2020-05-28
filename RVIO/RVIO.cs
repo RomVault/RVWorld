@@ -416,7 +416,7 @@ namespace RVIO
                 throw new Exception(GetErrorCode(hr), new Exception("ERROR_MOVING_FILE. (" + fullSourceFileName + " to " + fullDestFileName + ")"));
             }
         }
-        
+
         public static void Delete(string path)
         {
             if (unix.IsUnix)
@@ -466,7 +466,7 @@ namespace RVIO
                     return false;
                 }
             }
-            
+
             string fullPath = NameFix.AddLongPathPrefix(path);
             return Win32Native.SetFileAttributes(fullPath, (int)fileAttributes);
         }
@@ -487,9 +487,15 @@ namespace RVIO
 
     public static class Path
     {
-        public static readonly char DirectorySeparatorChar = '\\';
-        public static readonly char AltDirectorySeparatorChar = '/';
-        public static readonly char VolumeSeparatorChar = ':';
+        private const char DirectorySeparatorChar = '\\';
+        private const char AltDirectorySeparatorChar = '/';
+        private const char VolumeSeparatorChar = ':';
+
+
+        public static char DirSeparatorChar
+        {
+            get { return unix.IsUnix ? AltDirectorySeparatorChar : DirectorySeparatorChar; }
+        }
 
         public static string GetExtension(string path)
         {

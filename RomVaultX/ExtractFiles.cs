@@ -81,7 +81,7 @@ namespace RomVaultX
                         //ZipSetLocalFileHeader(RomId, localHeader, fileOffset);
                         if (romCount == 0)
                         {
-                            ZipUtils.CreateDirForFile(outputFile);
+                            Compress.Utils.DirUtil.CreateDirForFile(outputFile);
                             int errorCode = FileStream.OpenFileWrite(outputFile, out _zipFs);
                         }
                         _zipFs.Write(localHeader, 0, localHeader.Length);
