@@ -19,7 +19,7 @@ namespace RVCore.FixFile.Util
             dirTree.RemoveAt(0);
 
             RvFile toSort = DB.RvFileToSort();
-            if (!File.Exists(toSort.FullName))
+            if (!Directory.Exists(toSort.FullName))
             {
                 outDir = null;
                 filename = null;
