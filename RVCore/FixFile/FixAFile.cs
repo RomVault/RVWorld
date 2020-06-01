@@ -129,7 +129,13 @@ namespace RVCore.FixFile
 
         private static ReturnCode FixFileMoveToSort(RvFile fixFile, out string errorMessage)
         {
-            FixFileUtils.CreateToSortDirs(fixFile, out RvFile outDir, out string toSortFileName);
+            ReturnCode returnCode;
+            returnCode = FixFileUtils.CreateToSortDirs(fixFile, out RvFile outDir, out string toSortFileName);
+            if (returnCode != ReturnCode.Good)
+            {
+                errorMessage = "ToSort Directory not found";
+                return returnCode;
+            }
 
             string fixFileFullName = fixFile.FullName;
             string toSortFullName = Path.Combine(outDir.FullName, toSortFileName);
@@ -146,7 +152,7 @@ namespace RVCore.FixFile
             };
             Report.ReportProgress(new bgwShowFix(Path.GetDirectoryName(fixFileFullName), "", Path.GetFileName(fixFileFullName), fixFile.Size, "-->", outDir.FullName, "", fixFileFullName));
 
-            ReturnCode returnCode = FixFileUtils.MoveFile(fixFile, toSortRom, toSortFullName, out bool fileMoved, out errorMessage);
+            returnCode = FixFileUtils.MoveFile(fixFile, toSortRom, toSortFullName, out bool fileMoved, out errorMessage);
             if (returnCode != ReturnCode.Good)
                 return returnCode;
 

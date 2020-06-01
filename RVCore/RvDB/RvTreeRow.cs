@@ -76,6 +76,12 @@ namespace RVCore.RvDB
 
         public static void OpenStream()
         {
+            if (!RVIO.File.Exists(Settings.rvSettings.CacheFile))
+            {
+                fsl = null;
+                bwl = null;
+                return;
+            }
             fsl = new FileStream(Settings.rvSettings.CacheFile, FileMode.Open, FileAccess.Write);
             bwl = new BinaryWriter(fsl, Encoding.UTF8, true);
         }

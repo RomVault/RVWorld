@@ -270,7 +270,7 @@ namespace RVCore.FixFile
 
         }
 
-        public static void MovetoSort(RvFile fixZip, RvFile fixZippedFile, ref RvFile toSortGame, ref ICompress toSortZipOut, int iRom)
+        public static ReturnCode MovetoSort(RvFile fixZip, RvFile fixZippedFile, ref RvFile toSortGame, ref ICompress toSortZipOut, int iRom)
         {
             if (!(fixZippedFile.DatStatus == DatStatus.NotInDat && fixZippedFile.GotStatus == GotStatus.Got))
             {
@@ -284,7 +284,9 @@ namespace RVCore.FixFile
             string toSortFullName;
             if (toSortGame == null)
             {
-                FixFileUtils.CreateToSortDirs(fixZip, out RvFile outDir, out string toSortFileName);
+                ReturnCode retCode=FixFileUtils.CreateToSortDirs(fixZip, out RvFile outDir, out string toSortFileName);
+                if (retCode != ReturnCode.Good)
+                    return retCode;
 
                 toSortGame = new RvFile(fixZip.FileType)
                 {
@@ -354,6 +356,8 @@ namespace RVCore.FixFile
                     throw new FixAZip.ZipFileException(returnCode, fixZippedFile.FullName + " " + fixZippedFile.RepStatus + " " + returnCode + Environment.NewLine + errorMessage);
             }
             fixZippedFile.GotStatus = GotStatus.NotGot; // Changes RepStatus to Deleted
+
+            return ReturnCode.Good;
         }
 
         public static void MoveToCorrupt(RvFile fixZip, RvFile fixZippedFile, ref RvFile toSortCorruptGame, ref ICompress toSortCorruptOut, int iRom)

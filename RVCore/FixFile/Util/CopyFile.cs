@@ -31,7 +31,8 @@ namespace RVCore.FixFile.Util
         FileSystemError,
         SourceDataStreamCorrupt,
         SourceCheckSumMismatch,
-        DestinationCheckSumMismatch
+        DestinationCheckSumMismatch,
+        ToSortNotFound
     }
 
 

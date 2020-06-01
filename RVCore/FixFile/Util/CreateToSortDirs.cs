@@ -6,7 +6,7 @@ namespace RVCore.FixFile.Util
 {
     public static partial class FixFileUtils
     {
-        public static void CreateToSortDirs(RvFile inFile, out RvFile outDir, out string filename)
+        public static ReturnCode CreateToSortDirs(RvFile inFile, out RvFile outDir, out string filename)
         {
             List<RvFile> dirTree = new List<RvFile>();
 
@@ -16,9 +16,15 @@ namespace RVCore.FixFile.Util
                 rFile = rFile.Parent;
                 dirTree.Insert(0,rFile);
             }
-
             dirTree.RemoveAt(0);
+
             RvFile toSort = DB.RvFileToSort();
+            if (!File.Exists(toSort.FullName))
+            {
+                outDir = null;
+                filename = null;
+                return ReturnCode.ToSortNotFound;
+            }
             dirTree[0] = toSort;
             int dirTreeCount = dirTree.Count;
 
@@ -80,9 +86,10 @@ namespace RVCore.FixFile.Util
 
                 filename = name + "_" + fileC + "." + ext;
                 toSortFullName = Path.Combine(outDir.FullName, filename);
+                fileC += 1;
             }
+
+            return ReturnCode.Good;
         }
-
-
     }
 }

@@ -259,6 +259,9 @@ namespace RVCore.FixFile
                 case ReturnCode.SourceDataStreamCorrupt:
                     ReportError.Show(errorMessage);
                     break;
+                case ReturnCode.ToSortNotFound:
+                    ReportError.Show(errorMessage);
+                    break;
                 default:
                     ReportError.UnhandledExceptionHandler("Unknown result type " + returnCode);
                     break;
