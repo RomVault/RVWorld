@@ -192,8 +192,7 @@ namespace RVCore.FixFile
                         case RepStatus.NeededForFix:
                         case RepStatus.Corrupt:
                             {
-                                returnCode = FixAZipFunctions.CorrectZipFile(fixZip, fixZippedFile, ref tempFixZip, iRom,
-                                out errorMessage);
+                                returnCode = FixAZipFunctions.CorrectZipFile(fixZip, fixZippedFile, ref tempFixZip, iRom, out errorMessage);
                                 if (returnCode != ReturnCode.Good)
                                 {
                                     CloseZipFile(ref tempFixZip);
@@ -201,7 +200,6 @@ namespace RVCore.FixFile
                                     CloseToSortCorruptGame(toSortGame, ref toSortZipOut);
                                     return returnCode;
                                 }
-
                                 break;
                             }
 
@@ -216,17 +214,24 @@ namespace RVCore.FixFile
                                     CloseToSortCorruptGame(toSortGame, ref toSortZipOut);
                                     return returnCode;
                                 }
-
                                 break;
                             }
 
                         case RepStatus.MoveToSort:
-                            FixAZipFunctions.MovetoSort(fixZip, fixZippedFile, ref toSortGame, ref toSortZipOut, iRom);
-                            break;
+                            {
+                                returnCode = FixAZipFunctions.MovetoSort(fixZip, fixZippedFile, ref toSortGame, ref toSortZipOut, iRom);
+                                if (returnCode != ReturnCode.Good)
+                                {
+                                    CloseZipFile(ref tempFixZip);
+                                    CloseToSortGame(toSortGame, ref toSortZipOut);
+                                    CloseToSortCorruptGame(toSortGame, ref toSortZipOut);
+                                    return returnCode;
+                                }
+                                break;
+                            }
 
                         case RepStatus.MoveToCorrupt:
-                            FixAZipFunctions.MoveToCorrupt(fixZip, fixZippedFile, ref toSortCorruptGame,
-                                ref toSortCorruptOut, iRom);
+                            FixAZipFunctions.MoveToCorrupt(fixZip, fixZippedFile, ref toSortCorruptGame, ref toSortCorruptOut, iRom);
                             break;
 
                         default:

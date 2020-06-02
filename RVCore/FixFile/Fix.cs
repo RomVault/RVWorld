@@ -260,7 +260,7 @@ namespace RVCore.FixFile
                     ReportError.Show(errorMessage);
                     break;
                 case ReturnCode.ToSortNotFound:
-                    ReportError.Show(errorMessage);
+                    ReportError.Show("Your Primary ToSort directory could not be found.");
                     break;
                 default:
                     ReportError.UnhandledExceptionHandler("Unknown result type " + returnCode);

@@ -53,7 +53,7 @@ namespace RVCore.FixFile
                     return FixFileDelete(fixFile, out errorMessage);
 
                 case RepStatus.MoveToSort:
-                    return FixFileMoveToSort(fixFile, out errorMessage);
+                    return FixFileMoveToSort(fixFile,out errorMessage);
 
                 case RepStatus.MoveToCorrupt:
                     return FixFileMoveToCorrupt(fixFile, out errorMessage);
@@ -127,13 +127,13 @@ namespace RVCore.FixFile
             return ReturnCode.Good;
         }
 
-        private static ReturnCode FixFileMoveToSort(RvFile fixFile, out string errorMessage)
+        private static ReturnCode FixFileMoveToSort(RvFile fixFile,out string errorMessage)
         {
             ReturnCode returnCode;
             returnCode = FixFileUtils.CreateToSortDirs(fixFile, out RvFile outDir, out string toSortFileName);
             if (returnCode != ReturnCode.Good)
             {
-                errorMessage = "ToSort Directory not found";
+                errorMessage = "";
                 return returnCode;
             }
 
@@ -179,7 +179,6 @@ namespace RVCore.FixFile
 
             outDir.ChildAdd(toSortRom);
 
-            errorMessage = "";
             return ReturnCode.Good;
         }
 
@@ -322,7 +321,7 @@ namespace RVCore.FixFile
                             }
                         case RepStatus.MoveToSort:
                             {
-                                ReturnCode ret = FixFileMoveToSort(testFile, out errorMessage);
+                                ReturnCode ret = FixFileMoveToSort(testFile,out errorMessage);
                                 if (ret != ReturnCode.Good)
                                 {
                                     return ret;
