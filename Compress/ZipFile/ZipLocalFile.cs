@@ -365,7 +365,6 @@ namespace Compress.ZipFile
                 {
                     TrrntZip = true;
 
-
                     zipFs.Position = (long)RelativeOffsetOfLocalHeader;
                     uint thisSignature = br.ReadUInt32();
                     if (thisSignature != LocalFileHeaderSignature)
@@ -387,8 +386,8 @@ namespace Compress.ZipFile
                     _lastModFileTimeDate = ZipUtils.SetDateTime(lastModFileDate, lastModFileTime);
 
                     CRC = ReadCRC(br);
-                    _compressedSize = br.ReadUInt32();
-                    UncompressedSize = br.ReadUInt32();
+                    _localHeaderCompressedSize = br.ReadUInt32();
+                    _localHeaderUncompressedSize = br.ReadUInt32();
 
                     ushort fileNameLength = br.ReadUInt16();
                     ushort extraFieldLength = br.ReadUInt16();
@@ -407,11 +406,13 @@ namespace Compress.ZipFile
                         ZipReturn zr = ZipExtraField.ReadLocalExtraField(extraField, bFileName, this, false);
                         if (zr != ZipReturn.ZipGood)
                             return zr;
-                        _compressedSize = _localHeaderCompressedSize;
-                        UncompressedSize = _localHeaderUncompressedSize;
                     }
 
                     _dataLocation = (ulong)zipFs.Position;
+
+                    _compressedSize = _localHeaderCompressedSize;
+                    UncompressedSize = _localHeaderUncompressedSize;
+
                     return ZipReturn.ZipGood;
                 }
             }
