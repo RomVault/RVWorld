@@ -53,6 +53,7 @@ namespace FileHeaderReader
                 new Detector(HeaderFileType.NES, 16, 16, "No-Intro_NES.xml", new Data(0, new byte[] {0x4E, 0x45, 0x53, 0x1A})),
                 new Detector(HeaderFileType.NES, 16, 16, "NonGoodNES.xml", new Data(0, new byte[] {0x4E, 0x45, 0x53, 0x1A})),
                 new Detector(HeaderFileType.NES, 16, 16, "nes.xml", new Data(0, new byte[] {0x4E, 0x45, 0x53, 0x1A})),
+                new Detector(HeaderFileType.NES, 16, 16, "nes0.xml", new Data(0, new byte[] {0x4E, 0x45, 0x53, 0x1A})),
                 new Detector(HeaderFileType.PCE, 512, 512, "pce.xml", new Data(0, new byte[] {0x40, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xAA, 0xBB, 0x02})),
                 new Detector(HeaderFileType.PSID, 118, 118, "psid.xml", new Data(0, new byte[] {0x50, 0x53, 0x49, 0x44, 0x00, 0x01, 0x00, 0x76})),
                 new Detector(HeaderFileType.PSID, 118, 118, "psid.xml", new Data(0, new byte[] {0x50, 0x53, 0x49, 0x44, 0x00, 0x03, 0x00, 0x7c})),

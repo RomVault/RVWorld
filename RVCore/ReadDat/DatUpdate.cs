@@ -410,6 +410,10 @@ namespace RVCore.ReadDat
                 ReportError.Show("Error reading Dat " + fileDat.GetData(RvDat.DatData.DatRootFullName));
                 return false;
             }
+            if (newDatFile.ChildCount==0)
+            {
+                return false;
+            }
 
             if (
                     !fileDat.MultiDatOverride &&
@@ -428,6 +432,9 @@ namespace RVCore.ReadDat
                     dirName = newDatFile.Dat.GetData(RvDat.DatData.RootDir);
                 if (string.IsNullOrEmpty(dirName))
                     dirName = newDatFile.Dat.GetData(RvDat.DatData.DatName);
+                if (string.IsNullOrEmpty(dirName))
+                    dirName = Path.GetFileNameWithoutExtension(newDatFile.Dat.GetData(RvDat.DatData.DatRootFullName));
+
                 newDatFile.Name = VarFix.CleanFileName(dirName);
 
                 newDatFile.DatStatus = DatStatus.InDatCollect;
