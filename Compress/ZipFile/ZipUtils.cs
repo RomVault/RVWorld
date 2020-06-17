@@ -1,29 +1,27 @@
 ﻿using System;
-using Directory = RVIO.Directory;
-using Path = RVIO.Path;
-
+using System.Text;
 
 namespace Compress.ZipFile
 {
     public static class ZipUtils
     {
+        private static Encoding enc = Encoding.GetEncoding(437);
+
         public static string GetString(byte[] byteArr)
         {
-            string s = "";
-            foreach (byte by in byteArr)
-            {
-                s += (char)by;
-            }
-            return s;
+            return enc.GetString(byteArr, 0, byteArr.Length);
         }
-
 
         internal static bool IsUnicode(string s)
         {
             char[] charArr = s.ToCharArray();
             foreach (char ch in charArr)
             {
-                if (ch > 127)
+                if (ch == '?')
+                    continue;
+
+                byte[] bOut = enc.GetBytes(new char[] { ch });
+                if (bOut[0] == '?')
                 {
                     return true;
                 }
@@ -33,14 +31,7 @@ namespace Compress.ZipFile
 
         internal static byte[] GetBytes(string s)
         {
-            char[] c = s.ToCharArray();
-            byte[] b = new byte[c.Length];
-            for (int i = 0; i < c.Length; i++)
-            {
-                char t = c[i];
-                b[i] = t > 255 ? (byte)'?' : (byte)c[i];
-            }
-            return b;
+            return enc.GetBytes(s);
         }
 
         internal static bool CompareString(string s1, string s2)
