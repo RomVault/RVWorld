@@ -5,28 +5,24 @@ namespace Compress.ZipFile
 {
     public static class ZipUtils
     {
+        // according to the zip documents, zip filesname are stored as MS-DOS Code Page 437.
+        // (Unless the uncode flag is set, in which case they are stored as UTF-8.
         private static Encoding enc = Encoding.GetEncoding(437);
 
         public static string GetString(byte[] byteArr)
         {
-            return enc.GetString(byteArr, 0, byteArr.Length);
+            return enc.GetString(byteArr);
         }
 
-        internal static bool IsUnicode(string s)
+        // to test if a filename can be stored as codepage 437 we take the filename string
+        // convert it to bytes using the 437 code page, and then convert it back to a string
+        // and we see if we lost characters as a result of the conversion there and back.
+        internal static bool IsCodePage437(string s)
         {
-            char[] charArr = s.ToCharArray();
-            foreach (char ch in charArr)
-            {
-                if (ch == '?')
-                    continue;
+            byte[] bOut = enc.GetBytes(s);
+            string sOut = enc.GetString(bOut);
 
-                byte[] bOut = enc.GetBytes(new char[] { ch });
-                if (bOut[0] == '?')
-                {
-                    return true;
-                }
-            }
-            return false;
+            return CompareString(s, sOut);
         }
 
         internal static byte[] GetBytes(string s)

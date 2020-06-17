@@ -203,14 +203,14 @@ namespace Compress.ZipFile
                 ushort extraFieldLength = (ushort)extraField.Count;
 
                 byte[] bFileName;
-                if (ZipUtils.IsUnicode(FileName))
+                if (ZipUtils.IsCodePage437(FileName))
                 {
-                    GeneralPurposeBitFlag |= 1 << 11;
-                    bFileName = Encoding.UTF8.GetBytes(FileName);
+                    bFileName = ZipUtils.GetBytes(FileName);
                 }
                 else
                 {
-                    bFileName = ZipUtils.GetBytes(FileName);
+                    GeneralPurposeBitFlag |= 1 << 11;
+                    bFileName = Encoding.UTF8.GetBytes(FileName);
                 }
 
                 ushort fileNameLength = (ushort)bFileName.Length;
@@ -430,14 +430,14 @@ namespace Compress.ZipFile
                 Zip64 = UncompressedSize >= 0xffffffff;
 
                 byte[] bFileName;
-                if (ZipUtils.IsUnicode(FileName))
+                if (ZipUtils.IsCodePage437(FileName))
                 {
-                    GeneralPurposeBitFlag |= 1 << 11;
-                    bFileName = Encoding.UTF8.GetBytes(FileName);
+                    bFileName = ZipUtils.GetBytes(FileName);
                 }
                 else
                 {
-                    bFileName = ZipUtils.GetBytes(FileName);
+                    GeneralPurposeBitFlag |= 1 << 11;
+                    bFileName = Encoding.UTF8.GetBytes(FileName);
                 }
 
                 ushort versionNeededToExtract = (ushort)(Zip64 ? 45 : 20);
@@ -487,14 +487,14 @@ namespace Compress.ZipFile
                 Zip64 = UncompressedSize >= 0xffffffff || _compressedSize >= 0xffffffff;
 
                 byte[] bFileName;
-                if (ZipUtils.IsUnicode(FileName))
+                if (ZipUtils.IsCodePage437(FileName))
                 {
-                    GeneralPurposeBitFlag |= 1 << 11;
-                    bFileName = Encoding.UTF8.GetBytes(FileName);
+                    bFileName = ZipUtils.GetBytes(FileName);
                 }
                 else
                 {
-                    bFileName = ZipUtils.GetBytes(FileName);
+                    GeneralPurposeBitFlag |= 1 << 11;
+                    bFileName = Encoding.UTF8.GetBytes(FileName);
                 }
 
                 ushort versionNeededToExtract = (ushort)(Zip64 ? 45 : 20);
