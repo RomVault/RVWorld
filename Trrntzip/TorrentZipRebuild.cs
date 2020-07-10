@@ -82,26 +82,34 @@ namespace Trrntzip
                     ulong streamSize = 0;
 
                     ZipReturn zrInput = ZipReturn.ZipUntested;
-                    switch (originalZipFile)
-                    {
-                        case Zip z:
-                            zrInput = z.ZipFileOpenReadStream(t.Index, false, out readStream, out streamSize, out ushort _);
-                            break;
-                        case SevenZ z7:
-                            zrInput = z7.ZipFileOpenReadStream(t.Index, out readStream, out streamSize);
-                            break;
-                        case Compress.File.File zf:
-                            zrInput = zf.ZipFileOpenReadStream(t.Index, out readStream, out streamSize);
-                            break;
-                    }
 
+                    if (t.Size > 0)
+                    {
+                        switch (originalZipFile)
+                        {
+                            case Zip z:
+                                zrInput = z.ZipFileOpenReadStream(t.Index, false, out readStream, out streamSize, out ushort _);
+                                break;
+                            case SevenZ z7:
+                                zrInput = z7.ZipFileOpenReadStream(t.Index, out readStream, out streamSize);
+                                break;
+                            case Compress.File.File zf:
+                                zrInput = zf.ZipFileOpenReadStream(t.Index, out readStream, out streamSize);
+                                break;
+                        }
+                    }
+                    else
+                    {
+                        // do nothing for a zero size file, the stream will not be used.
+                        zrInput = ZipReturn.ZipGood;
+                    }
 
                     ZipReturn zrOutput = zipFileOut.ZipFileOpenWriteStream(false, true, t.Name, streamSize, 8, out Stream writeStream);
 
                     if ((zrInput != ZipReturn.ZipGood) || (zrOutput != ZipReturn.ZipGood))
                     {
                         //Error writing local File.
-                        zipFileOut.ZipFileClose();
+                        zipFileOut.ZipFileCloseFailed();
                         originalZipFile.ZipFileClose();
                         File.Delete(tmpFilename);
                         return TrrntZipStatus.CorruptZip;

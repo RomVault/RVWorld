@@ -49,11 +49,11 @@ namespace RVCore.Scanner
 
 
             _thWrk.Report(new bgwText("Scanning Dir's"));
-            _thWrk.Report(new bgwSetRange(lstDir.Count - 1));
+            _thWrk.Report(new bgwSetRange(lstDir.Count));
             //Scan the list of directories.
             for (int i = 0; i < lstDir.Count; i++)
             {
-                _thWrk.Report(i);
+                _thWrk.Report(i+1);
                 _thWrk.Report(new bgwText("Scanning Dir : " + lstDir[i].FullName));
                 string lDir = lstDir[i].FullName;
                 Console.WriteLine(lDir);
@@ -160,7 +160,7 @@ namespace RVCore.Scanner
 
             if (report)
             {
-                _thWrk.Report(new bgwSetRange2(fileDir.ChildCount - 1));
+                _thWrk.Report(new bgwSetRange2(fileDir.ChildCount));
 
                 _thWrk.Report(new bgwRange2Visible(true));
             }
@@ -220,7 +220,7 @@ namespace RVCore.Scanner
                         if (timenow - _lastUpdateTime > TimeSpan.TicksPerSecond / 10)
                         {
                             _lastUpdateTime = timenow;
-                            _thWrk.Report(new bgwValue2(fileIndex));
+                            _thWrk.Report(new bgwValue2(fileIndex+1));
                             _thWrk.Report(new bgwText2(Path.Combine(fullDir, fileChild.Name)));
                         }
                     }
