@@ -192,7 +192,7 @@ namespace Compress.SevenZip
                 return ZipReturn.ZipGood;
 
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 return ZipReturn.ZipErrorGettingDataStream;
             }

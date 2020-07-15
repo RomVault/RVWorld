@@ -64,6 +64,11 @@ namespace Compress.ZipFile
             {
                 dfStream.Close();
                 dfStream.Dispose();
+            } 
+            else if (_compressionStream is System.IO.Compression.DeflateStream dfIOStream)
+            {
+                dfIOStream.Close();
+                dfIOStream.Dispose();
             }
             _compressionStream = null;
 
