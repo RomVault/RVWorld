@@ -50,6 +50,11 @@ namespace Compress.SevenZip
                 ZipFileCloseReadStream();
                 _streamIndex = thisStreamIndex;
 
+                if (_header.StreamsInfo==null)
+                {
+                    stream = null;
+                    return ZipReturn.ZipGood;
+                }
 
                 Folder folder = _header.StreamsInfo.Folders[_streamIndex];
 
@@ -224,18 +229,21 @@ namespace Compress.SevenZip
         {
             if (_streamIndex != -1)
             {
-                Folder folder = _header.StreamsInfo.Folders[_streamIndex];
-
-                foreach (Coder c in folder.Coders)
+                if (_header.StreamsInfo != null)
                 {
-                    Stream ds = c?.DecoderStream;
-                    if (ds == null)
+                    Folder folder = _header.StreamsInfo.Folders[_streamIndex];
+
+                    foreach (Coder c in folder.Coders)
                     {
-                        continue;
+                        Stream ds = c?.DecoderStream;
+                        if (ds == null)
+                        {
+                            continue;
+                        }
+                        ds.Close();
+                        ds.Dispose();
+                        c.DecoderStream = null;
                     }
-                    ds.Close();
-                    ds.Dispose();
-                    c.DecoderStream = null;
                 }
             }
             _streamIndex = -1;

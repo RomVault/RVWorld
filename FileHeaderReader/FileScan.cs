@@ -157,7 +157,9 @@ namespace FileHeaderReader
                 int maxHeaderSize = 128;
                 long sizetogo = (long)totalSize;
                 int sizenow = maxHeaderSize < sizetogo ? maxHeaderSize : (int)sizetogo;
-                inStream.Read(_buffer0, 0, sizenow);
+                if (sizenow>0)
+                    inStream.Read(_buffer0, 0, sizenow);
+    
                 fileResults.HeaderFileType = FileHeaderReader.GetType(_buffer0, sizenow, out int actualHeaderSize);
 
 
@@ -272,7 +274,9 @@ namespace FileHeaderReader
 
                 // Pre load the first buffer0
                 int sizeNext = sizetogo > Buffersize ? Buffersize : (int)sizetogo;
-                inStream.Read(_buffer0, 0, sizeNext);
+                if(sizeNext>0)
+                    inStream.Read(_buffer0, 0, sizeNext);
+
                 int sizebuffer = sizeNext;
                 sizetogo -= sizeNext;
                 bool whichBuffer = true;
