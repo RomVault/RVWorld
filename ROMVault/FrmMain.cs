@@ -66,7 +66,7 @@ namespace ROMVault
         {
             InitializeComponent();
             AddGameMetaData();
-            Text = $@"RomVault ({Program.StrVersion}-WIP3)  {Application.StartupPath}";
+            Text = $@"RomVault ({Program.StrVersion})  {Application.StartupPath}";
 
             _displayColor = new Color[(int)RepStatus.EndValue];
             _fontColor = new Color[(int)RepStatus.EndValue];
