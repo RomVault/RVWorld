@@ -2,9 +2,9 @@
 using System.IO;
 using System.IO.Compression;
 using System.Runtime.InteropServices;
-using Interop = Zstandard.Net.ZstandardInterop;
+using Interop = Compress.SevenZip.Compress.ZSTD.ZstandardInterop;
 
-namespace Zstandard.Net
+namespace Compress.SevenZip.Compress.ZSTD
 {
     /// <summary>
     /// Provides methods and properties for compressing and decompressing streams by using the Zstandard algorithm.

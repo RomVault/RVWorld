@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
-using Interop = Zstandard.Net.ZstandardInterop;
+using Interop = Compress.SevenZip.Compress.ZSTD.ZstandardInterop;
 
-namespace Zstandard.Net
+namespace Compress.SevenZip.Compress.ZSTD
 {
     /// <summary>
     /// A Zstandard dictionary improves the compression ratio and speed on small data dramatically.
@@ -38,7 +38,7 @@ namespace Zstandard.Net
         /// <param name="dictionaryPath">The dictionary path.</param>
         public ZstandardDictionary(string dictionaryPath)
         {
-            this.dictionary = File.ReadAllBytes(dictionaryPath);
+            this.dictionary = System.IO.File.ReadAllBytes(dictionaryPath);
         }
 
         /// <summary>

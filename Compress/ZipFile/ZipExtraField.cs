@@ -1,7 +1,7 @@
-﻿using Compress.Utils;
-using System;
+﻿using System;
 using System.Diagnostics;
 using System.Text;
+using Compress.Utils;
 
 namespace Compress.ZipFile
 {
@@ -499,7 +499,10 @@ namespace Compress.ZipFile
                             if (nameCRC32 == fCRC)
                             {
                                 int charLen = blockLength - 5;
-                                lf.FileName = Encoding.UTF8.GetString(extraField, pos, charLen);
+                                if (centralDir)
+                                    lf.FileName = Encoding.UTF8.GetString(extraField, pos, charLen);
+                                else
+                                    lf._localHeaderFilename = Encoding.UTF8.GetString(extraField, pos, charLen);
                             }
 
                             break;

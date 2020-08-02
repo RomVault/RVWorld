@@ -2,7 +2,7 @@
 using System.IO;
 using System.Runtime.InteropServices;
 
-namespace Zstandard.Net
+namespace Compress.SevenZip.Compress.ZSTD
 {
     internal static class ZstandardInterop
     {

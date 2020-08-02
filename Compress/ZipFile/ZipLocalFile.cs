@@ -19,6 +19,7 @@ namespace Compress.ZipFile
         private long? cTime;
         private long? aTime;
 
+        private string _localHeaderFilename;
         private ulong _compressedSize;
         private ulong _localHeaderCompressedSize;
         private ulong _localHeaderUncompressedSize;
@@ -87,7 +88,6 @@ namespace Compress.ZipFile
                     br.ReadUInt16(); // Version Made By
 
                     br.ReadUInt16(); // Version Needed To Extract
-
 
                     GeneralPurposeBitFlag = br.ReadUInt16();
                     _compressionMethod = br.ReadUInt16();
@@ -292,7 +292,7 @@ namespace Compress.ZipFile
 
 
                     byte[] bFileName = br.ReadBytes(fileNameLength);
-                    string tFileName = (generalPurposeBitFlagLocal & (1 << 11)) == 0
+                    _localHeaderFilename = (generalPurposeBitFlagLocal & (1 << 11)) == 0
                         ? ZipUtils.GetString(bFileName)
                         : Encoding.UTF8.GetString(bFileName, 0, fileNameLength);
 
@@ -307,10 +307,10 @@ namespace Compress.ZipFile
                             return zr;
                     }
 
-                    if (!ZipUtils.CompareString(FileName, tFileName))
+                    if (!ZipUtils.CompareString(FileName, _localHeaderFilename))
                     {
                         TrrntZip = false;
-                        if (!ZipUtils.CompareStringSlash(FileName, tFileName))
+                        if (!ZipUtils.CompareStringSlash(FileName, _localHeaderFilename))
                         {
                             return ZipReturn.ZipLocalFileHeaderError;
                         }
@@ -394,7 +394,7 @@ namespace Compress.ZipFile
 
                     byte[] bFileName = br.ReadBytes(fileNameLength);
 
-                    FileName = (GeneralPurposeBitFlag & (1 << 11)) == 0
+                    _localHeaderFilename = (GeneralPurposeBitFlag & (1 << 11)) == 0
                         ? ZipUtils.GetString(bFileName)
                         : Encoding.UTF8.GetString(bFileName, 0, fileNameLength);
 
@@ -410,6 +410,7 @@ namespace Compress.ZipFile
 
                     _dataLocation = (ulong)zipFs.Position;
 
+                    FileName = _localHeaderFilename;
                     _compressedSize = _localHeaderCompressedSize;
                     UncompressedSize = _localHeaderUncompressedSize;
 

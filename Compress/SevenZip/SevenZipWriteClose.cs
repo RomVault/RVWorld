@@ -1,9 +1,9 @@
 ﻿using System.IO;
 using System.Text;
 using Compress.SevenZip.Compress.LZMA;
+using Compress.SevenZip.Compress.ZSTD;
 using Compress.SevenZip.Structure;
 using Compress.Utils;
-using Zstandard.Net;
 
 namespace Compress.SevenZip
 {
