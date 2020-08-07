@@ -41,9 +41,9 @@ namespace DATReader.DatReader
 
         public string GnNameToSize()
         {
-            int sizePos = _line.ToLower().IndexOf("size ");
-            string strret = (sizePos == 0) ? "" : _line.Substring(0, sizePos - 1);
-            _line = _line.Substring(sizePos);
+            int sizePos = _line.ToLower().LastIndexOf(" size ");
+            string strret = (sizePos == 0) ? "" : _line.Substring(0, sizePos);
+            _line = _line.Substring(sizePos+1);
             Next = strret;
             return strret;
         }

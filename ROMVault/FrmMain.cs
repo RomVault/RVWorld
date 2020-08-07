@@ -214,9 +214,9 @@ namespace ROMVault
             chkBoxShowCorrect.Checked = Settings.rvSettings.chkBoxShowCorrect;
             chkBoxShowMissing.Checked = Settings.rvSettings.chkBoxShowMissing;
             chkBoxShowFixed.Checked = Settings.rvSettings.chkBoxShowFixed;
-            chkBoxShowMerged.Checked = Settings.rvSettings.chkBoxShowMerged;
-
-
+            chkBoxShowMerged.Checked = Settings.rvSettings.chkBoxShowMerged; 
+            
+            
             TabArtworkInitialize();
         }
 
