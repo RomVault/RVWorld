@@ -104,9 +104,9 @@ namespace RVCore.ReadDat
 
             List<FileInfo> lFilesIn = new List<FileInfo>();
 
-            FileInfo[] oFilesIn = oDir.GetFiles("*.dat", false);
+            FileInfo[] oFilesIn = oDir.GetFiles("*.dat");
             lFilesIn.AddRange(oFilesIn);
-            oFilesIn = oDir.GetFiles("*.xml", false);
+            oFilesIn = oDir.GetFiles("*.xml");
             lFilesIn.AddRange(oFilesIn);
 
             datCount += lFilesIn.Count;
@@ -134,7 +134,7 @@ namespace RVCore.ReadDat
                 }
             }
 
-            DirectoryInfo[] oSubDir = oDir.GetDirectories(false);
+            DirectoryInfo[] oSubDir = oDir.GetDirectories();
 
             foreach (DirectoryInfo t in oSubDir)
             {

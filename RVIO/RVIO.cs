@@ -90,53 +90,66 @@ namespace RVIO
             LastWriteTime = fi.LastWriteTimeUtc.Ticks;
         }
 
-        public DirectoryInfo[] GetDirectories(bool includeHidden = true)
-        {
-            return GetDirectories("*", includeHidden);
-        }
-        public DirectoryInfo[] GetDirectories(string SearchPattern, bool includeHidden = true)
+        public DirectoryInfo[] GetDirectories()
         {
             List<DirectoryInfo> dirs = new List<DirectoryInfo>();
 
-            System.IO.DirectoryInfo di = new System.IO.DirectoryInfo(NameFix.AddLongPathPrefix(FullName));
-            System.IO.DirectoryInfo[] arrDi = di.GetDirectories(SearchPattern);
-            foreach (System.IO.DirectoryInfo tDi in arrDi)
+            try
             {
-                DirectoryInfo lDi = new DirectoryInfo
+                System.IO.DirectoryInfo di = new System.IO.DirectoryInfo(NameFix.AddLongPathPrefix(FullName));
+                if (!di.Exists)
+                    return dirs.ToArray();
+
+                System.IO.DirectoryInfo[] arrDi = di.GetDirectories();
+                foreach (System.IO.DirectoryInfo tDi in arrDi)
                 {
-                    Name = tDi.Name,
-                    FullName = Path.Combine(FullName, tDi.Name),
-                    LastWriteTime = tDi.LastWriteTimeUtc.Ticks
-                };
-                dirs.Add(lDi);
+                    DirectoryInfo lDi = new DirectoryInfo
+                    {
+                        Name = tDi.Name,
+                        FullName = Path.Combine(FullName, tDi.Name),
+                        LastWriteTime = tDi.LastWriteTimeUtc.Ticks
+                    };
+                    dirs.Add(lDi);
+                }
+            }
+            catch (Exception e)
+            {
+
             }
             return dirs.ToArray();
         }
 
-        public FileInfo[] GetFiles()
-        {
-            return GetFiles("*");
-        }
-        public FileInfo[] GetFiles(string SearchPattern, bool includeHidden = true)
+        public FileInfo[] GetFiles(string SearchPattern = "*")
         {
             List<FileInfo> files = new List<FileInfo>();
 
-            System.IO.DirectoryInfo di = new System.IO.DirectoryInfo(NameFix.AddLongPathPrefix(FullName));
-            System.IO.FileInfo[] arrDi = di.GetFiles(SearchPattern);
-            foreach (System.IO.FileInfo tDi in arrDi)
+            try
             {
-                FileInfo lDi = new FileInfo
+                System.IO.DirectoryInfo di = new System.IO.DirectoryInfo(NameFix.AddLongPathPrefix(FullName));
+                if (!di.Exists)
+                    return files.ToArray();
+
+                System.IO.FileInfo[] arrDi = di.GetFiles(SearchPattern);
+                foreach (System.IO.FileInfo tDi in arrDi)
                 {
-                    Name = tDi.Name,
-                    FullName = Path.Combine(FullName, tDi.Name),
-                    Length = tDi.Length,
-                    LastWriteTime = tDi.LastWriteTimeUtc.Ticks
-                };
-                files.Add(lDi);
+                    FileInfo lDi = new FileInfo
+                    {
+                        Name = tDi.Name,
+                        FullName = Path.Combine(FullName, tDi.Name),
+                        Length = tDi.Length,
+                        LastWriteTime = tDi.LastWriteTimeUtc.Ticks
+                    };
+                    files.Add(lDi);
+                }
             }
+            catch (Exception e)
+            {
+            }
+
             return files.ToArray();
         }
     }
+
 
     public static class Directory
     {
