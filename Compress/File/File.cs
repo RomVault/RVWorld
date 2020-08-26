@@ -39,7 +39,7 @@ namespace Compress.File
 
         public ulong UncompressedSize(int i)
         {
-            return _fileInfo != null ? (ulong)_fileInfo.Length : 0;
+            return _fileInfo != null ? (ulong)_fileInfo.Length : (ulong)_inStream.Length;
         }
 
         public ulong? LocalHeader(int i)
@@ -61,7 +61,7 @@ namespace Compress.File
         {
             return _fileInfo.LastWriteTime;
         }
-
+     
         public ZipReturn ZipFileCreate(string newFilename)
         {
             if (ZipOpen != ZipOpenType.Closed)
@@ -92,20 +92,27 @@ namespace Compress.File
 
             if (ZipOpen == ZipOpenType.OpenRead)
             {
-                if (_inStream != null)
+                // if FileInfo is valid (not null), then we created the stream and need to close it.
+                // if we open from a stream, then FileInfo will be null, and we do not need to close the stream.
+                if (_fileInfo != null && _inStream != null)
                 {
                     _inStream.Close();
                     _inStream.Dispose();
+                    _inStream = null;
                 }
                 ZipOpen = ZipOpenType.Closed;
                 return;
             }
 
-            _inStream.Flush();
-            _inStream.Close();
-            _inStream.Dispose();
-            _fileInfo = new FileInfo(_fileInfo.FullName);
-            ZipOpen = ZipOpenType.Closed;
+            if (ZipOpen == ZipOpenType.OpenWrite)
+            {
+                _inStream.Flush();
+                _inStream.Close();
+                _inStream.Dispose();
+                _inStream = null;
+                _fileInfo = new FileInfo(_fileInfo.FullName);
+                ZipOpen = ZipOpenType.Closed;
+            }
         }
 
 
@@ -156,7 +163,6 @@ namespace Compress.File
                 return ZipReturn.ZipGood;
             }
 
-
             //return ZipFileReadHeaders();
             return ZipReturn.ZipGood;
         }
@@ -196,7 +202,7 @@ namespace Compress.File
         {
             _inStream.Position = 0;
             stream = _inStream;
-            streamSize = (ulong)_fileInfo.Length;
+            streamSize = (ulong)_inStream.Length;
             return ZipReturn.ZipGood;
         }
 
@@ -211,9 +217,5 @@ namespace Compress.File
         {
             return ZipReturn.ZipGood;
         }
-
-
-
-
     }
 }
