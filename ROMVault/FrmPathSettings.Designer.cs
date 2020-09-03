@@ -34,7 +34,6 @@
             this.CROM = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.btnDeleteSelected = new System.Windows.Forms.Button();
             this.grpBoxAddNew = new System.Windows.Forms.GroupBox();
-            this.chkRemoveSubDir = new System.Windows.Forms.CheckBox();
             this.label4 = new System.Windows.Forms.Label();
             this.chkUseDescription = new System.Windows.Forms.CheckBox();
             this.cboFilterType = new System.Windows.Forms.ComboBox();
@@ -58,6 +57,7 @@
             this.lblDelete = new System.Windows.Forms.Label();
             this.btnClose = new System.Windows.Forms.Button();
             this.btnResetAll = new System.Windows.Forms.Button();
+            this.cboDirType = new System.Windows.Forms.ComboBox();
             ((System.ComponentModel.ISupportInitialize)(this.DataGridGames)).BeginInit();
             this.grpBoxAddNew.SuspendLayout();
             this.SuspendLayout();
@@ -113,7 +113,7 @@
             // 
             // grpBoxAddNew
             // 
-            this.grpBoxAddNew.Controls.Add(this.chkRemoveSubDir);
+            this.grpBoxAddNew.Controls.Add(this.cboDirType);
             this.grpBoxAddNew.Controls.Add(this.label4);
             this.grpBoxAddNew.Controls.Add(this.chkUseDescription);
             this.grpBoxAddNew.Controls.Add(this.cboFilterType);
@@ -142,19 +142,10 @@
             this.grpBoxAddNew.TabStop = false;
             this.grpBoxAddNew.Text = "Add New Directory Mapping";
             // 
-            // chkRemoveSubDir
-            // 
-            this.chkRemoveSubDir.Location = new System.Drawing.Point(464, 153);
-            this.chkRemoveSubDir.Name = "chkRemoveSubDir";
-            this.chkRemoveSubDir.Size = new System.Drawing.Size(126, 17);
-            this.chkRemoveSubDir.TabIndex = 44;
-            this.chkRemoveSubDir.Text = "Remove Sub Dir";
-            this.chkRemoveSubDir.UseVisualStyleBackColor = true;
-            // 
             // label4
             // 
             this.label4.AutoSize = true;
-            this.label4.Location = new System.Drawing.Point(351, 88);
+            this.label4.Location = new System.Drawing.Point(338, 88);
             this.label4.Name = "label4";
             this.label4.Size = new System.Drawing.Size(112, 13);
             this.label4.TabIndex = 43;
@@ -162,7 +153,7 @@
             // 
             // chkUseDescription
             // 
-            this.chkUseDescription.Location = new System.Drawing.Point(354, 130);
+            this.chkUseDescription.Location = new System.Drawing.Point(341, 130);
             this.chkUseDescription.Name = "chkUseDescription";
             this.chkUseDescription.Size = new System.Drawing.Size(187, 17);
             this.chkUseDescription.TabIndex = 42;
@@ -190,9 +181,9 @@
             // btnDelete
             // 
             this.btnDelete.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.btnDelete.Location = new System.Drawing.Point(596, 109);
+            this.btnDelete.Location = new System.Drawing.Point(604, 121);
             this.btnDelete.Name = "btnDelete";
-            this.btnDelete.Size = new System.Drawing.Size(68, 24);
+            this.btnDelete.Size = new System.Drawing.Size(59, 24);
             this.btnDelete.TabIndex = 39;
             this.btnDelete.Text = "Delete";
             this.btnDelete.UseVisualStyleBackColor = true;
@@ -224,7 +215,7 @@
             // 
             // chkMultiDatDirOverride
             // 
-            this.chkMultiDatDirOverride.Location = new System.Drawing.Point(354, 108);
+            this.chkMultiDatDirOverride.Location = new System.Drawing.Point(341, 108);
             this.chkMultiDatDirOverride.Name = "chkMultiDatDirOverride";
             this.chkMultiDatDirOverride.Size = new System.Drawing.Size(220, 16);
             this.chkMultiDatDirOverride.TabIndex = 36;
@@ -233,11 +224,13 @@
             // 
             // chkSingleArchive
             // 
-            this.chkSingleArchive.Location = new System.Drawing.Point(354, 153);
+            this.chkSingleArchive.CheckAlign = System.Drawing.ContentAlignment.MiddleRight;
+            this.chkSingleArchive.Location = new System.Drawing.Point(246, 153);
             this.chkSingleArchive.Name = "chkSingleArchive";
             this.chkSingleArchive.Size = new System.Drawing.Size(109, 17);
             this.chkSingleArchive.TabIndex = 35;
             this.chkSingleArchive.Text = "Single Archive";
+            this.chkSingleArchive.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
             this.chkSingleArchive.UseVisualStyleBackColor = true;
             this.chkSingleArchive.CheckedChanged += new System.EventHandler(this.chkSingleArchive_CheckedChanged);
             // 
@@ -298,9 +291,9 @@
             // btnSet
             // 
             this.btnSet.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.btnSet.Location = new System.Drawing.Point(596, 140);
+            this.btnSet.Location = new System.Drawing.Point(604, 149);
             this.btnSet.Name = "btnSet";
-            this.btnSet.Size = new System.Drawing.Size(68, 24);
+            this.btnSet.Size = new System.Drawing.Size(59, 25);
             this.btnSet.TabIndex = 14;
             this.btnSet.Text = "Apply";
             this.btnSet.UseVisualStyleBackColor = true;
@@ -380,6 +373,15 @@
             this.btnResetAll.UseVisualStyleBackColor = true;
             this.btnResetAll.Click += new System.EventHandler(this.BtnResetAllClick);
             // 
+            // cboDirType
+            // 
+            this.cboDirType.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.cboDirType.FormattingEnabled = true;
+            this.cboDirType.Location = new System.Drawing.Point(361, 151);
+            this.cboDirType.Name = "cboDirType";
+            this.cboDirType.Size = new System.Drawing.Size(219, 21);
+            this.cboDirType.TabIndex = 44;
+            // 
             // FrmSetDirSettings
             // 
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
@@ -436,6 +438,6 @@
         private System.Windows.Forms.Label label3;
         private System.Windows.Forms.CheckBox chkUseDescription;
         private System.Windows.Forms.Label label4;
-        private System.Windows.Forms.CheckBox chkRemoveSubDir;
+        private System.Windows.Forms.ComboBox cboDirType;
     }
 }

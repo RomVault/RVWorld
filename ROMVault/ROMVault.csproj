@@ -315,6 +315,10 @@
       <Project>{c30ee098-15d3-40d8-90f6-465d924d9987}</Project>
       <Name>Compress</Name>
     </ProjectReference>
+    <ProjectReference Include="..\DATReader\DATReader.csproj">
+      <Project>{2ffd495b-2eca-49a5-983b-f2e10d64830e}</Project>
+      <Name>DATReader</Name>
+    </ProjectReference>
     <ProjectReference Include="..\FileHeaderReader\FileHeaderReader.csproj">
       <Project>{8a90a6cf-f673-4633-829a-8484efdf14fe}</Project>
       <Name>FileHeaderReader</Name>

@@ -113,7 +113,7 @@ namespace RVCore.ReadDat
             foreach (FileInfo file in lFilesIn)
             {
                 RvDat tDat = new RvDat();
-                tDat.AddData(RvDat.DatData.DatRootFullName, Path.Combine(tDir.DatTreeFullName, file.Name));
+                tDat.SetData(RvDat.DatData.DatRootFullName, Path.Combine(tDir.DatTreeFullName, file.Name));
                 tDat.TimeStamp = file.LastWriteTime;
 
                 string datRootFullName = tDat.GetData(RvDat.DatData.DatRootFullName);
@@ -121,7 +121,7 @@ namespace RVCore.ReadDat
                 tDat.MultiDatOverride = datRule.MultiDATDirOverride;
                 tDat.UseDescriptionAsDirName = datRule.UseDescriptionAsDirName;
                 tDat.SingleArchive = datRule.SingleArchive;
-                tDat.RemoveSubDir = datRule.RemoveSubDir;
+                tDat.SubDirType = datRule.SubDirType;
 
                 tDir.DirDatAdd(tDat);
             }

@@ -104,7 +104,7 @@ namespace RVCore.ReadDat
                 SetMergeType(datRule, dh);
 
                 if (datFile.SingleArchive)
-                    DatClean.MakeDatSingleLevel(dh, datFile.UseDescriptionAsDirName,datFile.RemoveSubDir);
+                    DatClean.MakeDatSingleLevel(dh, datFile.UseDescriptionAsDirName, datFile.SubDirType);
 
                 DatClean.RemoveUnNeededDirectories(dh.BaseDir);
 
@@ -170,8 +170,7 @@ namespace RVCore.ReadDat
             }
 
         }
-
-
+        
         private static void SetCompressionMethod(DatRule datRule, DatHeader dh)
         {
             FileType ft = datRule.Compression;

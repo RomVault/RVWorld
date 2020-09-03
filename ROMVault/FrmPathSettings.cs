@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Drawing;
 using System.Windows.Forms;
+using DATReader.DatClean;
 using RVCore;
 using RVCore.ReadDat;
 using RVCore.RvDB;
@@ -38,6 +39,13 @@ namespace ROMVault
             cboFilterType.Items.Add("Roms & CHDs");
             cboFilterType.Items.Add("Roms Only");
             cboFilterType.Items.Add("CHDs Only");
+
+
+            cboDirType.Items.Clear();
+            cboDirType.Items.Add("Add SubDirs");
+            cboDirType.Items.Add("No SubDirs");
+            cboDirType.Items.Add("Add SubDirs if conflicts");
+            cboDirType.Items.Add("Add SubDirs if multiple roms");
 
             tooltip = new ToolTip
             {
@@ -110,8 +118,8 @@ namespace ROMVault
 
             chkSingleArchive.Checked = _rule.SingleArchive;
 
-            chkRemoveSubDir.Enabled = chkSingleArchive.Checked;
-            chkRemoveSubDir.Checked = _rule.RemoveSubDir;
+            cboDirType.Enabled = chkSingleArchive.Checked;
+            cboDirType.SelectedIndex = (int)_rule.SubDirType;
         }
 
 
@@ -210,7 +218,7 @@ namespace ROMVault
             _rule.MergeOverrideDAT = chkMergeTypeOverride.Checked;
             _rule.Filter = (FilterType)cboFilterType.SelectedIndex;
             _rule.SingleArchive = chkSingleArchive.Checked;
-            _rule.RemoveSubDir = chkRemoveSubDir.Checked;
+            _rule.SubDirType = (RemoveSubType)cboDirType.SelectedIndex;
             _rule.MultiDATDirOverride = chkMultiDatDirOverride.Checked;
             _rule.UseDescriptionAsDirName = chkUseDescription.Checked;
 
@@ -336,7 +344,7 @@ namespace ROMVault
                     _rule.CompressionOverrideDAT ||
                     _rule.Merge != MergeType.Split ||
                     _rule.MergeOverrideDAT ||
-                    _rule.RemoveSubDir ||
+                    _rule.SubDirType!=RemoveSubType.KeepAllSubDirs ||
                     _rule.SingleArchive ||
                     _rule.MultiDATDirOverride ||
                     _rule.UseDescriptionAsDirName)
@@ -351,7 +359,7 @@ namespace ROMVault
 
         private void chkSingleArchive_CheckedChanged(object sender, EventArgs e)
         {
-            chkRemoveSubDir.Enabled = chkSingleArchive.Checked;
+            cboDirType.Enabled = chkSingleArchive.Checked;
         }
     }
 }

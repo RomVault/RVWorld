@@ -4,8 +4,10 @@
  *     Copyright 2020                                 *
  ******************************************************/
 
+using System;
 using System.Collections.Generic;
 using System.IO;
+using DATReader.DatClean;
 
 namespace RVCore.RvDB
 {
@@ -35,12 +37,25 @@ namespace RVCore.RvDB
             MergeType = 13,
             SuperDat = 14,
             DirSetup = 15,
-            Header = 16
+            Header = 16,
+            SubDirType = 17
         }
 
         private readonly List<DatMetaData> _gameMetaData = new List<DatMetaData>();
         public int DatIndex = -1;
         public DatUpdateStatus Status;
+
+        public RemoveSubType SubDirType
+        {
+            get
+            {
+                string dirType = GetData(DatData.SubDirType);
+                if (string.IsNullOrWhiteSpace(dirType))
+                    return RemoveSubType.KeepAllSubDirs;
+                return (RemoveSubType)Convert.ToInt32(dirType);
+            }
+            set => SetData(DatData.SubDirType,((int)value).ToString());
+        }
 
         public long TimeStamp;
         public bool MultiDatOverride;
@@ -48,7 +63,6 @@ namespace RVCore.RvDB
         public bool AutoAddedDirectory;
         public bool UseDescriptionAsDirName;
         public bool SingleArchive;
-        public bool RemoveSubDir;
 
         public void Write(BinaryWriter bw)
         {
@@ -59,8 +73,7 @@ namespace RVCore.RvDB
                     (MultiDatOverride ? 2 : 0) |
                     (MultiDatsInDirectory ? 4 : 0) |
                     (UseDescriptionAsDirName ? 8 : 0) |
-                    (SingleArchive ? 16 : 0) |
-                    (RemoveSubDir ? 32 :0)
+                    (SingleArchive ? 16 : 0)
                  );
             bw.Write(bools);
 
@@ -83,7 +96,6 @@ namespace RVCore.RvDB
             MultiDatsInDirectory = (bools & 4) == 4;
             UseDescriptionAsDirName = (bools & 8) == 8;
             SingleArchive = (bools & 16) == 16;
-            RemoveSubDir = (bools & 32) == 32;
 
             byte c = br.ReadByte();
             _gameMetaData.Clear();
@@ -94,7 +106,7 @@ namespace RVCore.RvDB
             }
         }
 
-        public void AddData(DatData id, string val)
+        public void SetData(DatData id, string val)
         {
             if (string.IsNullOrWhiteSpace(val))
             {
@@ -107,7 +119,13 @@ namespace RVCore.RvDB
                 pos++;
             }
 
-            _gameMetaData.Insert(pos, new DatMetaData(id, val));
+            if (pos >= _gameMetaData.Count || _gameMetaData[pos].Id != id)
+            {
+                _gameMetaData.Insert(pos, new DatMetaData(id, val));
+                return;
+            }
+
+            _gameMetaData[pos] = new DatMetaData(id, val);
         }
 
         public string GetData(DatData id)

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Xml.Serialization;
+using DATReader.DatClean;
 using Microsoft.Win32;
 using RVCore.RvDB;
 using File = RVIO.File;
@@ -249,7 +250,7 @@ namespace RVCore
         public bool MergeOverrideDAT;
 
         public bool SingleArchive;
-        public bool RemoveSubDir;
+        public RemoveSubType SubDirType;
         public bool MultiDATDirOverride;
         public bool UseDescriptionAsDirName;
 

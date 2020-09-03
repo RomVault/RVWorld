@@ -14,21 +14,21 @@ namespace RVCore.ReadDat
         {
             RvFile newDirFromExternal = new RvFile(FileType.Dir);
             RvDat newDatFromExternal = new RvDat();
-            newDatFromExternal.AddData(RvDat.DatData.DatRootFullName, datFile.GetData(RvDat.DatData.DatRootFullName));
+            newDatFromExternal.SetData(RvDat.DatData.DatRootFullName, datFile.GetData(RvDat.DatData.DatRootFullName));
             newDatFromExternal.TimeStamp = datFile.TimeStamp;
             newDatFromExternal.Status = DatUpdateStatus.Correct;
-            newDatFromExternal.AddData(RvDat.DatData.DatName, datHeaderExternal.Name);
-            newDatFromExternal.AddData(RvDat.DatData.RootDir, datHeaderExternal.RootDir);
-            newDatFromExternal.AddData(RvDat.DatData.Description, datHeaderExternal.Description);
-            newDatFromExternal.AddData(RvDat.DatData.Category, datHeaderExternal.Category);
-            newDatFromExternal.AddData(RvDat.DatData.Version, datHeaderExternal.Version);
-            newDatFromExternal.AddData(RvDat.DatData.Date, datHeaderExternal.Date);
-            newDatFromExternal.AddData(RvDat.DatData.Author, datHeaderExternal.Author);
-            newDatFromExternal.AddData(RvDat.DatData.Email, datHeaderExternal.Email);
-            newDatFromExternal.AddData(RvDat.DatData.HomePage, datHeaderExternal.Homepage);
-            newDatFromExternal.AddData(RvDat.DatData.URL, datHeaderExternal.URL);
-            newDatFromExternal.AddData(RvDat.DatData.DirSetup, datHeaderExternal.Dir);
-            newDatFromExternal.AddData(RvDat.DatData.Header, datHeaderExternal.Header);
+            newDatFromExternal.SetData(RvDat.DatData.DatName, datHeaderExternal.Name);
+            newDatFromExternal.SetData(RvDat.DatData.RootDir, datHeaderExternal.RootDir);
+            newDatFromExternal.SetData(RvDat.DatData.Description, datHeaderExternal.Description);
+            newDatFromExternal.SetData(RvDat.DatData.Category, datHeaderExternal.Category);
+            newDatFromExternal.SetData(RvDat.DatData.Version, datHeaderExternal.Version);
+            newDatFromExternal.SetData(RvDat.DatData.Date, datHeaderExternal.Date);
+            newDatFromExternal.SetData(RvDat.DatData.Author, datHeaderExternal.Author);
+            newDatFromExternal.SetData(RvDat.DatData.Email, datHeaderExternal.Email);
+            newDatFromExternal.SetData(RvDat.DatData.HomePage, datHeaderExternal.Homepage);
+            newDatFromExternal.SetData(RvDat.DatData.URL, datHeaderExternal.URL);
+            newDatFromExternal.SetData(RvDat.DatData.DirSetup, datHeaderExternal.Dir);
+            newDatFromExternal.SetData(RvDat.DatData.Header, datHeaderExternal.Header);
             newDatFromExternal.MultiDatsInDirectory = datFile.MultiDatsInDirectory;
             newDatFromExternal.MultiDatOverride = datFile.MultiDatOverride;
 
