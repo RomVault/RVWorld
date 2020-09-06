@@ -17,7 +17,7 @@ namespace DATReader.DatClean
 
     public static partial class DatClean
     {
-        public static void MakeDatSingleLevel(DatHeader tDatHeader, bool useDescription, RemoveSubType subDirType)
+        public static void MakeDatSingleLevel(DatHeader tDatHeader, bool useDescription, RemoveSubType subDirType,bool isFiles)
         {
             // KeepAllSubDirs, just does what it says
             // RemoveAllSubDirs, just does what it says
@@ -72,12 +72,22 @@ namespace DATReader.DatClean
 
             tDatHeader.BaseDir.ChildrenClear();
 
-            DatDir root = new DatDir(DatFileType.UnSet)
+            DatDir root;
+            if (isFiles)
             {
-                Name = rootDirName,
-                DGame = new DatGame { Description = tDatHeader.Description }
-            };
-            tDatHeader.BaseDir.ChildAdd(root);
+                root = tDatHeader.BaseDir;
+
+            }
+            else
+            {
+                root = new DatDir(DatFileType.UnSet)
+                {
+                    Name = rootDirName,
+                    DGame = new DatGame { Description = tDatHeader.Description }
+                };
+                tDatHeader.BaseDir.ChildAdd(root);
+
+            }            
 
             foreach (DatBase set in db)
             {

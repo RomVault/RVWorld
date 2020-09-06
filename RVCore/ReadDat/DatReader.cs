@@ -104,7 +104,7 @@ namespace RVCore.ReadDat
                 SetMergeType(datRule, dh);
 
                 if (datFile.SingleArchive)
-                    DatClean.MakeDatSingleLevel(dh, datFile.UseDescriptionAsDirName, datFile.SubDirType);
+                    DatClean.MakeDatSingleLevel(dh, datFile.UseDescriptionAsDirName, datFile.SubDirType, isFile(datRule, dh));
 
                 DatClean.RemoveUnNeededDirectories(dh.BaseDir);
 
@@ -170,7 +170,35 @@ namespace RVCore.ReadDat
             }
 
         }
-        
+
+        private static bool isFile(DatRule datRule, DatHeader dh)
+        {
+            FileType ft = datRule.Compression;
+            if (!datRule.CompressionOverrideDAT)
+            {
+                switch (dh.Compression?.ToLower())
+                {
+                    case "unzip":
+                    case "file":
+                        ft = FileType.Dir;
+                        break;
+                    case "7zip":
+                    case "7z":
+                        ft = FileType.SevenZip;
+                        break;
+                    case "zip":
+                        ft = FileType.Zip;
+                        break;
+
+                }
+            }
+
+            if (Settings.rvSettings.FilesOnly)
+                ft = FileType.Dir;
+
+            return ft == FileType.Dir;
+        }
+
         private static void SetCompressionMethod(DatRule datRule, DatHeader dh)
         {
             FileType ft = datRule.Compression;

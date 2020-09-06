@@ -232,7 +232,8 @@ namespace DATReader.DatClean
         {
             for (int g = 0; g < tDat.ChildCount; g++)
             {
-                DatDir mGame = (DatDir)tDat.Child(g);
+                if (!(tDat.Child(g) is DatDir mGame))
+                    continue;
 
                 if (mGame.DGame == null)
                 {
@@ -280,7 +281,8 @@ namespace DATReader.DatClean
         {
             for (int g = 0; g < tDat.ChildCount; g++)
             {
-                DatDir mGame = (DatDir)tDat.Child(g);
+                if (!(tDat.Child(g) is DatDir mGame))
+                    continue;
 
                 if (mGame.DGame == null)
                 {

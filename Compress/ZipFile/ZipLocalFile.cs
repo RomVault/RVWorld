@@ -123,7 +123,7 @@ namespace Compress.ZipFile
                     FileName = (GeneralPurposeBitFlag & (1 << 11)) == 0
                         ? ZipUtils.GetString(bFileName)
                         : Encoding.UTF8.GetString(bFileName, 0, fileNameLength);
-
+                    
                     if (extraFieldLength > 0)
                     {
                         byte[] extraField = br.ReadBytes(extraFieldLength);
@@ -133,6 +133,9 @@ namespace Compress.ZipFile
                         if (zr != ZipReturn.ZipGood)
                             return zr;
                     }
+
+                    if (ZipUtils.IsCodePage437(FileName) != ((GeneralPurposeBitFlag & (1 << 11)) == 0))
+                        TrrntZip = false;
 
                     if (fileCommentLength > 0)
                     {
@@ -330,9 +333,10 @@ namespace Compress.ZipFile
                         _localHeaderCompressedSize = br.ReadUInt32();
                         _localHeaderUncompressedSize = br.ReadUInt32();
                     }
-
-
-
+                    
+                    if (ZipUtils.IsCodePage437(FileName) != ((GeneralPurposeBitFlag & (1 << 11)) == 0))
+                        TrrntZip = false;
+                    
                     if (!ZipUtils.ByteArrCompare(tCRC, CRC))
                     {
                         return ZipReturn.ZipLocalFileHeaderError;
@@ -408,11 +412,15 @@ namespace Compress.ZipFile
                             return zr;
                     }
 
+
                     _dataLocation = (ulong)zipFs.Position;
 
                     FileName = _localHeaderFilename;
                     _compressedSize = _localHeaderCompressedSize;
                     UncompressedSize = _localHeaderUncompressedSize;
+
+                    if (ZipUtils.IsCodePage437(FileName) != ((GeneralPurposeBitFlag & (1 << 11)) == 0))
+                        TrrntZip = false;
 
                     return ZipReturn.ZipGood;
                 }
