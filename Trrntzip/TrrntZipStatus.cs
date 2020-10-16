@@ -7,11 +7,12 @@ namespace Trrntzip
     {
         Unknown = 0,
         ValidTrrntzip = 1,
-        CorruptZip = 2,
-        NotTrrntzipped = 4,
-        BadDirectorySeparator = 8,
-        Unsorted = 16,
-        ExtraDirectoryEnteries = 32,
-        RepeatFilesFound = 64
+        Trrntzipped = 2,
+        CorruptZip = 4,
+        NotTrrntzipped = 8,
+        BadDirectorySeparator = 16,
+        Unsorted = 32,
+        ExtraDirectoryEnteries = 64,
+        RepeatFilesFound = 128
     }
 }

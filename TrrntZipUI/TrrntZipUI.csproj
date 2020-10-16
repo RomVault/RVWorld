@@ -54,15 +54,6 @@
   <PropertyGroup>
     <ApplicationIcon>memory-rom.ico</ApplicationIcon>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'DebugNewDat|AnyCPU'">
-    <DebugSymbols>true</DebugSymbols>
-    <OutputPath>bin\DebugNewDat\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <DebugType>full</DebugType>
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <ErrorReport>prompt</ErrorReport>
-    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
-  </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.configuration" />
@@ -72,8 +63,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AppSettings.cs" />
-    <Compile Include="CProcessZip.cs" />
-    <Compile Include="FileList.cs" />
     <Compile Include="FrmTrrntzip.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -82,23 +71,32 @@
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="rvImages11.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>rvImages1.resx</DependentUpon>
+    </Compile>
     <EmbeddedResource Include="FrmTrrntzip.resx">
       <DependentUpon>FrmTrrntzip.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
       <SubType>Designer</SubType>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
-    <Compile Include="Properties\Resources.Designer.cs">
-      <AutoGen>True</AutoGen>
-      <DependentUpon>Resources.resx</DependentUpon>
-      <DesignTime>True</DesignTime>
-    </Compile>
+    <EmbeddedResource Include="rvImages1.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>rvImages11.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
     </None>
+    <Compile Include="Properties\Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
     <Compile Include="Properties\Settings.Designer.cs">
       <AutoGen>True</AutoGen>
       <DependentUpon>Settings.settings</DependentUpon>
@@ -110,12 +108,12 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\RVIO\RVIO.csproj">
-      <Project>{ff8a7a0a-6319-49e0-a6e6-df3754bffdd1}</Project>
+      <Project>{cbf72202-65f6-4491-a3b9-7bcbc9bd1201}</Project>
       <Name>RVIO</Name>
     </ProjectReference>
-    <ProjectReference Include="..\Trrntzip\Trrntzip.csproj">
-      <Project>{21822412-a4ce-4a55-bd41-aaea753753f1}</Project>
-      <Name>Trrntzip</Name>
+    <ProjectReference Include="..\TrrntZip\TrrntZip.csproj">
+      <Project>{86289933-7d14-45bc-9eae-3566d8036bf0}</Project>
+      <Name>TrrntZip</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

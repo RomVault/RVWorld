@@ -161,7 +161,7 @@ namespace Trrntzip
                 File.Delete(filename);
                 File.Move(tmpFilename, outfilename);
 
-                return TrrntZipStatus.ValidTrrntzip;
+                return TrrntZipStatus.Trrntzipped;
             }
             catch (Exception)
             {
