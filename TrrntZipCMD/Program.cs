@@ -129,7 +129,7 @@ namespace TrrntZipCMD
                     foreach (FileInfo file in fileInfo)
                     {
                         string ext = Path.GetExtension(file.FullName).ToLower();
-                        if (!string.IsNullOrEmpty(ext) && ((ext == ".zip") || (ext == ".7z") || (ext == ".iso")))
+                        if (!string.IsNullOrEmpty(ext) && ((ext == ".zip") || (ext == ".7z")))
                         {
                             tz.Process(new FileInfo(file.FullName));
                         }
@@ -168,7 +168,7 @@ namespace TrrntZipCMD
             {
                 string filename = f.FullName;
                 string ext = Path.GetExtension(filename)?.ToLower();
-                if (!string.IsNullOrEmpty(ext) && (ext == ".zip" || ext == ".7z" || ext == ".iso"))
+                if (!string.IsNullOrEmpty(ext) && (ext == ".zip" || ext == ".7z"))
                 {
                     tz.Process(new FileInfo(filename));
                 }
