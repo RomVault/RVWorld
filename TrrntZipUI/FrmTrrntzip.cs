@@ -180,15 +180,20 @@ namespace TrrntZipUI
                 dataGrid.Rows[iRow].Selected = false;
                 dataGrid.Rows[iRow].Cells[0].Value = _fileList.Get(i).Filename;
             }
+
             lblTotalStatus.Text = @"( " + _fileIndex + @" / " + _fileList.Count() + @" )";
 
-            if (_working)
-                return;
 
             if (_fileList.Count() == 0)
             {
                 return;
             }
+            if (_working)
+            {
+                ProcessZipsStartThreads();
+                return;
+            }
+
             StartWorking();
 
             ProcessZipsStartThreads();
@@ -278,21 +283,34 @@ namespace TrrntZipUI
             base.OnFormClosing(e);
         }
 
-        private void ProcessZipsStartThreads(bool Restarting = false)
-        {
-            _threadsBusyCount = _threadCount;
-            for (int i = 0; i < _threadCount; i++)
-            {
-                CProcessZip cpz = new CProcessZip
-                {
-                    ThreadId = i,
-                    GetNextFileCallBack = GetNextFileCallback,
-                    SetFileStatusCallBack = SetFileStatusCallback,
-                    StatusCallBack = StatusCallBack
-                };
+        private List<bool> procStatus = new List<bool>();
 
-                Thread t = new Thread(cpz.MigrateZip);
-                t.Start();
+        private void ProcessZipsStartThreads()
+        {
+            lock (_fileList)
+            {
+                _threadsBusyCount = _threadCount;
+                for (int i = 0; i < _threadCount; i++)
+                {
+                    if (procStatus.Count <= i)
+                        procStatus.Add(false);
+
+                    if (procStatus[i])
+                        continue;
+
+                    CProcessZip cpz = new CProcessZip
+                    {
+                        ThreadId = i,
+                        GetNextFileCallBack = GetNextFileCallback,
+                        SetFileStatusCallBack = SetFileStatusCallback,
+                        StatusCallBack = StatusCallBack
+                    };
+
+                    procStatus[i] = true;
+
+                    Thread t = new Thread(cpz.MigrateZip);
+                    t.Start();
+                }
             }
         }
 
@@ -312,6 +330,7 @@ namespace TrrntZipUI
                     fileId = -1;
                     filename = "";
                     _threadsBusyCount--;
+                    procStatus[processId] = false;
 
                     if (Cancel)
                         Invoke(new StatusInvoker(DoStatusUpdate), _fileIndex, processId, "Cancelled");
@@ -507,7 +526,7 @@ namespace TrrntZipUI
                 // Resume after a Pause
                 btnPause.Image = GetBitmap("Pause");
                 Pause = false;
-                ProcessZipsStartThreads(true);
+                ProcessZipsStartThreads();
             }
         }
     }
