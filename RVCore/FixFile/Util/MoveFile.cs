@@ -1,4 +1,5 @@
-﻿using RVCore.RvDB;
+﻿using RVCore.FindFix;
+using RVCore.RvDB;
 using RVCore.Utils;
 using File = RVIO.File;
 using FileInfo = RVIO.FileInfo;
@@ -75,7 +76,8 @@ namespace RVCore.FixFile.Util
             if (fileOut.FileType != FileType.File)
                 return false;
 
-            // now need to do some deep tests
+            if (FindFixesListCheck.treeType(fileIn) == RvTreeRow.TreeSelect.Locked)
+                return false;
 
             if (fileIn.RepStatus == RepStatus.NeededForFix || fileIn.RepStatus==RepStatus.MoveToSort)
                 return true;
