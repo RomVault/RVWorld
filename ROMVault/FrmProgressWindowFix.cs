@@ -7,6 +7,7 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Reflection;
 using System.Windows.Forms;
 using RVCore;
 using RVCore.FixFile;
@@ -39,6 +40,11 @@ namespace ROMVault
             _reportPages = new List<string[][]>();
             _parentForm = parentForm;
             InitializeComponent();
+
+            //Type dgvType = dataGridView1.GetType();
+            //PropertyInfo pi = dgvType.GetProperty("DoubleBuffered", BindingFlags.Instance | BindingFlags.NonPublic);
+            //pi.SetValue(dataGridView1, true, null);
+
             timer1.Interval = 250;
             timer1.Enabled = true;
         }
@@ -59,11 +65,13 @@ namespace ROMVault
 
         private void Timer1Tick(object sender, EventArgs e)
         {
-            if (_rowDisplay == _rowCount || _rowCount==0)
+            int tmpRowCount = _rowCount;
+
+            if (_rowDisplay == tmpRowCount || tmpRowCount == 0)
                 return;
-            dataGridView1.RowCount = _rowCount;
-            _rowDisplay = _rowCount;
-            dataGridView1.FirstDisplayedScrollingRowIndex = _rowCount - 1;
+            dataGridView1.RowCount = tmpRowCount;
+            _rowDisplay = tmpRowCount;
+            dataGridView1.FirstDisplayedScrollingRowIndex = tmpRowCount - 1;
         }
 
         private void dataGridView1_CellValueNeeded(object sender, DataGridViewCellValueEventArgs e)
@@ -107,20 +115,13 @@ namespace ROMVault
 
         private void BgwProgressChanged(object e)
         {
-
-            if (InvokeRequired)
-            {
-                Invoke(new MethodInvoker(() => BgwProgressChanged(e)));
-                return;
-            }
-
             if (e is bgwShowFix bgwSf)
             {
                 int reportLineIndex = _rowCount % 1000;
 
                 if (reportLineIndex == 0)
                 {
-                    pageNow=new string[1000][];
+                    pageNow = new string[1000][];
                     _reportPages.Add(pageNow);
                 }
 
@@ -131,6 +132,13 @@ namespace ROMVault
                         bgwSf.SourceDir, bgwSf.SourceZip, bgwSf.SourceFile,null
                     };
                 _rowCount += 1;
+                return;
+            }
+
+
+            if (InvokeRequired)
+            {
+                BeginInvoke(new MethodInvoker(() => BgwProgressChanged(e)));
                 return;
             }
 
@@ -177,7 +185,7 @@ namespace ROMVault
         {
             if (InvokeRequired)
             {
-                Invoke(new MethodInvoker(BgwRunWorkerCompleted));
+                BeginInvoke(new MethodInvoker(BgwRunWorkerCompleted));
                 return;
             }
 

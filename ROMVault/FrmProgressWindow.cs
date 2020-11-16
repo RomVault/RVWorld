@@ -6,6 +6,7 @@
 
 using System;
 using System.Drawing;
+using System.Reflection;
 using System.Windows.Forms;
 using RVCore;
 
@@ -25,6 +26,10 @@ namespace ROMVault
             _parentForm = parentForm;
             _titleRoot = titleRoot;
             InitializeComponent();
+
+            //Type dgvType = ErrorGrid.GetType();
+            //PropertyInfo pi = dgvType.GetProperty("DoubleBuffered", BindingFlags.Instance | BindingFlags.NonPublic);
+            //pi.SetValue(ErrorGrid, true, null);
 
             ClientSize = new Size(511, 131);
 
@@ -56,7 +61,7 @@ namespace ROMVault
         {
             if (InvokeRequired)
             {
-                Invoke(new MethodInvoker(() => BgwProgressChanged(obj)));
+                BeginInvoke(new MethodInvoker(() => BgwProgressChanged(obj)));
                 return;
             }
 
@@ -191,7 +196,7 @@ namespace ROMVault
         {
             if (InvokeRequired)
             {
-                Invoke(new MethodInvoker(BgwRunWorkerCompleted));
+                BeginInvoke(new MethodInvoker(BgwRunWorkerCompleted));
                 return;
             }
 

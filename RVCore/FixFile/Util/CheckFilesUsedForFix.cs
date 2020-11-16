@@ -13,7 +13,8 @@ namespace RVCore.FixFile.Util
             List<RvFile> parentCheckList = new List<RvFile>();
             foreach (RvFile fixRom in lstFixRomTable)
             {
-                if (fixRom.RepStatus != RepStatus.NeededForFix && (!checkRename || fixRom.RepStatus != RepStatus.Rename)) continue;
+                if (fixRom.RepStatus != RepStatus.NeededForFix && (!checkRename || fixRom.RepStatus != RepStatus.Rename)) 
+                    continue;
                 //check NeededForFix files, and Rename files is checkRename==true
 
                 //if this dir is locked in the tree, just set the fixRom back to InToSort or Unknown
@@ -85,7 +86,7 @@ namespace RVCore.FixFile.Util
 
                 // if nothing needed deleted or zip still have NeededForFix or Rename then skip it.
                 if (!hasDelete || hasNeededForFix)
-                    return;
+                    continue;
 
                 // else add the zip file to the reprocess queue to get cleaned up next
                 Debug.WriteLine(checkFile.FullName + " adding to process list.");
