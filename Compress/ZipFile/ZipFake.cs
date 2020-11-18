@@ -30,30 +30,27 @@ namespace Compress.ZipFile
 
             _zipFs = new MemoryStream();
 
-            _centerDirStart = fileOffset;
-            if (_centerDirStart >= 0xffffffff)
-            {
-                _zip64 = true;
-            }
+            _centralDirStart = fileOffset;
 
             CrcCalculatorStream crcCs = new CrcCalculatorStream(_zipFs, true);
 
             foreach (LocalFile t in _localFiles)
             {
                 t.CenteralDirectoryWrite(crcCs);
-                _zip64 |= t.Zip64;
                 lTrrntzip &= t.TrrntZip;
             }
 
             crcCs.Flush();
             crcCs.Close();
 
-            _centerDirSize = (ulong)_zipFs.Position;
+            _centralDirSize = (ulong)_zipFs.Position;
 
             _fileComment = lTrrntzip ? ZipUtils.GetBytes("TORRENTZIPPED-" + crcCs.Crc.ToString("X8")) : new byte[0];
             ZipStatus = lTrrntzip ? ZipStatus.TrrntZip : ZipStatus.None;
 
             crcCs.Dispose();
+
+            _zip64 = (_centralDirStart >= 0xffffffff) || (_centralDirSize >= 0xffffffff) || (_localFiles.Count >= 0xffff);
 
             if (_zip64)
             {

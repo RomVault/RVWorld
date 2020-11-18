@@ -84,8 +84,8 @@ namespace Compress.ZipFile
                     return ZipReturn.ZipEndOfCentralDirectoryError;
                 }
 
-                _centerDirSize = zipBr.ReadUInt32(); // SizeOfCentralDir
-                _centerDirStart = zipBr.ReadUInt32(); // Offset
+                _centralDirSize = zipBr.ReadUInt32(); // SizeOfCentralDir
+                _centralDirStart = zipBr.ReadUInt32(); // Offset
 
                 ushort zipFileCommentLength = zipBr.ReadUInt16();
 
@@ -110,8 +110,8 @@ namespace Compress.ZipFile
                 bw.Write((ushort)0); // NumberOfThisDiskCenterDir
                 bw.Write((ushort)(_localFiles.Count >= 0xffff ? 0xffff : _localFiles.Count)); // TotalNumberOfEntriesDisk
                 bw.Write((ushort)(_localFiles.Count >= 0xffff ? 0xffff : _localFiles.Count)); // TotalNumber of entries in the central directory 
-                bw.Write((uint)(_centerDirSize >= 0xffffffff ? 0xffffffff : _centerDirSize));
-                bw.Write((uint)(_centerDirStart >= 0xffffffff ? 0xffffffff : _centerDirStart));
+                bw.Write((uint)(_centralDirSize >= 0xffffffff ? 0xffffffff : _centralDirSize));
+                bw.Write((uint)(_centralDirStart >= 0xffffffff ? 0xffffffff : _centralDirStart));
                 bw.Write((ushort)_fileComment.Length);
                 bw.Write(_fileComment, 0, _fileComment.Length);
             }
@@ -166,10 +166,9 @@ namespace Compress.ZipFile
                     return ZipReturn.Zip64EndOfCentralDirError;
                 }
 
-                _centerDirSize = zipBr.ReadUInt64(); // size of central directory
+                _centralDirSize = zipBr.ReadUInt64(); // size of central directory
 
-                _centerDirStart =
-                    zipBr.ReadUInt64(); // offset of start of central directory with respect to the starting disk number
+                _centralDirStart = zipBr.ReadUInt64(); // offset of start of central directory with respect to the starting disk number
 
                 return ZipReturn.ZipGood;
             }
@@ -188,8 +187,8 @@ namespace Compress.ZipFile
                 bw.Write((uint)0); // number of the disk with the start of the central directory
                 bw.Write((ulong)_localFiles.Count); // total number of entries in the central directory on this disk
                 bw.Write((ulong)_localFiles.Count); // total number of entries in the central directory
-                bw.Write(_centerDirSize); // size of central directory
-                bw.Write(_centerDirStart); // offset of start of central directory with respect to the starting disk number
+                bw.Write(_centralDirSize); // size of central directory
+                bw.Write(_centralDirStart); // offset of start of central directory with respect to the starting disk number
             }
         }
 

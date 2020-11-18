@@ -14,8 +14,8 @@ namespace Compress.ZipFile
             ZipFileClose();
             ZipStatus = ZipStatus.None;
             _zip64 = false;
-            _centerDirStart = 0;
-            _centerDirSize = 0;
+            _centralDirStart = 0;
+            _centralDirSize = 0;
             _zipFileInfo = null;
 
             try
@@ -69,8 +69,8 @@ namespace Compress.ZipFile
             ZipFileClose();
             ZipStatus = ZipStatus.None;
             _zip64 = false;
-            _centerDirStart = 0;
-            _centerDirSize = 0;
+            _centralDirStart = 0;
+            _centralDirSize = 0;
             _zipFileInfo = null;
             _zipFs = inStream;
 
@@ -101,7 +101,7 @@ namespace Compress.ZipFile
                     return zRet;
                 }
 
-                long endOfCentralDir = _zipFs.Position;
+                ulong endOfCentralDir = (ulong)_zipFs.Position;
                 zRet = EndOfCentralDirRead();
                 if (zRet != ZipReturn.ZipGood)
                 {
@@ -109,24 +109,27 @@ namespace Compress.ZipFile
                     return zRet;
                 }
 
-                // check if this is a ZIP64 zip and if it is read the Zip64 End Of Central Dir Info
-                if (_centerDirStart == 0xffffffff || _centerDirSize == 0xffffffff || _localFilesCount == 0xffff)
+
+                // check if ZIP64 header is required
+                bool zip64Required = (_centralDirStart == 0xffffffff || _centralDirSize == 0xffffffff || _localFilesCount == 0xffff);
+
+                // check for a ZIP64 header
+                _zipFs.Position = (long)endOfCentralDir - 20;
+                zRet = Zip64EndOfCentralDirectoryLocatorRead();
+                if (zRet == ZipReturn.ZipGood)
                 {
-                    _zip64 = true;
-                    _zipFs.Position = endOfCentralDir - 20;
-                    zRet = Zip64EndOfCentralDirectoryLocatorRead();
-                    if (zRet != ZipReturn.ZipGood)
-                    {
-                        ZipFileClose();
-                        return zRet;
-                    }
                     _zipFs.Position = (long)_endOfCenterDir64;
                     zRet = Zip64EndOfCentralDirRead();
-                    if (zRet != ZipReturn.ZipGood)
+                    if (zRet == ZipReturn.ZipGood)
                     {
-                        ZipFileClose();
-                        return zRet;
+                        _zip64 = true;
+                        endOfCentralDir = _endOfCenterDir64;
                     }
+                }
+
+                if (zip64Required && !_zip64)
+                {
+                    return ZipReturn.Zip64EndOfCentralDirError;
                 }
 
                 bool trrntzip = false;
@@ -137,9 +140,9 @@ namespace Compress.ZipFile
                     if (ZipUtils.GetString(_fileComment).Substring(0, 14) == "TORRENTZIPPED-")
                     {
                         CrcCalculatorStream crcCs = new CrcCalculatorStream(_zipFs, true);
-                        byte[] buffer = new byte[_centerDirSize];
-                        _zipFs.Position = (long)_centerDirStart;
-                        crcCs.Read(buffer, 0, (int)_centerDirSize);
+                        byte[] buffer = new byte[_centralDirSize];
+                        _zipFs.Position = (long)_centralDirStart;
+                        crcCs.Read(buffer, 0, (int)_centralDirSize);
                         crcCs.Flush();
                         crcCs.Close();
 
@@ -154,8 +157,12 @@ namespace Compress.ZipFile
                         }
                     }
                 }
+                
+                if (zip64Required != _zip64)
+                    trrntzip = false;
+
                 // now read the central directory
-                _zipFs.Position = (long)_centerDirStart;
+                _zipFs.Position = (long)_centralDirStart;
 
                 _localFiles.Clear();
                 _localFiles.Capacity = (int)_localFilesCount;

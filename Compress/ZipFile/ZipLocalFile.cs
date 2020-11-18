@@ -573,8 +573,8 @@ namespace Compress.ZipFile
                     }
                     else
                     {
-                        //readStream=new System.IO.Compression.DeflateStream(zipFs,System.IO.Compression.CompressionMode.Decompress,true);
-                        readStream = new ZlibBaseStream(zipFs, CompressionMode.Decompress, CompressionLevel.Default, ZlibStreamFlavor.DEFLATE, true);
+                        readStream=new System.IO.Compression.DeflateStream(zipFs,System.IO.Compression.CompressionMode.Decompress,true);
+                        //readStream = new ZlibBaseStream(zipFs, CompressionMode.Decompress, CompressionLevel.Default, ZlibStreamFlavor.DEFLATE, true);
                         streamSize = UncompressedSize;
                     }
                     break;
