@@ -161,57 +161,6 @@ namespace RVCore.Scanner
                 }
 
                 fileDir.ChildAdd(tFile);
-
-                /*
-                // if we find a zip file add it as zip files.
-                // else
-                if (ft == FileType.File)
-                {
-                // Scanning a file
-                //
-                // Level1 & 2 : (are the same for files) Fully checksum changed only files
-                // Here we are just getting the TimeStamp of the File, and later
-                // if the TimeStamp was not matched we will have to read the files CRC, MD5 & SHA1
-                //
-                // Level3: Fully checksum everything
-                // Get everything about the file right here so
-                // read CRC, MD5 & SHA1
-
-                errorCode = CHD.CheckFile(oFile, out tFile.AltSHA1, out tFile.AltMD5, out tFile.CHDVersion);
-
-                if (errorCode == 0)
-                {
-                    if (tFile.AltSHA1 != null)
-                    {
-                        tFile.FileStatusSet(FileStatus.AltSHA1FromHeader);
-                    }
-                    if (tFile.AltMD5 != null)
-                    {
-                        tFile.FileStatusSet(FileStatus.AltMD5FromHeader);
-                    }
-
-                    // if we are scanning at Level3 then we get all the info here
-                    if (EScanLevel == EScanLevel.Level3)
-                    {
-                        FileResults(fullDir, tFile);
-                        ChdManCheck(fullDir, tFile);
-                    }
-                }
-                else if (errorCode == 32)
-                {
-                    tFile.GotStatus = GotStatus.FileLocked;
-                    _bgw.Report(new bgwShowError(fullDir, "File Locked"));
-                }
-                else
-                {
-                    string filename = Path.Combine(fullDir, tFile.Name);
-                    ReportError.Show("File: " + filename + " Error: " + new Win32Exception(errorCode).Message + ". Scan Aborted.");
-                    _fileErrorAbort = true;
-                    return fileDir;
-                }
-                }
-                */
-
             }
             return fileDir;
         }
