@@ -155,7 +155,7 @@ namespace RVCore.Scanner
                 tFile.FileStatusSet(FileStatus.SizeVerified);
                 tFile.SetStatus(datStatus, GotStatus.Got);
 
-                if (eScanLevel == EScanLevel.Level3 && tFile.FileType==FileType.File)
+                if (eScanLevel == EScanLevel.Level3 && tFile.FileType == FileType.File)
                 {
                     FromAFile(tFile, fullDir, eScanLevel, bgw, ref fileErrorAbort);
                 }
@@ -265,7 +265,7 @@ namespace RVCore.Scanner
             if (fr[0].HeaderFileType == HeaderFileType.CHD)
             {
                 CHD.CheckFile(file, directory);
-                if (eScanLevel == EScanLevel.Level2 || eScanLevel == EScanLevel.Level3)
+                if ((eScanLevel == EScanLevel.Level2 || eScanLevel == EScanLevel.Level3) && file.CHDVersion > 1)
                     Utils.ChdManCheck(file, directory, bgw, ref fileErrorAbort);
             }
             fileToScan.ZipFileClose();
