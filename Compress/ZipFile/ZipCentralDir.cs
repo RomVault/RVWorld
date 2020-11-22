@@ -124,13 +124,13 @@ namespace Compress.ZipFile
         {
             using (BinaryReader zipBr = new BinaryReader(_zipFs, Encoding.UTF8, true))
             {
-                _zip64 = true;
                 uint thisSignature = zipBr.ReadUInt32();
                 if (thisSignature != Zip64EndOfCentralDirSignature)
                 {
                     return ZipReturn.ZipEndOfCentralDirectoryError;
                 }
 
+                //_zip64 = true;
                 ulong tULong = zipBr.ReadUInt64(); // Size of zip64 end of central directory record
                 if (tULong != 44)
                 {
@@ -166,6 +166,7 @@ namespace Compress.ZipFile
                     return ZipReturn.Zip64EndOfCentralDirError;
                 }
 
+                _zip64 = true;
                 _centralDirSize = zipBr.ReadUInt64(); // size of central directory
 
                 _centralDirStart = zipBr.ReadUInt64(); // offset of start of central directory with respect to the starting disk number
@@ -198,7 +199,6 @@ namespace Compress.ZipFile
         {
             using (BinaryReader zipBr = new BinaryReader(_zipFs, Encoding.UTF8, true))
             {
-                _zip64 = true;
                 uint thisSignature = zipBr.ReadUInt32();
                 if (thisSignature != Zip64EndOfCentralDirectoryLocator)
                 {
