@@ -251,7 +251,7 @@ namespace DATReader.DatClean
             for (int r = 0; r < mGame.ChildCount; r++)
             {
                 DatFile df1 = (DatFile)mGame.Child(r);
-                if (df1.Size != 0 || df1.Name.Length == 0 || df1.Name.Substring(df1.Name.Length - 1) != "/")
+                if (df1.Size != 0 || df1.Name.Length == 0 || df1.Name.Substring(df1.Name.Length - 1) != "\\")
                     continue;
                 bool found = false;
                 for (int r1 = 0; r1 < mGame.ChildCount; r1++)
