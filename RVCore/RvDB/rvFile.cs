@@ -1051,11 +1051,11 @@ namespace RVCore.RvDB
 
         public string FileNameInsideGame()
         {
-            if (Game != null)
+            if (Game != null || Dat!=null)
             {
                 return Name;
             }
-
+            
             return Path.Combine(Parent.FileNameInsideGame(), Name);
         }
 
