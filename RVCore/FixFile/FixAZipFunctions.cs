@@ -11,7 +11,7 @@ namespace RVCore.FixFile
 {
     public static class FixAZipFunctions
     {
-        public static ReturnCode CorrectZipFile(RvFile fixZip, RvFile fixZippedFile, ref ICompress tempFixZip, int iRom, out string errorMessage)
+        public static ReturnCode CorrectZipFile(RvFile fixZip, RvFile fixZippedFile, ref ICompress tempFixZip, int iRom, List<RvFile> fileProcessQueue, out string errorMessage)
         {
             if (!
                 (
@@ -52,14 +52,15 @@ namespace RVCore.FixFile
             bool rawcopy = fixZippedFile.RepStatus == RepStatus.InToSort || fixZippedFile.RepStatus == RepStatus.Corrupt;
 
             RvFile fileIn = fixZip.Child(iRom);
+            List<RvFile> lstFixRomTable = null;
 
             if (fileIn.FileType == FileType.SevenZipFile)
             {
-                List<RvFile> fixFiles = FindSourceFile.GetFixFileList(fixZippedFile);
+                lstFixRomTable = FindSourceFile.GetFixFileList(fixZippedFile);
                 ReportError.LogOut("CorrectZipFile: picking from");
-                ReportError.ReportList(fixFiles);
+                ReportError.ReportList(lstFixRomTable);
 
-                fileIn = FindSourceFile.FindSourceToUseForFix(fixZippedFile, fixFiles);
+                fileIn = FindSourceFile.FindSourceToUseForFix(fixZippedFile, lstFixRomTable);
 
                 if (fileIn.FileType == FileType.SevenZipFile)
                 {
@@ -70,8 +71,8 @@ namespace RVCore.FixFile
                         return returnCode1;
                     }
 
-                    fixFiles = FindSourceFile.GetFixFileList(fixZippedFile);
-                    fileIn = FindSourceFile.FindSourceToUseForFix(fixZippedFile, fixFiles);
+                    lstFixRomTable = FindSourceFile.GetFixFileList(fixZippedFile);
+                    fileIn = FindSourceFile.FindSourceToUseForFix(fixZippedFile, lstFixRomTable);
                 }
             }
 
@@ -117,6 +118,10 @@ namespace RVCore.FixFile
                 default:
                     throw new FixAZip.ZipFileException(returnCode, fixZippedFile.FullName + " " + fixZippedFile.RepStatus + " " + returnCode + " : " + errorMessage);
             }
+
+            //Check to see if the files used for fix, can now be set to delete
+            if (lstFixRomTable != null)
+                FixFileUtils.CheckFilesUsedForFix(lstFixRomTable, fileProcessQueue, false);
 
             return returnCode;
         }
@@ -181,9 +186,7 @@ namespace RVCore.FixFile
 
             if (lstFixRomTable.Count > 0)
             {
-                RvFile fileIn = lstFixRomTable[0];
-
-                fileIn = FindSourceFile.FindSourceToUseForFix(fixZippedFile, lstFixRomTable);
+                RvFile fileIn = FindSourceFile.FindSourceToUseForFix(fixZippedFile, lstFixRomTable);
 
                 if (fileIn.FileType == FileType.SevenZipFile)
                 {
@@ -284,7 +287,7 @@ namespace RVCore.FixFile
             string toSortFullName;
             if (toSortGame == null)
             {
-                ReturnCode retCode=FixFileUtils.CreateToSortDirs(fixZip, out RvFile outDir, out string toSortFileName);
+                ReturnCode retCode = FixFileUtils.CreateToSortDirs(fixZip, out RvFile outDir, out string toSortFileName);
                 if (retCode != ReturnCode.Good)
                     return retCode;
 

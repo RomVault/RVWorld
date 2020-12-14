@@ -245,18 +245,18 @@ namespace ROMVault
 
             if (uTree.RIcon.IntersectsWith(t))
             {
-                int icon = 2;
+                int icon = 2; //yellow
                 if (pTree.DirStatus.HasInToSort())
                 {
-                    icon = 4;
+                    icon = 4; //blue
                 }
-                else if (!pTree.DirStatus.HasCorrect())
+                else if (!pTree.DirStatus.HasCorrect() && pTree.DirStatus.HasMissing())
                 {
-                    icon = 1;
+                    icon = 1;  //red
                 }
                 else if (!pTree.DirStatus.HasMissing())
                 {
-                    icon = 3;
+                    icon = 3; //green
                 }
 
 

@@ -97,6 +97,17 @@ namespace RVCore.FixFile
 
 
             FixFileUtils.CheckCreateDirectories(fixZip.Parent);
+
+            string filename = fixZip.FullName;
+            if (fixZip.GotStatus == GotStatus.NotGot)
+            {
+                if (File.Exists(filename))
+                {
+                    errorMessage = "Unexpected file found in directory. Rescan needed.\n" + filename;
+                    return ReturnCode.RescanNeeded;
+                }
+            }
+
             ReportError.LogOut("");
             ReportError.LogOut(fixZipFullName + " : " + fixZip.RepStatus);
             ReportError.LogOut("------------------------------------------------------------");
@@ -192,7 +203,7 @@ namespace RVCore.FixFile
                         case RepStatus.NeededForFix:
                         case RepStatus.Corrupt:
                             {
-                                returnCode = FixAZipFunctions.CorrectZipFile(fixZip, fixZippedFile, ref tempFixZip, iRom, out errorMessage);
+                                returnCode = FixAZipFunctions.CorrectZipFile(fixZip, fixZippedFile, ref tempFixZip, iRom, fileProcessQueue, out errorMessage);
                                 if (returnCode != ReturnCode.Good)
                                 {
                                     CloseZipFile(ref tempFixZip);
@@ -251,7 +262,6 @@ namespace RVCore.FixFile
 
                 #region Process original Zip
 
-                string filename = fixZip.FullName;
                 if (File.Exists(filename))
                 {
                     if (!File.SetAttributes(filename, FileAttributes.Normal))
