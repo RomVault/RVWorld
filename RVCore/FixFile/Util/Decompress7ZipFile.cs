@@ -88,7 +88,7 @@ namespace RVCore.FixFile.Util
                 if (includeGood)
                 {
                     // if this is the file we are fixing then pull out the correct files.
-                    if (thisFile.RepStatus == RepStatus.Correct)
+                    if (thisFile.RepStatus == RepStatus.Correct || thisFile.RepStatus==RepStatus.InToSort)
                         extract = true;
                 }
 
@@ -109,6 +109,16 @@ namespace RVCore.FixFile.Util
                 cleanedName = cleanedName.Replace("/", "-");
                 cleanedName = cleanedName.Replace("\\", "-");
 
+
+                if (cleanedName.Length >= 248)
+                {
+                    string mainName = Path.GetFileNameWithoutExtension(cleanedName);
+                    string extName = Path.GetExtension(cleanedName);
+
+                    mainName = mainName.Substring(0,248 - extName.Length);
+                    cleanedName = mainName + extName;
+                }
+
                 RvFile outFile = new RvFile(FileType.File)
                 {
                     Name = cleanedName,
@@ -123,6 +133,17 @@ namespace RVCore.FixFile.Util
                     AltMD5 = thisFile.AltMD5,
                     FileGroup = thisFile.FileGroup
                 };
+
+                int tryname = 0;
+                while (outDir.ChildNameSearch(outFile, out int index)==0)
+                {
+                    tryname += 1;
+                    string mainName = Path.GetFileNameWithoutExtension(cleanedName);
+                    string extName = Path.GetExtension(cleanedName);
+                    cleanedName = mainName + $"_{tryname}" + extName;
+                    outFile.Name = cleanedName;
+                }
+
 
                 outFile.SetStatus(DatStatus.InToSort, GotStatus.Got);
                 outFile.FileStatusSet(
@@ -220,7 +241,7 @@ namespace RVCore.FixFile.Util
                 writeStream.Flush();
                 writeStream.Close();
                 writeStream.Dispose();
-                
+
                 tcrc32.Finish();
                 tmd5?.Finish();
                 tsha1?.Finish();
