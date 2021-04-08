@@ -35,8 +35,7 @@ namespace RVCore.FixFile
                 errorMessage = "";
                 return ReturnCode.Good;
             }
-
-
+            
             if (tempFixZip == null)
             {
                 string strPath = fixZip.Parent.FullName;
@@ -54,7 +53,7 @@ namespace RVCore.FixFile
             RvFile fileIn = fixZip.Child(iRom);
             List<RvFile> lstFixRomTable = null;
 
-            if (fileIn.FileType == FileType.SevenZipFile)
+            if (fileIn.FileType == FileType.SevenZipFile && fileIn.Size>0)
             {
                 lstFixRomTable = FindSourceFile.GetFixFileList(fixZippedFile);
                 ReportError.LogOut("CorrectZipFile: picking from");

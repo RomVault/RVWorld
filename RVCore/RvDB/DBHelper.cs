@@ -77,14 +77,17 @@ namespace RVCore.RvDB
         {
             FileType f1 = var1.FileType;
             FileType f2 = var2.FileType;
-
+            int res = 0;
             if (f1 == FileType.ZipFile || f2 == FileType.ZipFile)
             {
                 if (f1 != f2)
                 {
                     ReportError.SendAndShow("Incompatible Compare type");
                 }
-                return Math.Sign(DatSort.TrrntZipStringCompare(var1.Name, var2.Name));
+                res= Math.Sign(DatSort.TrrntZipStringCompare(var1.Name, var2.Name));
+                return res != 0
+                    ? res
+                    : Math.Sign(string.Compare(var1.Name, var2.Name, StringComparison.Ordinal));
             }
             if (f1 == FileType.SevenZipFile || f2 == FileType.SevenZipFile)
             {
@@ -95,11 +98,10 @@ namespace RVCore.RvDB
                 return Math.Sign(DatSort.Trrnt7ZipStringCompare(var1.Name, var2.Name));
             }
 
-            int res = DatSort.TrrntZipStringCompare(var1.Name, var2.Name);
-            if (res != 0)
-                return res;
-
-            return f1.CompareTo(f2);
+            res = DatSort.TrrntZipStringCompare(var1.Name, var2.Name);
+            return res != 0
+                ? res 
+                : f1.CompareTo(f2);
         }
 
         public static int DatCompare(RvDat var1, RvDat var2)

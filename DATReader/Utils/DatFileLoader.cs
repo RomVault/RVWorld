@@ -57,10 +57,19 @@ namespace DATReader.DatReader
                 LineNumber++;
 
                 _line = (_line ?? "").Replace("" + (char)9, " ");
+              
+                int indexof = _line.IndexOf(@"//");
+                if (indexof >= 0)
+                {
+                    _line = _line.Substring(0, indexof);
+                }
+                /*
                 if ((_line.TrimStart().Length > 2) && (_line.TrimStart().Substring(0, 2) == @"//"))
                 {
                     _line = "";
                 }
+                */
+
                 if ((_line.TrimStart().Length > 1) && (_line.TrimStart().Substring(0, 1) == @"#"))
                 {
                     _line = "";

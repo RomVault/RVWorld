@@ -407,6 +407,9 @@ namespace DATReader.DatReader
                     case "size":
                         dRom.Size = VarFix.ULong(dfl.Gn());
                         break;
+                    case "hash":
+                        dfl.Gn();
+                        break;
                     case "crc":
                         dRom.CRC = VarFix.CleanMD5SHA1(dfl.Gn(), 8);
                         break;
@@ -420,7 +423,9 @@ namespace DATReader.DatReader
                         dRom.Merge = VarFix.String(dfl.Gn());
                         break;
                     case "flags":
-                        dRom.Status = VarFix.ToLower(dfl.Gn());
+                        string flags = VarFix.ToLower(dfl.Gn());
+                        if (string.IsNullOrWhiteSpace(dRom.Status))
+                            dRom.Status = flags;
                         break;
                     case "date":
                         dfl.Gn();
