@@ -42,6 +42,7 @@ namespace RVCore.FixFile.Util
                     case RepStatus.Delete:
                         i++;
                         break;
+                    case RepStatus.Unknown:
                     case RepStatus.Correct:
                     case RepStatus.InToSort:
                     case RepStatus.Rename:

@@ -10,7 +10,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("RomVault")]
 [assembly: AssemblyProduct("ROMVault3")]
-[assembly: AssemblyCopyright("Copyright © Gordon J 2020")]
+[assembly: AssemblyCopyright("Copyright © Gordon J 2021")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -35,5 +35,5 @@ using System.Runtime.InteropServices;
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
 
-[assembly: AssemblyVersion("3.2.3.0")]
+[assembly: AssemblyVersion("3.2.4.0")]
 [assembly: AssemblyFileVersion("1.0.0.0")]

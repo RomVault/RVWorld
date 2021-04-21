@@ -124,7 +124,7 @@ namespace RVCore.FixFile.Util
             }
 
             //Find and Check/Open Output Files
-            retC = OpenOutputStream(fileOut, fileIn, zipFileOut, filenameOut, compressionMethod, rawCopy, sourceTrrntzip,null, out Stream writeStream, out error);
+            retC = OpenOutputStream(fileOut, fileIn, zipFileOut, filenameOut, compressionMethod, rawCopy, sourceTrrntzip, null, out Stream writeStream, out error);
             if (retC != ReturnCode.Good)
             {
                 return retC;
@@ -199,10 +199,6 @@ namespace RVCore.FixFile.Util
                         tcrc32.Trigger(_buffer, sizenow);
                         tmd5?.Trigger(_buffer, sizenow);
                         tsha1?.Trigger(_buffer, sizenow);
-
-                        tcrc32.Wait();
-                        tmd5?.Wait();
-                        tsha1?.Wait();
                     }
                     try
                     {
@@ -212,6 +208,12 @@ namespace RVCore.FixFile.Util
                     {
                         error = "Error writing out file. " + Environment.NewLine + e.Message;
                         return ReturnCode.FileSystemError;
+                    }
+                    if (!rawCopy)
+                    {
+                        tcrc32.Wait();
+                        tmd5?.Wait();
+                        tsha1?.Wait();
                     }
                     sizetogo = sizetogo - (ulong)sizenow;
                 }
@@ -539,7 +541,7 @@ namespace RVCore.FixFile.Util
                 TimeStamps ts = null;
                 if (dateTime != null)
                 {
-                    ts = new TimeStamps {ModTime = dateTime};
+                    ts = new TimeStamps { ModTime = dateTime };
                 }
 
                 ZipReturn zr = zipFileOut.ZipFileOpenWriteStream(rawCopy, sourceTrrntzip, fileOut.Name, (ulong)fileIn.Size, compressionMethod, out writeStream, ts);

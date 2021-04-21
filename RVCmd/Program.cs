@@ -92,7 +92,7 @@ namespace RVCmd
         {
             Console.WriteLine($"RomVault v{Assembly.GetEntryAssembly().GetName().Version.ToString(3)} Commandline");
             Console.WriteLine("");
-            Console.WriteLine("Copyright (C) 2020 GordonJ");
+            Console.WriteLine("Copyright (C) 2021 GordonJ");
             Console.WriteLine("Homepage : https://www.romvault.com/");
             Console.WriteLine("");
             Console.WriteLine("Options:");

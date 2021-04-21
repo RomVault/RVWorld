@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Security.Policy;
 using System.Text;
 using Compress.SevenZip.Structure;
 using FileInfo = RVIO.FileInfo;
@@ -9,6 +10,14 @@ namespace Compress.SevenZip
 {
     public partial class SevenZ : ICompress
     {
+
+        public enum sevenZipCompressType
+        {
+            uncompressed,
+            lzma,
+            zstd
+        }
+
         public static bool supportZstd
         {
             get;
@@ -43,7 +52,8 @@ namespace Compress.SevenZip
 
         private SignatureHeader _signatureHeader;
 
-        private bool _compressed = true;
+        private sevenZipCompressType _compressed = sevenZipCompressType.lzma;
+        private bool _compressedHeader = true;
 
 
         private long _baseOffset;

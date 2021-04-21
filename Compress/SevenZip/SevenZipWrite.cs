@@ -1,6 +1,7 @@
 ﻿using System.IO;
 using System.Text;
 using Compress.SevenZip.Compress.LZMA;
+using Compress.SevenZip.Compress.ZSTD;
 using Compress.SevenZip.Structure;
 using Compress.Utils;
 using FileInfo = RVIO.FileInfo;
@@ -19,16 +20,22 @@ namespace Compress.SevenZip
 
         public ZipReturn ZipFileCreate(string newFilename)
         {
-            return ZipFileCreate(newFilename, true);
+            return ZipFileCreate(newFilename, sevenZipCompressType.lzma);
         }
 
 
-        public ZipReturn ZipFileCreateFromUncompressedSize(string newFilename, ulong unCompressedSize)
+        public ZipReturn ZipFileCreateFromUncompressedSize(string newFilename,sevenZipCompressType ctype, ulong unCompressedSize)
         {
-            return ZipFileCreate(newFilename, true, GetDictionarySizeFromUncompressedSize(unCompressedSize));
+            if (ctype == sevenZipCompressType.zstd)
+            {
+                if (!supportZstd)
+                    ctype = sevenZipCompressType.lzma;
+            }
+
+            return ZipFileCreate(newFilename, ctype, GetDictionarySizeFromUncompressedSize(unCompressedSize));
         }
 
-        public ZipReturn ZipFileCreate(string newFilename, bool compressOutput, int dictionarySize = 1 << 24, int numFastBytes = 64)
+        public ZipReturn ZipFileCreate(string newFilename, sevenZipCompressType compressOutput, int dictionarySize = 1 << 24, int numFastBytes = 64)
         {
             if (ZipOpen != ZipOpenType.Closed)
             {
@@ -59,22 +66,21 @@ namespace Compress.SevenZip
             _compressed = compressOutput;
 
             _unpackedStreamSize = 0;
-            if (_compressed)
+            if (_compressed == sevenZipCompressType.lzma)
             {
                 LzmaEncoderProperties ep = new LzmaEncoderProperties(true, dictionarySize, numFastBytes);
                 LzmaStream lzs = new LzmaStream(ep, false, _zipFs);
                 _codeMSbytes = lzs.Properties;
                 _lzmaStream = lzs;
-
-
-                /*
+                _packStreamStart = (ulong)_zipFs.Position;
+            }
+            else if (_compressed == sevenZipCompressType.zstd)
+            {
                 ZstandardStream zss = new ZstandardStream(_zipFs, 22, true);
                 _codeMSbytes = new byte[] { 1, 4, 18, 0, 0 };
                 _lzmaStream = zss;
-                */
                 _packStreamStart = (ulong)_zipFs.Position;
             }
-
             return ZipReturn.ZipGood;
         }
 
@@ -121,7 +127,7 @@ namespace Compress.SevenZip
             _unpackedStreamSize += uncompressedSize;
 
             _localFiles.Add(lf);
-            stream = _compressed ? _lzmaStream : _zipFs;
+            stream = _compressed == sevenZipCompressType.uncompressed ? _zipFs : _lzmaStream;
             return ZipReturn.ZipGood;
         }
 

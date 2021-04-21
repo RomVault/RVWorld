@@ -117,7 +117,7 @@ namespace ROMVault
 
                 if (tDir.Game == null)
                 {
-                    AddDir(tDir, pathAdd + tGame.Name + "/", ref fileList);
+                    AddDir(tDir, pathAdd + tDir.Name + "/", ref fileList);
                 }
             }
         }

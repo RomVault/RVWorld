@@ -50,6 +50,7 @@ namespace RVCore
         public static Settings rvSettings;
 
         public bool FilesOnly = false;
+        public bool zstd = false;
 
         public string DatRoot;
         public string CacheFile;
