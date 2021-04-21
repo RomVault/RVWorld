@@ -362,7 +362,6 @@ namespace Compress.SevenZip.Compress.ZSTD
                 sizeToGo -= sizenow;
             }
 
-            position += offset;
             return offset;
         }
 

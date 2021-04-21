@@ -22,9 +22,8 @@ namespace Compress.SevenZip
         {
             return ZipFileCreate(newFilename, sevenZipCompressType.lzma);
         }
-
-
-        public ZipReturn ZipFileCreateFromUncompressedSize(string newFilename,sevenZipCompressType ctype, ulong unCompressedSize)
+        
+        public ZipReturn ZipFileCreateFromUncompressedSize(string newFilename, sevenZipCompressType ctype, ulong unCompressedSize)
         {
             if (ctype == sevenZipCompressType.zstd)
             {
@@ -76,7 +75,7 @@ namespace Compress.SevenZip
             }
             else if (_compressed == sevenZipCompressType.zstd)
             {
-                ZstandardStream zss = new ZstandardStream(_zipFs, 22, true);
+                ZstandardStream zss = new ZstandardStream(_zipFs, 18, true);
                 _codeMSbytes = new byte[] { 1, 4, 18, 0, 0 };
                 _lzmaStream = zss;
                 _packStreamStart = (ulong)_zipFs.Position;

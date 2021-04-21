@@ -18,16 +18,14 @@ namespace RVCore.FixFile.Util
     {
         private const int BufferSize = 128 * 4096;
 
-        public static ReturnCode DecompressSource7ZipFile(RvFile zZipFileIn, bool includeGood, out string error)
+        public static ReturnCode DecompressSource7ZipFile(RvFile db7zFile, bool includeGood, out string error)
         {
             byte[] buffer = new byte[BufferSize];
 
             RvFile cacheDir = DB.RvFileCache();
-
-            string fileNameIn = zZipFileIn.FullName;
-
-            SevenZ zipFileIn = new SevenZ();
-            ZipReturn zr1 = zipFileIn.ZipFileOpen(fileNameIn, zZipFileIn.FileModTimeStamp, true);
+            
+            SevenZ sevenZipFile = new SevenZ();
+            ZipReturn zr1 = sevenZipFile.ZipFileOpen(db7zFile.FullName, db7zFile.FileModTimeStamp, true);
             if (zr1 != ZipReturn.ZipGood)
             {
                 error = "Error opening 7zip file for caching";
@@ -36,7 +34,7 @@ namespace RVCore.FixFile.Util
 
             RvFile outDir = new RvFile(FileType.Dir)
             {
-                Name = zZipFileIn.Name + ".cache",
+                Name = db7zFile.Name + ".cache",
                 Parent = cacheDir,
                 DatStatus = DatStatus.InToSort,
                 GotStatus = GotStatus.Got
@@ -46,21 +44,21 @@ namespace RVCore.FixFile.Util
             while (cacheDir.ChildNameSearch(outDir, out int index) == 0)
             {
                 nameDirIndex++;
-                outDir.Name = zZipFileIn.Name + ".cache (" + nameDirIndex + ")";
+                outDir.Name = db7zFile.Name + ".cache (" + nameDirIndex + ")";
             }
             cacheDir.ChildAdd(outDir);
             Directory.CreateDirectory(outDir.FullName);
 
-            for (int i = 0; i < zipFileIn.LocalFilesCount(); i++)
+            for (int i = 0; i < sevenZipFile.LocalFilesCount(); i++)
             {
-                if (zipFileIn.IsDirectory(i))
+                if (sevenZipFile.IsDirectory(i))
                     continue;
                 RvFile thisFile = null;
-                for (int j = 0; j < zZipFileIn.ChildCount; j++)
+                for (int j = 0; j < db7zFile.ChildCount; j++)
                 {
-                    if (zZipFileIn.Child(j).ZipFileIndex != i)
+                    if (db7zFile.Child(j).ZipFileIndex != i)
                         continue;
-                    thisFile = zZipFileIn.Child(j);
+                    thisFile = db7zFile.Child(j);
                     break;
                 }
 
@@ -159,13 +157,13 @@ namespace RVCore.FixFile.Util
                     , thisFile);
                 outFile.RepStatus = RepStatus.NeededForFix;
 
-                zipFileIn.ZipFileOpenReadStream(i, out Stream readStream, out ulong unCompressedSize);
+                sevenZipFile.ZipFileOpenReadStream(i, out Stream readStream, out ulong unCompressedSize);
 
                 string filenameOut = Path.Combine(outDir.FullName, outFile.Name);
 
                 if (Settings.rvSettings.DetailedFixReporting)
                 {
-                    string fixZipFullName = zZipFileIn.TreeFullName;
+                    string fixZipFullName = db7zFile.TreeFullName;
                     Report.ReportProgress(new bgwShowFix(Path.GetDirectoryName(fixZipFullName), Path.GetFileName(fixZipFullName), thisFile.Name, thisFile.Size, "-->", outDir.FullName, "", outFile.Name));
                 }
 
@@ -194,14 +192,14 @@ namespace RVCore.FixFile.Util
                     {
                         if (ex is ZlibException || ex is DataErrorException)
                         {
-                            ZipReturn zr = zipFileIn.ZipFileCloseReadStream();
+                            ZipReturn zr = sevenZipFile.ZipFileCloseReadStream();
                             if (zr != ZipReturn.ZipGood)
                             {
-                                error = "Error Closing " + zr + " Stream :" + zipFileIn.ZipFilename;
+                                error = "Error Closing " + zr + " Stream :" + sevenZipFile.ZipFilename;
                                 return ReturnCode.FileSystemError;
                             }
 
-                            zipFileIn.ZipFileClose();
+                            sevenZipFile.ZipFileClose();
                             writeStream.Flush();
                             writeStream.Close();
                             if (filenameOut != null)
@@ -210,7 +208,7 @@ namespace RVCore.FixFile.Util
                             }
 
                             thisFile.GotStatus = GotStatus.Corrupt;
-                            error = "Unexpected corrupt archive file found:\n" + zZipFileIn.FullName +
+                            error = "Unexpected corrupt archive file found:\n" + db7zFile.FullName +
                                     "\nRun Find Fixes, and Fix to continue fixing correctly.";
                             return ReturnCode.SourceDataStreamCorrupt;
                         }
@@ -222,11 +220,6 @@ namespace RVCore.FixFile.Util
                     tcrc32.Trigger(buffer, sizenow);
                     tmd5?.Trigger(buffer, sizenow);
                     tsha1?.Trigger(buffer, sizenow);
-
-                    tcrc32.Wait();
-                    tmd5?.Wait();
-                    tsha1?.Wait();
-
                     try
                     {
                         writeStream.Write(buffer, 0, sizenow);
@@ -236,6 +229,9 @@ namespace RVCore.FixFile.Util
                         error = "Error writing out file. " + Environment.NewLine + e.Message;
                         return ReturnCode.FileSystemError;
                     }
+                    tcrc32.Wait();
+                    tmd5?.Wait();
+                    tsha1?.Wait();
                     sizetogo = sizetogo - (ulong)sizenow;
                 }
                 writeStream.Flush();
@@ -260,14 +256,20 @@ namespace RVCore.FixFile.Util
                 if (bCRC != null && thisFile.CRC != null && !ArrByte.BCompare(bCRC, thisFile.CRC))
                 {
                     // error in file.
+                    error = "Error found in cache extract CRC";
+                    return ReturnCode.SourceCheckSumMismatch;
                 }
                 if (bMD5 != null && thisFile.MD5 != null && !ArrByte.BCompare(bMD5, thisFile.MD5))
                 {
                     // error in file.
+                    error = "Error found in cache extract MD5";
+                    return ReturnCode.SourceCheckSumMismatch;
                 }
                 if (bSHA1 != null && thisFile.SHA1 != null && !ArrByte.BCompare(bSHA1, thisFile.SHA1))
                 {
                     // error in file.
+                    error = "Error found in cache extract SHA1";
+                    return ReturnCode.SourceCheckSumMismatch;
                 }
 
                 thisFile.FileGroup.Files.Add(outFile);
@@ -275,7 +277,7 @@ namespace RVCore.FixFile.Util
                 outDir.ChildAdd(outFile);
             }
 
-            zipFileIn.ZipFileClose();
+            sevenZipFile.ZipFileClose();
 
             error = "";
             return ReturnCode.Good;

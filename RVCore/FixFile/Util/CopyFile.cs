@@ -194,12 +194,9 @@ namespace RVCore.FixFile.Util
                         return ReturnCode.FileSystemError;
                     }
 
-                    if (!rawCopy)
-                    {
-                        tcrc32.Trigger(_buffer, sizenow);
-                        tmd5?.Trigger(_buffer, sizenow);
-                        tsha1?.Trigger(_buffer, sizenow);
-                    }
+                    tcrc32?.Trigger(_buffer, sizenow);
+                    tmd5?.Trigger(_buffer, sizenow);
+                    tsha1?.Trigger(_buffer, sizenow);
                     try
                     {
                         writeStream.Write(_buffer, 0, sizenow);
@@ -209,12 +206,9 @@ namespace RVCore.FixFile.Util
                         error = "Error writing out file. " + Environment.NewLine + e.Message;
                         return ReturnCode.FileSystemError;
                     }
-                    if (!rawCopy)
-                    {
-                        tcrc32.Wait();
-                        tmd5?.Wait();
-                        tsha1?.Wait();
-                    }
+                    tcrc32?.Wait();
+                    tmd5?.Wait();
+                    tsha1?.Wait();
                     sizetogo = sizetogo - (ulong)sizenow;
                 }
                 writeStream.Flush();

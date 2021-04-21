@@ -85,7 +85,7 @@ namespace Compress.SevenZip
             _header.StreamsInfo = new StreamsInfo { PackPosition = 0 };
 
             //StreamsInfo.PackedStreamsInfo
-            if (_compressedHeader)
+            if (_compressed!=sevenZipCompressType.uncompressed)
             {
                 _header.StreamsInfo.PackedStreams = new PackedStreamInfo[1];
                 _header.StreamsInfo.PackedStreams[0] = new PackedStreamInfo { PackedSize = _packStreamSize };
@@ -105,7 +105,7 @@ namespace Compress.SevenZip
             }
             //StreamsInfo.PackedStreamsInfo, no CRC or StreamPosition required
 
-            if (_compressedHeader)
+            if (_compressed != sevenZipCompressType.uncompressed)
             {
                 //StreamsInfo.Folders
                 _header.StreamsInfo.Folders = new Folder[1];
@@ -200,8 +200,9 @@ namespace Compress.SevenZip
 
         private void CloseWriting7Zip()
         {
-            if (_compressedHeader)
+            if (_compressed != sevenZipCompressType.uncompressed)
             {
+                _lzmaStream.Flush();
                 _lzmaStream.Close();
             }
 

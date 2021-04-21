@@ -13,9 +13,9 @@ namespace RVCore.FixFile.Util
             List<RvFile> parentCheckList = new List<RvFile>();
             foreach (RvFile fixRom in lstFixRomTable)
             {
+                //check NeededForFix files, and Rename files is checkRename==true
                 if (fixRom.RepStatus != RepStatus.NeededForFix && (!checkRename || fixRom.RepStatus != RepStatus.Rename)) 
                     continue;
-                //check NeededForFix files, and Rename files is checkRename==true
 
                 //if this dir is locked in the tree, just set the fixRom back to InToSort or Unknown
                 if (FindFixesListCheck.treeType(fixRom) == RvTreeRow.TreeSelect.Locked)
@@ -23,6 +23,16 @@ namespace RVCore.FixFile.Util
                     fixRom.RepStatus = fixRom.IsInToSort ? RepStatus.InToSort : RepStatus.Unknown;
                     continue;
                 }
+
+                // need to add an improvement here for 7z
+                // if we just used a file to fix a 7z, then right now that file will be marked to be deleted.
+                // I need to check if the file is needed to fix any other 7z files, because right now
+                // if we do delete the file after the first use, then when we fix the second 7z file we
+                // have to go and extract it again from the first 7z file that we just fixed.
+                // It would be much better to just not delete the file if there are any other 7z files needing
+                // it still for a fix.
+
+
 
                 // now set the fixRom to delete, as this fixRom has now been moved to its correct location.
                 fixRom.RepStatus = RepStatus.Delete;
