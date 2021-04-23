@@ -9,6 +9,7 @@ using System.Diagnostics;
 using System.Drawing;
 using System.Globalization;
 using System.Windows.Forms;
+using Compress.SevenZip;
 using RVCore;
 using RVCore.FindFix;
 using RVCore.ReadDat;
@@ -66,9 +67,16 @@ namespace ROMVault
         {
             InitializeComponent();
             AddGameMetaData();
-            Text = $@"RomVault ({Program.StrVersion})  {Application.StartupPath}";
+            Text = $@"RomVault ({Program.StrVersion})";
 
-            _displayColor = new Color[(int)RepStatus.EndValue];
+            if (SevenZ.supportZstd && Settings.rvSettings.zstd)
+            {
+                Text += " -using ZSTD";
+            }
+
+            Text += $@"   {Application.StartupPath}";
+
+                _displayColor = new Color[(int)RepStatus.EndValue];
             _fontColor = new Color[(int)RepStatus.EndValue];
 
             // RepStatus.UnSet
