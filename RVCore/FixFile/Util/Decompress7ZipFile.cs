@@ -25,7 +25,7 @@ namespace RVCore.FixFile.Util
             RvFile cacheDir = DB.RvFileCache();
             
             SevenZ sevenZipFile = new SevenZ();
-            ZipReturn zr1 = sevenZipFile.ZipFileOpen(db7zFile.FullName, db7zFile.FileModTimeStamp, true);
+            ZipReturn zr1 = sevenZipFile.ZipFileOpen(db7zFile.FullNameCase, db7zFile.FileModTimeStamp, true);
             if (zr1 != ZipReturn.ZipGood)
             {
                 error = "Error opening 7zip file for caching";

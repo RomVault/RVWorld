@@ -79,7 +79,7 @@ namespace RVCore.FixFile.Util
                 case FileType.ZipFile:
                 case FileType.SevenZipFile:
                     {
-                        string fullPathCheckDelete = fileToCheck.Parent.FullName;
+                        string fullPathCheckDelete = fileToCheck.Parent.FullNameCase;
                         if (!File.Exists(fullPathCheckDelete))
                         {
                             errorMessage = "Deleting " + fileDeleting.FullName + " Correct file not found. Resan for " + fullPathCheckDelete;
@@ -95,7 +95,7 @@ namespace RVCore.FixFile.Util
                     }
                 case FileType.File:
                     {
-                        string fullPathCheckDelete = fileToCheck.FullName;
+                        string fullPathCheckDelete = fileToCheck.FullNameCase;
                         if (!File.Exists(fullPathCheckDelete))
                         {
                             errorMessage = "Deleting " + fileDeleting.FullName + " Correct file not found. Resan for " + fullPathCheckDelete;
@@ -113,8 +113,7 @@ namespace RVCore.FixFile.Util
                     ReportError.UnhandledExceptionHandler("Unknown double check delete status " + fileToCheck.RepStatus);
                     break;
             }
-
-
+            
             return ReturnCode.Good;
         }
 

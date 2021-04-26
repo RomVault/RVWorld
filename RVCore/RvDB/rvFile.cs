@@ -124,6 +124,18 @@ namespace RVCore.RvDB
                 return Path.Combine(Parent.TreeFullName, Name);
             }
         }
+        public string TreeFullNameCase
+        {
+            get
+            {
+                if (Parent == null)
+                {
+                    return string.IsNullOrWhiteSpace(FileName) ? (string.IsNullOrWhiteSpace(Name) ? "" : Name) : FileName;
+                }
+
+                return Path.Combine(Parent.TreeFullNameCase, string.IsNullOrWhiteSpace(FileName) ? Name : FileName);
+            }
+        }
 
         /// <summary>
         /// Returns te PhysicalPath of this RvFile, it first calls the above TreeFullName
@@ -131,6 +143,8 @@ namespace RVCore.RvDB
         /// of part of the relative directory name to be mapped to another location.
         /// </summary>
         public string FullName => GetPhysicalPath(TreeFullName);
+
+        public string FullNameCase => GetPhysicalPath(TreeFullNameCase);
 
         public static string GetPhysicalPath(string dirTree)
         {
@@ -501,7 +515,7 @@ namespace RVCore.RvDB
             Name = br.ReadString();
             FileName = br.ReadString();
             FileModTimeStamp = br.ReadInt64();
-            if (FileModTimeStamp!=0 && FileModTimeStamp < RVIO.FileParamConvert.FileTimeOffset)
+            if (FileModTimeStamp != 0 && FileModTimeStamp < RVIO.FileParamConvert.FileTimeOffset)
                 FileModTimeStamp += RVIO.FileParamConvert.FileTimeOffset;
 #if dt
             DatModTimeStamp = (fFlags & FileFlags.DatModTimeStamp) > 0 ? br.ReadInt64() : (long?)null;
@@ -1051,11 +1065,11 @@ namespace RVCore.RvDB
 
         public string FileNameInsideGame()
         {
-            if (Game != null || Dat!=null)
+            if (Game != null || Dat != null)
             {
                 return Name;
             }
-            
+
             return Path.Combine(Parent.FileNameInsideGame(), Name);
         }
 

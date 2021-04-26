@@ -21,7 +21,7 @@ namespace RVCore.Scanner
             RvFile fileDir = new RvFile(dbDir.FileType);
             DatStatus chechingDatStatus = dbDir.IsInToSort ? DatStatus.InToSort : DatStatus.NotInDat;
 
-            string filename = dbDir.FullName;
+            string filename = dbDir.FullNameCase;
             ICompress checkZ = dbDir.FileType == FileType.Zip ? new Zip() : (ICompress)new SevenZ();
             ZipReturn zr = checkZ.ZipFileOpen(filename, dbDir.FileModTimeStamp);
 
@@ -167,7 +167,7 @@ namespace RVCore.Scanner
 
         public static void FromAFile(RvFile file, string directory, EScanLevel eScanLevel, ThreadWorker bgw, ref bool fileErrorAbort)
         {
-            string filename = Path.Combine(directory, file.Name);
+            string filename = Path.Combine(directory, string.IsNullOrWhiteSpace(file.FileName) ? file.Name : file.FileName);
             ICompress fileToScan = new Compress.File.File();
             ZipReturn zr = fileToScan.ZipFileOpen(filename, file.FileModTimeStamp);
 

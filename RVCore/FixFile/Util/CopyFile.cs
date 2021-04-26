@@ -421,7 +421,7 @@ namespace RVCore.FixFile.Util
                     return ReturnCode.LogicError;
                 }
 
-                string fileNameIn = zZipFileIn.FullName;
+                string fileNameIn = zZipFileIn.FullNameCase;
                 ZipReturn zr1;
 
 

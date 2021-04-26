@@ -46,7 +46,7 @@ namespace ROMVault
                                 return false;
 
                             Zip zf = new Zip();
-                            if (zf.ZipFileOpen(tGame.FullName, tGame.FileModTimeStamp, false) != ZipReturn.ZipGood)
+                            if (zf.ZipFileOpen(tGame.FullNameCase, tGame.FileModTimeStamp, false) != ZipReturn.ZipGood)
                                 return false;
 
                             if (zf.ZipFileOpenReadStreamQuick((ulong)imagefile.ZipFileHeaderPosition, false,
@@ -63,7 +63,7 @@ namespace ROMVault
                         }
                     case FileType.Dir:
                         {
-                            string dirPath = tGame.FullName;
+                            string dirPath = tGame.FullNameCase;
                             string artwork = Path.Combine(dirPath, filename);
                             if (!File.Exists(artwork))
                                 return false;

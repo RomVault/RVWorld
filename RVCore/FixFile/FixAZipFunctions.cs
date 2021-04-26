@@ -118,9 +118,11 @@ namespace RVCore.FixFile
                     throw new FixAZip.ZipFileException(returnCode, fixZippedFile.FullName + " " + fixZippedFile.RepStatus + " " + returnCode + " : " + errorMessage);
             }
 
+            // This should not be done here, as you land up marking files that are being
+            // copied that are still set to needed for fix to delete status 
             //Check to see if the files used for fix, can now be set to delete
-            if (lstFixRomTable != null)
-                FixFileUtils.CheckFilesUsedForFix(lstFixRomTable, fileProcessQueue, false);
+            //if (lstFixRomTable != null)
+            //    FixFileUtils.CheckFilesUsedForFix(lstFixRomTable, fileProcessQueue, false);
 
             return returnCode;
         }
