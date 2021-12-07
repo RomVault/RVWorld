@@ -1,19 +1,19 @@
 ﻿using System.Collections.Generic;
-using System.Data.SQLite;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Linq;
 using System.Windows.Forms;
+using RVXCore;
 
 namespace RomVaultX
 {
     public partial class RvTree : UserControl
     {
-        private List<RvTreeRow> _rows;
+        private List<UITreeRow> _rows;
 
         public RvTree()
         {
-            _rows = new List<RvTreeRow>();
+            _rows = new List<UITreeRow>();
             InitializeComponent();
         }
 
@@ -23,25 +23,27 @@ namespace RomVaultX
 
         public void Setup(List<RvTreeRow> rows)
         {
-            _rows = rows;
+            _rows.Clear();
 
             int yPos = 0;
-            int treeCount = _rows.Count;
+            int treeCount = rows.Count;
             for (int i = 0; i < treeCount; i++)
             {
-                RvTreeRow pTree = _rows[i];
-                int nodeDepth = pTree.dirFullName.Count(x => x == '\\') - 1;
-                if (pTree.MultiDatDir)
+                UITreeRow pTree=new UITreeRow(rows[i]);
+                _rows.Add(pTree);
+
+                int nodeDepth = pTree.TRow.dirFullName.Count(x => x == '\\') - 1;
+                if (pTree.TRow.MultiDatDir)
                 {
                     nodeDepth += 1;
                 }
-                pTree.RTree = new Rectangle(0, yPos - 8, nodeDepth*18, 16);
-                if (pTree.DatId == null)
+                pTree.RTree = new Rectangle(0, yPos - 8, nodeDepth * 18, 16);
+                if (pTree.TRow.DatId == null)
                 {
-                    pTree.RExpand = new Rectangle(5 + nodeDepth*18, yPos + 4, 9, 9);
+                    pTree.RExpand = new Rectangle(5 + nodeDepth * 18, yPos + 4, 9, 9);
                 }
-                pTree.RIcon = new Rectangle(20 + nodeDepth*18, yPos, 16, 16);
-                pTree.RText = new Rectangle(36 + nodeDepth*18, yPos, 500, 16);
+                pTree.RIcon = new Rectangle(20 + nodeDepth * 18, yPos, 16, 16);
+                pTree.RText = new Rectangle(36 + nodeDepth * 18, yPos, 500, 16);
                 yPos = yPos + 16;
             }
             AutoScrollMinSize = new Size(500, yPos);
@@ -50,9 +52,9 @@ namespace RomVaultX
             string lastBranch = "";
             for (int i = treeCount - 1; i >= 0; i--)
             {
-                RvTreeRow pTree = _rows[i];
-                int nodeDepth = pTree.dirFullName.Count(x => x == '\\');
-                if (pTree.MultiDatDir)
+                UITreeRow pTree = _rows[i];
+                int nodeDepth = pTree.TRow.dirFullName.Count(x => x == '\\');
+                if (pTree.TRow.MultiDatDir)
                 {
                     nodeDepth += 1;
                 }
@@ -102,23 +104,23 @@ namespace RomVaultX
             int treeCount = _rows.Count;
             for (int i = 0; i < treeCount; i++)
             {
-                RvTreeRow pTree = _rows[i];
+                UITreeRow pTree = _rows[i];
                 PaintTree(pTree, g, t);
             }
         }
 
-        private void PaintTree(RvTreeRow pTree, Graphics g, Rectangle t)
+        private void PaintTree(UITreeRow pTree, Graphics g, Rectangle t)
         {
             int y = pTree.RTree.Top - _vScroll;
 
             if (pTree.RTree.IntersectsWith(t))
             {
-                Pen p = new Pen(Brushes.Gray, 1) {DashStyle = DashStyle.Dot};
+                Pen p = new Pen(Brushes.Gray, 1) { DashStyle = DashStyle.Dot };
 
                 string lTree = pTree.TreeBranches;
                 for (int j = 0; j < lTree.Length; j++)
                 {
-                    int x = j*18 - _hScroll;
+                    int x = j * 18 - _hScroll;
                     string cTree = lTree.Substring(j, 1);
                     switch (cTree)
                     {
@@ -138,7 +140,7 @@ namespace RomVaultX
             {
                 if (pTree.RExpand.IntersectsWith(t))
                 {
-                    g.DrawImage(pTree.Expanded ? RvImages.ExpandBoxMinus : RvImages.ExpandBoxPlus, RSub(pTree.RExpand, _hScroll, _vScroll));
+                    g.DrawImage(pTree.TRow.Expanded ? RvImages.ExpandBoxMinus : RvImages.ExpandBoxPlus, RSub(pTree.RExpand, _hScroll, _vScroll));
                 }
             }
 
@@ -146,11 +148,11 @@ namespace RomVaultX
             {
                 int icon;
 
-                if (pTree.RomGot == pTree.RomTotal - pTree.RomNoDump)
+                if (pTree.TRow.RomGot == pTree.TRow.RomTotal - pTree.TRow.RomNoDump)
                 {
                     icon = 3;
                 }
-                else if (pTree.RomGot > 0)
+                else if (pTree.TRow.RomGot > 0)
                 {
                     icon = 2;
                 }
@@ -162,7 +164,7 @@ namespace RomVaultX
 
                 Bitmap bm;
                 //if (pTree.Dat == null && pTree.DirDatCount != 1) // Directory above DAT's in Tree
-                bm = string.IsNullOrEmpty(pTree.datName) ?
+                bm = string.IsNullOrEmpty(pTree.TRow.datName) ?
                     RvImages.GetBitmap("DirectoryTree" + icon) :
                     RvImages.GetBitmap("Tree" + icon);
 
@@ -177,21 +179,21 @@ namespace RomVaultX
 
             if (recBackGround.IntersectsWith(t))
             {
-                string thistxt = pTree.dirName;
-                if (!string.IsNullOrEmpty(pTree.datName) || !string.IsNullOrEmpty(pTree.description))
+                string thistxt = pTree.TRow.dirName;
+                if (!string.IsNullOrEmpty(pTree.TRow.datName) || !string.IsNullOrEmpty(pTree.TRow.description))
                 {
-                    if (!string.IsNullOrEmpty(pTree.description))
+                    if (!string.IsNullOrEmpty(pTree.TRow.description))
                     {
-                        thistxt += ": " + pTree.description;
+                        thistxt += ": " + pTree.TRow.description;
                     }
                     else
                     {
-                        thistxt += ": " + pTree.datName;
+                        thistxt += ": " + pTree.TRow.datName;
                     }
                 }
-                if ((pTree.RomTotal > 0) || (pTree.RomGot > 0) || (pTree.RomNoDump > 0))
+                if ((pTree.TRow.RomTotal > 0) || (pTree.TRow.RomGot > 0) || (pTree.TRow.RomNoDump > 0))
                 {
-                    thistxt += " ( Have: " + pTree.RomGot.ToString("#,0") + " / Missing: " + (pTree.RomTotal - pTree.RomGot - pTree.RomNoDump).ToString("#,0") + " )";
+                    thistxt += " ( Have: " + pTree.TRow.RomGot.ToString("#,0") + " / Missing: " + (pTree.TRow.RomTotal - pTree.TRow.RomGot - pTree.TRow.RomNoDump).ToString("#,0") + " )";
                 }
                 if (Selected == pTree)
                 {
@@ -225,7 +227,7 @@ namespace RomVaultX
 
             if (_rows != null)
             {
-                foreach (RvTreeRow tDir in _rows)
+                foreach (UITreeRow tDir in _rows)
                 {
                     if (!CheckMouseDown(tDir, x, y, mevent))
                     {
@@ -245,7 +247,7 @@ namespace RomVaultX
             base.OnMouseDown(mevent);
         }
 
-        private bool CheckMouseDown(RvTreeRow pTree, int x, int y, MouseEventArgs mevent)
+        private bool CheckMouseDown(UITreeRow pTree, int x, int y, MouseEventArgs mevent)
         {
             if (pTree.RExpand.Contains(x, y))
             {
@@ -265,38 +267,23 @@ namespace RomVaultX
             return false;
         }
 
-        public RvTreeRow Selected { get; private set; }
+        public UITreeRow Selected { get; private set; }
 
-        private void SetExpanded(RvTreeRow pTree, MouseButtons mouseB)
+        private void SetExpanded(UITreeRow pTree, MouseButtons mouseB)
         {
             if (mouseB == MouseButtons.Left)
             {
-                SetTreeExpanded(pTree.DirId, !pTree.Expanded);
+                RvTreeRow.SetTreeExpanded(pTree.TRow.DirId, !pTree.TRow.Expanded);
                 Setup(RvTreeRow.ReadTreeFromDB());
             }
             else
             {
-                RvTreeRow.SetTreeExpandedChildren(pTree.DirId);
+                RvTreeRow.SetTreeExpandedChildren(pTree.TRow.DirId);
                 Setup(RvTreeRow.ReadTreeFromDB());
             }
         }
 
 
-        private static SQLiteCommand _commandSetTreeExpanded;
-
-        private static void SetTreeExpanded(uint DirId, bool expanded)
-        {
-            if (_commandSetTreeExpanded == null)
-            {
-                _commandSetTreeExpanded = new SQLiteCommand(@"
-                    UPDATE dir SET expanded=@expanded WHERE DirId=@dirId", Program.db.Connection);
-                _commandSetTreeExpanded.Parameters.Add(new SQLiteParameter("expanded"));
-                _commandSetTreeExpanded.Parameters.Add(new SQLiteParameter("dirId"));
-            }
-            _commandSetTreeExpanded.Parameters["dirId"].Value = DirId;
-            _commandSetTreeExpanded.Parameters["expanded"].Value = expanded;
-            _commandSetTreeExpanded.ExecuteNonQuery();
-        }
 
         #endregion
     }

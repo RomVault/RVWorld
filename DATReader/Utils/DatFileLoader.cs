@@ -2,7 +2,7 @@
 using System.Text;
 using RVIO;
 
-namespace DATReader.DatReader
+namespace DATReader.Utils
 {
     internal class DatFileLoader : IDisposable
     {
@@ -34,6 +34,13 @@ namespace DATReader.DatReader
         public string GnRest()
         {
             string strret = _line.Replace("\"", "");
+            _line = "";
+            Next = strret;
+            return strret;
+        }
+        public string GnRestQ()
+        {
+            string strret = _line;
             _line = "";
             Next = strret;
             return strret;

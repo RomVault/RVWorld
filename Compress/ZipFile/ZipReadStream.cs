@@ -1,5 +1,4 @@
 ﻿using System.IO;
-using Compress.ZipFile.ZLib;
 
 namespace Compress.ZipFile
 {
@@ -38,7 +37,7 @@ namespace Compress.ZipFile
         {
             ZipFileCloseReadStream();
 
-            LocalFile tmpFile = new LocalFile { LocalFilePos = pos };
+            ZipLocalFile tmpFile = new ZipLocalFile { RelativeOffsetOfLocalHeader = pos };
             _localFiles.Clear();
             _localFiles.Add(tmpFile);
             ZipReturn zRet = tmpFile.LocalFileHeaderReadQuick(_zipFs);
@@ -60,16 +59,13 @@ namespace Compress.ZipFile
         {
             if (_compressionStream == null)
                 return ZipReturn.ZipGood;
-            if (_compressionStream is ZlibBaseStream dfStream)
+
+            if (_compressionStream != _zipFs)
             {
-                dfStream.Close();
-                dfStream.Dispose();
-            } 
-            else if (_compressionStream is System.IO.Compression.DeflateStream dfIOStream)
-            {
-                dfIOStream.Close();
-                dfIOStream.Dispose();
+                _compressionStream.Close();
+                _compressionStream.Dispose();
             }
+
             _compressionStream = null;
 
             return ZipReturn.ZipGood;

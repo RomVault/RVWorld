@@ -1,27 +1,32 @@
-﻿using Compress.Utils;
+﻿using Compress.Support.Utils;
 using FileInfo = RVIO.FileInfo;
 using FileStream = RVIO.FileStream;
 
-// UInt16 = ushort
-// UInt32 = uint
-// ULong = ulong
 
 namespace Compress.ZipFile
 {
+  
     public partial class Zip
     {
-        private ulong _centralDirStart;
-        private ulong _centralDirSize;
-        private ulong _endOfCenterDir64;
 
         public ZipReturn ZipFileCreate(string newFilename)
+        {
+            return ZipFileCreate(newFilename, OutputZipType.None);
+        }
+
+        // OutType of Trrntzip forces that we must have a trrtnzip file made
+        // OutType of None will still make a trrntzip file if everything was supplied in trrntzip format.
+
+        public ZipReturn ZipFileCreate(string newFilename, OutputZipType outType)
         {
             if (ZipOpen != ZipOpenType.Closed)
             {
                 return ZipReturn.ZipFileAlreadyOpen;
             }
 
-            DirUtil.CreateDirForFile(newFilename);
+            writeZipType = outType;
+
+            CompressUtils.CreateDirForFile(newFilename);
             _zipFileInfo = new FileInfo(newFilename);
 
             int errorCode = FileStream.OpenFileWrite(newFilename, out _zipFs);
@@ -42,10 +47,10 @@ namespace Compress.ZipFile
 
             using (CrcCalculatorStream crcCs = new CrcCalculatorStream(_zipFs, true))
             {
-                foreach (LocalFile t in _localFiles)
+                foreach (ZipLocalFile t in _localFiles)
                 {
-                    t.CenteralDirectoryWrite(crcCs);
-                    lTrrntzip &= t.TrrntZip;
+                    t.CentralDirectoryWrite(crcCs);
+                    lTrrntzip &= t.GetStatus(LocalFileStatus.TrrntZip);
                 }
 
                 crcCs.Flush();
@@ -53,7 +58,7 @@ namespace Compress.ZipFile
 
                 _centralDirSize = (ulong)_zipFs.Position - _centralDirStart;
 
-                _fileComment = lTrrntzip ? ZipUtils.GetBytes("TORRENTZIPPED-" + crcCs.Crc.ToString("X8")) : new byte[0];
+                FileComment = lTrrntzip ? CompressUtils.GetBytes("TORRENTZIPPED-" + crcCs.Crc.ToString("X8")) : new byte[0];
                 ZipStatus = lTrrntzip ? ZipStatus.TrrntZip : ZipStatus.None;
             }
 
@@ -64,7 +69,7 @@ namespace Compress.ZipFile
 
             if (_zip64)
             {
-                _endOfCenterDir64 = (ulong)_zipFs.Position;
+                _endOfCentralDir64 = (ulong)_zipFs.Position;
                 Zip64EndOfCentralDirWrite();
                 Zip64EndOfCentralDirectoryLocatorWrite();
             }

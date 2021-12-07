@@ -1,6 +1,6 @@
 ﻿using System;
 using System.IO;
-using Compress.Utils;
+using Compress.Support.Utils;
 
 namespace Compress
 {
@@ -8,15 +8,8 @@ namespace Compress
     {
         int LocalFilesCount();
 
-        string Filename(int i);
-        ulong? LocalHeader(int i);
-        ulong UncompressedSize(int i);
-        byte[] CRC32(int i);
-
-        long LastModified(int i);
-
-        bool IsDirectory(int i);
-
+        LocalFile GetLocalFile(int i);
+       
         ZipOpenType ZipOpen { get; }
 
         ZipReturn ZipFileOpen(string newFilename, long timestamp = -1, bool readHeaders = true);

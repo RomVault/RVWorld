@@ -10,7 +10,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>ROMVault</RootNamespace>
     <AssemblyName>ROMVault3</AssemblyName>
-    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <TargetFrameworkProfile>
     </TargetFrameworkProfile>
     <FileAlignment>512</FileAlignment>
@@ -29,13 +29,15 @@
     <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
     <UseApplicationTrust>false</UseApplicationTrust>
     <BootstrapperEnabled>true</BootstrapperEnabled>
+    <NuGetPackageImportStamp>
+    </NuGetPackageImportStamp>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
     <PlatformTarget>x86</PlatformTarget>
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>..\..\stage\RomVault\</OutputPath>
+    <OutputPath>..\..\stage\Private\Debug\RomVault\</OutputPath>
     <DefineConstants>TRACE;DEBUG</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -46,7 +48,7 @@
     <PlatformTarget>x86</PlatformTarget>
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
-    <OutputPath>..\..\Stage\</OutputPath>
+    <OutputPath>..\..\stage\Private\Release\RomVault\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -54,8 +56,8 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
     <DebugSymbols>true</DebugSymbols>
-    <OutputPath>..\..\CaseSensitive\</OutputPath>
-    <DefineConstants>TRACE;DEBUG</DefineConstants>
+    <OutputPath>E:\Bug_16\</OutputPath>
+    <DefineConstants>TRACE;DEBUG;RomShare</DefineConstants>
     <DebugType>full</DebugType>
     <PlatformTarget>x64</PlatformTarget>
     <CodeAnalysisLogFile>..\..\Stage\ROMVault2.exe.CodeAnalysisLog.xml</CodeAnalysisLogFile>
@@ -67,10 +69,10 @@
     <CodeAnalysisIgnoreBuiltInRuleSets>false</CodeAnalysisIgnoreBuiltInRuleSets>
     <CodeAnalysisRuleDirectories>;C:\Program Files (x86)\Microsoft Visual Studio 10.0\Team Tools\Static Analysis Tools\FxCop\\Rules</CodeAnalysisRuleDirectories>
     <Prefer32Bit>false</Prefer32Bit>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
-    <OutputPath>..\..\stage\RomVaultPublic\</OutputPath>
+    <OutputPath>..\..\stage\Release\RomVault\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <Optimize>true</Optimize>
     <DebugType>pdbonly</DebugType>
@@ -83,7 +85,7 @@
     <CodeAnalysisRuleSetDirectories>;C:\Program Files (x86)\Microsoft Visual Studio 10.0\Team Tools\Static Analysis Tools\\Rule Sets</CodeAnalysisRuleSetDirectories>
     <CodeAnalysisRuleDirectories>;C:\Program Files (x86)\Microsoft Visual Studio 10.0\Team Tools\Static Analysis Tools\FxCop\\Rules</CodeAnalysisRuleDirectories>
     <Prefer32Bit>false</Prefer32Bit>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup>
     <ApplicationIcon>chip.ico</ApplicationIcon>
@@ -110,19 +112,64 @@
     <CodeAnalysisIgnoreBuiltInRuleSets>false</CodeAnalysisIgnoreBuiltInRuleSets>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Microsoft.Bcl.AsyncInterfaces, Version=6.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.Bcl.AsyncInterfaces.6.0.0\lib\net461\Microsoft.Bcl.AsyncInterfaces.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
+    <Reference Include="System.Buffers, Version=4.0.3.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Buffers.4.5.1\lib\net461\System.Buffers.dll</HintPath>
+    </Reference>
     <Reference Include="System.Data" />
+    <Reference Include="System.DirectoryServices" />
     <Reference Include="System.Drawing" />
+    <Reference Include="System.IdentityModel" />
+    <Reference Include="System.Memory, Version=4.0.1.1, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Memory.4.5.4\lib\net461\System.Memory.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Numerics" />
+    <Reference Include="System.Numerics.Vectors, Version=4.1.4.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Numerics.Vectors.4.5.0\lib\net46\System.Numerics.Vectors.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Runtime.CompilerServices.Unsafe, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Runtime.CompilerServices.Unsafe.6.0.0\lib\net461\System.Runtime.CompilerServices.Unsafe.dll</HintPath>
+    </Reference>
     <Reference Include="System.Runtime.Serialization" />
     <Reference Include="System.ServiceModel" />
+    <Reference Include="System.ServiceModel.Http, Version=4.9.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.ServiceModel.Http.4.9.0\lib\net461\System.ServiceModel.Http.dll</HintPath>
+    </Reference>
+    <Reference Include="System.ServiceModel.Primitives, Version=4.9.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.ServiceModel.Primitives.4.9.0\lib\net461\System.ServiceModel.Primitives.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Text.Encoding.CodePages, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Text.Encoding.CodePages.6.0.0\lib\net461\System.Text.Encoding.CodePages.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Text.Encodings.Web, Version=6.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Text.Encodings.Web.6.0.0\lib\net461\System.Text.Encodings.Web.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Text.Json, Version=6.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Text.Json.6.0.0\lib\net461\System.Text.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="System.ValueTuple, Version=4.0.3.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.ValueTuple.4.5.0\lib\net47\System.ValueTuple.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Threading.Tasks.Extensions, Version=4.2.0.1, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Threading.Tasks.Extensions.4.5.4\lib\net461\System.Threading.Tasks.Extensions.dll</HintPath>
+    </Reference>
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
+    <Reference Include="ZstdSharp, Version=0.5.2.0, Culture=neutral, PublicKeyToken=8d151af33a4ad5cf, processorArchitecture=MSIL">
+      <HintPath>..\packages\ZstdSharp.Port.0.5.2\lib\net461\ZstdSharp.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Connected Services\RVServices\Reference.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
       <DependentUpon>Reference.svcmap</DependentUpon>
+    </Compile>
+    <Compile Include="DVTreeView.cs">
+      <SubType>Component</SubType>
     </Compile>
     <Compile Include="EmuArcHelper.cs" />
     <Compile Include="FrmMain_Artwork.cs">
@@ -143,12 +190,13 @@
     <Compile Include="FrmRegistration.designer.cs">
       <DependentUpon>FrmRegistration.cs</DependentUpon>
     </Compile>
-    <Compile Include="Report.cs" />
-    <Compile Include="rvImages1.Designer.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>rvImages1.resx</DependentUpon>
+    <Compile Include="FrmRomInfo.cs">
+      <SubType>Form</SubType>
     </Compile>
+    <Compile Include="FrmRomInfo.Designer.cs">
+      <DependentUpon>FrmRomInfo.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Report.cs" />
     <Compile Include="FrmProgressWindowFix.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -174,11 +222,11 @@
     <Compile Include="FrmProgressWindow.Designer.cs">
       <DependentUpon>FrmProgressWindow.cs</DependentUpon>
     </Compile>
-    <Compile Include="FrmPathSettings.cs">
+    <Compile Include="FrmDirectorySettings.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="FrmPathSettings.Designer.cs">
-      <DependentUpon>FrmPathSettings.cs</DependentUpon>
+    <Compile Include="FrmDirectorySettings.Designer.cs">
+      <DependentUpon>FrmDirectorySettings.cs</DependentUpon>
     </Compile>
     <Compile Include="FrmSettings.cs">
       <SubType>Form</SubType>
@@ -198,6 +246,11 @@
     <Compile Include="FrmSplashScreen.Designer.cs">
       <DependentUpon>FrmSplashScreen.cs</DependentUpon>
     </Compile>
+    <Compile Include="rvImages1.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>rvImages1.resx</DependentUpon>
+    </Compile>
     <Compile Include="rvTree.cs">
       <SubType>UserControl</SubType>
     </Compile>
@@ -212,6 +265,7 @@
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="UISettings.cs" />
     <EmbeddedResource Include="FrmHelpAbout.resx">
       <DependentUpon>FrmHelpAbout.cs</DependentUpon>
     </EmbeddedResource>
@@ -221,6 +275,7 @@
     </EmbeddedResource>
     <EmbeddedResource Include="FrmMain.resx">
       <DependentUpon>FrmMain.cs</DependentUpon>
+      <SubType>Designer</SubType>
     </EmbeddedResource>
     <EmbeddedResource Include="FrmProgressWindow.resx">
       <DependentUpon>FrmProgressWindow.cs</DependentUpon>
@@ -228,11 +283,15 @@
     <EmbeddedResource Include="FrmProgressWindowFix.resx">
       <DependentUpon>FrmProgressWindowFix.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="FrmPathSettings.resx">
-      <DependentUpon>FrmPathSettings.cs</DependentUpon>
+    <EmbeddedResource Include="FrmDirectorySettings.resx">
+      <DependentUpon>FrmDirectorySettings.cs</DependentUpon>
+      <SubType>Designer</SubType>
     </EmbeddedResource>
     <EmbeddedResource Include="FrmRegistration.resx">
       <DependentUpon>FrmRegistration.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="FrmRomInfo.resx">
+      <DependentUpon>FrmRomInfo.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="FrmSettings.resx">
       <DependentUpon>FrmSettings.cs</DependentUpon>
@@ -263,6 +322,9 @@
       <DependentUpon>rvTree.cs</DependentUpon>
     </EmbeddedResource>
     <None Include="app.config" />
+    <None Include="Connected Services\RVServices\ROMVault.RVServices.groups.datasource">
+      <DependentUpon>Reference.svcmap</DependentUpon>
+    </None>
     <None Include="Connected Services\RVServices\RVService.wsdl" />
     <None Include="Connected Services\RVServices\RVService.xsd">
       <SubType>Designer</SubType>
@@ -270,6 +332,13 @@
     <None Include="Connected Services\RVServices\RVService1.xsd">
       <SubType>Designer</SubType>
     </None>
+    <None Include="Connected Services\RVServices\RVService2.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="Connected Services\RVServices\RVService3.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
@@ -302,6 +371,7 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="chip.ico" />
+    <Content Include="ROMVault3.exe" />
     <None Include="Connected Services\RVServices\RVService.disco" />
     <None Include="Connected Services\RVServices\configuration91.svcinfo" />
     <None Include="Connected Services\RVServices\configuration.svcinfo" />
@@ -323,9 +393,9 @@
       <Project>{8a90a6cf-f673-4633-829a-8484efdf14fe}</Project>
       <Name>FileHeaderReader</Name>
     </ProjectReference>
-    <ProjectReference Include="..\RVCore\RVCore.csproj">
+    <ProjectReference Include="..\RomVaultCore\RomVaultCore.csproj">
       <Project>{dda3c8cb-c4a1-4511-aad6-601b1c1f589a}</Project>
-      <Name>RVCore</Name>
+      <Name>RomVaultCore</Name>
     </ProjectReference>
     <ProjectReference Include="..\RVIO\RVIO.csproj">
       <Project>{ff8a7a0a-6319-49e0-a6e6-df3754bffdd1}</Project>
@@ -354,5 +424,12 @@
     <Message Importance="high" Text="Executing ILRepack...with target platform from $(ReferenceAssemblies)" />
     <Exec Command="&quot;C:\Program Files (x86)\ILRepack\ILRepack.exe&quot; /out:@(MainAssembly) /targetplatform:v4,&quot;$(ReferenceAssemblies)&quot; &quot;@(IntermediateAssembly)&quot; @(AssembliesToMerge->'&quot;%(FullPath)&quot;', ' ')" />
     <Delete Files="@(ReferenceCopyLocalPaths->'$(OutDir)%(DestinationSubDirectory)%(Filename)%(Extension)')" />
+  </Target>
+  <Import Project="..\packages\System.Text.Json.6.0.0\build\System.Text.Json.targets" Condition="Exists('..\packages\System.Text.Json.6.0.0\build\System.Text.Json.targets')" />
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('..\packages\System.Text.Json.6.0.0\build\System.Text.Json.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\System.Text.Json.6.0.0\build\System.Text.Json.targets'))" />
   </Target>
 </Project>

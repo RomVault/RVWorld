@@ -6,8 +6,8 @@ using System.Drawing.Text;
 using System.Globalization;
 using System.Windows.Forms;
 using Compress;
-using RVCore;
-using RVCore.RvDB;
+using RomVaultCore;
+using RomVaultCore.RvDB;
 using RVIO;
 
 namespace ROMVault
@@ -55,20 +55,31 @@ namespace ROMVault
             _updatingGameGrid = true;
 
             ClearGameGrid();
+            UpdateGameGrid();
 
+        }
+
+        private void UpdateGameGrid()
+        {
+            if (gameGridSource == null)
+                return;
+
+            _updatingGameGrid = true;
+            
             List<RvFile> gameList = new List<RvFile>();
 
             _gameGridColumnXPositions = new int[(int)RepStatus.EndValue];
 
-            for (int j = 0; j < tDir.ChildCount; j++)
+            string searchLowerCase = txtFilter.Text.ToLower();
+            for (int j = 0; j < gameGridSource.ChildCount; j++)
             {
-                RvFile tChildDir = tDir.Child(j);
+                RvFile tChildDir = gameGridSource.Child(j);
                 if (!tChildDir.IsDir)
                 {
                     continue;
                 }
 
-                if (txtFilter.Text.Length > 0 && !tChildDir.Name.Contains(txtFilter.Text))
+                if (txtFilter.Text.Length > 0 && !tChildDir.Name.ToLower().Contains(searchLowerCase))
                 {
                     continue;
                 }
@@ -80,14 +91,16 @@ namespace ROMVault
                 bool gUnknown = tDirStat.HasUnknown();
                 bool gInToSort = tDirStat.HasInToSort();
                 bool gFixes = tDirStat.HasFixesNeeded();
+                bool gAllMerged = tDirStat.HasAllMerged();
 
                 bool show = chkBoxShowCorrect.Checked && gCorrect && !gMissing && !gFixes;
                 show = show || chkBoxShowMissing.Checked && gMissing;
                 show = show || chkBoxShowFixed.Checked && gFixes;
+                show = show || chkBoxShowMerged.Checked && gAllMerged;
                 show = show || gUnknown;
                 show = show || gInToSort;
                 show = show || tChildDir.GotStatus == GotStatus.Corrupt;
-                show = show || !(gCorrect || gMissing || gUnknown || gInToSort || gFixes);
+                show = show || !(gCorrect || gMissing || gUnknown || gInToSort || gFixes || gAllMerged);
 
                 if (!show)
                 {
@@ -128,9 +141,13 @@ namespace ROMVault
             }
 
             gameGrid = gameList.ToArray();
-            GameGrid.RowCount = gameGrid.Length;
-            if (GameGrid.RowCount > 0)
-                GameGrid.Rows[0].Selected = false;
+            if (GameGrid.RowCount != gameGrid.Length)
+            {
+                GameGrid.RowCount = gameGrid.Length;
+                if (GameGrid.RowCount > 0)
+                    GameGrid.Rows[0].Selected = false;
+            }
+
             _updatingGameGrid = false;
 
             UpdateSelectedGame();
@@ -143,7 +160,7 @@ namespace ROMVault
 
             while (textNumber > 0)
             {
-                textNumber = textNumber / 10;
+                textNumber /= 10;
                 len++;
             }
 
@@ -178,9 +195,11 @@ namespace ROMVault
 
         private void GameGridCellValueNeeded(object sender, DataGridViewCellValueEventArgs e)
         {
+            if (e.RowIndex >= gameGrid.Length)
+                return;
+
             RvFile tRvDir = gameGrid[e.RowIndex];
-
-
+            
             switch (e.ColumnIndex)
             {
                 case 0: // CType
@@ -189,41 +208,24 @@ namespace ROMVault
                         switch (tRvDir.FileType)
                         {
                             case FileType.Zip:
-                                if ((tRvDir.RepStatus == RepStatus.DirCorrect || tRvDir.RepStatus==RepStatus.DirInToSort) && tRvDir.ZipStatus == ZipStatus.TrrntZip)
-                                {
-                                    bitmapName = "ZipTZ";
-                                }
-                                else
-                                {
-                                    bitmapName = "Zip" + tRvDir.RepStatus;
-                                }
+                                bitmapName = "Zip";
+                                if (tRvDir.ZipStatus == ZipStatus.TrrntZip) { bitmapName += "TZ"; }
+                                if (tRvDir.GotStatus == GotStatus.Corrupt) { bitmapName += "Corrupt"; }
+                                if (tRvDir.RepStatus == RepStatus.DirMissing) { bitmapName += "Missing"; }
 
                                 break;
                             case FileType.SevenZip:
-                                if (tRvDir.RepStatus == RepStatus.DirCorrect && tRvDir.ZipStatus == ZipStatus.TrrntZip)
-                                {
-                                    bitmapName = "SevenZipTZ";
-                                }
-                                else if ((tRvDir.RepStatus == RepStatus.DirCorrect || tRvDir.RepStatus==RepStatus.DirInToSort) && tRvDir.ZipStatus == ZipStatus.Trrnt7Zip)
-                                {
-                                    bitmapName = "SevenZipT7Z";
-                                }
-                                else
-                                {
-                                    bitmapName = "SevenZip" + tRvDir.RepStatus;
-                                }
+                                bitmapName = "SevenZip";
+                                if (tRvDir.ZipStatus == ZipStatus.TrrntZip) { bitmapName += "TZ"; }
+                                if (tRvDir.ZipStatus == ZipStatus.Trrnt7Zip) { bitmapName += "T7Z"; }
+                                if (tRvDir.GotStatus == GotStatus.Corrupt) { bitmapName += "Corrupt"; }
+                                if (tRvDir.RepStatus == RepStatus.DirMissing) { bitmapName += "Missing"; }
 
                                 break;
                             default:
+                                bitmapName = "Dir";
                                 // hack because DirDirInToSort image doesnt exist.
-                                if (tRvDir.RepStatus == RepStatus.DirInToSort)
-                                {
-                                    bitmapName = "Dir" + RepStatus.DirUnknown;
-                                }
-                                else
-                                {
-                                    bitmapName = "Dir" + tRvDir.RepStatus;
-                                }
+                                if (tRvDir.RepStatus == RepStatus.DirMissing) { bitmapName += "Missing"; }
 
                                 break;
                         }
@@ -421,6 +423,19 @@ namespace ROMVault
                 int retVal = 0;
                 switch (_colIndex)
                 {
+                    case 0:
+                        retVal = x.FileType - y.FileType;
+                        if (retVal != 0)
+                            break;
+                        retVal = y.ZipStatus - x.ZipStatus;
+                        if (retVal != 0)
+                            break;
+                        retVal = x.RepStatus - y.RepStatus;
+                        if (retVal != 0)
+                            break;
+                        retVal = string.Compare(x.Name ?? "", y.Name ?? "", StringComparison.Ordinal);
+                        break;
+
                     case 1:
                         retVal = string.Compare(x.Name ?? "", y.Name ?? "", StringComparison.Ordinal);
                         break;
@@ -477,16 +492,30 @@ namespace ROMVault
                 return;
             }
 
+
+            if (e.Button == MouseButtons.Right)
+            {
+                RvFile tParent = gameGridSource?.Parent;
+                if (tParent == null)
+                    return;
+                UpdateGameGrid(tParent);
+                ctrRvTree.SetSelected(tParent);
+
+                UpdateDatMetaData(tParent);
+                return;
+            }
             if (GameGrid.SelectedRows.Count != 1)
             {
                 return;
             }
 
             RvFile tGame = gameGrid[GameGrid.SelectedRows[0].Index];
-            if (tGame.Game == null)
+            if (tGame.Game == null && tGame.FileType == FileType.Dir)
             {
                 UpdateGameGrid(tGame);
-                DirTree.SetSelected(tGame);
+                ctrRvTree.SetSelected(tGame);
+
+                UpdateDatMetaData(tGame);
             }
             else
             {
@@ -496,7 +525,7 @@ namespace ROMVault
 
                 foreach (EmulatorInfo ei in Settings.rvSettings.EInfo)
                 {
-                    if (!string.Equals(path, ei.TreeDir, StringComparison.CurrentCultureIgnoreCase))
+                    if (!string.Equals(path.Substring(8), ei.TreeDir, StringComparison.CurrentCultureIgnoreCase))
                         continue;
 
                     if (string.IsNullOrWhiteSpace(ei.CommandLine))
@@ -504,12 +533,23 @@ namespace ROMVault
 
                     string commandLineOptions = ei.CommandLine;
                     string dirname = tGame.Parent.FullName;
+                    if (dirname.StartsWith("RomRoot\\"))
+                        dirname = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly().Location), dirname);
+                   
                     commandLineOptions = commandLineOptions.Replace("{gamename}", Path.GetFileNameWithoutExtension(tGame.Name));
                     commandLineOptions = commandLineOptions.Replace("{gamefilename}", tGame.Name);
                     commandLineOptions = commandLineOptions.Replace("{gamedirectory}", dirname);
+
+                    if (!File.Exists(ei.ExeName))
+                        continue;
+
+                    string workingDir = ei.WorkingDirectory;
+                    if (string.IsNullOrWhiteSpace(workingDir))
+                        workingDir = Path.GetDirectoryName(ei.ExeName);
+
                     using (Process exeProcess = new Process())
                     {
-                        exeProcess.StartInfo.WorkingDirectory = ei.WorkingDirectory;
+                        exeProcess.StartInfo.WorkingDirectory = workingDir;
                         exeProcess.StartInfo.FileName = ei.ExeName;
                         exeProcess.StartInfo.Arguments = commandLineOptions;
                         exeProcess.StartInfo.UseShellExecute = false;

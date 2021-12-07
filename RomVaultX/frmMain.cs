@@ -2,11 +2,10 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
-using System.Threading;
 using System.Windows.Forms;
-using DokanNet;
-using RomVaultX.DB;
-using RomVaultX.Util;
+using RVXCore;
+using RVXCore.DB;
+using RVXCore.Util;
 
 namespace RomVaultX
 {
@@ -25,12 +24,12 @@ namespace RomVaultX
         private float _scaleFactorY = 1;
 
         private FolderBrowserDialog sortDir;
-
-        private VDrive di;
-
+        
         public frmMain()
         {
             InitializeComponent();
+            DBSqlite.db = new DBSqlite();
+
             Text = $@"RomVaultX {Application.StartupPath}";
 
             string driveLetter = AppSettings.ReadSetting("vDriveLetter");
@@ -43,7 +42,7 @@ namespace RomVaultX
             vDriveLetter = driveLetter.ToCharArray()[0];
 
             addGameGrid();
-            string res = Program.db.ConnectToDB();
+            string res = DBSqlite.db.ConnectToDB();
 
             if (!string.IsNullOrEmpty(res))
             {
@@ -58,12 +57,12 @@ namespace RomVaultX
         protected override void ScaleControl(SizeF factor, BoundsSpecified specified)
         {
             base.ScaleControl(factor, specified);
-            splitContainer1.SplitterDistance = (int) (splitContainer1.SplitterDistance*factor.Width);
-            splitContainer2.SplitterDistance = (int) (splitContainer2.SplitterDistance*factor.Width);
-            splitContainer2.Panel1MinSize = (int) (splitContainer2.Panel1MinSize*factor.Width);
+            splitContainer1.SplitterDistance = (int)(splitContainer1.SplitterDistance * factor.Width);
+            splitContainer2.SplitterDistance = (int)(splitContainer2.SplitterDistance * factor.Width);
+            splitContainer2.Panel1MinSize = (int)(splitContainer2.Panel1MinSize * factor.Width);
 
-            splitContainer3.SplitterDistance = (int) (splitContainer3.SplitterDistance*factor.Height);
-            splitContainer4.SplitterDistance = (int) (splitContainer4.SplitterDistance*factor.Height);
+            splitContainer3.SplitterDistance = (int)(splitContainer3.SplitterDistance * factor.Height);
+            splitContainer4.SplitterDistance = (int)(splitContainer4.SplitterDistance * factor.Height);
 
             _scaleFactorX *= factor.Width;
             _scaleFactorY *= factor.Height;
@@ -132,13 +131,13 @@ namespace RomVaultX
 
         private void DirTree_RvSelected(object sender, MouseEventArgs e)
         {
-            RvTreeRow tr = (RvTreeRow) sender;
-            Debug.WriteLine(tr.dirFullName);
-            updateSelectedTreeRow(tr);
+            UITreeRow tr = (UITreeRow)sender;
+            Debug.WriteLine(tr.TRow.dirFullName);
+            updateSelectedTreeRow(tr.TRow);
         }
 
 
-        private void DatSetSelected(RvTreeRow cf)
+        private void DatSetSelected(UITreeRow cf)
         {
             DirTree.Refresh();
             GameGrid.Rows.Clear();
@@ -149,7 +148,7 @@ namespace RomVaultX
                 return;
             }
 
-            UpdateGameGrid(cf.DatId);
+            UpdateGameGrid(cf.TRow.DatId);
         }
 
 
@@ -170,43 +169,55 @@ namespace RomVaultX
         private void updateZipDBToolStripMenuItem_Click(object sender, EventArgs e)
         {
             UpdateZipDB.UpdateDB();
+            MessageBox.Show("Zip Header Database Update Complete");
         }
 
         private void startVDriveToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            Dokan.Unmount(vDriveLetter);
-            di = new VDrive();
-#if DEBUG
-            Thread t2 = new Thread(() => { di.Mount(vDriveLetter + ":\\", DokanOptions.DebugMode, 1); });
-#else
-            Thread t2 = new Thread(() => { di.Mount(vDriveLetter + ":\\", DokanOptions.FixedDrive, 10); });
-#endif
-            t2.Start();
+            VDrive.startVDrive(vDriveLetter);
         }
 
         private void closeVDriveToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            Dokan.Unmount(vDriveLetter);
+            VDrive.UnMount(vDriveLetter);
         }
+
         private void extractFilesToolStripMenuItem_Click(object sender, EventArgs e)
         {
             if (DirTree.Selected == null)
                 return;
 
-            ExtractFiles.extract(DirTree.Selected.dirFullName);
+            using (FolderBrowserDialog folderBrowserDialog1 = new FolderBrowserDialog())
+            {
+                DialogResult result = folderBrowserDialog1.ShowDialog();
+                if (result != DialogResult.OK) return;
+                string outPath = folderBrowserDialog1.SelectedPath;
+
+                ExtractFiles.extract(DirTree.Selected.TRow.dirFullName, outPath);
+            }
         }
 
         private void fixDatsToolStripMenuItem_Click(object sender, EventArgs e)
         {
             if (DirTree.Selected == null)
                 return;
-            
-            FixDatList.extract(DirTree.Selected.dirFullName);
+
+            using (SaveFileDialog openFileDialog = new SaveFileDialog())
+            {
+                openFileDialog.Filter = "Dat File (*.Dat)|*.DAT";
+                openFileDialog.ShowDialog();
+                string outPath = openFileDialog.FileName;
+
+                if (string.IsNullOrWhiteSpace(outPath))
+                    return;
+
+                FixDatList.extract(DirTree.Selected.TRow.dirFullName,outPath);
+            }
         }
 
         private void frmMain_FormClosing(object sender, FormClosingEventArgs e)
         {
-            Dokan.Unmount(vDriveLetter);
+            VDrive.UnMount(vDriveLetter);
         }
 
         private void RomGrid_CellContentClick(object sender, DataGridViewCellEventArgs e)
@@ -217,29 +228,29 @@ namespace RomVaultX
 
         private void splitContainer3_Panel1_Resize(object sender, EventArgs e)
         {
-            gbDatInfo.Width = splitContainer3.Panel1.Width - gbDatInfo.Left*2;
+            gbDatInfo.Width = splitContainer3.Panel1.Width - gbDatInfo.Left * 2;
         }
 
 
         private void gbDatInfo_Resize(object sender, EventArgs e)
         {
             const int leftPos = 89;
-            int rightPos = (int) (gbDatInfo.Width/_scaleFactorX) - 15;
+            int rightPos = (int)(gbDatInfo.Width / _scaleFactorX) - 15;
             if (rightPos > 600)
             {
                 rightPos = 600;
             }
             int width = rightPos - leftPos;
-            int widthB1 = (int) ((double) width*120/340);
+            int widthB1 = (int)((double)width * 120 / 340);
             int leftB2 = rightPos - widthB1;
 
 
             int backD = 97;
 
-            width = (int) (width*_scaleFactorX);
-            widthB1 = (int) (widthB1*_scaleFactorX);
-            leftB2 = (int) (leftB2*_scaleFactorX);
-            backD = (int) (backD*_scaleFactorX);
+            width = (int)(width * _scaleFactorX);
+            widthB1 = (int)(widthB1 * _scaleFactorX);
+            leftB2 = (int)(leftB2 * _scaleFactorX);
+            backD = (int)(backD * _scaleFactorX);
 
 
             lblDITName.Width = width;
@@ -280,7 +291,7 @@ namespace RomVaultX
             if (tr.DatId != null)
             {
                 RvDat tDat = new RvDat();
-                tDat.DbRead((uint) tr.DatId);
+                tDat.DbRead((uint)tr.DatId);
                 lblDITDescription.Text = tDat.Description;
                 lblDITCategory.Text = tDat.Category;
                 lblDITVersion.Text = tDat.Version;
@@ -370,122 +381,122 @@ namespace RomVaultX
 
         private void addGameGrid()
         {
-            lblSIName = new Label {Location = SPoint(6, 15), Size = SSize(76, 13), Text = "Name :", TextAlign = ContentAlignment.TopRight, Visible = false};
-            lblSITName = new Label {Location = SPoint(84, 14), Size = SSize(320, 17), BorderStyle = BorderStyle.FixedSingle, Visible = false};
+            lblSIName = new Label { Location = SPoint(6, 15), Size = SSize(76, 13), Text = "Name :", TextAlign = ContentAlignment.TopRight, Visible = false };
+            lblSITName = new Label { Location = SPoint(84, 14), Size = SSize(320, 17), BorderStyle = BorderStyle.FixedSingle, Visible = false };
             gbSetInfo.Controls.Add(lblSIName);
             gbSetInfo.Controls.Add(lblSITName);
 
-            lblSIDescription = new Label {Location = SPoint(6, 31), Size = SSize(76, 13), Text = "Description :", TextAlign = ContentAlignment.TopRight, Visible = false};
-            lblSITDescription = new Label {Location = SPoint(84, 30), Size = SSize(320, 17), BorderStyle = BorderStyle.FixedSingle, Visible = false};
+            lblSIDescription = new Label { Location = SPoint(6, 31), Size = SSize(76, 13), Text = "Description :", TextAlign = ContentAlignment.TopRight, Visible = false };
+            lblSITDescription = new Label { Location = SPoint(84, 30), Size = SSize(320, 17), BorderStyle = BorderStyle.FixedSingle, Visible = false };
             gbSetInfo.Controls.Add(lblSIDescription);
             gbSetInfo.Controls.Add(lblSITDescription);
 
-            lblSIManufacturer = new Label {Location = SPoint(6, 47), Size = SSize(76, 13), Text = "Manufacturer :", TextAlign = ContentAlignment.TopRight, Visible = false};
-            lblSITManufacturer = new Label {Location = SPoint(84, 46), Size = SSize(320, 17), BorderStyle = BorderStyle.FixedSingle, Visible = false};
+            lblSIManufacturer = new Label { Location = SPoint(6, 47), Size = SSize(76, 13), Text = "Manufacturer :", TextAlign = ContentAlignment.TopRight, Visible = false };
+            lblSITManufacturer = new Label { Location = SPoint(84, 46), Size = SSize(320, 17), BorderStyle = BorderStyle.FixedSingle, Visible = false };
             gbSetInfo.Controls.Add(lblSIManufacturer);
             gbSetInfo.Controls.Add(lblSITManufacturer);
 
-            lblSICloneOf = new Label {Location = SPoint(6, 63), Size = SSize(76, 13), Text = "Clone of :", TextAlign = ContentAlignment.TopRight, Visible = false};
-            lblSITCloneOf = new Label {Location = SPoint(84, 62), Size = SSize(120, 17), BorderStyle = BorderStyle.FixedSingle, Visible = false};
+            lblSICloneOf = new Label { Location = SPoint(6, 63), Size = SSize(76, 13), Text = "Clone of :", TextAlign = ContentAlignment.TopRight, Visible = false };
+            lblSITCloneOf = new Label { Location = SPoint(84, 62), Size = SSize(120, 17), BorderStyle = BorderStyle.FixedSingle, Visible = false };
             gbSetInfo.Controls.Add(lblSICloneOf);
             gbSetInfo.Controls.Add(lblSITCloneOf);
 
-            lblSIYear = new Label {Location = SPoint(206, 63), Size = SSize(76, 13), Text = "Year :", TextAlign = ContentAlignment.TopRight, Visible = false};
-            lblSITYear = new Label {Location = SPoint(284, 62), Size = SSize(120, 17), BorderStyle = BorderStyle.FixedSingle, Visible = false};
+            lblSIYear = new Label { Location = SPoint(206, 63), Size = SSize(76, 13), Text = "Year :", TextAlign = ContentAlignment.TopRight, Visible = false };
+            lblSITYear = new Label { Location = SPoint(284, 62), Size = SSize(120, 17), BorderStyle = BorderStyle.FixedSingle, Visible = false };
             gbSetInfo.Controls.Add(lblSIYear);
             gbSetInfo.Controls.Add(lblSITYear);
 
 
-            lblSIRomOf = new Label {Location = SPoint(6, 79), Size = SSize(76, 13), Text = "ROM of :", TextAlign = ContentAlignment.TopRight, Visible = false};
-            lblSITRomOf = new Label {Location = SPoint(84, 78), Size = SSize(120, 17), BorderStyle = BorderStyle.FixedSingle, Visible = false};
+            lblSIRomOf = new Label { Location = SPoint(6, 79), Size = SSize(76, 13), Text = "ROM of :", TextAlign = ContentAlignment.TopRight, Visible = false };
+            lblSITRomOf = new Label { Location = SPoint(84, 78), Size = SSize(120, 17), BorderStyle = BorderStyle.FixedSingle, Visible = false };
             gbSetInfo.Controls.Add(lblSIRomOf);
             gbSetInfo.Controls.Add(lblSITRomOf);
 
-            lblSITotalRoms = new Label {Location = SPoint(206, 79), Size = SSize(76, 13), Text = "Total ROMs :", TextAlign = ContentAlignment.TopRight, Visible = false};
-            lblSITTotalRoms = new Label {Location = SPoint(284, 78), Size = SSize(120, 17), BorderStyle = BorderStyle.FixedSingle, Visible = false};
+            lblSITotalRoms = new Label { Location = SPoint(206, 79), Size = SSize(76, 13), Text = "Total ROMs :", TextAlign = ContentAlignment.TopRight, Visible = false };
+            lblSITTotalRoms = new Label { Location = SPoint(284, 78), Size = SSize(120, 17), BorderStyle = BorderStyle.FixedSingle, Visible = false };
             gbSetInfo.Controls.Add(lblSITotalRoms);
             gbSetInfo.Controls.Add(lblSITTotalRoms);
 
             //Trurip
 
-            lblSIPublisher = new Label {Location = SPoint(6, 47), Size = SSize(76, 13), Text = "Publisher :", TextAlign = ContentAlignment.TopRight, Visible = false};
-            lblSITPublisher = new Label {Location = SPoint(84, 46), Size = SSize(320, 17), BorderStyle = BorderStyle.FixedSingle, Visible = false};
+            lblSIPublisher = new Label { Location = SPoint(6, 47), Size = SSize(76, 13), Text = "Publisher :", TextAlign = ContentAlignment.TopRight, Visible = false };
+            lblSITPublisher = new Label { Location = SPoint(84, 46), Size = SSize(320, 17), BorderStyle = BorderStyle.FixedSingle, Visible = false };
             gbSetInfo.Controls.Add(lblSIPublisher);
             gbSetInfo.Controls.Add(lblSITPublisher);
 
-            lblSIDeveloper = new Label {Location = SPoint(6, 63), Size = SSize(76, 13), Text = "Developer :", TextAlign = ContentAlignment.TopRight, Visible = false};
-            lblSITDeveloper = new Label {Location = SPoint(84, 62), Size = SSize(320, 17), BorderStyle = BorderStyle.FixedSingle, Visible = false};
+            lblSIDeveloper = new Label { Location = SPoint(6, 63), Size = SSize(76, 13), Text = "Developer :", TextAlign = ContentAlignment.TopRight, Visible = false };
+            lblSITDeveloper = new Label { Location = SPoint(84, 62), Size = SSize(320, 17), BorderStyle = BorderStyle.FixedSingle, Visible = false };
             gbSetInfo.Controls.Add(lblSIDeveloper);
             gbSetInfo.Controls.Add(lblSITDeveloper);
 
 
-            lblSIEdition = new Label {Location = SPoint(6, 79), Size = SSize(76, 13), Text = "Edition :", TextAlign = ContentAlignment.TopRight, Visible = false};
-            lblSITEdition = new Label {Location = SPoint(84, 78), Size = SSize(120, 17), BorderStyle = BorderStyle.FixedSingle, Visible = false};
+            lblSIEdition = new Label { Location = SPoint(6, 79), Size = SSize(76, 13), Text = "Edition :", TextAlign = ContentAlignment.TopRight, Visible = false };
+            lblSITEdition = new Label { Location = SPoint(84, 78), Size = SSize(120, 17), BorderStyle = BorderStyle.FixedSingle, Visible = false };
             gbSetInfo.Controls.Add(lblSIEdition);
             gbSetInfo.Controls.Add(lblSITEdition);
 
-            lblSIVersion = new Label {Location = SPoint(206, 79), Size = SSize(76, 13), Text = "Version :", TextAlign = ContentAlignment.TopRight, Visible = false};
-            lblSITVersion = new Label {Location = SPoint(284, 78), Size = SSize(120, 17), BorderStyle = BorderStyle.FixedSingle, Visible = false};
+            lblSIVersion = new Label { Location = SPoint(206, 79), Size = SSize(76, 13), Text = "Version :", TextAlign = ContentAlignment.TopRight, Visible = false };
+            lblSITVersion = new Label { Location = SPoint(284, 78), Size = SSize(120, 17), BorderStyle = BorderStyle.FixedSingle, Visible = false };
             gbSetInfo.Controls.Add(lblSIVersion);
             gbSetInfo.Controls.Add(lblSITVersion);
 
-            lblSIType = new Label {Location = SPoint(406, 79), Size = SSize(76, 13), Text = "Type :", TextAlign = ContentAlignment.TopRight, Visible = false};
-            lblSITType = new Label {Location = SPoint(484, 78), Size = SSize(120, 17), BorderStyle = BorderStyle.FixedSingle, Visible = false};
+            lblSIType = new Label { Location = SPoint(406, 79), Size = SSize(76, 13), Text = "Type :", TextAlign = ContentAlignment.TopRight, Visible = false };
+            lblSITType = new Label { Location = SPoint(484, 78), Size = SSize(120, 17), BorderStyle = BorderStyle.FixedSingle, Visible = false };
             gbSetInfo.Controls.Add(lblSIType);
             gbSetInfo.Controls.Add(lblSITType);
 
 
-            lblSIMedia = new Label {Location = SPoint(6, 95), Size = SSize(76, 13), Text = "Media :", TextAlign = ContentAlignment.TopRight, Visible = false};
-            lblSITMedia = new Label {Location = SPoint(84, 94), Size = SSize(120, 17), BorderStyle = BorderStyle.FixedSingle, Visible = false};
+            lblSIMedia = new Label { Location = SPoint(6, 95), Size = SSize(76, 13), Text = "Media :", TextAlign = ContentAlignment.TopRight, Visible = false };
+            lblSITMedia = new Label { Location = SPoint(84, 94), Size = SSize(120, 17), BorderStyle = BorderStyle.FixedSingle, Visible = false };
             gbSetInfo.Controls.Add(lblSIMedia);
             gbSetInfo.Controls.Add(lblSITMedia);
 
-            lblSILanguage = new Label {Location = SPoint(206, 95), Size = SSize(76, 13), Text = "Language :", TextAlign = ContentAlignment.TopRight, Visible = false};
-            lblSITLanguage = new Label {Location = SPoint(284, 94), Size = SSize(120, 17), BorderStyle = BorderStyle.FixedSingle, Visible = false};
+            lblSILanguage = new Label { Location = SPoint(206, 95), Size = SSize(76, 13), Text = "Language :", TextAlign = ContentAlignment.TopRight, Visible = false };
+            lblSITLanguage = new Label { Location = SPoint(284, 94), Size = SSize(120, 17), BorderStyle = BorderStyle.FixedSingle, Visible = false };
             gbSetInfo.Controls.Add(lblSILanguage);
             gbSetInfo.Controls.Add(lblSITLanguage);
 
-            lblSIPlayers = new Label {Location = SPoint(406, 95), Size = SSize(76, 13), Text = "Players :", TextAlign = ContentAlignment.TopRight, Visible = false};
-            lblSITPlayers = new Label {Location = SPoint(484, 94), Size = SSize(120, 17), BorderStyle = BorderStyle.FixedSingle, Visible = false};
+            lblSIPlayers = new Label { Location = SPoint(406, 95), Size = SSize(76, 13), Text = "Players :", TextAlign = ContentAlignment.TopRight, Visible = false };
+            lblSITPlayers = new Label { Location = SPoint(484, 94), Size = SSize(120, 17), BorderStyle = BorderStyle.FixedSingle, Visible = false };
             gbSetInfo.Controls.Add(lblSIPlayers);
             gbSetInfo.Controls.Add(lblSITPlayers);
 
 
-            lblSIRatings = new Label {Location = SPoint(6, 111), Size = SSize(76, 13), Text = "Ratings :", TextAlign = ContentAlignment.TopRight, Visible = false};
-            lblSITRatings = new Label {Location = SPoint(84, 110), Size = SSize(120, 17), BorderStyle = BorderStyle.FixedSingle, Visible = false};
+            lblSIRatings = new Label { Location = SPoint(6, 111), Size = SSize(76, 13), Text = "Ratings :", TextAlign = ContentAlignment.TopRight, Visible = false };
+            lblSITRatings = new Label { Location = SPoint(84, 110), Size = SSize(120, 17), BorderStyle = BorderStyle.FixedSingle, Visible = false };
             gbSetInfo.Controls.Add(lblSIRatings);
             gbSetInfo.Controls.Add(lblSITRatings);
 
-            lblSIGenre = new Label {Location = SPoint(206, 111), Size = SSize(76, 13), Text = "Genre :", TextAlign = ContentAlignment.TopRight, Visible = false};
-            lblSITGenre = new Label {Location = SPoint(284, 110), Size = SSize(120, 17), BorderStyle = BorderStyle.FixedSingle, Visible = false};
+            lblSIGenre = new Label { Location = SPoint(206, 111), Size = SSize(76, 13), Text = "Genre :", TextAlign = ContentAlignment.TopRight, Visible = false };
+            lblSITGenre = new Label { Location = SPoint(284, 110), Size = SSize(120, 17), BorderStyle = BorderStyle.FixedSingle, Visible = false };
             gbSetInfo.Controls.Add(lblSIGenre);
             gbSetInfo.Controls.Add(lblSITGenre);
 
-            lblSIPeripheral = new Label {Location = SPoint(406, 111), Size = SSize(76, 13), Text = "Peripheral :", TextAlign = ContentAlignment.TopRight, Visible = false};
-            lblSITPeripheral = new Label {Location = SPoint(484, 110), Size = SSize(120, 17), BorderStyle = BorderStyle.FixedSingle, Visible = false};
+            lblSIPeripheral = new Label { Location = SPoint(406, 111), Size = SSize(76, 13), Text = "Peripheral :", TextAlign = ContentAlignment.TopRight, Visible = false };
+            lblSITPeripheral = new Label { Location = SPoint(484, 110), Size = SSize(120, 17), BorderStyle = BorderStyle.FixedSingle, Visible = false };
             gbSetInfo.Controls.Add(lblSIPeripheral);
             gbSetInfo.Controls.Add(lblSITPeripheral);
 
 
-            lblSIBarCode = new Label {Location = SPoint(6, 127), Size = SSize(76, 13), Text = "Barcode :", TextAlign = ContentAlignment.TopRight, Visible = false};
-            lblSITBarCode = new Label {Location = SPoint(84, 126), Size = SSize(120, 17), BorderStyle = BorderStyle.FixedSingle, Visible = false};
+            lblSIBarCode = new Label { Location = SPoint(6, 127), Size = SSize(76, 13), Text = "Barcode :", TextAlign = ContentAlignment.TopRight, Visible = false };
+            lblSITBarCode = new Label { Location = SPoint(84, 126), Size = SSize(120, 17), BorderStyle = BorderStyle.FixedSingle, Visible = false };
             gbSetInfo.Controls.Add(lblSIBarCode);
             gbSetInfo.Controls.Add(lblSITBarCode);
 
-            lblSIMediaCatalogNumber = new Label {Location = SPoint(406, 127), Size = SSize(76, 13), Text = "Cat. No. :", TextAlign = ContentAlignment.TopRight, Visible = false};
-            lblSITMediaCatalogNumber = new Label {Location = SPoint(484, 126), Size = SSize(120, 17), BorderStyle = BorderStyle.FixedSingle, Visible = false};
+            lblSIMediaCatalogNumber = new Label { Location = SPoint(406, 127), Size = SSize(76, 13), Text = "Cat. No. :", TextAlign = ContentAlignment.TopRight, Visible = false };
+            lblSITMediaCatalogNumber = new Label { Location = SPoint(484, 126), Size = SSize(120, 17), BorderStyle = BorderStyle.FixedSingle, Visible = false };
             gbSetInfo.Controls.Add(lblSIMediaCatalogNumber);
             gbSetInfo.Controls.Add(lblSITMediaCatalogNumber);
         }
 
         private Point SPoint(int x, int y)
         {
-            return new Point((int) (x*_scaleFactorX), (int) (y*_scaleFactorY));
+            return new Point((int)(x * _scaleFactorX), (int)(y * _scaleFactorY));
         }
 
         private Size SSize(int x, int y)
         {
-            return new Size((int) (x*_scaleFactorX), (int) (y*_scaleFactorY));
+            return new Size((int)(x * _scaleFactorX), (int)(y * _scaleFactorY));
         }
 
         private void splitContainer4_Panel1_Resize(object sender, EventArgs e)
@@ -512,7 +523,7 @@ namespace RomVaultX
             }
             int width = rightPos - leftPos;
 
-            int widthB1 = (int) ((double) width*120/340);
+            int widthB1 = (int)((double)width * 120 / 340);
             int leftB2 = leftPos + width - widthB1;
 
             if (lblSITName == null)
@@ -539,10 +550,10 @@ namespace RomVaultX
             lblSITPublisher.Width = width;
             lblSITDeveloper.Width = width;
 
-            int width3 = (int) (width*0.24);
-            int P2 = (int) (width*0.38);
+            int width3 = (int)(width * 0.24);
+            int P2 = (int)(width * 0.38);
 
-            int width4 = (int) (width*0.24);
+            int width4 = (int)(width * 0.24);
 
             lblSITEdition.Width = width3;
 
@@ -595,7 +606,7 @@ namespace RomVaultX
                 return;
             }
 
-            List<rvGameGridRow> rows = rvGameGridRow.ReadGames((int) DatId);
+            List<rvGameGridRow> rows = rvGameGridRow.ReadGames((int)DatId);
 
             foreach (rvGameGridRow row in rows)
             {
@@ -671,7 +682,7 @@ namespace RomVaultX
 
             if (GameGrid.SelectedRows.Count == 1)
             {
-                int GameId = (int) GameGrid.SelectedRows[0].Tag;
+                int GameId = (int)GameGrid.SelectedRows[0].Tag;
                 tGame = new RvGame();
                 tGame.DBRead(GameId);
             }

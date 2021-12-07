@@ -11,6 +11,9 @@ using RVIO;
 
 namespace Dir2Dat
 {
+
+    // newver version available for rvdat
+
     class Program
     {
         private static bool testMode = false;
@@ -123,10 +126,9 @@ namespace Dir2Dat
             DirectoryInfo di = new DirectoryInfo(dirSource);
             ProcessDir(di, ThisDat.BaseDir, style);
 
-            DatXMLWriter dWriter = new DatXMLWriter();
             if (Path.GetExtension(outfile).ToLower() != ".dat")
                 outfile += ".dat";
-            dWriter.WriteDat(outfile, ThisDat, style);
+            DatXMLWriter.WriteDat(outfile, ThisDat, style);
         }
 
         private static void ShowHelp()
@@ -247,9 +249,9 @@ namespace Dir2Dat
                 Console.WriteLine($"{zCount}   {tCount}    {cCount}");
             }
 
-            else if (zf1.Filecomment != null && zf1.Filecomment.Length > 0)
+            else if (zf1.FileComment != null && zf1.FileComment.Length > 0)
             {
-                string comments = ZipUtils.GetString(zf1.Filecomment);
+                string comments = CompressUtils.GetString(zf1.FileComment);
 
                 if (comments.Length>13 &&  comments.Substring(0, 13) == "TORRENTZIPPED")
                 {
@@ -283,24 +285,23 @@ namespace Dir2Dat
             bool isTorrentZipDate = true;
             for (int i = 0; i < fr.Count; i++)
             {
+                LocalFile lf = zf1.GetLocalFile(i);
                 if (fr[i].FileStatus != ZipReturn.ZipGood)
                 {
-                    Console.WriteLine("File Error :" + zf1.Filename(i) + " : " + fr[i].FileStatus);
+                    Console.WriteLine("File Error :" + lf.Filename + " : " + fr[i].FileStatus);
                     continue;
                 }
 
                 DatFile df = new DatFile(DatFileType.UnSet)
                 {
-                    Name = zf1.Filename(i),
+                    Name = lf.Filename,
                     Size = fr[i].Size,
                     CRC = fr[i].CRC,
                     SHA1 = fr[i].SHA1,
-                    DateModified = new DateTime(zf1.LastModified(i)).ToString("yyyy/MM/dd HH:mm:ss"),
-                    DateCreated = zf1.Created(i) == null ? null : new DateTime((long)zf1.Created(i)).ToString("yyyy/MM/dd HH:mm:ss"),
-                    DateAccessed = zf1.Accessed(i) == null ? null : new DateTime((long)zf1.Accessed(i)).ToString("yyyy/MM/dd HH:mm:ss")
+                    DateModified = new DateTime(lf.LastModified).ToString("yyyy/MM/dd HH:mm:ss"),
                     //df.MD5 = zf.MD5(i)
                 };
-                if (zf1.LastModified(i) != 629870671200000000)
+                if (lf.LastModified != 629870671200000000)
                     isTorrentZipDate = false;
 
                 ZipDir.ChildAdd(df);
@@ -332,11 +333,12 @@ namespace Dir2Dat
             List<FileScan.FileResults> fr = fs.Scan(zf1, true, true);
             for (int i = 0; i < fr.Count; i++)
             {
-                if (zf1.IsDirectory(i))
+                LocalFile lf = zf1.GetLocalFile(i);
+                if (lf.IsDirectory)
                     continue;
                 DatFile df = new DatFile(DatFileType.File7Zip)
                 {
-                    Name = zf1.Filename(i),
+                    Name = lf.Filename,
                     Size = fr[i].Size,
                     CRC = fr[i].CRC,
                     SHA1 = fr[i].SHA1

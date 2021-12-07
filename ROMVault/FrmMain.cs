@@ -5,17 +5,26 @@
  ******************************************************/
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.Globalization;
+using System.Reflection;
 using System.Windows.Forms;
-using Compress.SevenZip;
-using RVCore;
-using RVCore.FindFix;
-using RVCore.ReadDat;
-using RVCore.RvDB;
-using RVCore.Scanner;
+using RomVaultCore;
+using RomVaultCore.FindFix;
+using RomVaultCore.ReadDat;
+using RomVaultCore.RvDB;
+using RomVaultCore.Scanner;
 using RVIO;
+
+
+/*
+ * DatVault   to enable auto DatDownload
+ * RomShare   to enable rom share code
+ * ZipFile    to enable zip as file code
+ * 
+ */
 
 namespace ROMVault
 {
@@ -40,17 +49,15 @@ namespace ROMVault
         private readonly Color[] _displayColor;
         private readonly Color[] _fontColor;
 
-        private readonly ContextMenu _mnuContext;
-        private readonly ContextMenu _mnuContextToSort;
+        private readonly ContextMenuStrip _mnuContext;
+        private readonly ContextMenuStrip _mnuContextToSort;
 
-        private readonly MenuItem _mnuFile;
-        private readonly MenuItem _mnuOpen;
+        private readonly ToolStripMenuItem _mnuOpen;
 
-        private readonly MenuItem _mnuToSortScan;
-        private readonly MenuItem _mnuToSortOpen;
-        private readonly MenuItem _mnuToSortDelete;
-        private readonly MenuItem _mnuToSortSetPrimary;
-        private readonly MenuItem _mnuToSortSetCache;
+        private readonly ToolStripMenuItem _mnuToSortOpen;
+        private readonly ToolStripMenuItem _mnuToSortDelete;
+        private readonly ToolStripMenuItem _mnuToSortSetPrimary;
+        private readonly ToolStripMenuItem _mnuToSortSetCache;
 
         private RvFile _clickedTree;
 
@@ -62,21 +69,31 @@ namespace ROMVault
         private float _scaleFactorX = 1;
         private float _scaleFactorY = 1;
 
+        #region MainUISetup
 
         public FrmMain()
         {
             InitializeComponent();
             AddGameMetaData();
-            Text = $@"RomVault ({Program.StrVersion})";
+            Text = $@"RomVault ({Program.StrVersion} WIP 6)";
 
-            if (SevenZ.supportZstd && Settings.rvSettings.zstd)
+            if (Settings.rvSettings.zstd)
             {
                 Text += " -using ZSTD";
             }
 
-            Text += $@"   {Application.StartupPath}";
+            Text += $@" {Application.StartupPath}";
 
-                _displayColor = new Color[(int)RepStatus.EndValue];
+            Type dgvType = GameGrid.GetType();
+            PropertyInfo pi = dgvType.GetProperty("DoubleBuffered", BindingFlags.Instance | BindingFlags.NonPublic);
+            pi.SetValue(GameGrid, true, null);
+
+            dgvType = RomGrid.GetType();
+            pi = dgvType.GetProperty("DoubleBuffered", BindingFlags.Instance | BindingFlags.NonPublic);
+            pi.SetValue(RomGrid, true, null);
+
+
+            _displayColor = new Color[(int)RepStatus.EndValue];
             _fontColor = new Color[(int)RepStatus.EndValue];
 
             // RepStatus.UnSet
@@ -116,103 +133,132 @@ namespace ROMVault
 
             _gameGridColumnXPositions = new int[(int)RepStatus.EndValue];
 
-            DirTree.Setup(ref DB.DirTree);
+            ctrRvTree.Setup(ref DB.DirRoot);
 
             splitContainer3_Panel1_Resize(new object(), new EventArgs());
             splitContainer4_Panel1_Resize(new object(), new EventArgs());
 
-            _mnuContext = new ContextMenu();
 
-            MenuItem mnuScan = new MenuItem
+            _mnuContext = new ContextMenuStrip();
+
+            ToolStripMenuItem mnuScan1 = new ToolStripMenuItem
+            {
+                Text = @"Scan Quick (Headers Only)",
+                Tag = EScanLevel.Level1
+            };
+            ToolStripMenuItem mnuScan2 = new ToolStripMenuItem
             {
                 Text = @"Scan",
-                Tag = null
+                Tag = EScanLevel.Level2
+            };
+            ToolStripMenuItem mnuScan3 = new ToolStripMenuItem
+            {
+                Text = @"Scan Full (Complete Re-Scan)",
+                Tag = EScanLevel.Level3
             };
 
-            _mnuFile = new MenuItem
+            ToolStripMenuItem mnuFile = new ToolStripMenuItem
             {
                 Text = @"Set Dir Settings",
                 Tag = null
             };
 
-            _mnuOpen = new MenuItem
+            _mnuOpen = new ToolStripMenuItem
             {
-                Text = @"Open",
+                Text = @"Open Directory",
                 Tag = null
             };
 
-            MenuItem mnuFixDat = new MenuItem
+            ToolStripMenuItem mnuFixDat = new ToolStripMenuItem
             {
                 Text = @"Create Fix DATs",
                 Tag = null
             };
 
-            MenuItem mnuMakeDat = new MenuItem
+            ToolStripMenuItem mnuMakeDat = new ToolStripMenuItem
             {
                 Text = @"Make Dat with CHDs as disk",
                 Tag = null
             };
 
-            MenuItem mnuMakeDat2 = new MenuItem
+            ToolStripMenuItem mnuMakeDat2 = new ToolStripMenuItem
             {
                 Text = @"Make Dat with CHDs as rom",
                 Tag = null
             };
 
-            _mnuContext.MenuItems.Add(mnuScan);
-            _mnuContext.MenuItems.Add(_mnuOpen);
-            _mnuContext.MenuItems.Add(_mnuFile);
-            _mnuContext.MenuItems.Add(mnuFixDat);
-            _mnuContext.MenuItems.Add(mnuMakeDat);
-            _mnuContext.MenuItems.Add(mnuMakeDat2);
+            _mnuContext.Items.Add(mnuScan2);
+            _mnuContext.Items.Add(mnuScan1);
+            _mnuContext.Items.Add(mnuScan3);
+            _mnuContext.Items.Add(mnuFile);
+            _mnuContext.Items.Add("-");
+            _mnuContext.Items.Add(_mnuOpen);
+            _mnuContext.Items.Add(mnuFixDat);
+            _mnuContext.Items.Add(mnuMakeDat);
+            _mnuContext.Items.Add(mnuMakeDat2);
 
-            mnuScan.Click += MnuToSortScan;
+            mnuScan1.Click += MnuScan;
+            mnuScan2.Click += MnuScan;
+            mnuScan3.Click += MnuScan;
+            mnuFile.Click += MnuFileClick;
             _mnuOpen.Click += MnuOpenClick;
-            _mnuFile.Click += MnuFileClick;
             mnuFixDat.Click += MnuMakeFixDatClick;
             mnuMakeDat.Click += MnuMakeDatClick;
             mnuMakeDat2.Click += MnuMakeDat2Click;
 
 
-            _mnuContextToSort = new ContextMenu();
+            _mnuContextToSort = new ContextMenuStrip();
 
-            _mnuToSortScan = new MenuItem
+            ToolStripMenuItem mnuToSortScan1 = new ToolStripMenuItem
+            {
+                Text = @"Scan Quick (Headers Only)",
+                Tag = EScanLevel.Level1
+            };
+            ToolStripMenuItem mnuToSortScan2 = new ToolStripMenuItem
             {
                 Text = @"Scan",
-                Tag = null
+                Tag = EScanLevel.Level2
             };
-
-            _mnuToSortOpen = new MenuItem
+            ToolStripMenuItem mnuToSortScan3 = new ToolStripMenuItem
             {
-                Text = @"Open",
+                Text = @"Scan Full (Complete Re-Scan)",
+                Tag = EScanLevel.Level3
+            };
+            _mnuToSortOpen = new ToolStripMenuItem
+            {
+                Text = @"Open ToSort Directory",
                 Tag = null
             };
 
-            _mnuToSortDelete = new MenuItem
+            _mnuToSortDelete = new ToolStripMenuItem
             {
                 Text = @"Remove",
                 Tag = null
             };
 
-            _mnuToSortSetPrimary = new MenuItem
+            _mnuToSortSetPrimary = new ToolStripMenuItem
             {
                 Text = @"Set To Primary ToSort",
                 Tag = null
             };
 
-            _mnuToSortSetCache = new MenuItem
+            _mnuToSortSetCache = new ToolStripMenuItem
             {
                 Text = @"Set To Cache ToSort",
                 Tag = null
             };
 
-            _mnuContextToSort.MenuItems.Add(_mnuToSortScan);
-            _mnuContextToSort.MenuItems.Add(_mnuToSortOpen);
-            _mnuContextToSort.MenuItems.Add(_mnuToSortDelete);
-            _mnuContextToSort.MenuItems.Add(_mnuToSortSetPrimary);
-            _mnuContextToSort.MenuItems.Add(_mnuToSortSetCache);
+            _mnuContextToSort.Items.Add(mnuToSortScan2);
+            _mnuContextToSort.Items.Add(mnuToSortScan1);
+            _mnuContextToSort.Items.Add(mnuToSortScan3);
+            _mnuContextToSort.Items.Add(_mnuToSortOpen);
+            _mnuContextToSort.Items.Add(_mnuToSortDelete);
+            _mnuContextToSort.Items.Add(_mnuToSortSetPrimary);
+            _mnuContextToSort.Items.Add(_mnuToSortSetCache);
 
-            _mnuToSortScan.Click += MnuToSortScan;
+            mnuToSortScan1.Click += MnuScan;
+            mnuToSortScan2.Click += MnuScan;
+            mnuToSortScan3.Click += MnuScan;
             _mnuToSortOpen.Click += MnuToSortOpen;
             _mnuToSortDelete.Click += MnuToSortDelete;
             _mnuToSortSetPrimary.Click += MnuToSortSetPrimary;
@@ -222,9 +268,8 @@ namespace ROMVault
             chkBoxShowCorrect.Checked = Settings.rvSettings.chkBoxShowCorrect;
             chkBoxShowMissing.Checked = Settings.rvSettings.chkBoxShowMissing;
             chkBoxShowFixed.Checked = Settings.rvSettings.chkBoxShowFixed;
-            chkBoxShowMerged.Checked = Settings.rvSettings.chkBoxShowMerged; 
-            
-            
+            chkBoxShowMerged.Checked = Settings.rvSettings.chkBoxShowMerged;
+
             TabArtworkInitialize();
         }
 
@@ -242,6 +287,36 @@ namespace ROMVault
             set => base.Text = value;
         }
 
+        private void splitContainer3_Panel1_Resize(object sender, EventArgs e)
+        {
+            // fixes a rendering issue in mono
+            if (splitDatInfoTree.Panel1.Width == 0)
+                return;
+
+            gbDatInfo.Width = splitDatInfoTree.Panel1.Width - gbDatInfo.Left * 2;
+        }
+
+        private void splitContainer4_Panel1_Resize(object sender, EventArgs e)
+        {
+            // fixes a rendering issue in mono
+            if (splitGameInfoLists.Panel1.Width == 0)
+                return;
+
+            int chkLeft = splitGameInfoLists.Panel1.Width - 150;
+            if (chkLeft < 430)
+                chkLeft = 430;
+
+            chkBoxShowCorrect.Left = chkLeft;
+            chkBoxShowMissing.Left = chkLeft;
+            chkBoxShowFixed.Left = chkLeft;
+            chkBoxShowMerged.Left = chkLeft;
+            txtFilter.Left = chkLeft;
+            btnClear.Left = chkLeft + txtFilter.Width + 2;
+            picPayPal.Left = chkLeft;
+            picPatreon.Left = chkLeft + picPayPal.Width;
+
+            gbSetInfo.Width = chkLeft - gbSetInfo.Left - 10;
+        }
         protected override void ScaleControl(SizeF factor, BoundsSpecified specified)
         {
             base.ScaleControl(factor, specified);
@@ -256,64 +331,47 @@ namespace ROMVault
             _scaleFactorY *= factor.Height;
         }
 
-        private void AddTextBox(int line, string name, int x, int x1, out Label lBox, out TextBox tBox)
+        protected override void OnFormClosing(FormClosingEventArgs e)
         {
-            int y = 14 + line * 16;
-
-            lBox = new Label
+            if (_working)
             {
-                Location = SPoint(x, y + 1),
-                Size = SSize(x1 - x - 2, 13),
-                Text = name + @" :",
-                TextAlign = ContentAlignment.TopRight
-            };
-            tBox = new TextBox
-            {
-                AutoSize = false,
-                Location = SPoint(x1, y),
-                Size = SSize(20, 17),
-                BorderStyle = BorderStyle.FixedSingle,
-                ReadOnly = true,
-                TabStop = false
-            };
-            gbSetInfo.Controls.Add(lBox);
-            gbSetInfo.Controls.Add(tBox);
-
+                e.Cancel = true;
+            }
         }
+        #endregion
 
 
-        private Point SPoint(int x, int y)
-        {
-            return new Point((int)(x * _scaleFactorX), (int)(y * _scaleFactorY));
-        }
-
-        private Size SSize(int x, int y)
-        {
-            return new Size((int)(x * _scaleFactorX), (int)(y * _scaleFactorY));
-        }
-
+        #region Tree
         private void DirTreeRvChecked(object sender, MouseEventArgs e)
         {
-            RepairStatus.ReportStatusReset(DB.DirTree);
-            DatSetSelected(DirTree.Selected);
+            RepairStatus.ReportStatusReset(DB.DirRoot);
+            DatSetSelected(ctrRvTree.Selected);
         }
 
         private void DirTreeRvSelected(object sender, MouseEventArgs e)
         {
             RvFile cf = (RvFile)sender;
-            if (cf != DirTree.GetSelected())
+
+            if (e.Button != MouseButtons.Right)
+            {
+                if (cf != gameGridSource)
+                {
+                    DatSetSelected(cf);
+                }
+                return;
+            }
+
+            if (cf != ctrRvTree.Selected)
             {
                 DatSetSelected(cf);
             }
 
-            if (e.Button != MouseButtons.Right)
-            {
-                return;
-            }
-
             _clickedTree = (RvFile)sender;
 
-            Point controLocation = ControlLoc(DirTree);
+            if (_working)
+                return;
+
+            Point controLocation = ControlLoc(ctrRvTree);
 
             if (cf.IsInToSort)
             {
@@ -349,6 +407,16 @@ namespace ROMVault
             return ret;
         }
 
+
+        #endregion
+
+
+        #region popupMenus
+
+        private void MnuScan(object sender, EventArgs e)
+        {
+            ScanRoms((EScanLevel)((ToolStripMenuItem)sender).Tag, _clickedTree);
+        }
         private void MnuFileClick(object sender, EventArgs e)
         {
             using (FrmSetDirSettings sd = new FrmSetDirSettings())
@@ -362,19 +430,16 @@ namespace ROMVault
                     UpdateDats();
             }
         }
-
         private void MnuOpenClick(object sender, EventArgs e)
         {
             string tDir = _clickedTree.FullName;
             if (Directory.Exists(tDir))
                 Process.Start(tDir);
         }
-
         private void MnuMakeFixDatClick(object sender, EventArgs e)
         {
             Report.MakeFixFiles(_clickedTree);
         }
-
 
         private void MnuMakeDatClick(object sender, EventArgs e)
         {
@@ -422,33 +487,6 @@ namespace ROMVault
         }
 
 
-        private void AddToSortToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            FolderBrowserDialog folderBrowserDialog1 = new FolderBrowserDialog();
-            DialogResult result = folderBrowserDialog1.ShowDialog();
-            if (result != DialogResult.OK) return;
-
-            RvFile ts = new RvFile(FileType.Dir)
-            {
-                Name = folderBrowserDialog1.SelectedPath,
-                Tree = new RvTreeRow { Checked = RvTreeRow.TreeSelect.Locked },
-                DatStatus = DatStatus.InDatCollect
-            };
-
-            DB.DirTree.ChildAdd(ts, DB.DirTree.ChildCount);
-
-            RepairStatus.ReportStatusReset(DB.DirTree);
-            DirTree.Setup(ref DB.DirTree);
-            DatSetSelected(ts);
-
-            DB.Write();
-        }
-
-        private void MnuToSortScan(object sender, EventArgs e)
-        {
-            ScanRoms(Settings.rvSettings.ScanLevel, _clickedTree);
-        }
-
         private void MnuToSortOpen(object sender, EventArgs e)
         {
             string tDir = _clickedTree.FullName;
@@ -458,17 +496,17 @@ namespace ROMVault
 
         private void MnuToSortDelete(object sender, EventArgs e)
         {
-            for (int i = 0; i < DB.DirTree.ChildCount; i++)
+            for (int i = 0; i < DB.DirRoot.ChildCount; i++)
             {
-                if (DB.DirTree.Child(i) == _clickedTree)
+                if (DB.DirRoot.Child(i) == _clickedTree)
                 {
-                    DB.DirTree.ChildRemove(i);
-                    RepairStatus.ReportStatusReset(DB.DirTree);
+                    DB.DirRoot.ChildRemove(i);
+                    RepairStatus.ReportStatusReset(DB.DirRoot);
 
-                    DirTree.Setup(ref DB.DirTree);
-                    DatSetSelected(DB.DirTree.Child(i - 1));
+                    ctrRvTree.Setup(ref DB.DirRoot);
+                    DatSetSelected(DB.DirRoot.Child(i - 1));
                     DB.Write();
-                    DirTree.Refresh();
+                    ctrRvTree.Refresh();
                     return;
                 }
             }
@@ -491,7 +529,7 @@ namespace ROMVault
                 _clickedTree.FileStatusSet(FileStatus.CacheToSort);
 
             DB.Write();
-            DirTree.Refresh();
+            ctrRvTree.Refresh();
         }
 
         private void MnuToSortSetCache(object sender, EventArgs e)
@@ -508,57 +546,115 @@ namespace ROMVault
             _clickedTree.FileStatusSet(FileStatus.CacheToSort);
 
             DB.Write();
-            DirTree.Refresh();
+            ctrRvTree.Refresh();
+        }
+
+        #endregion
+
+
+        #region TopMenu
+
+        private void updateNewDATsToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            UpdateDats();
+        }
+        private void updateAllDATsToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            DatUpdate.CheckAllDats(DB.DirRoot.Child(0), @"DatRoot\");
+            UpdateDats();
+        }
+              
+
+        private void AddToSortToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            FolderBrowserDialog folderBrowserDialog1 = new FolderBrowserDialog();
+            DialogResult result = folderBrowserDialog1.ShowDialog();
+            if (result != DialogResult.OK) return;
+
+            RvFile ts = new RvFile(FileType.Dir)
+            {
+                Name = folderBrowserDialog1.SelectedPath,
+                DatStatus = DatStatus.InDatCollect,
+                Tree = new RvTreeRow()
+            };
+            ts.Tree.SetChecked(RvTreeRow.TreeSelect.Locked, false);
+
+            DB.DirRoot.ChildAdd(ts, DB.DirRoot.ChildCount);
+
+            RepairStatus.ReportStatusReset(DB.DirRoot);
+            ctrRvTree.Setup(ref DB.DirRoot);
+            DatSetSelected(ts);
+
+            DB.Write();
+        }
+
+
+
+        private void TsmScanLevel1Click(object sender, EventArgs e)
+        {
+            ScanRoms(EScanLevel.Level1);
+        }
+        private void TsmScanLevel2Click(object sender, EventArgs e)
+        {
+            ScanRoms(EScanLevel.Level2);
+        }
+        private void TsmScanLevel3Click(object sender, EventArgs e)
+        {
+            ScanRoms(EScanLevel.Level3);
         }
 
 
 
 
-        private void ChkBoxShowCorrectCheckedChanged(object sender, EventArgs e)
+
+        private void TsmFindFixesClick(object sender, EventArgs e)
         {
-            if (Settings.rvSettings.chkBoxShowCorrect != this.chkBoxShowCorrect.Checked)
+            FindFixs();
+        }
+
+        private void FixFilesToolStripMenuItemClick(object sender, EventArgs e)
+        {
+            FixFiles();
+        }
+
+
+
+
+
+        private void RomVaultSettingsToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            using (FrmSettings fcfg = new FrmSettings())
             {
-                Settings.rvSettings.chkBoxShowCorrect = this.chkBoxShowCorrect.Checked;
-                Settings.WriteConfig(Settings.rvSettings);
-                DatSetSelected(DirTree.Selected);
+                fcfg.ShowDialog(this);
+            }
+        }
+        private void DirectorySettingsToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            using (FrmSetDirSettings sd = new FrmSetDirSettings())
+            {
+                string tDir = "RomVault";
+                sd.SetLocation(tDir);
+                sd.SetDisplayType(false);
+                sd.ShowDialog(this);
+
+                if (sd.ChangesMade)
+                    UpdateDats();
             }
         }
 
-        private void ChkBoxShowMissingCheckedChanged(object sender, EventArgs e)
+        private void RegistrationSettingsToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            if (Settings.rvSettings.chkBoxShowMissing != this.chkBoxShowMissing.Checked)
+            using (FrmRegistration fReg = new FrmRegistration())
             {
-                Settings.rvSettings.chkBoxShowMissing = this.chkBoxShowMissing.Checked;
-                Settings.WriteConfig(Settings.rvSettings);
-                DatSetSelected(DirTree.Selected);
-            }
-        }
-
-        private void ChkBoxShowFixedCheckedChanged(object sender, EventArgs e)
-        {
-            if (Settings.rvSettings.chkBoxShowFixed != this.chkBoxShowFixed.Checked)
-            {
-                Settings.rvSettings.chkBoxShowFixed = this.chkBoxShowFixed.Checked;
-                Settings.WriteConfig(Settings.rvSettings);
-                DatSetSelected(DirTree.Selected);
-            }
-        }
-
-        private void ChkBoxShowMergedCheckedChanged(object sender, EventArgs e)
-        {
-            if (Settings.rvSettings.chkBoxShowMerged != this.chkBoxShowMerged.Checked)
-            {
-                Settings.rvSettings.chkBoxShowMerged = this.chkBoxShowMerged.Checked;
-                Settings.WriteConfig(Settings.rvSettings);
-                UpdateSelectedGame();
+                fReg.ShowDialog();
             }
         }
 
 
-        private void btnReport_MouseUp(object sender, MouseEventArgs e)
-        {
-            Report.MakeFixFiles(null, e.Button == MouseButtons.Left);
-        }
+
+
+
+
 
         private void fixDatReportToolStripMenuItem_Click(object sender, EventArgs e)
         {
@@ -576,6 +672,17 @@ namespace ROMVault
         }
 
 
+
+
+        private void colorKeyToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (_fk == null || _fk.IsDisposed)
+            {
+                _fk = new FrmKey();
+            }
+
+            _fk.Show();
+        }
         private void AboutRomVaultToolStripMenuItemClick(object sender, EventArgs e)
         {
             FrmHelpAbout fha = new FrmHelpAbout();
@@ -584,119 +691,303 @@ namespace ROMVault
         }
 
 
-        #region "Main Buttons"
-
-        private void TsmUpdateDaTsClick(object sender, EventArgs e)
-        {
-            UpdateDats();
-        }
 
 
-        private void btnUpdateDats_MouseUp(object sender, MouseEventArgs e)
+        #endregion
+
+
+        #region sideButtons
+        private void BtnUpdateDatsMouseUp(object sender, MouseEventArgs e)
         {
             if (e.Button == MouseButtons.Right && Control.ModifierKeys == Keys.Shift)
             {
-                DatUpdate.CheckAllDats(DB.DirTree.Child(0), @"DatRoot\");
-
+                DatUpdate.CheckAllDats(DB.DirRoot.Child(0), @"DatRoot\");
             }
+           
             UpdateDats();
         }
-
-        private void UpdateDats()
-        {
-            FrmProgressWindow progress = new FrmProgressWindow(this, "Scanning Dats", DatUpdate.UpdateDat);
-            progress.ShowDialog(this);
-            progress.Dispose();
-
-            DirTree.Setup(ref DB.DirTree);
-            DatSetSelected(DirTree.Selected);
-        }
-
-
-        private void TsmScanLevel1Click(object sender, EventArgs e)
-        {
-            ScanRoms(EScanLevel.Level1);
-        }
-
-        private void TsmScanLevel2Click(object sender, EventArgs e)
+        private void BtnScanRomsClick(object sender, EventArgs e)
         {
             ScanRoms(EScanLevel.Level2);
         }
-
-        private void TsmScanLevel3Click(object sender, EventArgs e)
-        {
-            ScanRoms(EScanLevel.Level3);
-        }
-
-        private void BtnScanRomsClick(object sender, EventArgs e)
-        {
-            ScanRoms(Settings.rvSettings.ScanLevel);
-        }
-
-        private void ScanRoms(EScanLevel sd, RvFile StartAt = null)
-        {
-            FileScanning.StartAt = StartAt;
-            FileScanning.EScanLevel = sd;
-            FrmProgressWindow progress = new FrmProgressWindow(this, "Scanning Dirs", FileScanning.ScanFiles);
-            progress.ShowDialog(this);
-            progress.Dispose();
-
-            DatSetSelected(DirTree.Selected);
-        }
-
-
-        private void TsmFindFixesClick(object sender, EventArgs e)
-        {
-            FindFix();
-        }
-
         private void BtnFindFixesClick(object sender, EventArgs e)
         {
-            FindFix();
+            FindFixs();
         }
-
-        private void FindFix()
-        {
-            FrmProgressWindow progress = new FrmProgressWindow(this, "Finding Fixes", FindFixes.ScanFiles);
-            progress.ShowDialog(this);
-            progress.Dispose();
-
-            DatSetSelected(DirTree.Selected);
-        }
-
-        private void btnFixFiles_MouseUp(object sender, MouseEventArgs e)
+        private void BtnFixFilesMouseUp(object sender, MouseEventArgs e)
         {
             if (e.Button == MouseButtons.Right)
             {
-                ScanRoms(Settings.rvSettings.ScanLevel);
-                FindFix();
+                _multiFixing = true;
+                ScanRoms(EScanLevel.Level2);
+                return;
             }
 
             FixFiles();
         }
-
-        private void FixFilesToolStripMenuItemClick(object sender, EventArgs e)
+        private void BtnReportMouseUp(object sender, MouseEventArgs e)
         {
-            FixFiles();
+            Report.MakeFixFiles(null, e.Button == MouseButtons.Left);
+        }
+        #endregion
+
+
+        #region TopRight
+
+        private void ChkBoxShowCorrectCheckedChanged(object sender, EventArgs e)
+        {
+            if (Settings.rvSettings.chkBoxShowCorrect != this.chkBoxShowCorrect.Checked)
+            {
+                Settings.rvSettings.chkBoxShowCorrect = this.chkBoxShowCorrect.Checked;
+                Settings.WriteConfig(Settings.rvSettings);
+                DatSetSelected(ctrRvTree.Selected);
+            }
+        }
+
+        private void ChkBoxShowMissingCheckedChanged(object sender, EventArgs e)
+        {
+            if (Settings.rvSettings.chkBoxShowMissing != this.chkBoxShowMissing.Checked)
+            {
+                Settings.rvSettings.chkBoxShowMissing = this.chkBoxShowMissing.Checked;
+                Settings.WriteConfig(Settings.rvSettings);
+                DatSetSelected(ctrRvTree.Selected);
+            }
+        }
+
+        private void ChkBoxShowFixedCheckedChanged(object sender, EventArgs e)
+        {
+            if (Settings.rvSettings.chkBoxShowFixed != this.chkBoxShowFixed.Checked)
+            {
+                Settings.rvSettings.chkBoxShowFixed = this.chkBoxShowFixed.Checked;
+                Settings.WriteConfig(Settings.rvSettings);
+                DatSetSelected(ctrRvTree.Selected);
+            }
+        }
+
+        private void ChkBoxShowMergedCheckedChanged(object sender, EventArgs e)
+        {
+            if (Settings.rvSettings.chkBoxShowMerged != this.chkBoxShowMerged.Checked)
+            {
+                Settings.rvSettings.chkBoxShowMerged = this.chkBoxShowMerged.Checked;
+                Settings.WriteConfig(Settings.rvSettings);
+                DatSetSelected(ctrRvTree.Selected);
+            }
         }
 
 
-        private void FixFiles()
-        {
-            FrmProgressWindowFix progress = new FrmProgressWindowFix(this);
-            progress.ShowDialog(this);
-            progress.Dispose();
 
-            DatSetSelected(DirTree.Selected);
+        private void BtnClear_Click(object sender, EventArgs e)
+        {
+            txtFilter.Text = "";
+        }
+
+        private void TxtFilter_TextChanged(object sender, EventArgs e)
+        {
+            if (gameGridSource != null)
+                UpdateGameGrid(gameGridSource);
+            txtFilter.Focus();
+        }
+
+
+        private void picPayPal_Click(object sender, EventArgs e)
+        {
+            Process.Start("http://paypal.me/romvault");
+        }
+
+        private void picPatreon_Click(object sender, EventArgs e)
+        {
+            Process.Start("https://www.patreon.com/romvault");
         }
 
         #endregion
 
-        #region "DAT display code"
+
+        #region coreFunctions
+
+      
+        private void UpdateDats()
+        {
+            // incase the selected tree item(DAT) is removed from the tree in the updated we need to build a parent list and traverse up it until we find a parent item still in the tree.
+
+            // build a list of the selected item in the Tree view and all the items up the parent list from there back to the root.
+            RvFile selected = ctrRvTree.Selected;
+            List<RvFile> parents = new List<RvFile>();
+            while (selected != null)
+            {
+                parents.Add(selected);
+                selected = selected.Parent;
+            }
+
+            // update the dats
+            FrmProgressWindow progress = new FrmProgressWindow(this, "Scanning Dats", DatUpdate.UpdateDat, null);
+            progress.HideCancelButton();
+            progress.ShowDialog(this);
+            progress.Dispose();
+
+            // rebuild the tree
+            ctrRvTree.Setup(ref DB.DirRoot);
+
+            // if the rvFile.Parent is null it have been removed from the tree so remove it from the list.
+            // set up until we find a rvFile with a parent.
+            while (parents.Count > 1 && parents[0].Parent == null)
+                parents.RemoveAt(0);
+
+            // did we find a parent
+            if (parents.Count > 0)
+                selected = parents[0];
+            else
+                selected = null;
+
+            // update the selected tree item, and the game grid view.
+            ctrRvTree.SetSelected(selected);
+            DatSetSelected(selected);
+        }
+
+        private void setPos(Form childForm)
+        {
+            childForm.Owner = this;
+            childForm.StartPosition = FormStartPosition.Manual;
+            childForm.Location = new Point(
+              Location.X + (Width - childForm.Width) / 2,
+              Location.Y + (Height - childForm.Height) / 2
+            );
+        }
+
+        private bool _multiFixing = false;
+
+        private FrmProgressWindow frmScanRoms;
+        private void ScanRoms(EScanLevel sd, RvFile StartAt = null)
+        {
+            if (frmScanRoms != null)
+            {
+                frmScanRoms.FormClosed -= ScanRomsClosed;
+                frmScanRoms.Dispose();
+            }
+            FileScanning.StartAt = StartAt;
+            FileScanning.EScanLevel = sd;
+            frmScanRoms = new FrmProgressWindow(this, "Scanning Dirs", FileScanning.ScanFiles, Finish);
+            Start();
+            setPos(frmScanRoms);
+            frmScanRoms.FormClosed += ScanRomsClosed;
+            frmScanRoms.Show();
+        }
+        private void ScanRomsClosed(object sender, FormClosedEventArgs e)
+        {
+            if (!_multiFixing)
+                return;
+
+            if (frmScanRoms.Cancelled)
+            {
+                _multiFixing = false;
+                return;
+            }
+            FindFixs();
+        }
+
+        private FrmProgressWindow frmFindFixs;
+        private void FindFixs()
+        {
+            if (frmFindFixs != null)
+            {
+                frmFindFixs.FormClosed -= FindFixsClosed;
+                frmFindFixs.Dispose();
+            }
+            frmFindFixs = new FrmProgressWindow(this, "Finding Fixes", FindFixes.ScanFiles, Finish);
+            Start();
+            setPos(frmFindFixs);
+            frmFindFixs.FormClosed += FindFixsClosed;
+            frmFindFixs.Show();
+        }
+        private void FindFixsClosed(object sender, FormClosedEventArgs e)
+        {
+            if (!_multiFixing)
+                return;
+
+            if (frmFindFixs.Cancelled)
+            {
+                _multiFixing = false;
+                return;
+            }
+            FixFiles();
+        }
+
+        FrmProgressWindowFix frmFixFiles;
+        private void FixFiles()
+        {
+            if (frmFixFiles != null)
+                frmFixFiles.Dispose();
+
+            frmFixFiles = new FrmProgressWindowFix(this, Finish);
+            Start();
+            setPos(frmFixFiles);
+            frmFixFiles.Show();
+
+            _multiFixing = false;
+        }
+
+        private bool _working = false;
+        private void Start()
+        {
+            _working = true;
+            timer1.Enabled = true;
+            ctrRvTree.Working = true;
+            menuStrip1.Enabled = false;
+            btnUpdateDats.Enabled = false;
+            btnScanRoms.Enabled = false;
+            btnFindFixes.Enabled = false;
+            btnFixFiles.Enabled = false;
+            btnReport.Enabled = false;
+
+            btnUpdateDats.BackgroundImage = rvImages1.btnUpdateDats_Disabled;
+            btnScanRoms.BackgroundImage = rvImages1.btnScanRoms_Disabled;
+            btnFindFixes.BackgroundImage = rvImages1.btnFindFixes_Disabled;
+            btnFixFiles.BackgroundImage = rvImages1.btnFixFiles_Disabled;
+            btnReport.BackgroundImage = rvImages1.btnReport_Disabled;
+        }
+        private void Finish()
+        {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(FrmMain));
+
+
+            _working = false;
+            ctrRvTree.Working = false;
+            menuStrip1.Enabled = true;
+
+            btnUpdateDats.BackgroundImage = rvImages1.btnUpdateDats_Enabled;
+            btnScanRoms.BackgroundImage = rvImages1.btnScanRoms_Enabled;
+            btnFindFixes.BackgroundImage = rvImages1.btnFindFixes_Enabled;
+            btnFixFiles.BackgroundImage = rvImages1.btnFixFiles_Enabled;
+            btnReport.BackgroundImage = rvImages1.btnReport_Enabled;
+
+            btnUpdateDats.Enabled = true;
+            btnScanRoms.Enabled = true;
+            btnFindFixes.Enabled = true;
+            btnFixFiles.Enabled = true;
+            btnReport.Enabled = true;
+
+            timer1.Enabled = false;
+            DatSetSelected(ctrRvTree.Selected);
+        }
+
+        private void timer1_Tick(object sender, EventArgs e)
+        {
+
+            ctrRvTree.Refresh();
+            UpdateGameGrid();
+            if (ctrRvTree.Selected != null)
+                UpdateDatMetaData(ctrRvTree.Selected);
+            GameGrid.Refresh();
+        }
+
+
+        #endregion
+
+
+        #region DatDisplay
 
         private void DatSetSelected(RvFile cf)
         {
-            DirTree.Refresh();
+            ctrRvTree.Refresh();
 
             ClearGameGrid();
 
@@ -708,47 +999,49 @@ namespace ROMVault
             UpdateDatMetaData(cf);
             UpdateGameGrid(cf);
         }
-
-
-
-        private void splitContainer3_Panel1_Resize(object sender, EventArgs e)
+        private void UpdateDatMetaData(RvFile tDir)
         {
-            // fixes a rendering issue in mono
-            if (splitDatInfoTree.Panel1.Width == 0)
+            lblDITName.Text = tDir.Name;
+            if (tDir.Dat != null)
             {
-                return;
+                RvDat tDat = tDir.Dat;
+                lblDITDescription.Text = tDat.GetData(RvDat.DatData.Description);
+                lblDITCategory.Text = tDat.GetData(RvDat.DatData.Category);
+                lblDITVersion.Text = tDat.GetData(RvDat.DatData.Version);
+                lblDITAuthor.Text = tDat.GetData(RvDat.DatData.Author);
+                lblDITDate.Text = tDat.GetData(RvDat.DatData.Date);
+                string header = tDat.GetData(RvDat.DatData.Header);
+                if (!string.IsNullOrWhiteSpace(header))
+                    lblDITName.Text += " (" + header + ")";
+            }
+            else if (tDir.DirDatCount == 1)
+            {
+                RvDat tDat = tDir.DirDat(0);
+                lblDITDescription.Text = tDat.GetData(RvDat.DatData.Description);
+                lblDITCategory.Text = tDat.GetData(RvDat.DatData.Category);
+                lblDITVersion.Text = tDat.GetData(RvDat.DatData.Version);
+                lblDITAuthor.Text = tDat.GetData(RvDat.DatData.Author);
+                lblDITDate.Text = tDat.GetData(RvDat.DatData.Date);
+                string header = tDat.GetData(RvDat.DatData.Header);
+                if (!string.IsNullOrWhiteSpace(header))
+                    lblDITName.Text += " (" + header + ")";
+            }
+            else
+            {
+                lblDITDescription.Text = "";
+                lblDITCategory.Text = "";
+                lblDITVersion.Text = "";
+                lblDITAuthor.Text = "";
+                lblDITDate.Text = "";
             }
 
-            gbDatInfo.Width = splitDatInfoTree.Panel1.Width - gbDatInfo.Left * 2;
+            lblDITPath.Text = tDir.FullName;
+
+            lblDITRomsGot.Text = tDir.DirStatus.CountCorrect().ToString(CultureInfo.InvariantCulture);
+            lblDITRomsMissing.Text = tDir.DirStatus.CountMissing().ToString(CultureInfo.InvariantCulture);
+            lblDITRomsFixable.Text = tDir.DirStatus.CountFixesNeeded().ToString(CultureInfo.InvariantCulture);
+            lblDITRomsUnknown.Text = (tDir.DirStatus.CountUnknown() + tDir.DirStatus.CountInToSort()).ToString(CultureInfo.InvariantCulture);
         }
-
-
-        private void splitContainer4_Panel1_Resize(object sender, EventArgs e)
-        {
-            // fixes a rendering issue in mono
-            if (splitGameInfoLists.Panel1.Width == 0)
-            {
-                return;
-            }
-
-            int chkLeft = splitGameInfoLists.Panel1.Width - 150;
-            if (chkLeft < 430)
-            {
-                chkLeft = 430;
-            }
-
-            chkBoxShowCorrect.Left = chkLeft;
-            chkBoxShowMissing.Left = chkLeft;
-            chkBoxShowFixed.Left = chkLeft;
-            chkBoxShowMerged.Left = chkLeft;
-            txtFilter.Left = chkLeft;
-            btnClear.Left = chkLeft + txtFilter.Width + 2;
-            picPayPal.Left = chkLeft;
-            picPatreon.Left = chkLeft + picPayPal.Width;
-
-            gbSetInfo.Width = chkLeft - gbSetInfo.Left - 10;
-        }
-
 
 
         private void gbDatInfo_Resize(object sender, EventArgs e)
@@ -799,121 +1092,9 @@ namespace ROMVault
         }
 
 
-        private void UpdateDatMetaData(RvFile tDir)
-        {
-            lblDITName.Text = tDir.Name;
-            if (tDir.Dat != null)
-            {
-                RvDat tDat = tDir.Dat;
-                lblDITDescription.Text = tDat.GetData(RvDat.DatData.Description);
-                lblDITCategory.Text = tDat.GetData(RvDat.DatData.Category);
-                lblDITVersion.Text = tDat.GetData(RvDat.DatData.Version);
-                lblDITAuthor.Text = tDat.GetData(RvDat.DatData.Author);
-                lblDITDate.Text = tDat.GetData(RvDat.DatData.Date);
-                string header = tDat.GetData(RvDat.DatData.Header);
-                if (!string.IsNullOrWhiteSpace(header))
-                    lblDITName.Text += " (" + header + ")";
-            }
-            else if (tDir.DirDatCount == 1)
-            {
-                RvDat tDat = tDir.DirDat(0);
-                lblDITDescription.Text = tDat.GetData(RvDat.DatData.Description);
-                lblDITCategory.Text = tDat.GetData(RvDat.DatData.Category);
-                lblDITVersion.Text = tDat.GetData(RvDat.DatData.Version);
-                lblDITAuthor.Text = tDat.GetData(RvDat.DatData.Author);
-                lblDITDate.Text = tDat.GetData(RvDat.DatData.Date);
-                string header = tDat.GetData(RvDat.DatData.Header);
-                if (!string.IsNullOrWhiteSpace(header))
-                    lblDITName.Text += " (" + header + ")";
-            }
-            else
-            {
-                lblDITDescription.Text = "";
-                lblDITCategory.Text = "";
-                lblDITVersion.Text = "";
-                lblDITAuthor.Text = "";
-                lblDITDate.Text = "";
-            }
-
-            lblDITPath.Text = tDir.FullName;
-
-            lblDITRomsGot.Text = tDir.DirStatus.CountCorrect().ToString(CultureInfo.InvariantCulture);
-            lblDITRomsMissing.Text = tDir.DirStatus.CountMissing().ToString(CultureInfo.InvariantCulture);
-            lblDITRomsFixable.Text = tDir.DirStatus.CountFixesNeeded().ToString(CultureInfo.InvariantCulture);
-            lblDITRomsUnknown.Text = (tDir.DirStatus.CountUnknown() + tDir.DirStatus.CountInToSort()).ToString(CultureInfo.InvariantCulture);
-        }
-
         #endregion
 
 
-        private void picPayPal_Click(object sender, EventArgs e)
-        {
-            Process.Start("http://paypal.me/romvault");
-        }
-
-        private void picPatreon_Click(object sender, EventArgs e)
-        {
-            Process.Start("https://www.patreon.com/romvault");
-        }
-
-        /*
-        private void jsonDataDumpToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            DB.WriteJson();
-        }
-        */
-
-
-        private void colorKeyToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            if (_fk == null || _fk.IsDisposed)
-            {
-                _fk = new FrmKey();
-            }
-
-            _fk.Show();
-        }
-
-        private void BtnClear_Click(object sender, EventArgs e)
-        {
-            txtFilter.Text = "";
-        }
-
-        private void TxtFilter_TextChanged(object sender, EventArgs e)
-        {
-            if (gameGridSource != null)
-                UpdateGameGrid(gameGridSource);
-            txtFilter.Focus();
-        }
-
-        private void RomVaultSettingsToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            using (FrmSettings fcfg = new FrmSettings())
-            {
-                fcfg.ShowDialog(this);
-            }
-        }
-        private void RegistrationSettingsToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            using (FrmRegistration fReg = new FrmRegistration())
-            {
-                fReg.ShowDialog();
-            }
-        }
-
-        private void DirectorySettingsToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            using (FrmSetDirSettings sd = new FrmSetDirSettings())
-            {
-                string tDir = "RomVault";
-                sd.SetLocation(tDir);
-                sd.SetDisplayType(false);
-                sd.ShowDialog(this);
-
-                if (sd.ChangesMade)
-                    UpdateDats();
-            }
-        }
 
     }
 }

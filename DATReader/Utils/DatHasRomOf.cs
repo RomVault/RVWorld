@@ -9,11 +9,12 @@ namespace DATReader.Utils
         {
             for (int g = 0; g < tDat.ChildCount; g++)
             {
-                DatDir mGame = (DatDir)tDat.Child(g);
+                if (!(tDat.Child(g) is DatDir mGame))
+                    continue;
 
                 if (mGame.DGame == null)
                 {
-                    bool res=HasRomOf(mGame);
+                    bool res = HasRomOf(mGame);
                     if (res)
                     {
                         return true;

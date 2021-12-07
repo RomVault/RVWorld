@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
@@ -6,38 +7,57 @@ using System.Reflection;
 using System.Threading;
 using System.Windows.Forms;
 using RVIO;
-using Trrntzip;
+using TrrntZip;
 
 namespace TrrntZipUI
 {
-
     public partial class FrmTrrntzip : Form
     {
-        private delegate void StatusInvoker(int fileId, int processId, string filename);
-
-        private readonly FileList _fileList;
         private int _fileIndex;
 
-        private int _threadCount;
+        private int FileCount;
 
-        private readonly List<Label> _threadLabel;
-        private readonly List<ProgressBar> _threadProgress;
+        private BlockingCollection<cFile> bccFile;
+
+        private class ThreadProcess
+        {
+            public Label threadLabel;
+            public ProgressBar threadProgress;
+            public string tLabel;
+            public int tProgress;
+            public CProcessZip cProcessZip;
+            public Thread thread;
+        }
+        private readonly List<ThreadProcess> _threads;
+
+        private class dGrid
+        {
+            public int fileId;
+            public string filename;
+            public string status;
+        }
+
+        private readonly List<dGrid> tGrid;
+        private int tGridMax = 0;
+
+        private readonly PauseCancel pc;
 
         private bool _working;
-        private int _threadsBusyCount;
+        private int _threadCount;
 
         private bool UiUpdate = false;
-
-        private bool Cancel = false;
-        private bool Pause = false;
+        private bool scanningForFiles = false;
 
         public FrmTrrntzip()
         {
-
             UiUpdate = true;
             InitializeComponent();
 
-            this.Text = $"Trrntzip .Net ({Assembly.GetExecutingAssembly().GetName().Version.ToString(3)}) - Powered by RomVault";
+            Type dgvType = dataGrid.GetType();
+            PropertyInfo pi = dgvType.GetProperty("DoubleBuffered", BindingFlags.Instance | BindingFlags.NonPublic);
+            pi.SetValue(dataGrid, true, null);
+
+            this.Text = $"TrrntzipUI.Net ({Assembly.GetExecutingAssembly().GetName().Version.ToString(3)})";
             DropBox.AllowDrop = true;
             DropBox.DragEnter += PDragEnter;
             DropBox.DragDrop += PDragDrop;
@@ -77,52 +97,83 @@ namespace TrrntZipUI
 
             tbProccessors.Value = procc;
 
-            _fileList = new FileList();
+            _threads = new List<ThreadProcess>();
+            tGrid = new List<dGrid>();
+            pc = new PauseCancel();
 
-            _threadLabel = new List<Label>();
-            _threadProgress = new List<ProgressBar>();
+            SetUpWorkerThreads();
 
-            SetUpUiThreads();
             UiUpdate = false;
         }
 
-        private void SetUpUiThreads()
+        private void SetUpWorkerThreads()
         {
             _threadCount = tbProccessors.Value;
 
-            foreach (Label t in _threadLabel)
+            bccFile?.CompleteAdding();
+
+            foreach (ThreadProcess tp in _threads)
             {
-                StatusPanel.Controls.Remove(t);
-                t.Dispose();
-            }
-            foreach (ProgressBar p in _threadProgress)
-            {
-                StatusPanel.Controls.Remove(p);
-                p.Dispose();
+                StatusPanel.Controls.Remove(tp.threadLabel);
+                tp.threadLabel.Dispose();
+
+                StatusPanel.Controls.Remove(tp.threadProgress);
+                tp.threadProgress.Dispose();
+
+                tp.cProcessZip.ProcessFileStartCallBack = null;
+                tp.cProcessZip.StatusCallBack = null;
+                tp.cProcessZip.ProcessFileEndCallBack = null;
+                tp.thread.Join();
             }
 
-            _threadLabel.Clear();
-            _threadProgress.Clear();
+            bccFile?.Dispose();
+
+            _threads.Clear();
+            bccFile = new BlockingCollection<cFile>();
+
             for (int i = 0; i < _threadCount; i++)
             {
-                Label pLabel = new Label();
-                _threadLabel.Add(pLabel);
-                pLabel.Visible = true;
-                pLabel.Left = 12;
-                pLabel.Top = 235 + 30 * i;
-                pLabel.Width = 225;
-                pLabel.Height = 15;
-                pLabel.Text = $"Processor {i + 1}";
-                StatusPanel.Controls.Add(pLabel);
+                ThreadProcess threadProcess = new ThreadProcess();
+                _threads.Add(threadProcess);
 
-                ProgressBar pProgress = new ProgressBar();
-                _threadProgress.Add(pProgress);
-                pProgress.Visible = true;
-                pProgress.Left = 12;
-                pProgress.Top = 250 + 30 * i;
-                pProgress.Width = 225;
-                pProgress.Height = 12;
+                Label pLabel = new Label
+                {
+                    Visible = true,
+                    Left = 12,
+                    Top = 235 + 30 * i,
+                    Width = 225,
+                    Height = 15,
+                    Text = $"Processor {i + 1}"
+                };
+
+                StatusPanel.Controls.Add(pLabel);
+                threadProcess.threadLabel = pLabel;
+
+                ProgressBar pProgress = new ProgressBar
+                {
+                    Visible = true,
+                    Left = 12,
+                    Top = 250 + 30 * i,
+                    Width = 225,
+                    Height = 12
+                };
                 StatusPanel.Controls.Add(pProgress);
+                threadProcess.threadProgress = pProgress;
+
+
+                CProcessZip cpzn = new CProcessZip
+                {
+                    ThreadId = i,
+                    bcCfile = bccFile,
+                    ProcessFileStartCallBack = ProcessFileStartCallback,
+                    StatusCallBack = StatusCallBack,
+                    ProcessFileEndCallBack = ProcessFileEndCallback,
+                    pauseCancel = pc
+                };
+                Thread t = new Thread(cpzn.MigrateZip);
+                t.Start();
+                threadProcess.thread = t;
+                threadProcess.cProcessZip = cpzn;
             }
 
             if (Height < 325 + 30 * _threadCount)
@@ -130,6 +181,7 @@ namespace TrrntZipUI
                 Height = 325 + 30 * _threadCount;
             }
         }
+
 
         private static void PDragEnter(object sender, DragEventArgs e)
         {
@@ -142,111 +194,35 @@ namespace TrrntZipUI
         private void PDragDrop(object sender, DragEventArgs e)
         {
             string[] file = (string[])e.Data.GetData(DataFormats.FileDrop);
-            if (!_working)
-            {
-                dataGrid.Columns[0].SortMode = DataGridViewColumnSortMode.NotSortable;
-                dataGrid.Columns[1].SortMode = DataGridViewColumnSortMode.NotSortable;
 
-                _fileIndex = 0;
-                _fileList.Clear();
-                dataGrid.Rows.Clear();
+            dataGrid.Columns[0].SortMode = DataGridViewColumnSortMode.NotSortable;
+            dataGrid.Columns[1].SortMode = DataGridViewColumnSortMode.NotSortable;
 
-                Trrntzip.Program.ForceReZip = chkForce.Checked;
-                Trrntzip.Program.CheckOnly = !chkFix.Checked;
-                Trrntzip.Program.InZip = (zipType)cboInType.SelectedIndex;
-                Trrntzip.Program.OutZip = (zipType)cboOutType.SelectedIndex;
-            }
+            tGrid.Clear();
+            tGridMax = 0;
+            dataGrid.Rows.Clear();
 
-            foreach (string t in file)
-            {
-                if (File.Exists(t))
-                {
-                    AddFile(t);
-                }
-
-                if (Directory.Exists(t))
-                {
-                    AddDirectory(t);
-                }
-            }
-
-            int startRow = dataGrid.Rows.Count;
-
-            for (int i = startRow; i < _fileList.Count(); i++)
-            {
-                dataGrid.Rows.Add();
-                int iRow = dataGrid.Rows.Count - 1;
-
-                dataGrid.Rows[iRow].Selected = false;
-                dataGrid.Rows[iRow].Cells[0].Value = _fileList.Get(i).Filename;
-            }
-
-            lblTotalStatus.Text = @"( " + _fileIndex + @" / " + _fileList.Count() + @" )";
-
-
-            if (_fileList.Count() == 0)
-            {
-                return;
-            }
-            if (_working)
-            {
-                ProcessZipsStartThreads();
-                return;
-            }
+            TrrntZip.Program.ForceReZip = chkForce.Checked;
+            TrrntZip.Program.CheckOnly = !chkFix.Checked;
+            TrrntZip.Program.InZip = (zipType)cboInType.SelectedIndex;
+            TrrntZip.Program.OutZip = (zipType)cboOutType.SelectedIndex;
 
             StartWorking();
 
-            ProcessZipsStartThreads();
+            scanningForFiles = true;
+            FileAdder pm = new FileAdder(bccFile, file, UpdateFileCount, ProcessFileEndCallback);
+            Thread procT = new Thread(pm.ProcFiles);
+            procT.Start();
+
+            timer1.Interval = 125;
+            timer1.Enabled = true;
+
         }
-
-        private void AddFile(string filename)
-        {
-            string extn = Path.GetExtension(filename);
-            extn = extn.ToLower();
-            if ((extn != ".zip") && (extn != ".7z"))
-            {
-                return;
-            }
-
-            if ((extn == ".zip") && (Trrntzip.Program.InZip == zipType.sevenzip))
-            {
-                return;
-            }
-            if ((extn == ".7z") && (Trrntzip.Program.InZip == zipType.zip))
-            {
-                return;
-            }
-
-            TzFile tmpFile = new TzFile(filename);
-            int found = _fileList.Search(tmpFile, out int index);
-            if (found != 0)
-            {
-                _fileList.Add(index, tmpFile);
-            }
-        }
-
-        private void AddDirectory(string directory)
-        {
-            DirectoryInfo di = new DirectoryInfo(directory);
-
-            FileInfo[] fi = di.GetFiles();
-            foreach (FileInfo t in fi)
-            {
-                AddFile(t.FullName);
-            }
-
-            DirectoryInfo[] diChild = di.GetDirectories();
-            foreach (DirectoryInfo t in diChild)
-            {
-                AddDirectory(t.FullName);
-            }
-        }
-
 
         private void StartWorking()
         {
             _working = true;
-            //DropBox.Enabled = false;
+            DropBox.Enabled = false;
             cboInType.Enabled = false;
             cboOutType.Enabled = false;
             chkForce.Enabled = false;
@@ -262,7 +238,7 @@ namespace TrrntZipUI
         private void StopWorking()
         {
             _working = false;
-            //DropBox.Enabled = true;
+            DropBox.Enabled = true;
             cboInType.Enabled = true;
             cboOutType.Enabled = true;
             chkForce.Enabled = true;
@@ -280,140 +256,23 @@ namespace TrrntZipUI
             {
                 e.Cancel = true;
             }
+            else
+            {
+                bccFile?.CompleteAdding();
+                foreach (ThreadProcess tp in _threads)
+                {
+                    tp.cProcessZip.ProcessFileStartCallBack = null;
+                    tp.cProcessZip.StatusCallBack = null;
+                    tp.cProcessZip.ProcessFileEndCallBack = null;
+                    tp.thread.Join();
+                }
+
+                bccFile?.Dispose();
+            }
+
             base.OnFormClosing(e);
         }
 
-        private List<bool> procStatus = new List<bool>();
-
-        private void ProcessZipsStartThreads()
-        {
-            lock (_fileList)
-            {
-                _threadsBusyCount = _threadCount;
-                for (int i = 0; i < _threadCount; i++)
-                {
-                    if (procStatus.Count <= i)
-                        procStatus.Add(false);
-
-                    if (procStatus[i])
-                        continue;
-
-                    CProcessZip cpz = new CProcessZip
-                    {
-                        ThreadId = i,
-                        GetNextFileCallBack = GetNextFileCallback,
-                        SetFileStatusCallBack = SetFileStatusCallback,
-                        StatusCallBack = StatusCallBack
-                    };
-
-                    procStatus[i] = true;
-
-                    Thread t = new Thread(cpz.MigrateZip);
-                    t.Start();
-                }
-            }
-        }
-
-        private void GetNextFileCallback(int processId, out int fileId, out string filename)
-        {
-            lock (_fileList)
-            {
-                if (_fileIndex < _fileList.Count() && !(Cancel || Pause))
-                {
-                    fileId = _fileIndex;
-                    filename = _fileList.Get(_fileIndex).Filename;
-                    Invoke(new StatusInvoker(DoStatusUpdate), _fileIndex, processId, filename);
-                    _fileIndex += 1;
-                }
-                else
-                {
-                    fileId = -1;
-                    filename = "";
-                    _threadsBusyCount--;
-                    procStatus[processId] = false;
-
-                    if (Cancel)
-                        Invoke(new StatusInvoker(DoStatusUpdate), _fileIndex, processId, "Cancelled");
-                    else if (Pause)
-                        Invoke(new StatusInvoker(DoStatusUpdate), _fileIndex, processId, "Paused");
-                    else
-                        Invoke(new StatusInvoker(DoStatusUpdate), _fileList.Count(), processId, "Complete");
-                }
-            }
-        }
-
-        private void DoStatusUpdate(int fileId, int processId, string filename)
-        {
-            lblTotalStatus.Text = @"( " + fileId + @" / " + _fileList.Count() + @" )";
-            _threadLabel[processId].Text = Path.GetFileName(filename);
-
-            int topfileId = fileId;
-            if (topfileId < dataGrid.Rows.Count && !(Cancel || Pause))
-            {
-                dataGrid.Rows[topfileId].Cells[1].Value = "Processing....(" + processId + ")";
-            }
-
-            topfileId -= (int)((double)dataGrid.Height / dataGrid.Rows[0].Height * 0.8);
-            if (topfileId > dataGrid.Rows.Count)
-            {
-                topfileId = dataGrid.Rows.Count - 1;
-            }
-            if (topfileId < 0)
-            {
-                topfileId = 0;
-            }
-            dataGrid.FirstDisplayedScrollingRowIndex = topfileId;
-
-
-            if (_threadsBusyCount != 0)
-                return;
-
-            // all threads have finished
-            if (Pause)
-            {
-                // we finished due to a pause, so just re-enable the Pause (Resume) and Cancel buttons
-                btnPause.Enabled = true;
-                btnCancel.Enabled = true;
-            }
-            else
-            {
-                // if we did not Pause, then we either finished normally or we cancelled
-                Cancel = false;
-                StopWorking();
-            }
-        }
-
-
-        private void SetFileStatusCallback(int processId, int fileId, TrrntZipStatus trrntZipStatus)
-        {
-            if (InvokeRequired)
-            {
-                BeginInvoke(new SetFileStatusCallback(SetFileStatusCallback), processId, fileId, trrntZipStatus);
-                return;
-            }
-            switch (trrntZipStatus)
-            {
-                case TrrntZipStatus.ValidTrrntzip:
-                    dataGrid.Rows[fileId].Cells[1].Value = "Valid TrrntZip";
-                    break;
-                case TrrntZipStatus.Trrntzipped:
-                    dataGrid.Rows[fileId].Cells[1].Value = "TrrntZipped";
-                    break;
-                default:
-                    dataGrid.Rows[fileId].Cells[1].Value = trrntZipStatus.ToString();
-                    break;
-            }
-        }
-
-        private void StatusCallBack(int processId, int percent)
-        {
-            if (InvokeRequired)
-            {
-                BeginInvoke(new StatusCallback(StatusCallBack), processId, percent);
-                return;
-            }
-            _threadProgress[processId].Value = percent;
-        }
 
         private void picTitle_Click(object sender, EventArgs e)
         {
@@ -443,7 +302,7 @@ namespace TrrntZipUI
                 return;
 
             AppSettings.AddUpdateAppSettings("ProcCount", tbProccessors.Value.ToString());
-            SetUpUiThreads();
+            SetUpWorkerThreads();
         }
 
         private void chkFix_CheckedChanged(object sender, EventArgs e)
@@ -474,26 +333,6 @@ namespace TrrntZipUI
             AppSettings.AddUpdateAppSettings("OutZip", cboOutType.SelectedIndex.ToString());
         }
 
-        private void btnCancel_Click(object sender, EventArgs e)
-        {
-            // if we cancelled after a pause then just stop
-            if (Pause)
-            {
-                for (int i = 0; i < _threadCount; i++)
-                {
-                    _threadLabel[i].Text = "Cancelled";
-                }
-
-                Pause = false;
-                StopWorking();
-                return;
-            }
-
-            // start Cancel
-            Cancel = true;
-            btnCancel.Enabled = false;
-            btnPause.Enabled = false;
-        }
 
         private static Bitmap GetBitmap(string bitmapName)
         {
@@ -510,24 +349,152 @@ namespace TrrntZipUI
 
         private void btnPause_Click(object sender, EventArgs e)
         {
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(FrmTrrntzip));
-            if (!Pause)
+            if (!pc.Paused)
             {
                 // Pause
                 btnPause.Image = GetBitmap("Resume");
-                Pause = true;
-
-                // disable the Pause and Cancel buttons until all tasks have finished the file they are working on.
-                btnCancel.Enabled = false;
-                btnPause.Enabled = false;
+                pc.Pause();
             }
             else
             {
                 // Resume after a Pause
                 btnPause.Image = GetBitmap("Pause");
-                Pause = false;
-                ProcessZipsStartThreads();
+                pc.UnPause();
             }
         }
+        private void btnCancel_Click(object sender, EventArgs e)
+        {
+            // start Cancel
+            btnPause.Image = GetBitmap("Pause");
+            pc.Cancel();
+            btnCancel.Enabled = false;
+            btnPause.Enabled = false;
+
+            while (bccFile.Count != 0)
+                Thread.Sleep(100);
+
+            StopWorking();
+            pc.ResetCancel();
+        }
+
+
+
+
+        #region callbacks
+
+        private void UpdateFileCount(int fileCount)
+        {
+            FileCount = fileCount;
+        }
+
+
+        private void ProcessFileStartCallback(int processId, int fileId, string filename)
+        {
+            if (InvokeRequired)
+            {
+                BeginInvoke(new ProcessFileStartCallback(ProcessFileStartCallback), processId, fileId, filename);
+                return;
+            }
+
+            _fileIndex = fileId + 1;
+
+            _threads[processId].tLabel = Path.GetFileName(filename);
+            _threads[processId].tProgress = 0;
+
+            if ((fileId + 1) > tGridMax)
+                tGridMax = (fileId + 1);
+
+            tGrid.Add(new dGrid() { fileId = fileId, filename = filename, status = "Processing....(" + processId + ")" });
+        }
+
+        private void ProcessFileEndCallback(int processId, int fileId, TrrntZipStatus trrntZipStatus)
+        {
+            if (InvokeRequired)
+            {
+                BeginInvoke(new ProcessFileEndCallback(ProcessFileEndCallback), processId, fileId, trrntZipStatus);
+                return;
+            }
+
+            if (processId == -1)
+            {
+                scanningForFiles = false;
+
+                if (FileCount==0)
+                    StopWorking();
+            }
+            else
+            {
+                _threads[processId].tProgress = 100;
+                if ((fileId + 1) > tGridMax)
+                    tGridMax = (fileId + 1);
+
+                dGrid tGridn = new dGrid() { fileId = fileId, filename = null };
+                switch (trrntZipStatus)
+                {
+                    case TrrntZipStatus.ValidTrrntzip:
+                        tGridn.status = "Valid TrrntZip";
+                        break;
+                    case TrrntZipStatus.Trrntzipped:
+                        tGridn.status = "TrrntZipped";
+                        break;
+                    default:
+                        tGridn.status = trrntZipStatus.ToString();
+                        break;
+                }
+                tGrid.Add(tGridn);
+
+                if (!scanningForFiles && (fileId + 1) == FileCount)
+                    StopWorking();
+            }
+
+        }
+
+        private void StatusCallBack(int processId, int percent)
+        {
+            _threads[processId].tProgress = percent;
+        }
+
+
+        #endregion
+
+        private int uiFileCount = -1;
+        private int uiFileIndex = -1;
+
+        private void timer1_Tick(object sender, EventArgs e)
+        {
+            if (_fileIndex != uiFileIndex || FileCount != uiFileCount)
+            {
+                uiFileIndex = _fileIndex;
+                uiFileCount = FileCount;
+
+                lblTotalStatus.Text = @"( " + uiFileIndex + @" / " + uiFileCount + @" )";
+            }
+
+            foreach (ThreadProcess tp in _threads)
+            {
+                if (tp.tProgress != tp.threadProgress.Value)
+                    tp.threadProgress.Value = tp.tProgress;
+                if (tp.tLabel != tp.threadLabel.Text)
+                    tp.threadLabel.Text = tp.tLabel;
+            }
+
+            if (dataGrid.RowCount != tGridMax)
+            {
+                dataGrid.RowCount = tGridMax;
+                dataGrid.FirstDisplayedScrollingRowIndex = tGridMax - 1;
+
+            }
+
+            foreach (dGrid dg in tGrid)
+            {
+                var c = dataGrid.Rows[dg.fileId].Cells;
+                if (dg.filename != null)
+                    c[0].Value = dg.filename;
+                if (dg.status != null)
+                    c[1].Value = dg.status;
+            }
+            tGrid.Clear();
+        }
+
     }
 }

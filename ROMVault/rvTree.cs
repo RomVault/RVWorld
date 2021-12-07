@@ -8,14 +8,16 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Windows.Forms;
-using RVCore;
-using RVCore.RvDB;
+using RomVaultCore;
+using RomVaultCore.RvDB;
 
 namespace ROMVault
 {
 
     public partial class RvTree : UserControl
     {
+        public bool Working;
+
         private class UiTree
         {
             public string TreeBranches;
@@ -119,7 +121,7 @@ namespace ROMVault
             }
 
 
-            if (!found && pTree.DirDatCount<=1)
+            if (!found && pTree.DirDatCount <= 1)
             {
                 uTree.RExpand = new Rectangle(0, 0, 0, 0);
             }
@@ -245,18 +247,18 @@ namespace ROMVault
 
             if (uTree.RIcon.IntersectsWith(t))
             {
-                int icon = 2; //yellow
+                int icon = 2;
                 if (pTree.DirStatus.HasInToSort())
                 {
-                    icon = 4; //blue
+                    icon = 4;
                 }
                 else if (!pTree.DirStatus.HasCorrect() && pTree.DirStatus.HasMissing())
                 {
-                    icon = 1;  //red
+                    icon = 1;
                 }
                 else if (!pTree.DirStatus.HasMissing())
                 {
-                    icon = 3; //green
+                    icon = 3;
                 }
 
 
@@ -366,7 +368,7 @@ namespace ROMVault
 
                 thistxt += " " + subtxt;
                 g.DrawString(thistxt, tFont, textBrush, uTree.RText.Left - _hScroll, uTree.RText.Top + 1 - _vScroll);
-                
+
                 if (datList != null)
                 {
                     for (int i = 0; i < datList.Count; i++)
@@ -446,7 +448,7 @@ namespace ROMVault
                     }
                     else
                     {
-                        t.Tree.TreeExpanded = true;
+                        t.Tree.SetTreeExpanded(true, Working);
                     }
                 }
                 t = t.Parent;
@@ -454,16 +456,13 @@ namespace ROMVault
             SetupInt();
         }
 
-        public RvFile GetSelected()
-        {
-            return Selected;
-        }
-
         private bool CheckMouseUp(RvFile pTree, int x, int y, MouseEventArgs mevent)
         {
-            if (((UiTree)pTree.Tree.UiObject).RChecked.Contains(x, y))
+            if (!Working && ((UiTree)pTree.Tree.UiObject).RChecked.Contains(x, y))
             {
                 RvChecked?.Invoke(pTree, mevent);
+
+                bool shiftPressed = (ModifierKeys & Keys.Shift) == Keys.Shift;
 
                 if (mevent.Button == MouseButtons.Right)
                 {
@@ -471,19 +470,19 @@ namespace ROMVault
                     if (pTree.FileStatusIs(FileStatus.PrimaryToSort) || pTree.FileStatusIs(FileStatus.CacheToSort))
                         return true;
 
-                    SetChecked(pTree, RvTreeRow.TreeSelect.Locked);
+                    SetChecked(pTree, RvTreeRow.TreeSelect.Locked,Working,shiftPressed);
                     return true;
                 }
 
                 _mousehit = true;
-                SetChecked(pTree, pTree.Tree.Checked == RvTreeRow.TreeSelect.Selected ? RvTreeRow.TreeSelect.UnSelected : RvTreeRow.TreeSelect.Selected);
+                SetChecked(pTree, pTree.Tree.Checked == RvTreeRow.TreeSelect.Selected ? RvTreeRow.TreeSelect.UnSelected : RvTreeRow.TreeSelect.Selected, Working, shiftPressed);
                 return true;
             }
 
             if (((UiTree)pTree.Tree.UiObject).RExpand.Contains(x, y))
             {
                 _mousehit = true;
-                SetExpanded(pTree, mevent.Button == MouseButtons.Right);
+                SetExpanded(pTree, mevent.Button == MouseButtons.Right, Working);
                 return true;
             }
 
@@ -515,34 +514,36 @@ namespace ROMVault
             return false;
         }
 
-        private static void SetChecked(RvFile pTree, RvTreeRow.TreeSelect nSelection)
+        private static void SetChecked(RvFile pTree, RvTreeRow.TreeSelect nSelection, bool isWorking,bool shiftPressed)
         {
-            RvTreeRow.OpenStream();
-            SetCheckedRecurse(pTree,nSelection);
-            RvTreeRow.CloseStream();
+            if (!isWorking) RvTreeRow.OpenStream();
+            SetCheckedRecurse(pTree, nSelection, isWorking,shiftPressed);
+            if (!isWorking) RvTreeRow.CloseStream();
         }
 
-        private static void SetCheckedRecurse(RvFile pTree, RvTreeRow.TreeSelect nSelection)
+        private static void SetCheckedRecurse(RvFile pTree, RvTreeRow.TreeSelect nSelection, bool isworking,bool shiftPressed)
         {
-            pTree.Tree.Checked = nSelection;
+            pTree.Tree.SetChecked(nSelection, isworking);
+            if (shiftPressed)
+                return;
             for (int i = 0; i < pTree.ChildCount; i++)
             {
                 RvFile d = pTree.Child(i);
                 if (d.IsDir && d.Tree != null)
                 {
-                    SetCheckedRecurse(d, nSelection);
+                    SetCheckedRecurse(d, nSelection, isworking,false);
                 }
             }
         }
 
-        private static void SetExpanded(RvFile pTree, bool rightClick)
+        private static void SetExpanded(RvFile pTree, bool rightClick, bool isWorking)
         {
             if (!rightClick)
             {
-                pTree.Tree.TreeExpanded = !pTree.Tree.TreeExpanded;
+                pTree.Tree.SetTreeExpanded(!pTree.Tree.TreeExpanded, isWorking);
                 return;
             }
-            RvTreeRow.OpenStream();
+            if (!isWorking) RvTreeRow.OpenStream();
             // Find the value of the first child node.
             for (int i = 0; i < pTree.ChildCount; i++)
             {
@@ -551,13 +552,13 @@ namespace ROMVault
                     continue;
 
                 //Recusivly Set All Child Nodes to this value
-                SetExpandedRecurse(pTree, !d.Tree.TreeExpanded);
+                SetExpandedRecurse(pTree, !d.Tree.TreeExpanded, isWorking);
                 break;
             }
-            RvTreeRow.CloseStream();
+            if (!isWorking) RvTreeRow.CloseStream();
         }
 
-        private static void SetExpandedRecurse(RvFile pTree, bool expanded)
+        private static void SetExpandedRecurse(RvFile pTree, bool expanded, bool isWorking)
         {
             for (int i = 0; i < pTree.ChildCount; i++)
             {
@@ -565,8 +566,8 @@ namespace ROMVault
                 if (!d.IsDir || d.Tree == null)
                     continue;
 
-                d.Tree.TreeExpanded = expanded;
-                SetExpandedRecurse(d, expanded);
+                d.Tree.SetTreeExpanded(expanded, isWorking);
+                SetExpandedRecurse(d, expanded, isWorking);
             }
         }
 

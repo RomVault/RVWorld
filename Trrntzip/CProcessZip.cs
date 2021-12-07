@@ -1,17 +1,27 @@
-﻿using RVIO;
-using Trrntzip;
+﻿using System.Collections.Concurrent;
+using System.Diagnostics;
+using System.Threading;
+using RVIO;
 
-namespace TrrntZipUI
+namespace TrrntZip
 {
-    public delegate void GetNextFileCallback(int threadId, out int fileId, out string filename);
-    public delegate void SetFileStatusCallback(int processId, int fileId, TrrntZipStatus trrntZipStatus);
+    public class cFile
+    {
+        public int fileId;
+        public string filename;
+    }
 
+    public delegate void ProcessFileStartCallback(int threadId, int fileId, string filename);
+    public delegate void ProcessFileEndCallback(int threadId, int fileId, TrrntZipStatus trrntZipStatus);
     public class CProcessZip
     {
         public int ThreadId;
-        public GetNextFileCallback GetNextFileCallBack;
+        public BlockingCollection<cFile> bcCfile;
+        public ProcessFileStartCallback ProcessFileStartCallBack;
+        public ProcessFileEndCallback ProcessFileEndCallBack;
+
         public StatusCallback StatusCallBack;
-        public SetFileStatusCallback SetFileStatusCallBack;
+        public PauseCancel pauseCancel;
 
         public void MigrateZip()
         {
@@ -21,25 +31,26 @@ namespace TrrntZipUI
                 StatusLogCallBack = null,
                 ThreadId = ThreadId
             };
+            Debug.WriteLine($"Thread {ThreadId} Starting Up");
 
-
-            int fileId = 0;
-            string filename = null;
-
-            // get the first file
-            GetNextFileCallBack?.Invoke(ThreadId, out fileId, out filename);
-
-            while (!string.IsNullOrEmpty(filename))
+            foreach (cFile file in bcCfile.GetConsumingEnumerable(CancellationToken.None))
             {
-                FileInfo fi = new FileInfo(filename);
+                if (pauseCancel.Cancelled)
+                {
+                    continue;
+                }
+                pauseCancel.WaitOne();
 
-                TrrntZipStatus trrntZipFileStatus = tz.Process(fi);
-
-                SetFileStatusCallBack?.Invoke(ThreadId, fileId, trrntZipFileStatus);
-
-                // get the next file
-                GetNextFileCallBack?.Invoke(ThreadId, out fileId, out filename);
+                ProcessFileStartCallBack?.Invoke(ThreadId, file.fileId, file.filename);
+                Debug.WriteLine($"Thread {ThreadId} Starting to Process File {file.filename}");
+                FileInfo fileInfo = new FileInfo(file.filename);
+                TrrntZipStatus trrntZipFileStatus = tz.Process(fileInfo, pauseCancel);
+                ProcessFileEndCallBack?.Invoke(ThreadId, file.fileId, trrntZipFileStatus);
+                Debug.WriteLine($"Thread {ThreadId} Finished Process File {file.filename}");
             }
+
+            Debug.WriteLine($"Thread {ThreadId} Finished");
+
         }
     }
 }

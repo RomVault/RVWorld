@@ -28,19 +28,15 @@
         /// </summary>
         private void InitializeComponent()
         {
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(FrmMain));
+            this.components = new System.ComponentModel.Container();
             System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle1 = new System.Windows.Forms.DataGridViewCellStyle();
             System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle2 = new System.Windows.Forms.DataGridViewCellStyle();
             System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle3 = new System.Windows.Forms.DataGridViewCellStyle();
             System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle4 = new System.Windows.Forms.DataGridViewCellStyle();
             System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle5 = new System.Windows.Forms.DataGridViewCellStyle();
             System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle6 = new System.Windows.Forms.DataGridViewCellStyle();
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(FrmMain));
             this.splitToolBarMain = new System.Windows.Forms.SplitContainer();
-            this.btnReport = new System.Windows.Forms.Button();
-            this.btnFixFiles = new System.Windows.Forms.Button();
-            this.btnFindFixes = new System.Windows.Forms.Button();
-            this.btnScanRoms = new System.Windows.Forms.Button();
-            this.btnUpdateDats = new System.Windows.Forms.Button();
             this.splitDatInfoGameInfo = new System.Windows.Forms.SplitContainer();
             this.splitDatInfoTree = new System.Windows.Forms.SplitContainer();
             this.gbDatInfo = new System.Windows.Forms.GroupBox();
@@ -66,12 +62,10 @@
             this.lblDITName = new System.Windows.Forms.TextBox();
             this.lblDIRomsFixable = new System.Windows.Forms.Label();
             this.lblDIROMsMissing = new System.Windows.Forms.Label();
-            this.DirTree = new ROMVault.RvTree();
+            this.ctrRvTree = new ROMVault.RvTree();
             this.splitGameInfoLists = new System.Windows.Forms.SplitContainer();
             this.btnClear = new System.Windows.Forms.Button();
             this.txtFilter = new System.Windows.Forms.TextBox();
-            this.picPatreon = new System.Windows.Forms.PictureBox();
-            this.picPayPal = new System.Windows.Forms.PictureBox();
             this.chkBoxShowMerged = new System.Windows.Forms.CheckBox();
             this.chkBoxShowFixed = new System.Windows.Forms.CheckBox();
             this.chkBoxShowMissing = new System.Windows.Forms.CheckBox();
@@ -85,17 +79,31 @@
             this.CDescription = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.CCorrect = new System.Windows.Forms.DataGridViewImageColumn();
             this.RomGrid = new System.Windows.Forms.DataGridView();
+            this.CGot = new System.Windows.Forms.DataGridViewImageColumn();
+            this.CRom = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.CMerge = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.CSize = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.CCRC32 = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.CSHA1 = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.CMD5 = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.CAltSize = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.CAltCRC32 = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.CAltSHA1 = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.CAltMD5 = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.CStatus = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.CDatModDate = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.CFileModDate = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.CZipIndex = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.CDupeCount = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.TabEmuArc = new System.Windows.Forms.TabControl();
             this.tabArtWork = new System.Windows.Forms.TabPage();
-            this.picLogo = new System.Windows.Forms.PictureBox();
-            this.picArtwork = new System.Windows.Forms.PictureBox();
             this.tabScreens = new System.Windows.Forms.TabPage();
-            this.picScreenShot = new System.Windows.Forms.PictureBox();
-            this.picScreenTitle = new System.Windows.Forms.PictureBox();
             this.tabInfo = new System.Windows.Forms.TabPage();
             this.txtInfo = new System.Windows.Forms.RichTextBox();
             this.menuStrip1 = new System.Windows.Forms.MenuStrip();
             this.tsmUpdateDATs = new System.Windows.Forms.ToolStripMenuItem();
+            this.updateNewDATsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.updateAllDATsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.addToSortToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.tsmScanROMs = new System.Windows.Forms.ToolStripMenuItem();
             this.tsmScanLevel1 = new System.Windows.Forms.ToolStripMenuItem();
@@ -117,25 +125,18 @@
             this.dataGridViewImageColumn1 = new System.Windows.Forms.DataGridViewImageColumn();
             this.dataGridViewImageColumn2 = new System.Windows.Forms.DataGridViewImageColumn();
             this.dataGridViewImageColumn3 = new System.Windows.Forms.DataGridViewImageColumn();
-            this.CGot = new System.Windows.Forms.DataGridViewImageColumn();
-            this.CRom = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.CMerge = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.CSize = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.CCRC32 = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.CSHA1 = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.CMD5 = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.CAltSize = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.CAltCRC32 = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.CAltSHA1 = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.CAltMD5 = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.CStatus = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.DatModDate = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.FileModDate = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.DatCreatedDate = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.FileCreatedDate = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.DatAccessDate = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.FileAccessDate = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.ZipIndex = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.timer1 = new System.Windows.Forms.Timer(this.components);
+            this.btnReport = new System.Windows.Forms.Button();
+            this.btnFixFiles = new System.Windows.Forms.Button();
+            this.btnFindFixes = new System.Windows.Forms.Button();
+            this.btnScanRoms = new System.Windows.Forms.Button();
+            this.btnUpdateDats = new System.Windows.Forms.Button();
+            this.picPatreon = new System.Windows.Forms.PictureBox();
+            this.picPayPal = new System.Windows.Forms.PictureBox();
+            this.picLogo = new System.Windows.Forms.PictureBox();
+            this.picArtwork = new System.Windows.Forms.PictureBox();
+            this.picScreenShot = new System.Windows.Forms.PictureBox();
+            this.picScreenTitle = new System.Windows.Forms.PictureBox();
             ((System.ComponentModel.ISupportInitialize)(this.splitToolBarMain)).BeginInit();
             this.splitToolBarMain.Panel1.SuspendLayout();
             this.splitToolBarMain.Panel2.SuspendLayout();
@@ -153,8 +154,6 @@
             this.splitGameInfoLists.Panel1.SuspendLayout();
             this.splitGameInfoLists.Panel2.SuspendLayout();
             this.splitGameInfoLists.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.picPatreon)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.picPayPal)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.splitListArt)).BeginInit();
             this.splitListArt.Panel1.SuspendLayout();
             this.splitListArt.Panel2.SuspendLayout();
@@ -167,13 +166,15 @@
             ((System.ComponentModel.ISupportInitialize)(this.RomGrid)).BeginInit();
             this.TabEmuArc.SuspendLayout();
             this.tabArtWork.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.picLogo)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.picArtwork)).BeginInit();
             this.tabScreens.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.picScreenShot)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.picScreenTitle)).BeginInit();
             this.tabInfo.SuspendLayout();
             this.menuStrip1.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.picPatreon)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.picPayPal)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.picLogo)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.picArtwork)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.picScreenShot)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.picScreenTitle)).BeginInit();
             this.SuspendLayout();
             // 
             // splitToolBarMain
@@ -199,71 +200,6 @@
             this.splitToolBarMain.Size = new System.Drawing.Size(1264, 738);
             this.splitToolBarMain.SplitterDistance = 80;
             this.splitToolBarMain.TabIndex = 5;
-            // 
-            // btnReport
-            // 
-            this.btnReport.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("btnReport.BackgroundImage")));
-            this.btnReport.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
-            this.btnReport.Location = new System.Drawing.Point(0, 320);
-            this.btnReport.Name = "btnReport";
-            this.btnReport.Size = new System.Drawing.Size(80, 80);
-            this.btnReport.TabIndex = 13;
-            this.btnReport.Text = "Generate Reports";
-            this.btnReport.TextAlign = System.Drawing.ContentAlignment.BottomCenter;
-            this.btnReport.UseVisualStyleBackColor = true;
-            this.btnReport.MouseUp += new System.Windows.Forms.MouseEventHandler(this.btnReport_MouseUp);
-            // 
-            // btnFixFiles
-            // 
-            this.btnFixFiles.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("btnFixFiles.BackgroundImage")));
-            this.btnFixFiles.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
-            this.btnFixFiles.Location = new System.Drawing.Point(0, 240);
-            this.btnFixFiles.Name = "btnFixFiles";
-            this.btnFixFiles.Size = new System.Drawing.Size(80, 80);
-            this.btnFixFiles.TabIndex = 10;
-            this.btnFixFiles.Text = "Fix ROMs";
-            this.btnFixFiles.TextAlign = System.Drawing.ContentAlignment.BottomCenter;
-            this.btnFixFiles.UseVisualStyleBackColor = true;
-            this.btnFixFiles.MouseUp += new System.Windows.Forms.MouseEventHandler(this.btnFixFiles_MouseUp);
-            // 
-            // btnFindFixes
-            // 
-            this.btnFindFixes.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("btnFindFixes.BackgroundImage")));
-            this.btnFindFixes.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
-            this.btnFindFixes.Location = new System.Drawing.Point(0, 160);
-            this.btnFindFixes.Name = "btnFindFixes";
-            this.btnFindFixes.Size = new System.Drawing.Size(80, 80);
-            this.btnFindFixes.TabIndex = 9;
-            this.btnFindFixes.Text = "Find Fixes";
-            this.btnFindFixes.TextAlign = System.Drawing.ContentAlignment.BottomCenter;
-            this.btnFindFixes.UseVisualStyleBackColor = true;
-            this.btnFindFixes.Click += new System.EventHandler(this.BtnFindFixesClick);
-            // 
-            // btnScanRoms
-            // 
-            this.btnScanRoms.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("btnScanRoms.BackgroundImage")));
-            this.btnScanRoms.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
-            this.btnScanRoms.Location = new System.Drawing.Point(0, 80);
-            this.btnScanRoms.Name = "btnScanRoms";
-            this.btnScanRoms.Size = new System.Drawing.Size(80, 80);
-            this.btnScanRoms.TabIndex = 8;
-            this.btnScanRoms.Text = "Scan ROMs";
-            this.btnScanRoms.TextAlign = System.Drawing.ContentAlignment.BottomCenter;
-            this.btnScanRoms.UseVisualStyleBackColor = true;
-            this.btnScanRoms.Click += new System.EventHandler(this.BtnScanRomsClick);
-            // 
-            // btnUpdateDats
-            // 
-            this.btnUpdateDats.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("btnUpdateDats.BackgroundImage")));
-            this.btnUpdateDats.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
-            this.btnUpdateDats.Location = new System.Drawing.Point(0, 0);
-            this.btnUpdateDats.Name = "btnUpdateDats";
-            this.btnUpdateDats.Size = new System.Drawing.Size(80, 80);
-            this.btnUpdateDats.TabIndex = 0;
-            this.btnUpdateDats.Text = "Update DATs";
-            this.btnUpdateDats.TextAlign = System.Drawing.ContentAlignment.BottomCenter;
-            this.btnUpdateDats.UseVisualStyleBackColor = true;
-            this.btnUpdateDats.MouseUp += new System.Windows.Forms.MouseEventHandler(this.btnUpdateDats_MouseUp);
             // 
             // splitDatInfoGameInfo
             // 
@@ -300,7 +236,7 @@
             // 
             // splitDatInfoTree.Panel2
             // 
-            this.splitDatInfoTree.Panel2.Controls.Add(this.DirTree);
+            this.splitDatInfoTree.Panel2.Controls.Add(this.ctrRvTree);
             this.splitDatInfoTree.Size = new System.Drawing.Size(479, 738);
             this.splitDatInfoTree.SplitterDistance = 148;
             this.splitDatInfoTree.TabIndex = 0;
@@ -547,16 +483,16 @@
             this.lblDIROMsMissing.Text = "ROMs Missing :";
             this.lblDIROMsMissing.TextAlign = System.Drawing.ContentAlignment.TopRight;
             // 
-            // DirTree
+            // ctrRvTree
             // 
-            this.DirTree.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.DirTree.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.DirTree.Location = new System.Drawing.Point(0, 0);
-            this.DirTree.Name = "DirTree";
-            this.DirTree.Size = new System.Drawing.Size(479, 586);
-            this.DirTree.TabIndex = 2;
-            this.DirTree.RvSelected += new System.Windows.Forms.MouseEventHandler(this.DirTreeRvSelected);
-            this.DirTree.RvChecked += new System.Windows.Forms.MouseEventHandler(this.DirTreeRvChecked);
+            this.ctrRvTree.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.ctrRvTree.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.ctrRvTree.Location = new System.Drawing.Point(0, 0);
+            this.ctrRvTree.Name = "ctrRvTree";
+            this.ctrRvTree.Size = new System.Drawing.Size(479, 586);
+            this.ctrRvTree.TabIndex = 2;
+            this.ctrRvTree.RvSelected += new System.Windows.Forms.MouseEventHandler(this.DirTreeRvSelected);
+            this.ctrRvTree.RvChecked += new System.Windows.Forms.MouseEventHandler(this.DirTreeRvChecked);
             // 
             // splitGameInfoLists
             // 
@@ -604,26 +540,6 @@
             this.txtFilter.Size = new System.Drawing.Size(109, 20);
             this.txtFilter.TabIndex = 17;
             this.txtFilter.TextChanged += new System.EventHandler(this.TxtFilter_TextChanged);
-            // 
-            // picPatreon
-            // 
-            this.picPatreon.Image = ((System.Drawing.Image)(resources.GetObject("picPatreon.Image")));
-            this.picPatreon.Location = new System.Drawing.Point(620, 114);
-            this.picPatreon.Name = "picPatreon";
-            this.picPatreon.Size = new System.Drawing.Size(73, 29);
-            this.picPatreon.TabIndex = 16;
-            this.picPatreon.TabStop = false;
-            this.picPatreon.Click += new System.EventHandler(this.picPatreon_Click);
-            // 
-            // picPayPal
-            // 
-            this.picPayPal.Image = ((System.Drawing.Image)(resources.GetObject("picPayPal.Image")));
-            this.picPayPal.Location = new System.Drawing.Point(547, 114);
-            this.picPayPal.Name = "picPayPal";
-            this.picPayPal.Size = new System.Drawing.Size(73, 29);
-            this.picPayPal.TabIndex = 15;
-            this.picPayPal.TabStop = false;
-            this.picPayPal.Click += new System.EventHandler(this.picPayPal_Click);
             // 
             // chkBoxShowMerged
             // 
@@ -717,7 +633,7 @@
             // 
             this.splitGameListRomList.Panel2.Controls.Add(this.RomGrid);
             this.splitGameListRomList.Size = new System.Drawing.Size(544, 586);
-            this.splitGameListRomList.SplitterDistance = 267;
+            this.splitGameListRomList.SplitterDistance = 266;
             this.splitGameListRomList.TabIndex = 0;
             // 
             // GameGrid
@@ -763,13 +679,14 @@
             dataGridViewCellStyle3.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
             this.GameGrid.RowHeadersDefaultCellStyle = dataGridViewCellStyle3;
             this.GameGrid.RowHeadersVisible = false;
+            this.GameGrid.RowHeadersWidth = 72;
             this.GameGrid.RowTemplate.Height = 17;
             this.GameGrid.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
             this.GameGrid.ShowCellErrors = false;
             this.GameGrid.ShowCellToolTips = false;
             this.GameGrid.ShowEditingIcon = false;
             this.GameGrid.ShowRowErrors = false;
-            this.GameGrid.Size = new System.Drawing.Size(544, 267);
+            this.GameGrid.Size = new System.Drawing.Size(544, 266);
             this.GameGrid.TabIndex = 4;
             this.GameGrid.VirtualMode = true;
             this.GameGrid.CellFormatting += new System.Windows.Forms.DataGridViewCellFormattingEventHandler(this.GameGridCellFormatting);
@@ -783,14 +700,17 @@
             // 
             this.CType.FillWeight = 40F;
             this.CType.HeaderText = "Type";
+            this.CType.MinimumWidth = 9;
             this.CType.Name = "CType";
             this.CType.ReadOnly = true;
             this.CType.Resizable = System.Windows.Forms.DataGridViewTriState.True;
+            this.CType.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.Programmatic;
             this.CType.Width = 40;
             // 
             // CGame
             // 
             this.CGame.HeaderText = "Game (Directory / Zip)";
+            this.CGame.MinimumWidth = 9;
             this.CGame.Name = "CGame";
             this.CGame.ReadOnly = true;
             this.CGame.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.Programmatic;
@@ -799,6 +719,7 @@
             // CDescription
             // 
             this.CDescription.HeaderText = "Description";
+            this.CDescription.MinimumWidth = 9;
             this.CDescription.Name = "CDescription";
             this.CDescription.ReadOnly = true;
             this.CDescription.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.Programmatic;
@@ -842,13 +763,10 @@
             this.CAltSHA1,
             this.CAltMD5,
             this.CStatus,
-            this.DatModDate,
-            this.FileModDate,
-            this.DatCreatedDate,
-            this.FileCreatedDate,
-            this.DatAccessDate,
-            this.FileAccessDate,
-            this.ZipIndex});
+            this.CDatModDate,
+            this.CFileModDate,
+            this.CZipIndex,
+            this.CDupeCount});
             dataGridViewCellStyle5.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
             dataGridViewCellStyle5.BackColor = System.Drawing.SystemColors.Window;
             dataGridViewCellStyle5.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
@@ -872,12 +790,13 @@
             dataGridViewCellStyle6.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
             this.RomGrid.RowHeadersDefaultCellStyle = dataGridViewCellStyle6;
             this.RomGrid.RowHeadersVisible = false;
+            this.RomGrid.RowHeadersWidth = 72;
             this.RomGrid.RowTemplate.Height = 19;
             this.RomGrid.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
             this.RomGrid.ShowCellErrors = false;
             this.RomGrid.ShowEditingIcon = false;
             this.RomGrid.ShowRowErrors = false;
-            this.RomGrid.Size = new System.Drawing.Size(544, 315);
+            this.RomGrid.Size = new System.Drawing.Size(544, 316);
             this.RomGrid.TabIndex = 21;
             this.RomGrid.VirtualMode = true;
             this.RomGrid.CellFormatting += new System.Windows.Forms.DataGridViewCellFormattingEventHandler(this.RomGridCellFormatting);
@@ -885,6 +804,151 @@
             this.RomGrid.ColumnHeaderMouseClick += new System.Windows.Forms.DataGridViewCellMouseEventHandler(this.RomGridColumnHeaderMouseClick);
             this.RomGrid.SelectionChanged += new System.EventHandler(this.RomGridSelectionChanged);
             this.RomGrid.MouseUp += new System.Windows.Forms.MouseEventHandler(this.RomGridMouseUp);
+            // 
+            // CGot
+            // 
+            this.CGot.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.None;
+            this.CGot.HeaderText = "Got";
+            this.CGot.MinimumWidth = 9;
+            this.CGot.Name = "CGot";
+            this.CGot.ReadOnly = true;
+            this.CGot.Resizable = System.Windows.Forms.DataGridViewTriState.True;
+            this.CGot.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.Programmatic;
+            this.CGot.Width = 65;
+            // 
+            // CRom
+            // 
+            this.CRom.HeaderText = "ROM (File)";
+            this.CRom.MinimumWidth = 9;
+            this.CRom.Name = "CRom";
+            this.CRom.ReadOnly = true;
+            this.CRom.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.Programmatic;
+            this.CRom.Width = 150;
+            // 
+            // CMerge
+            // 
+            this.CMerge.HeaderText = "Merge";
+            this.CMerge.MinimumWidth = 9;
+            this.CMerge.Name = "CMerge";
+            this.CMerge.ReadOnly = true;
+            this.CMerge.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.Programmatic;
+            this.CMerge.Width = 60;
+            // 
+            // CSize
+            // 
+            this.CSize.HeaderText = "Size";
+            this.CSize.MinimumWidth = 9;
+            this.CSize.Name = "CSize";
+            this.CSize.ReadOnly = true;
+            this.CSize.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.Programmatic;
+            this.CSize.Width = 60;
+            // 
+            // CCRC32
+            // 
+            this.CCRC32.HeaderText = "CRC32";
+            this.CCRC32.MinimumWidth = 9;
+            this.CCRC32.Name = "CCRC32";
+            this.CCRC32.ReadOnly = true;
+            this.CCRC32.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.Programmatic;
+            this.CCRC32.Width = 175;
+            // 
+            // CSHA1
+            // 
+            this.CSHA1.HeaderText = "SHA1";
+            this.CSHA1.MinimumWidth = 9;
+            this.CSHA1.Name = "CSHA1";
+            this.CSHA1.ReadOnly = true;
+            this.CSHA1.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.Programmatic;
+            this.CSHA1.Width = 150;
+            // 
+            // CMD5
+            // 
+            this.CMD5.HeaderText = "MD5";
+            this.CMD5.MinimumWidth = 9;
+            this.CMD5.Name = "CMD5";
+            this.CMD5.ReadOnly = true;
+            this.CMD5.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.Programmatic;
+            this.CMD5.Width = 150;
+            // 
+            // CAltSize
+            // 
+            this.CAltSize.HeaderText = "AltSize";
+            this.CAltSize.MinimumWidth = 9;
+            this.CAltSize.Name = "CAltSize";
+            this.CAltSize.ReadOnly = true;
+            this.CAltSize.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.Programmatic;
+            this.CAltSize.Visible = false;
+            this.CAltSize.Width = 60;
+            // 
+            // CAltCRC32
+            // 
+            this.CAltCRC32.HeaderText = "AltCRC32";
+            this.CAltCRC32.MinimumWidth = 9;
+            this.CAltCRC32.Name = "CAltCRC32";
+            this.CAltCRC32.ReadOnly = true;
+            this.CAltCRC32.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.Programmatic;
+            this.CAltCRC32.Visible = false;
+            this.CAltCRC32.Width = 175;
+            // 
+            // CAltSHA1
+            // 
+            this.CAltSHA1.HeaderText = "AltSHA1";
+            this.CAltSHA1.MinimumWidth = 9;
+            this.CAltSHA1.Name = "CAltSHA1";
+            this.CAltSHA1.ReadOnly = true;
+            this.CAltSHA1.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.Programmatic;
+            this.CAltSHA1.Visible = false;
+            this.CAltSHA1.Width = 150;
+            // 
+            // CAltMD5
+            // 
+            this.CAltMD5.HeaderText = "AltMD5";
+            this.CAltMD5.MinimumWidth = 9;
+            this.CAltMD5.Name = "CAltMD5";
+            this.CAltMD5.ReadOnly = true;
+            this.CAltMD5.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.Programmatic;
+            this.CAltMD5.Visible = false;
+            this.CAltMD5.Width = 150;
+            // 
+            // CStatus
+            // 
+            this.CStatus.HeaderText = "Status";
+            this.CStatus.MinimumWidth = 9;
+            this.CStatus.Name = "CStatus";
+            this.CStatus.ReadOnly = true;
+            this.CStatus.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.Programmatic;
+            this.CStatus.Width = 175;
+            // 
+            // CDatModDate
+            // 
+            this.CDatModDate.HeaderText = "DAT Mod";
+            this.CDatModDate.MinimumWidth = 9;
+            this.CDatModDate.Name = "CDatModDate";
+            this.CDatModDate.ReadOnly = true;
+            this.CDatModDate.Width = 175;
+            // 
+            // CFileModDate
+            // 
+            this.CFileModDate.HeaderText = "File Mod";
+            this.CFileModDate.MinimumWidth = 9;
+            this.CFileModDate.Name = "CFileModDate";
+            this.CFileModDate.ReadOnly = true;
+            this.CFileModDate.Width = 175;
+            // 
+            // CZipIndex
+            // 
+            this.CZipIndex.HeaderText = "ZipIndex";
+            this.CZipIndex.MinimumWidth = 9;
+            this.CZipIndex.Name = "CZipIndex";
+            this.CZipIndex.ReadOnly = true;
+            this.CZipIndex.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.NotSortable;
+            this.CZipIndex.Width = 175;
+            // 
+            // CDupeCount
+            // 
+            this.CDupeCount.HeaderText = "Dupe Count";
+            this.CDupeCount.Name = "CDupeCount";
+            this.CDupeCount.ReadOnly = true;
             // 
             // TabEmuArc
             // 
@@ -911,28 +975,6 @@
             this.tabArtWork.Text = "ArtWork";
             this.tabArtWork.Resize += new System.EventHandler(this.tabArtWork_Resize);
             // 
-            // picLogo
-            // 
-            this.picLogo.BackColor = System.Drawing.Color.White;
-            this.picLogo.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.picLogo.Location = new System.Drawing.Point(14, 197);
-            this.picLogo.Name = "picLogo";
-            this.picLogo.Size = new System.Drawing.Size(114, 117);
-            this.picLogo.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
-            this.picLogo.TabIndex = 1;
-            this.picLogo.TabStop = false;
-            // 
-            // picArtwork
-            // 
-            this.picArtwork.BackColor = System.Drawing.Color.White;
-            this.picArtwork.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.picArtwork.Location = new System.Drawing.Point(13, 60);
-            this.picArtwork.Name = "picArtwork";
-            this.picArtwork.Size = new System.Drawing.Size(116, 104);
-            this.picArtwork.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
-            this.picArtwork.TabIndex = 0;
-            this.picArtwork.TabStop = false;
-            // 
             // tabScreens
             // 
             this.tabScreens.BackColor = System.Drawing.SystemColors.Control;
@@ -945,28 +987,6 @@
             this.tabScreens.TabIndex = 1;
             this.tabScreens.Text = "Screens";
             this.tabScreens.Resize += new System.EventHandler(this.tabScreens_Resize);
-            // 
-            // picScreenShot
-            // 
-            this.picScreenShot.BackColor = System.Drawing.Color.White;
-            this.picScreenShot.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.picScreenShot.Location = new System.Drawing.Point(15, 218);
-            this.picScreenShot.Name = "picScreenShot";
-            this.picScreenShot.Size = new System.Drawing.Size(104, 113);
-            this.picScreenShot.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
-            this.picScreenShot.TabIndex = 1;
-            this.picScreenShot.TabStop = false;
-            // 
-            // picScreenTitle
-            // 
-            this.picScreenTitle.BackColor = System.Drawing.Color.White;
-            this.picScreenTitle.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.picScreenTitle.Location = new System.Drawing.Point(15, 69);
-            this.picScreenTitle.Name = "picScreenTitle";
-            this.picScreenTitle.Size = new System.Drawing.Size(104, 117);
-            this.picScreenTitle.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
-            this.picScreenTitle.TabIndex = 0;
-            this.picScreenTitle.TabStop = false;
             // 
             // tabInfo
             // 
@@ -991,6 +1011,7 @@
             // 
             // menuStrip1
             // 
+            this.menuStrip1.ImageScalingSize = new System.Drawing.Size(28, 28);
             this.menuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.tsmUpdateDATs,
             this.addToSortToolStripMenuItem,
@@ -1008,10 +1029,28 @@
             // 
             // tsmUpdateDATs
             // 
+            this.tsmUpdateDATs.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.updateNewDATsToolStripMenuItem,
+            this.updateAllDATsToolStripMenuItem});
             this.tsmUpdateDATs.Name = "tsmUpdateDATs";
             this.tsmUpdateDATs.Size = new System.Drawing.Size(85, 20);
             this.tsmUpdateDATs.Text = "Update DATs";
-            this.tsmUpdateDATs.Click += new System.EventHandler(this.TsmUpdateDaTsClick);
+            // 
+            // updateNewDATsToolStripMenuItem
+            // 
+            this.updateNewDATsToolStripMenuItem.Name = "updateNewDATsToolStripMenuItem";
+            this.updateNewDATsToolStripMenuItem.ShortcutKeys = System.Windows.Forms.Keys.F5;
+            this.updateNewDATsToolStripMenuItem.Size = new System.Drawing.Size(213, 22);
+            this.updateNewDATsToolStripMenuItem.Text = "Update New DATs";
+            this.updateNewDATsToolStripMenuItem.Click += new System.EventHandler(this.updateNewDATsToolStripMenuItem_Click);
+            // 
+            // updateAllDATsToolStripMenuItem
+            // 
+            this.updateAllDATsToolStripMenuItem.Name = "updateAllDATsToolStripMenuItem";
+            this.updateAllDATsToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.F5)));
+            this.updateAllDATsToolStripMenuItem.Size = new System.Drawing.Size(213, 22);
+            this.updateAllDATsToolStripMenuItem.Text = "Refresh All DATs";
+            this.updateAllDATsToolStripMenuItem.Click += new System.EventHandler(this.updateAllDATsToolStripMenuItem_Click);
             // 
             // addToSortToolStripMenuItem
             // 
@@ -1033,27 +1072,31 @@
             // tsmScanLevel1
             // 
             this.tsmScanLevel1.Name = "tsmScanLevel1";
-            this.tsmScanLevel1.Size = new System.Drawing.Size(272, 22);
-            this.tsmScanLevel1.Text = "Scan new ROMs headers only";
+            this.tsmScanLevel1.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Shift | System.Windows.Forms.Keys.F6)));
+            this.tsmScanLevel1.Size = new System.Drawing.Size(353, 22);
+            this.tsmScanLevel1.Text = "Scan ticked new ROMs headers only";
             this.tsmScanLevel1.Click += new System.EventHandler(this.TsmScanLevel1Click);
             // 
             // tsmScanLevel2
             // 
             this.tsmScanLevel2.Name = "tsmScanLevel2";
-            this.tsmScanLevel2.Size = new System.Drawing.Size(272, 22);
-            this.tsmScanLevel2.Text = "Scan new ROMs with full hash check";
+            this.tsmScanLevel2.ShortcutKeys = System.Windows.Forms.Keys.F6;
+            this.tsmScanLevel2.Size = new System.Drawing.Size(353, 22);
+            this.tsmScanLevel2.Text = "Scan ticked new ROMs with full hash check";
             this.tsmScanLevel2.Click += new System.EventHandler(this.TsmScanLevel2Click);
             // 
             // tsmScanLevel3
             // 
             this.tsmScanLevel3.Name = "tsmScanLevel3";
-            this.tsmScanLevel3.Size = new System.Drawing.Size(272, 22);
-            this.tsmScanLevel3.Text = "ReScan All ROMs with full hash check";
+            this.tsmScanLevel3.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.F6)));
+            this.tsmScanLevel3.Size = new System.Drawing.Size(353, 22);
+            this.tsmScanLevel3.Text = "ReScan All ticked ROMs with full hash check";
             this.tsmScanLevel3.Click += new System.EventHandler(this.TsmScanLevel3Click);
             // 
             // tsmFindFixes
             // 
             this.tsmFindFixes.Name = "tsmFindFixes";
+            this.tsmFindFixes.ShortcutKeys = System.Windows.Forms.Keys.F7;
             this.tsmFindFixes.Size = new System.Drawing.Size(71, 20);
             this.tsmFindFixes.Text = "Find Fixes";
             this.tsmFindFixes.Click += new System.EventHandler(this.TsmFindFixesClick);
@@ -1061,6 +1104,7 @@
             // FixROMsToolStripMenuItem
             // 
             this.FixROMsToolStripMenuItem.Name = "FixROMsToolStripMenuItem";
+            this.FixROMsToolStripMenuItem.ShortcutKeys = System.Windows.Forms.Keys.F8;
             this.FixROMsToolStripMenuItem.Size = new System.Drawing.Size(69, 20);
             this.FixROMsToolStripMenuItem.Text = "Fix ROMs";
             this.FixROMsToolStripMenuItem.Click += new System.EventHandler(this.FixFilesToolStripMenuItemClick);
@@ -1078,21 +1122,23 @@
             // romVaultSettingsToolStripMenuItem
             // 
             this.romVaultSettingsToolStripMenuItem.Name = "romVaultSettingsToolStripMenuItem";
-            this.romVaultSettingsToolStripMenuItem.Size = new System.Drawing.Size(182, 22);
+            this.romVaultSettingsToolStripMenuItem.ShortcutKeys = System.Windows.Forms.Keys.F10;
+            this.romVaultSettingsToolStripMenuItem.Size = new System.Drawing.Size(224, 22);
             this.romVaultSettingsToolStripMenuItem.Text = "RomVault Settings";
             this.romVaultSettingsToolStripMenuItem.Click += new System.EventHandler(this.RomVaultSettingsToolStripMenuItem_Click);
             // 
             // directorySettingsToolStripMenuItem
             // 
             this.directorySettingsToolStripMenuItem.Name = "directorySettingsToolStripMenuItem";
-            this.directorySettingsToolStripMenuItem.Size = new System.Drawing.Size(182, 22);
+            this.directorySettingsToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Shift | System.Windows.Forms.Keys.F10)));
+            this.directorySettingsToolStripMenuItem.Size = new System.Drawing.Size(224, 22);
             this.directorySettingsToolStripMenuItem.Text = "Directory Settings";
             this.directorySettingsToolStripMenuItem.Click += new System.EventHandler(this.DirectorySettingsToolStripMenuItem_Click);
             // 
             // registrationSettingsToolStripMenuItem
             // 
             this.registrationSettingsToolStripMenuItem.Name = "registrationSettingsToolStripMenuItem";
-            this.registrationSettingsToolStripMenuItem.Size = new System.Drawing.Size(182, 22);
+            this.registrationSettingsToolStripMenuItem.Size = new System.Drawing.Size(224, 22);
             this.registrationSettingsToolStripMenuItem.Text = "Registration Settings";
             this.registrationSettingsToolStripMenuItem.Click += new System.EventHandler(this.RegistrationSettingsToolStripMenuItem_Click);
             // 
@@ -1109,21 +1155,24 @@
             // fixDatReportToolStripMenuItem
             // 
             this.fixDatReportToolStripMenuItem.Name = "fixDatReportToolStripMenuItem";
-            this.fixDatReportToolStripMenuItem.Size = new System.Drawing.Size(148, 22);
+            this.fixDatReportToolStripMenuItem.ShortcutKeys = System.Windows.Forms.Keys.F9;
+            this.fixDatReportToolStripMenuItem.Size = new System.Drawing.Size(182, 22);
             this.fixDatReportToolStripMenuItem.Text = "Fix Dat Report";
             this.fixDatReportToolStripMenuItem.Click += new System.EventHandler(this.fixDatReportToolStripMenuItem_Click);
             // 
             // fullReportToolStripMenuItem
             // 
             this.fullReportToolStripMenuItem.Name = "fullReportToolStripMenuItem";
-            this.fullReportToolStripMenuItem.Size = new System.Drawing.Size(148, 22);
+            this.fullReportToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Shift | System.Windows.Forms.Keys.F9)));
+            this.fullReportToolStripMenuItem.Size = new System.Drawing.Size(182, 22);
             this.fullReportToolStripMenuItem.Text = "Full Report";
             this.fullReportToolStripMenuItem.Click += new System.EventHandler(this.fullReportToolStripMenuItem_Click);
             // 
             // fixReportToolStripMenuItem
             // 
             this.fixReportToolStripMenuItem.Name = "fixReportToolStripMenuItem";
-            this.fixReportToolStripMenuItem.Size = new System.Drawing.Size(148, 22);
+            this.fixReportToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.F9)));
+            this.fixReportToolStripMenuItem.Size = new System.Drawing.Size(182, 22);
             this.fixReportToolStripMenuItem.Text = "Fix Report";
             this.fixReportToolStripMenuItem.Click += new System.EventHandler(this.fixReportToolStripMenuItem_Click);
             // 
@@ -1139,14 +1188,16 @@
             // colorKeyToolStripMenuItem
             // 
             this.colorKeyToolStripMenuItem.Name = "colorKeyToolStripMenuItem";
-            this.colorKeyToolStripMenuItem.Size = new System.Drawing.Size(161, 22);
+            this.colorKeyToolStripMenuItem.ShortcutKeys = System.Windows.Forms.Keys.F1;
+            this.colorKeyToolStripMenuItem.Size = new System.Drawing.Size(186, 22);
             this.colorKeyToolStripMenuItem.Text = "Color Key";
             this.colorKeyToolStripMenuItem.Click += new System.EventHandler(this.colorKeyToolStripMenuItem_Click);
             // 
             // aboutRomVaultToolStripMenuItem
             // 
             this.aboutRomVaultToolStripMenuItem.Name = "aboutRomVaultToolStripMenuItem";
-            this.aboutRomVaultToolStripMenuItem.Size = new System.Drawing.Size(161, 22);
+            this.aboutRomVaultToolStripMenuItem.ShortcutKeys = System.Windows.Forms.Keys.F12;
+            this.aboutRomVaultToolStripMenuItem.Size = new System.Drawing.Size(186, 22);
             this.aboutRomVaultToolStripMenuItem.Text = "About RomVault";
             this.aboutRomVaultToolStripMenuItem.Click += new System.EventHandler(this.AboutRomVaultToolStripMenuItemClick);
             // 
@@ -1154,6 +1205,7 @@
             // 
             this.dataGridViewImageColumn1.FillWeight = 40F;
             this.dataGridViewImageColumn1.HeaderText = "Type";
+            this.dataGridViewImageColumn1.MinimumWidth = 9;
             this.dataGridViewImageColumn1.Name = "dataGridViewImageColumn1";
             this.dataGridViewImageColumn1.ReadOnly = true;
             this.dataGridViewImageColumn1.Resizable = System.Windows.Forms.DataGridViewTriState.True;
@@ -1163,6 +1215,7 @@
             // dataGridViewImageColumn2
             // 
             this.dataGridViewImageColumn2.HeaderText = "ROM Status";
+            this.dataGridViewImageColumn2.MinimumWidth = 9;
             this.dataGridViewImageColumn2.Name = "dataGridViewImageColumn2";
             this.dataGridViewImageColumn2.ReadOnly = true;
             this.dataGridViewImageColumn2.Resizable = System.Windows.Forms.DataGridViewTriState.False;
@@ -1172,152 +1225,146 @@
             // 
             this.dataGridViewImageColumn3.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.None;
             this.dataGridViewImageColumn3.HeaderText = "Got";
+            this.dataGridViewImageColumn3.MinimumWidth = 9;
             this.dataGridViewImageColumn3.Name = "dataGridViewImageColumn3";
             this.dataGridViewImageColumn3.ReadOnly = true;
             this.dataGridViewImageColumn3.Resizable = System.Windows.Forms.DataGridViewTriState.True;
             this.dataGridViewImageColumn3.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.Automatic;
             this.dataGridViewImageColumn3.Width = 65;
             // 
-            // CGot
+            // timer1
             // 
-            this.CGot.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.None;
-            this.CGot.HeaderText = "Got";
-            this.CGot.Name = "CGot";
-            this.CGot.ReadOnly = true;
-            this.CGot.Resizable = System.Windows.Forms.DataGridViewTriState.True;
-            this.CGot.Width = 65;
+            this.timer1.Interval = 5000;
+            this.timer1.Tick += new System.EventHandler(this.timer1_Tick);
             // 
-            // CRom
+            // btnReport
             // 
-            this.CRom.HeaderText = "ROM (File)";
-            this.CRom.Name = "CRom";
-            this.CRom.ReadOnly = true;
-            this.CRom.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.Programmatic;
-            this.CRom.Width = 150;
+            this.btnReport.BackgroundImage = global::ROMVault.rvImages1.btnReport_Enabled;
+            this.btnReport.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
+            this.btnReport.Location = new System.Drawing.Point(0, 320);
+            this.btnReport.Name = "btnReport";
+            this.btnReport.Size = new System.Drawing.Size(80, 80);
+            this.btnReport.TabIndex = 13;
+            this.btnReport.Text = "Generate Reports";
+            this.btnReport.TextAlign = System.Drawing.ContentAlignment.BottomCenter;
+            this.btnReport.UseVisualStyleBackColor = true;
+            this.btnReport.MouseUp += new System.Windows.Forms.MouseEventHandler(this.BtnReportMouseUp);
             // 
-            // CMerge
+            // btnFixFiles
             // 
-            this.CMerge.HeaderText = "Merge";
-            this.CMerge.Name = "CMerge";
-            this.CMerge.ReadOnly = true;
-            this.CMerge.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.Programmatic;
-            this.CMerge.Width = 60;
+            this.btnFixFiles.BackgroundImage = global::ROMVault.rvImages1.btnFixFiles_Enabled;
+            this.btnFixFiles.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
+            this.btnFixFiles.Location = new System.Drawing.Point(0, 240);
+            this.btnFixFiles.Name = "btnFixFiles";
+            this.btnFixFiles.Size = new System.Drawing.Size(80, 80);
+            this.btnFixFiles.TabIndex = 10;
+            this.btnFixFiles.Text = "Fix ROMs";
+            this.btnFixFiles.TextAlign = System.Drawing.ContentAlignment.BottomCenter;
+            this.btnFixFiles.UseVisualStyleBackColor = true;
+            this.btnFixFiles.MouseUp += new System.Windows.Forms.MouseEventHandler(this.BtnFixFilesMouseUp);
             // 
-            // CSize
+            // btnFindFixes
             // 
-            this.CSize.HeaderText = "Size";
-            this.CSize.Name = "CSize";
-            this.CSize.ReadOnly = true;
-            this.CSize.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.Programmatic;
-            this.CSize.Width = 60;
+            this.btnFindFixes.BackgroundImage = global::ROMVault.rvImages1.btnFindFixes_Enabled;
+            this.btnFindFixes.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
+            this.btnFindFixes.Location = new System.Drawing.Point(0, 160);
+            this.btnFindFixes.Name = "btnFindFixes";
+            this.btnFindFixes.Size = new System.Drawing.Size(80, 80);
+            this.btnFindFixes.TabIndex = 9;
+            this.btnFindFixes.Text = "Find Fixes";
+            this.btnFindFixes.TextAlign = System.Drawing.ContentAlignment.BottomCenter;
+            this.btnFindFixes.UseVisualStyleBackColor = true;
+            this.btnFindFixes.Click += new System.EventHandler(this.BtnFindFixesClick);
             // 
-            // CCRC32
+            // btnScanRoms
             // 
-            this.CCRC32.HeaderText = "CRC32";
-            this.CCRC32.Name = "CCRC32";
-            this.CCRC32.ReadOnly = true;
-            this.CCRC32.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.Programmatic;
+            this.btnScanRoms.BackgroundImage = global::ROMVault.rvImages1.btnScanRoms_Enabled;
+            this.btnScanRoms.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
+            this.btnScanRoms.Location = new System.Drawing.Point(0, 80);
+            this.btnScanRoms.Name = "btnScanRoms";
+            this.btnScanRoms.Size = new System.Drawing.Size(80, 80);
+            this.btnScanRoms.TabIndex = 8;
+            this.btnScanRoms.Text = "Scan ROMs";
+            this.btnScanRoms.TextAlign = System.Drawing.ContentAlignment.BottomCenter;
+            this.btnScanRoms.UseVisualStyleBackColor = true;
+            this.btnScanRoms.Click += new System.EventHandler(this.BtnScanRomsClick);
             // 
-            // CSHA1
+            // btnUpdateDats
             // 
-            this.CSHA1.HeaderText = "SHA1";
-            this.CSHA1.Name = "CSHA1";
-            this.CSHA1.ReadOnly = true;
-            this.CSHA1.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.Programmatic;
-            this.CSHA1.Width = 150;
+            this.btnUpdateDats.BackgroundImage = global::ROMVault.rvImages1.btnUpdateDats_Enabled;
+            this.btnUpdateDats.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
+            this.btnUpdateDats.Location = new System.Drawing.Point(0, 0);
+            this.btnUpdateDats.Name = "btnUpdateDats";
+            this.btnUpdateDats.Size = new System.Drawing.Size(80, 80);
+            this.btnUpdateDats.TabIndex = 0;
+            this.btnUpdateDats.Text = "Update DATs";
+            this.btnUpdateDats.TextAlign = System.Drawing.ContentAlignment.BottomCenter;
+            this.btnUpdateDats.UseVisualStyleBackColor = true;
+            this.btnUpdateDats.MouseUp += new System.Windows.Forms.MouseEventHandler(this.BtnUpdateDatsMouseUp);
             // 
-            // CMD5
+            // picPatreon
             // 
-            this.CMD5.HeaderText = "MD5";
-            this.CMD5.Name = "CMD5";
-            this.CMD5.ReadOnly = true;
-            this.CMD5.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.Programmatic;
-            this.CMD5.Width = 150;
+            this.picPatreon.Image = global::ROMVault.rvImages1.picPatreon;
+            this.picPatreon.Location = new System.Drawing.Point(620, 114);
+            this.picPatreon.Name = "picPatreon";
+            this.picPatreon.Size = new System.Drawing.Size(73, 29);
+            this.picPatreon.TabIndex = 16;
+            this.picPatreon.TabStop = false;
+            this.picPatreon.Click += new System.EventHandler(this.picPatreon_Click);
             // 
-            // CAltSize
+            // picPayPal
             // 
-            this.CAltSize.HeaderText = "AltSize";
-            this.CAltSize.Name = "CAltSize";
-            this.CAltSize.ReadOnly = true;
-            this.CAltSize.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.Programmatic;
-            this.CAltSize.Visible = false;
-            this.CAltSize.Width = 60;
+            this.picPayPal.Image = global::ROMVault.rvImages1.picPayPal;
+            this.picPayPal.Location = new System.Drawing.Point(547, 114);
+            this.picPayPal.Name = "picPayPal";
+            this.picPayPal.Size = new System.Drawing.Size(73, 29);
+            this.picPayPal.TabIndex = 15;
+            this.picPayPal.TabStop = false;
+            this.picPayPal.Click += new System.EventHandler(this.picPayPal_Click);
             // 
-            // CAltCRC32
+            // picLogo
             // 
-            this.CAltCRC32.HeaderText = "AltCRC32";
-            this.CAltCRC32.Name = "CAltCRC32";
-            this.CAltCRC32.ReadOnly = true;
-            this.CAltCRC32.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.Programmatic;
-            this.CAltCRC32.Visible = false;
+            this.picLogo.BackColor = System.Drawing.Color.White;
+            this.picLogo.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.picLogo.Location = new System.Drawing.Point(14, 197);
+            this.picLogo.Name = "picLogo";
+            this.picLogo.Size = new System.Drawing.Size(114, 117);
+            this.picLogo.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
+            this.picLogo.TabIndex = 1;
+            this.picLogo.TabStop = false;
             // 
-            // CAltSHA1
+            // picArtwork
             // 
-            this.CAltSHA1.HeaderText = "AltSHA1";
-            this.CAltSHA1.Name = "CAltSHA1";
-            this.CAltSHA1.ReadOnly = true;
-            this.CAltSHA1.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.Programmatic;
-            this.CAltSHA1.Visible = false;
-            this.CAltSHA1.Width = 150;
+            this.picArtwork.BackColor = System.Drawing.Color.White;
+            this.picArtwork.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.picArtwork.Location = new System.Drawing.Point(13, 60);
+            this.picArtwork.Name = "picArtwork";
+            this.picArtwork.Size = new System.Drawing.Size(116, 104);
+            this.picArtwork.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
+            this.picArtwork.TabIndex = 0;
+            this.picArtwork.TabStop = false;
             // 
-            // CAltMD5
+            // picScreenShot
             // 
-            this.CAltMD5.HeaderText = "AltMD5";
-            this.CAltMD5.Name = "CAltMD5";
-            this.CAltMD5.ReadOnly = true;
-            this.CAltMD5.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.Programmatic;
-            this.CAltMD5.Visible = false;
-            this.CAltMD5.Width = 150;
+            this.picScreenShot.BackColor = System.Drawing.Color.White;
+            this.picScreenShot.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.picScreenShot.Location = new System.Drawing.Point(15, 218);
+            this.picScreenShot.Name = "picScreenShot";
+            this.picScreenShot.Size = new System.Drawing.Size(104, 113);
+            this.picScreenShot.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
+            this.picScreenShot.TabIndex = 1;
+            this.picScreenShot.TabStop = false;
             // 
-            // CStatus
+            // picScreenTitle
             // 
-            this.CStatus.HeaderText = "Status";
-            this.CStatus.Name = "CStatus";
-            this.CStatus.ReadOnly = true;
-            this.CStatus.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.Programmatic;
-            // 
-            // DatModDate
-            // 
-            this.DatModDate.HeaderText = "DAT Mod";
-            this.DatModDate.Name = "DatModDate";
-            this.DatModDate.ReadOnly = true;
-            // 
-            // FileModDate
-            // 
-            this.FileModDate.HeaderText = "File Mod";
-            this.FileModDate.Name = "FileModDate";
-            this.FileModDate.ReadOnly = true;
-            // 
-            // DatCreatedDate
-            // 
-            this.DatCreatedDate.HeaderText = "DAT Created";
-            this.DatCreatedDate.Name = "DatCreatedDate";
-            this.DatCreatedDate.ReadOnly = true;
-            // 
-            // FileCreatedDate
-            // 
-            this.FileCreatedDate.HeaderText = "File Created";
-            this.FileCreatedDate.Name = "FileCreatedDate";
-            this.FileCreatedDate.ReadOnly = true;
-            // 
-            // DatAccessDate
-            // 
-            this.DatAccessDate.HeaderText = "DAT Access";
-            this.DatAccessDate.Name = "DatAccessDate";
-            this.DatAccessDate.ReadOnly = true;
-            // 
-            // FileAccessDate
-            // 
-            this.FileAccessDate.HeaderText = "File Access";
-            this.FileAccessDate.Name = "FileAccessDate";
-            this.FileAccessDate.ReadOnly = true;
-            // 
-            // ZipIndex
-            // 
-            this.ZipIndex.HeaderText = "ZipIndex";
-            this.ZipIndex.Name = "ZipIndex";
-            this.ZipIndex.ReadOnly = true;
-            this.ZipIndex.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.NotSortable;
+            this.picScreenTitle.BackColor = System.Drawing.Color.White;
+            this.picScreenTitle.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.picScreenTitle.Location = new System.Drawing.Point(15, 69);
+            this.picScreenTitle.Name = "picScreenTitle";
+            this.picScreenTitle.Size = new System.Drawing.Size(104, 117);
+            this.picScreenTitle.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
+            this.picScreenTitle.TabIndex = 0;
+            this.picScreenTitle.TabStop = false;
             // 
             // FrmMain
             // 
@@ -1327,7 +1374,7 @@
             this.Controls.Add(this.menuStrip1);
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "FrmMain";
-            this.Text = "RomVault (V2.0)";
+            this.Text = "RomVault (V3.0)";
             this.splitToolBarMain.Panel1.ResumeLayout(false);
             this.splitToolBarMain.Panel2.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.splitToolBarMain)).EndInit();
@@ -1347,8 +1394,6 @@
             this.splitGameInfoLists.Panel2.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.splitGameInfoLists)).EndInit();
             this.splitGameInfoLists.ResumeLayout(false);
-            ((System.ComponentModel.ISupportInitialize)(this.picPatreon)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.picPayPal)).EndInit();
             this.splitListArt.Panel1.ResumeLayout(false);
             this.splitListArt.Panel2.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.splitListArt)).EndInit();
@@ -1361,14 +1406,16 @@
             ((System.ComponentModel.ISupportInitialize)(this.RomGrid)).EndInit();
             this.TabEmuArc.ResumeLayout(false);
             this.tabArtWork.ResumeLayout(false);
-            ((System.ComponentModel.ISupportInitialize)(this.picLogo)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.picArtwork)).EndInit();
             this.tabScreens.ResumeLayout(false);
-            ((System.ComponentModel.ISupportInitialize)(this.picScreenShot)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.picScreenTitle)).EndInit();
             this.tabInfo.ResumeLayout(false);
             this.menuStrip1.ResumeLayout(false);
             this.menuStrip1.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.picPatreon)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.picPayPal)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.picLogo)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.picArtwork)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.picScreenShot)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.picScreenTitle)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -1415,7 +1462,7 @@
         private System.Windows.Forms.SplitContainer splitGameListRomList;
         private System.Windows.Forms.DataGridView GameGrid;
         private System.Windows.Forms.DataGridView RomGrid;
-        private RvTree DirTree;
+        private RvTree ctrRvTree;
         private System.Windows.Forms.DataGridViewImageColumn dataGridViewImageColumn1;
         private System.Windows.Forms.DataGridViewImageColumn dataGridViewImageColumn2;
         private System.Windows.Forms.DataGridViewImageColumn dataGridViewImageColumn3;
@@ -1455,10 +1502,13 @@
         private System.Windows.Forms.ToolStripMenuItem romVaultSettingsToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem directorySettingsToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem registrationSettingsToolStripMenuItem;
+        private System.Windows.Forms.Timer timer1;
         private System.Windows.Forms.DataGridViewImageColumn CType;
         private System.Windows.Forms.DataGridViewTextBoxColumn CGame;
         private System.Windows.Forms.DataGridViewTextBoxColumn CDescription;
         private System.Windows.Forms.DataGridViewImageColumn CCorrect;
+        private System.Windows.Forms.ToolStripMenuItem updateNewDATsToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem updateAllDATsToolStripMenuItem;
         private System.Windows.Forms.DataGridViewImageColumn CGot;
         private System.Windows.Forms.DataGridViewTextBoxColumn CRom;
         private System.Windows.Forms.DataGridViewTextBoxColumn CMerge;
@@ -1471,13 +1521,10 @@
         private System.Windows.Forms.DataGridViewTextBoxColumn CAltSHA1;
         private System.Windows.Forms.DataGridViewTextBoxColumn CAltMD5;
         private System.Windows.Forms.DataGridViewTextBoxColumn CStatus;
-        private System.Windows.Forms.DataGridViewTextBoxColumn DatModDate;
-        private System.Windows.Forms.DataGridViewTextBoxColumn FileModDate;
-        private System.Windows.Forms.DataGridViewTextBoxColumn DatCreatedDate;
-        private System.Windows.Forms.DataGridViewTextBoxColumn FileCreatedDate;
-        private System.Windows.Forms.DataGridViewTextBoxColumn DatAccessDate;
-        private System.Windows.Forms.DataGridViewTextBoxColumn FileAccessDate;
-        private System.Windows.Forms.DataGridViewTextBoxColumn ZipIndex;
+        private System.Windows.Forms.DataGridViewTextBoxColumn CDatModDate;
+        private System.Windows.Forms.DataGridViewTextBoxColumn CFileModDate;
+        private System.Windows.Forms.DataGridViewTextBoxColumn CZipIndex;
+        private System.Windows.Forms.DataGridViewTextBoxColumn CDupeCount;
     }
 }
 

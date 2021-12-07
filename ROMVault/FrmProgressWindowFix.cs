@@ -9,8 +9,8 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Reflection;
 using System.Windows.Forms;
-using RVCore;
-using RVCore.FixFile;
+using RomVaultCore;
+using RomVaultCore.FixFile;
 
 namespace ROMVault
 {
@@ -20,7 +20,7 @@ namespace ROMVault
         private int _rowCount;
         private readonly List<string[][]> _reportPages;
         string[][] pageNow;
-        
+
         private int _rowDisplay;
         private string[][] _pageDisplay;
         private int _pageDisplayIndex;
@@ -29,8 +29,10 @@ namespace ROMVault
 
 
         private ThreadWorker ThWrk;
+        private readonly Finished _funcFinished;
 
-        public FrmProgressWindowFix(Form parentForm)
+
+        public FrmProgressWindowFix(Form parentForm, Finished funcFinished)
         {
             _rowCount = 0;
             _rowDisplay = -1;
@@ -39,11 +41,12 @@ namespace ROMVault
 
             _reportPages = new List<string[][]>();
             _parentForm = parentForm;
+            _funcFinished = funcFinished;
             InitializeComponent();
 
-            //Type dgvType = dataGridView1.GetType();
-            //PropertyInfo pi = dgvType.GetProperty("DoubleBuffered", BindingFlags.Instance | BindingFlags.NonPublic);
-            //pi.SetValue(dataGridView1, true, null);
+            Type dgvType = dataGridView1.GetType();
+            PropertyInfo pi = dgvType.GetProperty("DoubleBuffered", BindingFlags.Instance | BindingFlags.NonPublic);
+            pi.SetValue(dataGridView1, true, null);
 
             timer1.Interval = 250;
             timer1.Enabled = true;
@@ -135,7 +138,6 @@ namespace ROMVault
                 return;
             }
 
-
             if (InvokeRequired)
             {
                 BeginInvoke(new MethodInvoker(() => BgwProgressChanged(e)));
@@ -206,6 +208,11 @@ namespace ROMVault
         {
             if (_bDone)
             {
+                if (!_parentForm.Visible)
+                {
+                    _parentForm.Show();
+                }
+                _funcFinished?.Invoke();
                 Close();
             }
             else

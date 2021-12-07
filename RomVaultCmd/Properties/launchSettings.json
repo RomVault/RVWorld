@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "RomVaultCmd": {
+      "commandName": "Project",
+      "commandLineArgs": "-a"
+    }
+  }
+}

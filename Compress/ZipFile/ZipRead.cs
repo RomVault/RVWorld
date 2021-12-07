@@ -1,6 +1,6 @@
 ﻿using System;
 using System.IO;
-using Compress.Utils;
+using Compress.Support.Utils;
 using FileInfo = RVIO.FileInfo;
 using FileStream = RVIO.FileStream;
 
@@ -109,7 +109,6 @@ namespace Compress.ZipFile
                     return zRet;
                 }
 
-
                 // check if ZIP64 header is required
                 bool zip64Required = (_centralDirStart == 0xffffffff || _centralDirSize == 0xffffffff || _localFilesCount == 0xffff);
 
@@ -118,12 +117,12 @@ namespace Compress.ZipFile
                 zRet = Zip64EndOfCentralDirectoryLocatorRead();
                 if (zRet == ZipReturn.ZipGood)
                 {
-                    _zipFs.Position = (long)_endOfCenterDir64;
+                    _zipFs.Position = (long)_endOfCentralDir64;
                     zRet = Zip64EndOfCentralDirRead();
                     if (zRet == ZipReturn.ZipGood)
                     {
                         _zip64 = true;
-                        endOfCentralDir = _endOfCenterDir64;
+                        endOfCentralDir = _endOfCentralDir64;
                     }
                 }
 
@@ -132,14 +131,18 @@ namespace Compress.ZipFile
                     return ZipReturn.Zip64EndOfCentralDirError;
                 }
 
+                offset = (endOfCentralDir - _centralDirSize) - _centralDirStart;
+
+                _centralDirStart += offset;
+
                 bool trrntzip = false;
 
                 // check if the ZIP has a valid TorrentZip file comment
-                if (_fileComment.Length == 22)
+                if (FileComment.Length == 22)
                 {
-                    if (ZipUtils.GetString(_fileComment).Substring(0, 14) == "TORRENTZIPPED-")
+                    if (CompressUtils.GetString(FileComment).Substring(0, 14) == "TORRENTZIPPED-")
                     {
-                        CrcCalculatorStream crcCs = new CrcCalculatorStream(_zipFs, true);
+                        CrcCalculatorStream crcCs = new(_zipFs, true);
                         byte[] buffer = new byte[_centralDirSize];
                         _zipFs.Position = (long)_centralDirStart;
                         crcCs.Read(buffer, 0, (int)_centralDirSize);
@@ -149,7 +152,7 @@ namespace Compress.ZipFile
                         uint r = (uint)crcCs.Crc;
                         crcCs.Dispose();
 
-                        string tcrc = ZipUtils.GetString(_fileComment).Substring(14, 8);
+                        string tcrc = CompressUtils.GetString(FileComment).Substring(14, 8);
                         string zcrc = r.ToString("X8");
                         if (string.Compare(tcrc, zcrc, StringComparison.Ordinal) == 0)
                         {
@@ -157,7 +160,7 @@ namespace Compress.ZipFile
                         }
                     }
                 }
-                
+
                 if (zip64Required != _zip64)
                     trrntzip = false;
 
@@ -168,14 +171,14 @@ namespace Compress.ZipFile
                 _localFiles.Capacity = (int)_localFilesCount;
                 for (int i = 0; i < _localFilesCount; i++)
                 {
-                    LocalFile lc = new LocalFile();
-                    zRet = lc.CenteralDirectoryRead(_zipFs);
+                    ZipLocalFile lc = new();
+                    zRet = lc.CentralDirectoryRead(_zipFs, offset);
                     if (zRet != ZipReturn.ZipGood)
                     {
                         ZipFileClose();
                         return zRet;
                     }
-                    _zip64 |= lc.Zip64;
+                    _zip64 |= lc.GetStatus(LocalFileStatus.Zip64);
                     _localFiles.Add(lc);
                 }
 
@@ -187,7 +190,7 @@ namespace Compress.ZipFile
                         ZipFileClose();
                         return zRet;
                     }
-                    trrntzip &= _localFiles[i].TrrntZip;
+                    trrntzip &= _localFiles[i].GetStatus(LocalFileStatus.TrrntZip);
                 }
 
                 // check trrntzip file order
@@ -195,7 +198,7 @@ namespace Compress.ZipFile
                 {
                     for (int i = 0; i < _localFilesCount - 1; i++)
                     {
-                        if (ZipUtils.TrrntZipStringCompare(_localFiles[i].FileName, _localFiles[i + 1].FileName) < 0)
+                        if (CompressUtils.TrrntZipStringCompare(_localFiles[i].Filename, _localFiles[i + 1].Filename) < 0)
                         {
                             continue;
                         }
@@ -210,19 +213,19 @@ namespace Compress.ZipFile
                     for (int i = 0; i < _localFilesCount - 1; i++)
                     {
                         // see if we found a directory
-                        string filename0 = _localFiles[i].FileName;
+                        string filename0 = _localFiles[i].Filename;
                         if (filename0.Substring(filename0.Length - 1, 1) != "/")
                         {
                             continue;
                         }
 
                         // see if the next file is in that directory
-                        string filename1 = _localFiles[i + 1].FileName;
+                        string filename1 = _localFiles[i + 1].Filename;
                         if (filename1.Length <= filename0.Length)
                         {
                             continue;
                         }
-                        if (ZipUtils.TrrntZipStringCompare(filename0, filename1.Substring(0, filename0.Length)) != 0)
+                        if (CompressUtils.TrrntZipStringCompare(filename0, filename1.Substring(0, filename0.Length)) != 0)
                         {
                             continue;
                         }

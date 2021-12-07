@@ -9,7 +9,102 @@
 //------------------------------------------------------------------------------
 
 namespace ROMVault.RVServices {
+    using System.Runtime.Serialization;
+    using System;
     
+    
+    [System.Diagnostics.DebuggerStepThroughAttribute()]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Runtime.Serialization", "4.0.0.0")]
+    [System.Runtime.Serialization.DataContractAttribute(Name="groups", Namespace="http://schemas.datacontract.org/2004/07/RVServices")]
+    [System.SerializableAttribute()]
+    public partial class groups : object, System.Runtime.Serialization.IExtensibleDataObject, System.ComponentModel.INotifyPropertyChanged {
+        
+        [System.NonSerializedAttribute()]
+        private System.Runtime.Serialization.ExtensionDataObject extensionDataField;
+        
+        [System.Runtime.Serialization.OptionalFieldAttribute()]
+        private string basepathField;
+        
+        [System.Runtime.Serialization.OptionalFieldAttribute()]
+        private string displayNameField;
+        
+        [System.Runtime.Serialization.OptionalFieldAttribute()]
+        private string groupField;
+        
+        [System.Runtime.Serialization.OptionalFieldAttribute()]
+        private string urlField;
+        
+        [global::System.ComponentModel.BrowsableAttribute(false)]
+        public System.Runtime.Serialization.ExtensionDataObject ExtensionData {
+            get {
+                return this.extensionDataField;
+            }
+            set {
+                this.extensionDataField = value;
+            }
+        }
+        
+        [System.Runtime.Serialization.DataMemberAttribute()]
+        public string basepath {
+            get {
+                return this.basepathField;
+            }
+            set {
+                if ((object.ReferenceEquals(this.basepathField, value) != true)) {
+                    this.basepathField = value;
+                    this.RaisePropertyChanged("basepath");
+                }
+            }
+        }
+        
+        [System.Runtime.Serialization.DataMemberAttribute()]
+        public string displayName {
+            get {
+                return this.displayNameField;
+            }
+            set {
+                if ((object.ReferenceEquals(this.displayNameField, value) != true)) {
+                    this.displayNameField = value;
+                    this.RaisePropertyChanged("displayName");
+                }
+            }
+        }
+        
+        [System.Runtime.Serialization.DataMemberAttribute()]
+        public string group {
+            get {
+                return this.groupField;
+            }
+            set {
+                if ((object.ReferenceEquals(this.groupField, value) != true)) {
+                    this.groupField = value;
+                    this.RaisePropertyChanged("group");
+                }
+            }
+        }
+        
+        [System.Runtime.Serialization.DataMemberAttribute()]
+        public string url {
+            get {
+                return this.urlField;
+            }
+            set {
+                if ((object.ReferenceEquals(this.urlField, value) != true)) {
+                    this.urlField = value;
+                    this.RaisePropertyChanged("url");
+                }
+            }
+        }
+        
+        public event System.ComponentModel.PropertyChangedEventHandler PropertyChanged;
+        
+        protected void RaisePropertyChanged(string propertyName) {
+            System.ComponentModel.PropertyChangedEventHandler propertyChanged = this.PropertyChanged;
+            if ((propertyChanged != null)) {
+                propertyChanged(this, new System.ComponentModel.PropertyChangedEventArgs(propertyName));
+            }
+        }
+    }
     
     [System.CodeDom.Compiler.GeneratedCodeAttribute("System.ServiceModel", "4.0.0.0")]
     [System.ServiceModel.ServiceContractAttribute(ConfigurationName="RVServices.IRVService")]
@@ -38,18 +133,6 @@ namespace ROMVault.RVServices {
         
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IRVService/SendUser", ReplyAction="http://tempuri.org/IRVService/SendUserResponse")]
         System.Threading.Tasks.Task<string> SendUserAsync(string username, string email, int version);
-        
-        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IRVService/CheckPassword", ReplyAction="http://tempuri.org/IRVService/CheckPasswordResponse")]
-        string CheckPassword(string username, string password);
-        
-        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IRVService/CheckPassword", ReplyAction="http://tempuri.org/IRVService/CheckPasswordResponse")]
-        System.Threading.Tasks.Task<string> CheckPasswordAsync(string username, string password);
-        
-        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IRVService/CheckPasswordV", ReplyAction="http://tempuri.org/IRVService/CheckPasswordVResponse")]
-        string CheckPasswordV(string username, string password, int version);
-        
-        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IRVService/CheckPasswordV", ReplyAction="http://tempuri.org/IRVService/CheckPasswordVResponse")]
-        System.Threading.Tasks.Task<string> CheckPasswordVAsync(string username, string password, int version);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IRVService/GetLatestVersion", ReplyAction="http://tempuri.org/IRVService/GetLatestVersionResponse")]
         int GetLatestVersion(int VersionNow);
@@ -86,6 +169,60 @@ namespace ROMVault.RVServices {
         
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IRVService/SendErrorMessageV2", ReplyAction="http://tempuri.org/IRVService/SendErrorMessageV2Response")]
         System.Threading.Tasks.Task SendErrorMessageV2Async(string username, int vMajor, int vMinor, int vBuild, string error);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IRVService/CheckFCUser", ReplyAction="http://tempuri.org/IRVService/CheckFCUserResponse")]
+        string CheckFCUser(string userkey);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IRVService/CheckFCUser", ReplyAction="http://tempuri.org/IRVService/CheckFCUserResponse")]
+        System.Threading.Tasks.Task<string> CheckFCUserAsync(string userkey);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IRVService/GetFCUsername", ReplyAction="http://tempuri.org/IRVService/GetFCUsernameResponse")]
+        byte[] GetFCUsername(string userkey);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IRVService/GetFCUsername", ReplyAction="http://tempuri.org/IRVService/GetFCUsernameResponse")]
+        System.Threading.Tasks.Task<byte[]> GetFCUsernameAsync(string userkey);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IRVService/CheckDVUser", ReplyAction="http://tempuri.org/IRVService/CheckDVUserResponse")]
+        string CheckDVUser(string userkey);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IRVService/CheckDVUser", ReplyAction="http://tempuri.org/IRVService/CheckDVUserResponse")]
+        System.Threading.Tasks.Task<string> CheckDVUserAsync(string userkey);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IRVService/GetDVInfo", ReplyAction="http://tempuri.org/IRVService/GetDVInfoResponse")]
+        string GetDVInfo(string passcode, string group, string system);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IRVService/GetDVInfo", ReplyAction="http://tempuri.org/IRVService/GetDVInfoResponse")]
+        System.Threading.Tasks.Task<string> GetDVInfoAsync(string passcode, string group, string system);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IRVService/GetDVGroupInfo", ReplyAction="http://tempuri.org/IRVService/GetDVGroupInfoResponse")]
+        string GetDVGroupInfo(string passcode, string group);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IRVService/GetDVGroupInfo", ReplyAction="http://tempuri.org/IRVService/GetDVGroupInfoResponse")]
+        System.Threading.Tasks.Task<string> GetDVGroupInfoAsync(string passcode, string group);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IRVService/ListOfGroups", ReplyAction="http://tempuri.org/IRVService/ListOfGroupsResponse")]
+        string[] ListOfGroups(string passcode);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IRVService/ListOfGroups", ReplyAction="http://tempuri.org/IRVService/ListOfGroupsResponse")]
+        System.Threading.Tasks.Task<string[]> ListOfGroupsAsync(string passcode);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IRVService/ListOfGroupsV2", ReplyAction="http://tempuri.org/IRVService/ListOfGroupsV2Response")]
+        ROMVault.RVServices.groups[] ListOfGroupsV2(string passcode);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IRVService/ListOfGroupsV2", ReplyAction="http://tempuri.org/IRVService/ListOfGroupsV2Response")]
+        System.Threading.Tasks.Task<ROMVault.RVServices.groups[]> ListOfGroupsV2Async(string passcode);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IRVService/GetDVDat", ReplyAction="http://tempuri.org/IRVService/GetDVDatResponse")]
+        byte[] GetDVDat(string passcode, string group, string system, string datURL);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IRVService/GetDVDat", ReplyAction="http://tempuri.org/IRVService/GetDVDatResponse")]
+        System.Threading.Tasks.Task<byte[]> GetDVDatAsync(string passcode, string group, string system, string datURL);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IRVService/GetDVCue", ReplyAction="http://tempuri.org/IRVService/GetDVCueResponse")]
+        byte[] GetDVCue(string passcode, string group, string system, string datURL);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IRVService/GetDVCue", ReplyAction="http://tempuri.org/IRVService/GetDVCueResponse")]
+        System.Threading.Tasks.Task<byte[]> GetDVCueAsync(string passcode, string group, string system, string datURL);
     }
     
     [System.CodeDom.Compiler.GeneratedCodeAttribute("System.ServiceModel", "4.0.0.0")]
@@ -147,22 +284,6 @@ namespace ROMVault.RVServices {
             return base.Channel.SendUserAsync(username, email, version);
         }
         
-        public string CheckPassword(string username, string password) {
-            return base.Channel.CheckPassword(username, password);
-        }
-        
-        public System.Threading.Tasks.Task<string> CheckPasswordAsync(string username, string password) {
-            return base.Channel.CheckPasswordAsync(username, password);
-        }
-        
-        public string CheckPasswordV(string username, string password, int version) {
-            return base.Channel.CheckPasswordV(username, password, version);
-        }
-        
-        public System.Threading.Tasks.Task<string> CheckPasswordVAsync(string username, string password, int version) {
-            return base.Channel.CheckPasswordVAsync(username, password, version);
-        }
-        
         public int GetLatestVersion(int VersionNow) {
             return base.Channel.GetLatestVersion(VersionNow);
         }
@@ -209,6 +330,78 @@ namespace ROMVault.RVServices {
         
         public System.Threading.Tasks.Task SendErrorMessageV2Async(string username, int vMajor, int vMinor, int vBuild, string error) {
             return base.Channel.SendErrorMessageV2Async(username, vMajor, vMinor, vBuild, error);
+        }
+        
+        public string CheckFCUser(string userkey) {
+            return base.Channel.CheckFCUser(userkey);
+        }
+        
+        public System.Threading.Tasks.Task<string> CheckFCUserAsync(string userkey) {
+            return base.Channel.CheckFCUserAsync(userkey);
+        }
+        
+        public byte[] GetFCUsername(string userkey) {
+            return base.Channel.GetFCUsername(userkey);
+        }
+        
+        public System.Threading.Tasks.Task<byte[]> GetFCUsernameAsync(string userkey) {
+            return base.Channel.GetFCUsernameAsync(userkey);
+        }
+        
+        public string CheckDVUser(string userkey) {
+            return base.Channel.CheckDVUser(userkey);
+        }
+        
+        public System.Threading.Tasks.Task<string> CheckDVUserAsync(string userkey) {
+            return base.Channel.CheckDVUserAsync(userkey);
+        }
+        
+        public string GetDVInfo(string passcode, string group, string system) {
+            return base.Channel.GetDVInfo(passcode, group, system);
+        }
+        
+        public System.Threading.Tasks.Task<string> GetDVInfoAsync(string passcode, string group, string system) {
+            return base.Channel.GetDVInfoAsync(passcode, group, system);
+        }
+        
+        public string GetDVGroupInfo(string passcode, string group) {
+            return base.Channel.GetDVGroupInfo(passcode, group);
+        }
+        
+        public System.Threading.Tasks.Task<string> GetDVGroupInfoAsync(string passcode, string group) {
+            return base.Channel.GetDVGroupInfoAsync(passcode, group);
+        }
+        
+        public string[] ListOfGroups(string passcode) {
+            return base.Channel.ListOfGroups(passcode);
+        }
+        
+        public System.Threading.Tasks.Task<string[]> ListOfGroupsAsync(string passcode) {
+            return base.Channel.ListOfGroupsAsync(passcode);
+        }
+        
+        public ROMVault.RVServices.groups[] ListOfGroupsV2(string passcode) {
+            return base.Channel.ListOfGroupsV2(passcode);
+        }
+        
+        public System.Threading.Tasks.Task<ROMVault.RVServices.groups[]> ListOfGroupsV2Async(string passcode) {
+            return base.Channel.ListOfGroupsV2Async(passcode);
+        }
+        
+        public byte[] GetDVDat(string passcode, string group, string system, string datURL) {
+            return base.Channel.GetDVDat(passcode, group, system, datURL);
+        }
+        
+        public System.Threading.Tasks.Task<byte[]> GetDVDatAsync(string passcode, string group, string system, string datURL) {
+            return base.Channel.GetDVDatAsync(passcode, group, system, datURL);
+        }
+        
+        public byte[] GetDVCue(string passcode, string group, string system, string datURL) {
+            return base.Channel.GetDVCue(passcode, group, system, datURL);
+        }
+        
+        public System.Threading.Tasks.Task<byte[]> GetDVCueAsync(string passcode, string group, string system, string datURL) {
+            return base.Channel.GetDVCueAsync(passcode, group, system, datURL);
         }
     }
 }

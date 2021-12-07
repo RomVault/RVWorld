@@ -1,5 +1,5 @@
 ﻿using System.IO;
-using Compress.Utils;
+using Compress.Support.Utils;
 
 namespace Compress.ZipFile
 {
@@ -25,19 +25,19 @@ namespace Compress.ZipFile
                 return;
             }
 
-            _zip64 = false;
             bool lTrrntzip = true;
 
             _zipFs = new MemoryStream();
 
             _centralDirStart = fileOffset;
 
-            CrcCalculatorStream crcCs = new CrcCalculatorStream(_zipFs, true);
 
-            foreach (LocalFile t in _localFiles)
+            CrcCalculatorStream crcCs = new(_zipFs, true);
+
+            foreach (ZipLocalFile t in _localFiles)
             {
-                t.CenteralDirectoryWrite(crcCs);
-                lTrrntzip &= t.TrrntZip;
+                t.CentralDirectoryWrite(crcCs);
+                lTrrntzip &= t.GetStatus(LocalFileStatus.TrrntZip);
             }
 
             crcCs.Flush();
@@ -45,7 +45,7 @@ namespace Compress.ZipFile
 
             _centralDirSize = (ulong)_zipFs.Position;
 
-            _fileComment = lTrrntzip ? ZipUtils.GetBytes("TORRENTZIPPED-" + crcCs.Crc.ToString("X8")) : new byte[0];
+            FileComment = lTrrntzip ? CompressUtils.GetBytes("TORRENTZIPPED-" + crcCs.Crc.ToString("X8")) : new byte[0];
             ZipStatus = lTrrntzip ? ZipStatus.TrrntZip : ZipStatus.None;
 
             crcCs.Dispose();
@@ -54,7 +54,7 @@ namespace Compress.ZipFile
 
             if (_zip64)
             {
-                _endOfCenterDir64 = fileOffset + (ulong)_zipFs.Position;
+                _endOfCentralDir64 = fileOffset + (ulong)_zipFs.Position;
                 Zip64EndOfCentralDirWrite();
                 Zip64EndOfCentralDirectoryLocatorWrite();
             }
@@ -76,10 +76,10 @@ namespace Compress.ZipFile
                 return ZipReturn.ZipWritingToInputFile;
             }
 
-            LocalFile lf = new LocalFile(filename);
+            ZipLocalFile lf = new(filename);
             _localFiles.Add(lf);
 
-            MemoryStream ms = new MemoryStream();
+            MemoryStream ms = new();
             lf.LocalFileHeaderFake(fileOffset, uncompressedSize, compressedSize, crc32, ms);
 
             localHeader = ms.ToArray();

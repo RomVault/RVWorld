@@ -49,9 +49,21 @@ namespace DATReader.Utils
             }
         }
 
+        public static string CleanCHD(XmlNode n)
+        {
+            return CleanCHD(n?.InnerText);
+        }
+        public static string CleanCHD(string n)
+        {
+            string diskName = n ?? "";
+            if (diskName.Length < 4 || diskName.Substring(diskName.Length - 4).ToLower() != ".chd")
+                diskName += ".chd";
+            return diskName;
+        }
+
         public static string String(XmlNode n)
         {
-            return String(n?.InnerText ?? "");
+            return n?.InnerText ?? "";
         }
 
         public static string String(string n)
@@ -153,7 +165,7 @@ namespace DATReader.Utils
             }
         }
 
-
+        /*
         public static string CleanFullFileName(XmlNode n)
         {
             return CleanFullFileName(n?.InnerText ?? "");
@@ -185,11 +197,14 @@ namespace DATReader.Utils
             }
             return new string(charName);
         }
+        */
 
+        /*
         public static string CleanFileName(XmlNode n)
         {
             return CleanFileName(n?.InnerText ?? "");
         }
+        */
 
         public static string CleanFileName(string name, char crep = '-')
         {
@@ -263,6 +278,20 @@ namespace DATReader.Utils
             int retv = Math.Abs(System.String.Compare(var1.Name, var2.Name, StringComparison.Ordinal));
             return retv;
         }
+
+        /*
+        public static DatFileType GetChild(DatFileType dft)
+        {
+            switch (dft)
+            {
+                case DatFileType.Dir: return DatFileType.File;
+                case DatFileType.DirRVZip: return DatFileType.FileRVZip;
+                case DatFileType.DirTorrentZip: return DatFileType.FileTorrentZip;
+                case DatFileType.Dir7Zip: return DatFileType.File7Zip;
+                default: return DatFileType.UnSet;
+            }
+        }
+        */
 
         private static int TrrntZipStringCompare(string string1, string string2)
         {

@@ -7,8 +7,8 @@
 using System;
 using System.Collections.Generic;
 using System.Windows.Forms;
-using RVCore;
-using RVCore.Utils;
+using RomVaultCore;
+using RomVaultCore.Utils;
 
 namespace ROMVault
 {
@@ -18,40 +18,30 @@ namespace ROMVault
         {
             InitializeComponent();
 
-            cboScanLevel.Items.Clear();
-            cboScanLevel.Items.Add("Level 1 - Scan Headers Only");
-            cboScanLevel.Items.Add("Level 2 - Full Data Scan New");
-            cboScanLevel.Items.Add("Level 3 - Full ReScan All");
-
             cboFixLevel.Items.Clear();
-            cboFixLevel.Items.Add("Level 1 - TorrentZip");
-            cboFixLevel.Items.Add("Level 2 - TorrentZip ");
-            cboFixLevel.Items.Add("Level 3 - TorrentZip ");
-            cboFixLevel.Items.Add("Level 1");
-            cboFixLevel.Items.Add("Level 2");
-            cboFixLevel.Items.Add("Level 3");
-
-          
+            cboFixLevel.Items.Add("Level 1 - Fast copy Match on CRC");
+            cboFixLevel.Items.Add("Level 2 - Fast copy if SHA1 scanned");
+            cboFixLevel.Items.Add("Level 3 - Uncompress/Hash/Compress");
         }
 
         private void FrmConfigLoad(object sender, EventArgs e)
         {
             lblDATRoot.Text = Settings.rvSettings.DatRoot;
-            cboScanLevel.SelectedIndex = (int) Settings.rvSettings.ScanLevel;
-            cboFixLevel.SelectedIndex = (int) Settings.rvSettings.FixLevel;
+            cboFixLevel.SelectedIndex = (int)Settings.rvSettings.FixLevel;
 
             textBox1.Text = "";
             foreach (string file in Settings.rvSettings.IgnoreFiles)
             {
                 textBox1.Text += file + Environment.NewLine;
             }
+            chkTrrntZip.Checked = Settings.rvSettings.ConvertToTrrntzip;
+            chkrv7Zip.Checked = Settings.rvSettings.ConvertToRV7Z;
 
             chkDetailedReporting.Checked = Settings.rvSettings.DetailedFixReporting;
             chkDoubleCheckDelete.Checked = Settings.rvSettings.DoubleCheckDelete;
             chkCacheSaveTimer.Checked = Settings.rvSettings.CacheSaveTimerEnabled;
             upTime.Value = Settings.rvSettings.CacheSaveTimePeriod;
             chkDebugLogs.Checked = Settings.rvSettings.DebugLogsEnabled;
-            chkRV7z.Checked = Settings.rvSettings.ConvertToRV7Z;
         }
 
         private void BtnCancelClick(object sender, EventArgs e)
@@ -62,8 +52,7 @@ namespace ROMVault
         private void BtnOkClick(object sender, EventArgs e)
         {
             Settings.rvSettings.DatRoot = lblDATRoot.Text;
-            Settings.rvSettings.ScanLevel = (EScanLevel) cboScanLevel.SelectedIndex;
-            Settings.rvSettings.FixLevel = (EFixLevel) cboFixLevel.SelectedIndex;
+            Settings.rvSettings.FixLevel = (EFixLevel)cboFixLevel.SelectedIndex;
             string strtxt = textBox1.Text;
             strtxt = strtxt.Replace("\r", "");
             string[] strsplit = strtxt.Split('\n');
@@ -78,13 +67,17 @@ namespace ROMVault
                     i--;
                 }
             }
+            Settings.rvSettings.SetRegExRules();
 
             Settings.rvSettings.DetailedFixReporting = chkDetailedReporting.Checked;
             Settings.rvSettings.DoubleCheckDelete = chkDoubleCheckDelete.Checked;
             Settings.rvSettings.DebugLogsEnabled = chkDebugLogs.Checked;
             Settings.rvSettings.CacheSaveTimerEnabled = chkCacheSaveTimer.Checked;
-            Settings.rvSettings.CacheSaveTimePeriod = (int) upTime.Value;
-            Settings.rvSettings.ConvertToRV7Z = chkRV7z.Checked;
+            Settings.rvSettings.CacheSaveTimePeriod = (int)upTime.Value;
+
+            Settings.rvSettings.ConvertToTrrntzip = chkTrrntZip.Checked;
+            Settings.rvSettings.ConvertToRV7Z = chkrv7Zip.Checked;
+
 
             Settings.WriteConfig(Settings.rvSettings);
             Close();

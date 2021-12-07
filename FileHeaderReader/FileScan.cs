@@ -43,10 +43,10 @@ namespace FileHeaderReader
      * the crc & the altcrc would be the same so we do not calculate the altcrc in this situation.)
      *
      * If testcrc is true then we will calculate the CRC value and if a header with an
-     * offset is found we will also calulate the altCRC.
+     * offset is found we will also calculate the altCRC.
      *
-     * If DeepScan is true then we will calulcate the 3 main hashes and if a header with an
-     * offset is found we will also calulate the alt 3 hashes.
+     * If DeepScan is true then we will calculate the 3 main hashes and if a header with an
+     * offset is found we will also calculate the alt 3 hashes.
      *
      * (Note: If we are scanning an uncompressed file we should at least have testCRC set to true
      * as we would not have any CRC if we did not.)
@@ -62,12 +62,15 @@ namespace FileHeaderReader
 
         public List<FileResults> Scan(ICompress file, bool testcrc, bool deepScan)
         {
+            testcrc = testcrc || deepScan;
+
             List<FileResults> lstFileResults = new List<FileResults>();
             int fileCount = file.LocalFilesCount();
             for (int i = 0; i < fileCount; i++)
             {
+                LocalFile lf = file.GetLocalFile(i);
                 FileResults fileResults = new FileResults();
-                if (file.IsDirectory(i))
+                if (lf.IsDirectory)
                 {
                     fileResults.HeaderFileType = HeaderFileType.Nothing;
                     fileResults.FileStatus = ZipReturn.ZipGood;
@@ -85,17 +88,18 @@ namespace FileHeaderReader
                     fileResults.FileStatus = zr;
                 else
                 {
-                    int res = CheckSumRead(fStream, fileResults, file.UncompressedSize(i), testcrc, deepScan);
+                    int res = CheckSumRead(fStream, fileResults, lf.UncompressedSize, testcrc, deepScan);
                     if (res != 0)
                         fileResults.FileStatus = ZipReturn.ZipDecodeError;
                     else
                     {
-                        if (!testcrc)
-                            fileResults.CRC = file.CRC32(i);
                         // if we are not testcrc'ing or deepScan'ing then we did not verify the data stream
                         // so we assume it is good.
+                        if (!testcrc)
+                            fileResults.CRC = lf.CRC;
+
                         fileResults.FileStatus =
-                            !(testcrc || deepScan) || ByteArrCompare(file.CRC32(i), fileResults.CRC)
+                             ByteArrCompare(lf.CRC, fileResults.CRC)
                                 ? ZipReturn.ZipGood
                                 : ZipReturn.ZipCRCDecodeError;
                     }
@@ -142,7 +146,7 @@ namespace FileHeaderReader
             fileResults.SHA1 = null;
             fileResults.CRC = null;
 
-            ThreadLoadBuffer lbuffer = null;
+            ThreadReadBuffer lbuffer = null;
 
             ThreadCRC tcrc32 = null;
             ThreadMD5 tmd5 = null;
@@ -157,9 +161,9 @@ namespace FileHeaderReader
                 int maxHeaderSize = 128;
                 long sizetogo = (long)totalSize;
                 int sizenow = maxHeaderSize < sizetogo ? maxHeaderSize : (int)sizetogo;
-                if (sizenow>0)
+                if (sizenow > 0)
                     inStream.Read(_buffer0, 0, sizenow);
-    
+
                 fileResults.HeaderFileType = FileHeaderReader.GetType(_buffer0, sizenow, out int actualHeaderSize);
 
 
@@ -270,11 +274,11 @@ namespace FileHeaderReader
                     }
                 }
 
-                lbuffer = new ThreadLoadBuffer(inStream);
+                lbuffer = new ThreadReadBuffer(inStream);
 
                 // Pre load the first buffer0
                 int sizeNext = sizetogo > Buffersize ? Buffersize : (int)sizetogo;
-                if(sizeNext>0)
+                if (sizeNext > 0)
                     inStream.Read(_buffer0, 0, sizeNext);
 
                 int sizebuffer = sizeNext;

@@ -1,8 +1,6 @@
 ﻿using System;
 using System.IO;
-using System.Security.Permissions;
 using System.Text;
-using Compress.Utils;
 
 namespace Compress.SevenZip.Structure
 {

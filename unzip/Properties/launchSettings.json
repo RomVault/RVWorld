@@ -1,0 +1,9 @@
+{
+  "profiles": {
+    "unzip": {
+      "commandName": "Project",
+      "commandLineArgs": "\"test\\Auto Destruct (USA).7z\" -d test",
+      "sqlDebugging": false
+    }
+  }
+}

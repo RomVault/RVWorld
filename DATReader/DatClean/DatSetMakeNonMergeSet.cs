@@ -8,8 +8,6 @@ namespace DATReader.DatClean
     {
         public static void DatSetMakeNonMergeSet(DatDir tDat)
         {
-            // look for merged roms, check if a rom exists in a parent set where the Name,Size and CRC all match.
-
             for (int g = 0; g < tDat.ChildCount; g++)
             {
                 DatDir mGame = (DatDir)tDat.Child(g);

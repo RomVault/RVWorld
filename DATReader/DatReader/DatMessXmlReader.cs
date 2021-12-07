@@ -4,16 +4,12 @@ using DATReader.Utils;
 
 namespace DATReader.DatReader
 {
-    public class DatMessXmlReader
+    public static class DatMessXmlReader
     {
-        private int _indexContinue;
-        private string _filename;
-
-        public bool ReadDat(XmlDocument doc, string strFilename, out DatHeader datHeader)
+        public static bool ReadDat(XmlDocument doc, string strFilename, out DatHeader datHeader)
         {
             datHeader = new DatHeader { BaseDir = new DatDir(DatFileType.UnSet) };
-            _filename = strFilename;
-            if (!LoadHeaderFromDat(doc, datHeader))
+            if (!LoadHeaderFromDat(doc, strFilename, datHeader))
             {
                 return false;
             }
@@ -32,7 +28,7 @@ namespace DATReader.DatReader
             return true;
         }
 
-        private bool LoadHeaderFromDat(XmlDocument doc, DatHeader datHeader)
+        private static bool LoadHeaderFromDat(XmlDocument doc, string filename, DatHeader datHeader)
         {
             XmlNodeList head = doc.SelectNodes("softwarelist");
             if (head == null)
@@ -50,14 +46,14 @@ namespace DATReader.DatReader
                 return false;
             }
 
-            datHeader.Filename = _filename;
+            datHeader.Filename = filename;
             datHeader.Name = VarFix.String(head[0].Attributes.GetNamedItem("name"));
             datHeader.Description = VarFix.String(head[0].Attributes.GetNamedItem("description"));
 
             return true;
         }
 
-        private void LoadGameFromDat(DatDir parentDir, XmlNode gameNode)
+        private static void LoadGameFromDat(DatDir parentDir, XmlNode gameNode)
         {
             if (gameNode.Attributes == null)
             {
@@ -85,7 +81,7 @@ namespace DATReader.DatReader
 
             for (int iP = 0; iP < partNodeList.Count; iP++)
             {
-                _indexContinue = -1;
+                int indexContinue = -1;
                 XmlNodeList dataAreaNodeList = partNodeList[iP].SelectNodes("dataarea");
                 if (dataAreaNodeList == null)
                 {
@@ -100,7 +96,7 @@ namespace DATReader.DatReader
                     }
                     for (int iR = 0; iR < romNodeList.Count; iR++)
                     {
-                        LoadRomFromDat(dDir, romNodeList[iR]);
+                        LoadRomFromDat(dDir, romNodeList[iR], ref indexContinue);
                     }
                 }
             }
@@ -132,7 +128,7 @@ namespace DATReader.DatReader
             }
         }
 
-        private void LoadRomFromDat(DatDir parentDir, XmlNode romNode)
+        private static void LoadRomFromDat(DatDir parentDir, XmlNode romNode, ref int indexContinue)
         {
             if (romNode.Attributes == null)
             {
@@ -152,21 +148,21 @@ namespace DATReader.DatReader
                     Status = VarFix.ToLower(romNode.Attributes.GetNamedItem("status"))
                 };
 
-                _indexContinue = parentDir.ChildAdd(dRom);
+                indexContinue = parentDir.ChildAdd(dRom);
             }
             else if (loadflag.ToLower() == "continue")
             {
-                DatFile tRom = (DatFile)parentDir.Child(_indexContinue);
+                DatFile tRom = (DatFile)parentDir.Child(indexContinue);
                 tRom.Size += VarFix.ULong(romNode.Attributes.GetNamedItem("size"));
             }
             else if (loadflag.ToLower() == "ignore")
             {
-                DatFile tRom = (DatFile)parentDir.Child(_indexContinue);
+                DatFile tRom = (DatFile)parentDir.Child(indexContinue);
                 tRom.Size += VarFix.ULong(romNode.Attributes.GetNamedItem("size"));
             }
         }
 
-        private void LoadDiskFromDat(DatDir parentDir, XmlNode romNode)
+        private static void LoadDiskFromDat(DatDir parentDir, XmlNode romNode)
         {
             if (romNode.Attributes == null)
             {
@@ -175,7 +171,7 @@ namespace DATReader.DatReader
 
             DatFile dRom = new DatFile(DatFileType.UnSet)
             {
-                Name = VarFix.String(romNode.Attributes.GetNamedItem("name")) + ".chd",
+                Name = VarFix.CleanCHD(romNode.Attributes.GetNamedItem("name")),
                 SHA1 = VarFix.CleanMD5SHA1(romNode.Attributes.GetNamedItem("sha1"), 40),
                 Status = VarFix.ToLower(romNode.Attributes.GetNamedItem("status")),
                 isDisk = true

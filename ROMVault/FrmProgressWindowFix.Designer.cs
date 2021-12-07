@@ -82,6 +82,7 @@
             // cancelButton
             // 
             this.cancelButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.cancelButton.DialogResult = System.Windows.Forms.DialogResult.Cancel;
             this.cancelButton.Location = new System.Drawing.Point(940, 32);
             this.cancelButton.Name = "cancelButton";
             this.cancelButton.Size = new System.Drawing.Size(75, 23);
@@ -107,6 +108,7 @@
             this.label.Size = new System.Drawing.Size(1002, 20);
             this.label.TabIndex = 4;
             this.label.Text = "Starting operation...";
+            this.label.UseMnemonic = false;
             // 
             // dataGridView1
             // 
@@ -248,6 +250,7 @@
             // 
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
             this.BackColor = System.Drawing.Color.White;
+            this.CancelButton = this.cancelButton;
             this.ClientSize = new System.Drawing.Size(1027, 500);
             this.Controls.Add(this.splitContainer1);
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));

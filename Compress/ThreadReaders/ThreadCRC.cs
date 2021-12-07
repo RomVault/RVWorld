@@ -1,11 +1,12 @@
 ﻿using System;
 using System.Threading;
+using Compress.Support.Utils;
 
 namespace Compress.ThreadReaders
 {
     public class ThreadCRC : IDisposable
     {
-        private Utils.CRC crc; 
+        private CRC crc; 
         private readonly AutoResetEvent _waitEvent;
         private readonly AutoResetEvent _outEvent;
         private readonly Thread _tWorker;
@@ -17,7 +18,7 @@ namespace Compress.ThreadReaders
 
         public ThreadCRC()
         {
-            crc=new Utils.CRC();
+            crc=new CRC();
             _waitEvent = new AutoResetEvent(false);
             _outEvent = new AutoResetEvent(false);
             _finished = false;
@@ -52,6 +53,13 @@ namespace Compress.ThreadReaders
 
         public void Trigger(byte[] buffer, int size)
         {
+            _buffer = buffer;
+            _size = size;
+            _waitEvent.Set();
+        }
+        public void TriggerOnce(byte[] buffer, int size)
+        {
+            crc.Reset();
             _buffer = buffer;
             _size = size;
             _waitEvent.Set();

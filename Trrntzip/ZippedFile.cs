@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Trrntzip
+namespace TrrntZip
 {
     public class ZippedFile
     {

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Reflection;
-using Trrntzip;
+using TrrntZip;
 using Directory = RVIO.Directory;
 using DirectoryInfo = RVIO.DirectoryInfo;
 using FileInfo = RVIO.FileInfo;
@@ -47,9 +47,9 @@ namespace TrrntZipCMD
                     switch (arg.Substring(1, 1))
                     {
                         case "?":
-                            Console.WriteLine($"TorrentZip.Net v{Assembly.GetExecutingAssembly().GetName().Version.ToString(3)}");
+                            Console.WriteLine($"TorrentZip.Net v{Assembly.GetExecutingAssembly().GetName().Version.ToString(3)} - Powered by RomVault");
                             Console.WriteLine("");
-                            Console.WriteLine("Copyright (C) 2020 GordonJ");
+                            Console.WriteLine("Copyright (C) 2021 GordonJ");
                             Console.WriteLine("Homepage : http://www.romvault.com/trrntzip");
                             Console.WriteLine("");
                             Console.WriteLine("Usage: trrntzip [OPTIONS] [PATH/ZIP FILE]");
@@ -68,13 +68,13 @@ namespace TrrntZipCMD
                             _noRecursion = true;
                             break;
                         case "f":
-                            Trrntzip.Program.ForceReZip = true;
+                            TrrntZip.Program.ForceReZip = true;
                             break;
                         case "c":
-                            Trrntzip.Program.CheckOnly = true;
+                            TrrntZip.Program.CheckOnly = true;
                             break;
                         case "l":
-                            Trrntzip.Program.VerboseLogging = true;
+                            TrrntZip.Program.VerboseLogging = true;
                             string logtime = DateTime.Now.ToString("yyyy-MM-dd-HHmmss");
                             logStream = new StreamWriter($"outlog-{logtime}.txt");
                             break;

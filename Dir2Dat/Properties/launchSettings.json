@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Dir2Dat": {
+      "commandName": "Project",
+      "commandLineArgs": "\"Z:\\Non-RomVault\\TotalDosCollection\\TDC Release 18\\TDC\\Games\\Files\" \"E:\\RomVaultTDC\\DatRoot\\TDC\\RV\\TDC-18.dat\" -ns -name \"Total Dos Collection\" -a \"GordonJ\" -url \"www.romvault.com\""
+    }
+  }
+}

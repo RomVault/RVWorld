@@ -2,13 +2,12 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.IO.Compression;
-using Compress.SevenZip.Compress.BZip2;
-using Compress.SevenZip.Compress.LZMA;
-using Compress.SevenZip.Compress.PPmd;
-using Compress.SevenZip.Compress.ZSTD;
-using Compress.SevenZip.Filters;
 using Compress.SevenZip.Structure;
+using Compress.Support.Compression.BZip2;
+using Compress.Support.Compression.LZMA;
+using Compress.Support.Compression.PPmd;
+using Compress.Support.Compression.zStd;
+using Compress.Support.Filters;
 using FileStream = RVIO.FileStream;
 
 namespace Compress.SevenZip
@@ -20,7 +19,7 @@ namespace Compress.SevenZip
 
         public ZipReturn ZipFileOpenReadStream(int index, out Stream stream, out ulong unCompressedSize)
         {
-            Debug.WriteLine("Opening File " + _localFiles[index].FileName);
+            Debug.WriteLine("Opening File " + _localFiles[index].Filename);
             stream = null;
             unCompressedSize = 0;
 
@@ -31,7 +30,7 @@ namespace Compress.SevenZip
                     return ZipReturn.ZipErrorGettingDataStream;
                 }
 
-                if (IsDirectory(index))
+                if (GetLocalFile(index).IsDirectory)
                 {
                     return ZipReturn.ZipTryingToAccessADirectory;
                 }
@@ -50,7 +49,7 @@ namespace Compress.SevenZip
                 ZipFileCloseReadStream();
                 _streamIndex = thisStreamIndex;
 
-                if (_header.StreamsInfo==null)
+                if (_header.StreamsInfo == null)
                 {
                     stream = null;
                     return ZipReturn.ZipGood;
@@ -61,7 +60,7 @@ namespace Compress.SevenZip
                 // first make the List of Decompressors streams
                 int codersNeeded = folder.Coders.Length;
 
-                List<InStreamSourceInfo> allInputStreams = new List<InStreamSourceInfo>();
+                List<InStreamSourceInfo> allInputStreams = new();
                 for (int i = 0; i < codersNeeded; i++)
                 {
                     folder.Coders[i].DecoderStream = null;
@@ -96,7 +95,7 @@ namespace Compress.SevenZip
                     allInputStreams[(int)folder.PackedStreamIndices[i]].InStreamIndex = packedStreamIndex;
                 }
 
-                List<Stream> inputCoders = new List<Stream>();
+                List<Stream> inputCoders = new();
 
                 bool allCodersComplete = false;
                 while (!allCodersComplete)
@@ -164,7 +163,7 @@ namespace Compress.SevenZip
                                     coder.DecoderStream = new BCJ2Filter(inputCoders[0], inputCoders[1], inputCoders[2], inputCoders[3]);
                                     break;
                                 case DecompressType.ZSTD:
-                                    coder.DecoderStream = new ZstandardStream(inputCoders[0], CompressionMode.Decompress, true);
+                                    coder.DecoderStream = new zStd(inputCoders[0]);
                                     break;
                                 default:
                                     return ZipReturn.ZipDecodeError;
@@ -217,7 +216,7 @@ namespace Compress.SevenZip
                     memStream.Position = 0;
                     byte[] newStream = new byte[memStream.Length];
                     memStream.Read(newStream, 0, (int)memStream.Length);
-                    MemoryStream ret = new MemoryStream(newStream, false);
+                    MemoryStream ret = new(newStream, false);
                     memStream.Position = pos;
                     return ret;
             }

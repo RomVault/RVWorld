@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Windows.Forms;
-using RVCore;
+using RomVaultCore;
 
 namespace ROMVault
 {
@@ -9,16 +9,20 @@ namespace ROMVault
         public FrmRegistration()
         {
             InitializeComponent();
-            txtName.Text = Settings.Username;
-            txtEmail.Text = Settings.EMail;
-            chkBoxOptOut.Checked = Settings.OptOut;
+            txtName.Text = UISettings.Username;
+            txtEmail.Text = UISettings.EMail;
+            chkBoxOptOut.Checked = UISettings.OptOut;
         }
 
         private void btnOK_Click(object sender, EventArgs e)
         {
-            Settings.Username = txtName.Text;
-            Settings.EMail = txtEmail.Text;
-            Settings.OptOut = chkBoxOptOut.Checked;
+            UISettings.Username = txtName.Text;
+            UISettings.EMail = txtEmail.Text;
+            UISettings.OptOut = chkBoxOptOut.Checked;
+            
+            ReportError.Username = UISettings.Username;
+            ReportError.EMail = UISettings.EMail;
+            ReportError.OptOut = UISettings.OptOut;
             Close();
         }
     }

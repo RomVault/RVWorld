@@ -1,148 +1,176 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
+﻿using System.IO;
 using System.Text;
-using Compress.Utils;
-using Compress.ZipFile.ZLib;
+using Compress.Support.Compression.BZip2;
+using Compress.Support.Compression.Deflate;
+using Compress.Support.Compression.Deflate64;
+using Compress.Support.Compression.LZMA;
+using Compress.Support.Compression.PPmd;
 
 namespace Compress.ZipFile
 {
-    internal partial class LocalFile
+    internal class ZipLocalFile : LocalFile
     {
         private const uint LocalFileHeaderSignature = 0x04034b50;
         private const uint CentralDirectoryHeaderSignature = 0x02014b50;
 
         private ushort _compressionMethod;
 
-        private long _lastModFileTimeDate;
-        private long? mTime;
-        private long? cTime;
-        private long? aTime;
-
-        private string _localHeaderFilename;
         private ulong _compressedSize;
-        private ulong _localHeaderCompressedSize;
-        private ulong _localHeaderUncompressedSize;
+        internal ulong RelativeOffsetOfLocalHeader; // only in central directory
 
-        public ulong RelativeOffsetOfLocalHeader; // only in centeral directory
-
-        private ulong _crc32Location;
         private ulong _extraLocation;
+        private byte[] _extraField;
         private ulong _dataLocation;
 
-        public LocalFile()
+        internal ushort GeneralPurposeBitFlag { get; private set; }
+
+        //internal bool TrrntZip { get; private set; }
+
+        public override ulong? LocalHead => (GeneralPurposeBitFlag & 8) == 0 ? (ulong?)RelativeOffsetOfLocalHeader : null;
+
+        internal ZipLocalFile()
         {
         }
 
-        public LocalFile(string filename, TimeStamps dateTime = null)
+        internal ZipLocalFile(string filename, TimeStamps dateTime = null)
         {
-            Zip64 = false;
+            SetStatus(LocalFileStatus.Zip64, false);
             GeneralPurposeBitFlag = 2; // Maximum Compression Deflating
             _compressionMethod = 8; // Compression Method Deflate
 
             if (dateTime?.ModTime == null)
             {
-                _lastModFileTimeDate = ZipUtils.trrntzipDateTime;
+                HeaderLastModified = CompressUtils.TrrntzipDateTime;
             }
             else
             {
-                _lastModFileTimeDate = (long)dateTime.ModTime;
+                HeaderLastModified = (long)dateTime.ModTime;
             }
 
-            FileName = filename;
-        }
-
-        public string FileName { get; private set; }
-        public ushort GeneralPurposeBitFlag { get; private set; }
-        public byte[] CRC { get; private set; }
-        public ulong UncompressedSize { get; private set; }
-
-        public bool Zip64 { get; private set; }
-        public bool TrrntZip { get; private set; }
-
-        public long DateTime => mTime ?? _lastModFileTimeDate;
-
-        public long? DateTimeCreate => cTime;
-        public long? DateTimeAccess => aTime;
-
-
-        public ulong LocalFilePos
-        {
-            get => RelativeOffsetOfLocalHeader;
-            set => RelativeOffsetOfLocalHeader = value;
+            Filename = filename;
         }
 
 
-        public ZipReturn CenteralDirectoryRead(Stream zipFs)
+        internal ZipReturn CentralDirectoryRead(Stream zipFs, ulong offset)
         {
             try
             {
-                using (BinaryReader br = new BinaryReader(zipFs, Encoding.UTF8, true))
+                using BinaryReader br = new(zipFs, Encoding.UTF8, true);
+                uint thisSignature = br.ReadUInt32();
+                if (thisSignature != CentralDirectoryHeaderSignature)
                 {
-                    uint thisSignature = br.ReadUInt32();
-                    if (thisSignature != CentralDirectoryHeaderSignature)
-                    {
-                        return ZipReturn.ZipCentralDirError;
-                    }
+                    return ZipReturn.ZipCentralDirError;
+                }
 
-                    br.ReadUInt16(); // Version Made By
+                br.ReadUInt16(); // Version Made By
 
-                    br.ReadUInt16(); // Version Needed To Extract
+                br.ReadUInt16(); // Version Needed To Extract
 
-                    GeneralPurposeBitFlag = br.ReadUInt16();
-                    _compressionMethod = br.ReadUInt16();
-                    if (_compressionMethod != 8 && _compressionMethod != 0)
-                    {
-                        if (_compressionMethod != 6 && _compressionMethod != 5 && _compressionMethod != 1)
-                        {
-                            return ZipReturn.ZipUnsupportedCompression;
-                        }
+
+                GeneralPurposeBitFlag = br.ReadUInt16();
+                _compressionMethod = br.ReadUInt16();
+
+                ushort lastModFileTime = br.ReadUInt16();
+                ushort lastModFileDate = br.ReadUInt16();
+                HeaderLastModified = CompressUtils.UtcTicksFromDosDateTime(lastModFileDate, lastModFileTime);
+
+                CRC = ReadCRC(br);
+
+                _compressedSize = br.ReadUInt32();
+                UncompressedSize = br.ReadUInt32();
+
+                ushort fileNameLength = br.ReadUInt16();
+                ushort extraFieldLength = br.ReadUInt16();
+                ushort fileCommentLength = br.ReadUInt16();
+
+                br.ReadUInt16(); // diskNumberStart
+                br.ReadUInt16(); // internalFileAttributes
+                br.ReadUInt32(); // externalFileAttributes
+
+                RelativeOffsetOfLocalHeader = br.ReadUInt32();
+
+
+                byte[] bFileName = br.ReadBytes(fileNameLength);
+                Filename = (GeneralPurposeBitFlag & (1 << 11)) == 0
+                    ? CompressUtils.GetString(bFileName)
+                    : Encoding.UTF8.GetString(bFileName, 0, fileNameLength);
+
+                if (extraFieldLength > 0)
+                {
+                    byte[] extraField = br.ReadBytes(extraFieldLength);
+
+                    ZipReturn zr = ZipExtraField.ReadExtraField(extraField, bFileName, this, ref _compressedSize, ref RelativeOffsetOfLocalHeader, true);
+                    if (zr != ZipReturn.ZipGood)
+                        return zr;
+                }
+
+                RelativeOffsetOfLocalHeader += offset;
+
+                if (CompressUtils.IsCodePage437(Filename) != ((GeneralPurposeBitFlag & (1 << 11)) == 0))
+                    SetStatus(LocalFileStatus.TrrntZip, false);
+
+                if (fileCommentLength > 0)
+                {
+                    byte[] fileComment = br.ReadBytes(fileCommentLength);
+                }
+
+                if (Filename.Length > 0)
+                {
+                    char lastChar = Filename[Filename.Length - 1];
+                    IsDirectory = (lastChar == '/' || lastChar == '\\');
+                    if (IsDirectory && UncompressedSize > 0) SetStatus(LocalFileStatus.DirectoryLengthError);
+                }
+                /*
+                4.4.5 compression method: (2 bytes)
+
+                0 - (Supported) The file is stored (no compression)
+                1 - (Supported) The file is Shrunk
+                2 - (Supported) The file is Reduced with compression factor 1
+                3 - (Supported) The file is Reduced with compression factor 2
+                4 - (Supported) The file is Reduced with compression factor 3
+                5 - (Supported) The file is Reduced with compression factor 4
+                6 - (Supported) The file is Imploded
+                7 - Reserved for Tokenizing compression algorithm
+                8 - (Supported) The file is Deflated
+                9 - (Supported) Enhanced Deflating using Deflate64(tm)
+               10 - PKWARE Data Compression Library Imploding (old IBM TERSE)
+               11 - Reserved by PKWARE
+               12 - (Supported) File is compressed using BZIP2 algorithm
+               13 - Reserved by PKWARE
+               14 - (Supported) LZMA
+               15 - Reserved by PKWARE
+               16 - IBM z/OS CMPSC Compression
+               17 - Reserved by PKWARE
+               18 - File is compressed using IBM TERSE (new)
+               19 - IBM LZ77 z Architecture 
+               20 - deprecated (use method 93 for zstd)
+               93 - (Supported, with external DLL) Zstandard (zstd) Compression 
+               94 - MP3 Compression 
+               95 - XZ Compression 
+               96 - JPEG variant
+               97 - WavPack compressed data
+               98 - (Supported) PPMd version I, Rev 1
+               99 - AE-x encryption marker (see APPENDIX E)
+        */
+
+                switch (_compressionMethod)
+                {
+                    case 0: // The file is stored (no compression)
+                    case 8: // The file is Deflated
+                    case 9: // Enhanced Deflating using Deflate64(tm)
+                    case 12: // The file is BZIP2 algorithm. 
+                    case 14: // LZMA
+                        return ZipReturn.ZipGood;
+
+                    case 20:
+                    case 93: // Zstandard (zstd) Compression 
+                        return ZipReturn.ZipGood;
+
+                    case 98: // PPMd version I, Rev 1
+                        return ZipReturn.ZipGood;
+
+                    default:
                         return ZipReturn.ZipUnsupportedCompression;
-                    }
-
-                    ushort lastModFileTime = br.ReadUInt16();
-                    ushort lastModFileDate = br.ReadUInt16();
-                    _lastModFileTimeDate = ZipUtils.SetDateTime(lastModFileDate, lastModFileTime);
-
-                    CRC = ReadCRC(br);
-
-                    _compressedSize = br.ReadUInt32();
-                    UncompressedSize = br.ReadUInt32();
-
-                    ushort fileNameLength = br.ReadUInt16();
-                    ushort extraFieldLength = br.ReadUInt16();
-                    ushort fileCommentLength = br.ReadUInt16();
-
-                    br.ReadUInt16(); // diskNumberStart
-                    br.ReadUInt16(); // internalFileAttributes
-                    br.ReadUInt32(); // externalFileAttributes
-
-                    RelativeOffsetOfLocalHeader = br.ReadUInt32();
-
-                    byte[] bFileName = br.ReadBytes(fileNameLength);
-                    FileName = (GeneralPurposeBitFlag & (1 << 11)) == 0
-                        ? ZipUtils.GetString(bFileName)
-                        : Encoding.UTF8.GetString(bFileName, 0, fileNameLength);
-                    
-                    if (extraFieldLength > 0)
-                    {
-                        byte[] extraField = br.ReadBytes(extraFieldLength);
-
-
-                        ZipReturn zr = ZipExtraField.ReadLocalExtraField(extraField, bFileName, this, true);
-                        if (zr != ZipReturn.ZipGood)
-                            return zr;
-                    }
-
-                    if (ZipUtils.IsCodePage437(FileName) != ((GeneralPurposeBitFlag & (1 << 11)) == 0))
-                        TrrntZip = false;
-
-                    if (fileCommentLength > 0)
-                    {
-                        byte[] fileComment = br.ReadBytes(fileCommentLength);
-                    }
-
-                    return ZipReturn.ZipGood;
                 }
             }
             catch
@@ -151,111 +179,65 @@ namespace Compress.ZipFile
             }
         }
 
-        public void CenteralDirectoryWrite(Stream crcStream)
+        internal void CentralDirectoryWrite(Stream crcStream)
         {
-            using (BinaryWriter bw = new BinaryWriter(crcStream, Encoding.UTF8, true))
+            using BinaryWriter bw = new(crcStream, Encoding.UTF8, true);
+
+            ZipExtraFieldWrite zefw = new();
+            SetStatus(LocalFileStatus.Zip64,
+                zefw.Zip64(UncompressedSize, _compressedSize, RelativeOffsetOfLocalHeader, true,
+                out uint headerUnCompressedSize, out uint headerCompressedSize, out uint headerRelativeOffsetOfLocalHeader)
+                );
+            _extraField = zefw.ExtraField;
+
+            ushort extraFieldLength = (ushort)_extraField.Length;
+
+            byte[] bFileName;
+            if (CompressUtils.IsCodePage437(Filename))
             {
-                const uint header = 0x2014B50;
-
-                List<byte> extraField = new List<byte>();
-
-                uint cdUncompressedSize;
-                if (UncompressedSize >= 0xffffffff)
-                {
-                    Zip64 = true;
-                    cdUncompressedSize = 0xffffffff;
-                    extraField.AddRange(BitConverter.GetBytes(UncompressedSize));
-                }
-                else
-                {
-                    cdUncompressedSize = (uint)UncompressedSize;
-                }
-
-                uint cdCompressedSize;
-                if (_compressedSize >= 0xffffffff)
-                {
-                    Zip64 = true;
-                    cdCompressedSize = 0xffffffff;
-                    extraField.AddRange(BitConverter.GetBytes(_compressedSize));
-                }
-                else
-                {
-                    cdCompressedSize = (uint)_compressedSize;
-                }
-
-                uint cdRelativeOffsetOfLocalHeader;
-                if (RelativeOffsetOfLocalHeader >= 0xffffffff)
-                {
-                    Zip64 = true;
-                    cdRelativeOffsetOfLocalHeader = 0xffffffff;
-                    extraField.AddRange(BitConverter.GetBytes(RelativeOffsetOfLocalHeader));
-                }
-                else
-                {
-                    cdRelativeOffsetOfLocalHeader = (uint)RelativeOffsetOfLocalHeader;
-                }
-
-
-                if (extraField.Count > 0)
-                {
-                    ushort exfl = (ushort)extraField.Count;
-                    extraField.InsertRange(0, BitConverter.GetBytes((ushort)0x0001));
-                    extraField.InsertRange(2, BitConverter.GetBytes(exfl));
-                }
-
-                ushort extraFieldLength = (ushort)extraField.Count;
-
-                byte[] bFileName;
-                if (ZipUtils.IsCodePage437(FileName))
-                {
-                    bFileName = ZipUtils.GetBytes(FileName);
-                }
-                else
-                {
-                    GeneralPurposeBitFlag |= 1 << 11;
-                    bFileName = Encoding.UTF8.GetBytes(FileName);
-                }
-
-                ushort fileNameLength = (ushort)bFileName.Length;
-
-                ushort versionNeededToExtract = (ushort)(Zip64 ? 45 : 20);
-
-                ZipUtils.SetDateTime(_lastModFileTimeDate, out ushort lastModFileDate, out ushort lastModFileTime);
-
-                bw.Write(header);
-                bw.Write((ushort)0);
-                bw.Write(versionNeededToExtract);
-                bw.Write(GeneralPurposeBitFlag);
-                bw.Write(_compressionMethod);
-                bw.Write(lastModFileTime);
-                bw.Write(lastModFileDate);
-                bw.Write(CRC[3]);
-                bw.Write(CRC[2]);
-                bw.Write(CRC[1]);
-                bw.Write(CRC[0]);
-                bw.Write(cdCompressedSize);
-                bw.Write(cdUncompressedSize);
-                bw.Write(fileNameLength);
-                bw.Write(extraFieldLength);
-                bw.Write((ushort)0); // file comment length
-                bw.Write((ushort)0); // disk number start
-                bw.Write((ushort)0); // internal file attributes
-                bw.Write((uint)0); // external file attributes
-                bw.Write(cdRelativeOffsetOfLocalHeader);
-
-                bw.Write(bFileName, 0, fileNameLength);
-                bw.Write(extraField.ToArray(), 0, extraFieldLength);
-                // No File Comment
+                bFileName = CompressUtils.GetBytes(Filename);
             }
+            else
+            {
+                GeneralPurposeBitFlag |= 1 << 11;
+                bFileName = Encoding.UTF8.GetBytes(Filename);
+            }
+
+            ushort fileNameLength = (ushort)bFileName.Length;
+
+            ushort versionNeededToExtract = (ushort)(GetStatus(LocalFileStatus.Zip64) ? 45 : 20);
+
+            CompressUtils.UtcTicksToDosDateTime(HeaderLastModified, out ushort lastModFileDate, out ushort lastModFileTime);
+
+            bw.Write(CentralDirectoryHeaderSignature);
+            bw.Write((ushort)0);
+            bw.Write(versionNeededToExtract);
+            bw.Write(GeneralPurposeBitFlag);
+            bw.Write(_compressionMethod);
+            bw.Write(lastModFileTime);
+            bw.Write(lastModFileDate);
+            WriteCRC(bw, CRC);
+            bw.Write(headerCompressedSize);
+            bw.Write(headerUnCompressedSize);
+            bw.Write(fileNameLength);
+            bw.Write(extraFieldLength);
+            bw.Write((ushort)0); // file comment length
+            bw.Write((ushort)0); // disk number start
+            bw.Write((ushort)0); // internal file attributes
+            bw.Write((uint)0); // external file attributes
+            bw.Write(headerRelativeOffsetOfLocalHeader);
+            bw.Write(bFileName, 0, fileNameLength);
+            bw.Write(_extraField, 0, extraFieldLength);
+            // No File Comment
         }
-        public ZipReturn LocalFileHeaderRead(Stream zipFs)
+        internal ZipReturn LocalFileHeaderRead(Stream zipFs)
         {
             try
             {
-                using (BinaryReader br = new BinaryReader(zipFs, Encoding.UTF8, true))
+                using (BinaryReader br = new(zipFs, Encoding.UTF8, true))
                 {
 
-                    TrrntZip = true;
+                    SetStatus(LocalFileStatus.TrrntZip);
 
                     zipFs.Position = (long)RelativeOffsetOfLocalHeader;
                     uint thisSignature = br.ReadUInt32();
@@ -268,7 +250,7 @@ namespace Compress.ZipFile
                     ushort generalPurposeBitFlagLocal = br.ReadUInt16();
                     if (generalPurposeBitFlagLocal != GeneralPurposeBitFlag)
                     {
-                        TrrntZip = false;
+                        SetStatus(LocalFileStatus.TrrntZip, false);
                     }
 
                     ushort tshort = br.ReadUInt16();
@@ -280,42 +262,45 @@ namespace Compress.ZipFile
                     ushort lastModFileTime = br.ReadUInt16();
                     ushort lastModFileDate = br.ReadUInt16();
 
-                    long tTime = ZipUtils.SetDateTime(lastModFileDate, lastModFileTime);
-                    if (tTime != _lastModFileTimeDate)
+                    long tTime = CompressUtils.UtcTicksFromDosDateTime(lastModFileDate, lastModFileTime);
+
+                    if (tTime != HeaderLastModified)
                     {
-                        return ZipReturn.ZipLocalFileHeaderError;
+                        SetStatus(LocalFileStatus.DateTimeMisMatch);
+                        SetStatus(LocalFileStatus.TrrntZip, false);
                     }
 
-                    byte[] tCRC = ReadCRC(br);
-                    _localHeaderCompressedSize = br.ReadUInt32();
-                    _localHeaderUncompressedSize = br.ReadUInt32();
+                    LocalFile localHeader = new();
+                    localHeader.CRC = ReadCRC(br);
+                    ulong localHeaderCompressedSize = br.ReadUInt32();
+                    localHeader.UncompressedSize = br.ReadUInt32();
+                    ulong localRelativeOffset = 0;
 
                     ushort fileNameLength = br.ReadUInt16();
                     ushort extraFieldLength = br.ReadUInt16();
 
 
                     byte[] bFileName = br.ReadBytes(fileNameLength);
-                    _localHeaderFilename = (generalPurposeBitFlagLocal & (1 << 11)) == 0
-                        ? ZipUtils.GetString(bFileName)
+                    localHeader.Filename = (generalPurposeBitFlagLocal & (1 << 11)) == 0
+                        ? CompressUtils.GetString(bFileName)
                         : Encoding.UTF8.GetString(bFileName, 0, fileNameLength);
 
 
-                    Zip64 = false;
                     if (extraFieldLength > 0)
                     {
                         byte[] extraField = br.ReadBytes(extraFieldLength);
 
-                        ZipReturn zr = ZipExtraField.ReadLocalExtraField(extraField, bFileName, this, false);
+                        ZipReturn zr = ZipExtraField.ReadExtraField(extraField, bFileName, localHeader, ref localHeaderCompressedSize, ref localRelativeOffset, false);
                         if (zr != ZipReturn.ZipGood)
                             return zr;
                     }
 
-                    if (!ZipUtils.CompareString(FileName, _localHeaderFilename))
+                    if (!CompressUtils.CompareString(Filename, localHeader.Filename))
                     {
-                        TrrntZip = false;
-                        if (!ZipUtils.CompareStringSlash(FileName, _localHeaderFilename))
+                        SetStatus(LocalFileStatus.TrrntZip, false);
+                        if (!CompressUtils.CompareStringSlash(Filename.ToLower(), localHeader.Filename.ToLower()))
                         {
-                            return ZipReturn.ZipLocalFileHeaderError;
+                            SetStatus(LocalFileStatus.FilenameMisMatch);
                         }
                     }
 
@@ -323,31 +308,42 @@ namespace Compress.ZipFile
 
                     if ((GeneralPurposeBitFlag & 8) == 8)
                     {
+                        SetStatus(LocalFileStatus.TrrntZip, false);
                         zipFs.Position += (long)_compressedSize;
 
-                        tCRC = ReadCRC(br);
-                        if (!ZipUtils.ByteArrCompare(tCRC, new byte[] { 0x50, 0x4b, 0x07, 0x08 }))
+                        localHeader.CRC = ReadCRC(br);
+                        if (CompressUtils.ByteArrCompare(localHeader.CRC, new byte[] { 0x08, 0x07, 0x4b, 0x50 }))
                         {
-                            tCRC = ReadCRC(br);
+                            localHeader.CRC = ReadCRC(br);
                         }
-                        _localHeaderCompressedSize = br.ReadUInt32();
-                        _localHeaderUncompressedSize = br.ReadUInt32();
+
+                        if (GetStatus(LocalFileStatus.Zip64))
+                        {
+                            localHeaderCompressedSize = br.ReadUInt64();
+                            localHeader.UncompressedSize = br.ReadUInt64();
+                        }
+                        else
+                        {
+                            localHeaderCompressedSize = br.ReadUInt32();
+                            localHeader.UncompressedSize = br.ReadUInt32();
+                        }
                     }
-                    
-                    if (ZipUtils.IsCodePage437(FileName) != ((GeneralPurposeBitFlag & (1 << 11)) == 0))
-                        TrrntZip = false;
-                    
-                    if (!ZipUtils.ByteArrCompare(tCRC, CRC))
+
+                    if (CompressUtils.IsCodePage437(Filename) != ((GeneralPurposeBitFlag & (1 << 11)) == 0))
+                        SetStatus(LocalFileStatus.TrrntZip, false);
+
+
+                    if (!CompressUtils.ByteArrCompare(localHeader.CRC, CRC))
                     {
                         return ZipReturn.ZipLocalFileHeaderError;
                     }
 
-                    if (_localHeaderCompressedSize != _compressedSize)
+                    if (localHeaderCompressedSize != _compressedSize)
                     {
                         return ZipReturn.ZipLocalFileHeaderError;
                     }
 
-                    if (_localHeaderUncompressedSize != UncompressedSize)
+                    if (localHeader.UncompressedSize != UncompressedSize)
                     {
                         return ZipReturn.ZipLocalFileHeaderError;
                     }
@@ -361,69 +357,63 @@ namespace Compress.ZipFile
             }
         }
 
-        public ZipReturn LocalFileHeaderReadQuick(Stream zipFs)
+        internal ZipReturn LocalFileHeaderReadQuick(Stream zipFs)
         {
             try
             {
-                using (BinaryReader br = new BinaryReader(zipFs, Encoding.UTF8, true))
+                using BinaryReader br = new(zipFs, Encoding.UTF8, true);
+                SetStatus(LocalFileStatus.TrrntZip);
+
+                zipFs.Position = (long)RelativeOffsetOfLocalHeader;
+                uint thisSignature = br.ReadUInt32();
+                if (thisSignature != LocalFileHeaderSignature)
                 {
-                    TrrntZip = true;
-
-                    zipFs.Position = (long)RelativeOffsetOfLocalHeader;
-                    uint thisSignature = br.ReadUInt32();
-                    if (thisSignature != LocalFileHeaderSignature)
-                    {
-                        return ZipReturn.ZipLocalFileHeaderError;
-                    }
-
-                    br.ReadUInt16(); // version needed to extract
-                    GeneralPurposeBitFlag = br.ReadUInt16();
-                    if ((GeneralPurposeBitFlag & 8) == 8)
-                    {
-                        return ZipReturn.ZipCannotFastOpen;
-                    }
-
-                    _compressionMethod = br.ReadUInt16();
-
-                    ushort lastModFileTime = br.ReadUInt16();
-                    ushort lastModFileDate = br.ReadUInt16();
-                    _lastModFileTimeDate = ZipUtils.SetDateTime(lastModFileDate, lastModFileTime);
-
-                    CRC = ReadCRC(br);
-                    _localHeaderCompressedSize = br.ReadUInt32();
-                    _localHeaderUncompressedSize = br.ReadUInt32();
-
-                    ushort fileNameLength = br.ReadUInt16();
-                    ushort extraFieldLength = br.ReadUInt16();
-
-                    byte[] bFileName = br.ReadBytes(fileNameLength);
-
-                    _localHeaderFilename = (GeneralPurposeBitFlag & (1 << 11)) == 0
-                        ? ZipUtils.GetString(bFileName)
-                        : Encoding.UTF8.GetString(bFileName, 0, fileNameLength);
-
-                    Zip64 = false;
-                    if (extraFieldLength > 0)
-                    {
-                        byte[] extraField = br.ReadBytes(extraFieldLength);
-
-                        ZipReturn zr = ZipExtraField.ReadLocalExtraField(extraField, bFileName, this, false);
-                        if (zr != ZipReturn.ZipGood)
-                            return zr;
-                    }
-
-
-                    _dataLocation = (ulong)zipFs.Position;
-
-                    FileName = _localHeaderFilename;
-                    _compressedSize = _localHeaderCompressedSize;
-                    UncompressedSize = _localHeaderUncompressedSize;
-
-                    if (ZipUtils.IsCodePage437(FileName) != ((GeneralPurposeBitFlag & (1 << 11)) == 0))
-                        TrrntZip = false;
-
-                    return ZipReturn.ZipGood;
+                    return ZipReturn.ZipLocalFileHeaderError;
                 }
+
+                br.ReadUInt16(); // version needed to extract
+                GeneralPurposeBitFlag = br.ReadUInt16();
+                if ((GeneralPurposeBitFlag & 8) == 8)
+                {
+                    return ZipReturn.ZipCannotFastOpen;
+                }
+
+                _compressionMethod = br.ReadUInt16();
+
+                ushort lastModFileTime = br.ReadUInt16();
+                ushort lastModFileDate = br.ReadUInt16();
+                HeaderLastModified = CompressUtils.UtcTicksFromDosDateTime(lastModFileDate, lastModFileTime);
+
+                CRC = ReadCRC(br);
+                _compressedSize = br.ReadUInt32();
+                UncompressedSize = br.ReadUInt32();
+
+                ushort fileNameLength = br.ReadUInt16();
+                ushort extraFieldLength = br.ReadUInt16();
+
+                byte[] bFileName = br.ReadBytes(fileNameLength);
+
+                Filename = (GeneralPurposeBitFlag & (1 << 11)) == 0
+                    ? CompressUtils.GetString(bFileName)
+                    : Encoding.UTF8.GetString(bFileName, 0, fileNameLength);
+
+                SetStatus(LocalFileStatus.Zip64, false);
+                if (extraFieldLength > 0)
+                {
+                    byte[] extraField = br.ReadBytes(extraFieldLength);
+
+                    ulong LocalHeader = 0;
+                    ZipReturn zr = ZipExtraField.ReadExtraField(extraField, bFileName, this, ref _compressedSize, ref LocalHeader, false);
+                    if (zr != ZipReturn.ZipGood)
+                        return zr;
+                }
+
+                if (CompressUtils.IsCodePage437(Filename) != ((GeneralPurposeBitFlag & (1 << 11)) == 0))
+                    SetStatus(LocalFileStatus.TrrntZip, false);
+
+                _dataLocation = (ulong)zipFs.Position;
+
+                return ZipReturn.ZipGood;
             }
             catch
             {
@@ -434,128 +424,150 @@ namespace Compress.ZipFile
 
         private void LocalFileHeaderWrite(Stream zipFs)
         {
-            using (BinaryWriter bw = new BinaryWriter(zipFs, Encoding.UTF8, true))
+            using BinaryWriter bw = new(zipFs, Encoding.UTF8, true);
+            ZipExtraFieldWrite zefw = new();
+            bool zip64 = zefw.Zip64(UncompressedSize, _compressedSize, RelativeOffsetOfLocalHeader, false,
+                out uint headerUnCompressedSize, out uint headerCompressedSize,
+                out uint headerRelativeOffsetOfLocalHeader);
+            _extraField = zefw.ExtraField;
+
+            SetStatus(LocalFileStatus.Zip64, zip64);
+
+            byte[] bFileName;
+            if (CompressUtils.IsCodePage437(Filename))
             {
-                Zip64 = UncompressedSize >= 0xffffffff;
-
-                byte[] bFileName;
-                if (ZipUtils.IsCodePage437(FileName))
-                {
-                    bFileName = ZipUtils.GetBytes(FileName);
-                }
-                else
-                {
-                    GeneralPurposeBitFlag |= 1 << 11;
-                    bFileName = Encoding.UTF8.GetBytes(FileName);
-                }
-
-                ushort versionNeededToExtract = (ushort)(Zip64 ? 45 : 20);
-
-                RelativeOffsetOfLocalHeader = (ulong)zipFs.Position;
-                const uint header = 0x4034B50;
-                bw.Write(header);
-                bw.Write(versionNeededToExtract);
-                bw.Write(GeneralPurposeBitFlag);
-                bw.Write(_compressionMethod);
-
-                ZipUtils.SetDateTime(_lastModFileTimeDate, out ushort lastModFileDate, out ushort lastModFileTime);
-                bw.Write(lastModFileTime);
-                bw.Write(lastModFileDate);
-
-                _crc32Location = (ulong)zipFs.Position;
-
-                // these 3 values will be set correctly after the file data has been written
-                bw.Write(0xffffffff);
-                bw.Write(0xffffffff);
-                bw.Write(0xffffffff);
-
-                ushort fileNameLength = (ushort)bFileName.Length;
-                bw.Write(fileNameLength);
-
-                ushort extraFieldLength = (ushort)(Zip64 ? 20 : 0);
-                bw.Write(extraFieldLength);
-
-                bw.Write(bFileName, 0, fileNameLength);
-
-                _extraLocation = (ulong)zipFs.Position;
-                if (Zip64)
-                    bw.Write(new byte[20], 0, extraFieldLength);
+                bFileName = CompressUtils.GetBytes(Filename);
             }
+            else
+            {
+                GeneralPurposeBitFlag |= 1 << 11;
+                bFileName = Encoding.UTF8.GetBytes(Filename);
+            }
+
+            ushort versionNeededToExtract = (ushort)(GetStatus(LocalFileStatus.Zip64) ? 45 : 20);
+
+            RelativeOffsetOfLocalHeader = (ulong)zipFs.Position;
+            bw.Write(LocalFileHeaderSignature);
+            bw.Write(versionNeededToExtract);
+            bw.Write(GeneralPurposeBitFlag);
+            bw.Write(_compressionMethod);
+
+            CompressUtils.UtcTicksToDosDateTime(HeaderLastModified, out ushort lastModFileDate, out ushort lastModFileTime);
+            bw.Write(lastModFileTime);
+            bw.Write(lastModFileDate);
+
+            // these 3 values will be set correctly after the file data has been written
+            bw.Write(0xffffffff); // crc
+            bw.Write(0xffffffff); // CompressedSize 32bit
+            bw.Write(0xffffffff); // UncompressedSie 32bit
+
+            ushort fileNameLength = (ushort)bFileName.Length;
+            bw.Write(fileNameLength);
+
+            ushort extraFieldLength = (ushort)_extraField.Length;
+            bw.Write(extraFieldLength);
+
+            bw.Write(bFileName, 0, fileNameLength);
+
+            _extraLocation = (ulong)zipFs.Position;
+            bw.Write(_extraField);
         }
 
-        public void LocalFileHeaderFake(ulong filePosition, ulong uncompressedSize, ulong compressedSize, byte[] crc32, MemoryStream ms)
+        private void LocalFileHeaderPostCompressWrite(Stream zipFs)
         {
-            using (BinaryWriter bw = new BinaryWriter(ms, Encoding.UTF8, true))
+            // after data is written to the zip, go back and finish up the header.
+
+            // there is a rare case where you can have a file that is very close up to the 32 bit size limit in it uncompressed size,
+            // and when it compresses it get just a little bigger, and bumps over the 32 bit size limit on its compressed size.
+            // so you get uncompressed size is < 0xffffffff so we did not think it needed a zip64 header.
+            // but compressed size is >= 0xffffffff so we do need to zip64 header, so we have to go back and move the compressed data
+            // down the file to make room in the file header for the zip64 extra data.
+
+            ZipExtraFieldWrite zefw = new();
+            bool postZip64 = zefw.Zip64(UncompressedSize, _compressedSize, RelativeOffsetOfLocalHeader, false,
+                out uint headerUnCompressedSize, out uint headerCompressedSize, out uint headerRelativeOffsetOfLocalHeader);
+            byte[] postExtraField = zefw.ExtraField;
+
+            if (postZip64 != GetStatus(LocalFileStatus.Zip64))
             {
-                RelativeOffsetOfLocalHeader = filePosition;
-                TrrntZip = true;
-                UncompressedSize = uncompressedSize;
-                _compressedSize = compressedSize;
-                CRC = crc32;
+                SetStatus(LocalFileStatus.Zip64);
+                FixFileForZip64(zipFs, _extraField.Length, postExtraField.Length);
+            }
 
-                Zip64 = UncompressedSize >= 0xffffffff || _compressedSize >= 0xffffffff;
+            _extraField = postExtraField;
+            long posNow = zipFs.Position;
 
-                byte[] bFileName;
-                if (ZipUtils.IsCodePage437(FileName))
+            zipFs.Seek((long)RelativeOffsetOfLocalHeader + 14, SeekOrigin.Begin);
+            using (BinaryWriter bw = new(zipFs, Encoding.UTF8, true))
+            {
+                WriteCRC(bw, CRC);
+                bw.Write(headerCompressedSize);
+                bw.Write(headerUnCompressedSize);
+
+                if (_extraField.Length > 0)
                 {
-                    bFileName = ZipUtils.GetBytes(FileName);
-                }
-                else
-                {
-                    GeneralPurposeBitFlag |= 1 << 11;
-                    bFileName = Encoding.UTF8.GetBytes(FileName);
-                }
-
-                ushort versionNeededToExtract = (ushort)(Zip64 ? 45 : 20);
-
-                const uint header = 0x4034B50;
-                bw.Write(header);
-                bw.Write(versionNeededToExtract);
-                bw.Write(GeneralPurposeBitFlag);
-                bw.Write(_compressionMethod);
-
-                ZipUtils.SetDateTime(_lastModFileTimeDate, out ushort lastModFileDate, out ushort lastModFileTime);
-                bw.Write(lastModFileTime);
-                bw.Write(lastModFileDate);
-
-                uint tCompressedSize;
-                uint tUncompressedSize;
-                if (Zip64)
-                {
-                    tCompressedSize = 0xffffffff;
-                    tUncompressedSize = 0xffffffff;
-                }
-                else
-                {
-                    tCompressedSize = (uint)_compressedSize;
-                    tUncompressedSize = (uint)UncompressedSize;
-                }
-
-                bw.Write(CRC[3]);
-                bw.Write(CRC[2]);
-                bw.Write(CRC[1]);
-                bw.Write(CRC[0]);
-                bw.Write(tCompressedSize);
-                bw.Write(tUncompressedSize);
-
-                ushort fileNameLength = (ushort)bFileName.Length;
-                bw.Write(fileNameLength);
-
-                ushort extraFieldLength = (ushort)(Zip64 ? 20 : 0);
-                bw.Write(extraFieldLength);
-
-                bw.Write(bFileName, 0, fileNameLength);
-
-                if (Zip64)
-                {
-                    bw.Write((ushort)0x0001); // id
-                    bw.Write((ushort)16); // data length
-                    bw.Write(UncompressedSize);
-                    bw.Write(_compressedSize);
+                    zipFs.Seek((long)_extraLocation, SeekOrigin.Begin);
+                    bw.Write(_extraField);
                 }
             }
+
+            zipFs.Seek(posNow, SeekOrigin.Begin);
         }
-        public ZipReturn LocalFileOpenReadStream(Stream zipFs, bool raw, out Stream readStream, out ulong streamSize, out ushort compressionMethod)
+
+
+        internal void LocalFileHeaderFake(ulong filePosition, ulong uncompressedSize, ulong compressedSize, byte[] crc32, MemoryStream ms)
+        {
+            using BinaryWriter bw = new(ms, Encoding.UTF8, true);
+            RelativeOffsetOfLocalHeader = filePosition;
+            SetStatus(LocalFileStatus.TrrntZip);
+            UncompressedSize = uncompressedSize;
+            _compressedSize = compressedSize;
+            CRC = crc32;
+
+            ZipExtraFieldWrite zefw = new();
+            SetStatus(LocalFileStatus.Zip64,
+            zefw.Zip64(UncompressedSize, _compressedSize, RelativeOffsetOfLocalHeader, false,
+                out uint headerUnCompressedSize, out uint headerCompressedSize, out uint headerRelativeOffsetOfLocalHeader)
+            );
+            _extraField = zefw.ExtraField;
+
+            byte[] bFileName;
+            if (CompressUtils.IsCodePage437(Filename))
+            {
+                bFileName = CompressUtils.GetBytes(Filename);
+            }
+            else
+            {
+                GeneralPurposeBitFlag |= 1 << 11;
+                bFileName = Encoding.UTF8.GetBytes(Filename);
+            }
+
+            ushort versionNeededToExtract = (ushort)(GetStatus(LocalFileStatus.Zip64) ? 45 : 20);
+
+            bw.Write(LocalFileHeaderSignature);
+            bw.Write(versionNeededToExtract);
+            bw.Write(GeneralPurposeBitFlag);
+            bw.Write(_compressionMethod);
+
+            CompressUtils.UtcTicksToDosDateTime(HeaderLastModified, out ushort lastModFileDate, out ushort lastModFileTime);
+            bw.Write(lastModFileTime);
+            bw.Write(lastModFileDate);
+
+            WriteCRC(bw, CRC);
+            bw.Write(headerCompressedSize);
+            bw.Write(headerUnCompressedSize);
+
+            ushort fileNameLength = (ushort)bFileName.Length;
+            bw.Write(fileNameLength);
+
+            ushort extraFieldLength = (ushort)_extraField.Length;
+            bw.Write(extraFieldLength);
+
+            bw.Write(bFileName, 0, fileNameLength);
+
+            bw.Write(_extraField);
+        }
+        internal ZipReturn LocalFileOpenReadStream(Stream zipFs, bool raw, out Stream readStream, out ulong streamSize, out ushort compressionMethod)
         {
             streamSize = 0;
             compressionMethod = _compressionMethod;
@@ -565,6 +577,10 @@ namespace Compress.ZipFile
 
             switch (_compressionMethod)
             {
+                case 0:
+                    readStream = zipFs;
+                    streamSize = _compressedSize; // same as UncompressedSize
+                    break;
                 case 8:
                     if (raw)
                     {
@@ -573,51 +589,94 @@ namespace Compress.ZipFile
                     }
                     else
                     {
-                        readStream=new System.IO.Compression.DeflateStream(zipFs,System.IO.Compression.CompressionMode.Decompress,true);
                         //readStream = new ZlibBaseStream(zipFs, CompressionMode.Decompress, CompressionLevel.Default, ZlibStreamFlavor.DEFLATE, true);
+                        readStream = new System.IO.Compression.DeflateStream(zipFs, System.IO.Compression.CompressionMode.Decompress, true);
                         streamSize = UncompressedSize;
                     }
+
                     break;
-                case 0:
-                    readStream = zipFs;
-                    streamSize = _compressedSize; // same as UncompressedSize
+                case 9:
+                    readStream = new Deflate64Stream(zipFs, System.IO.Compression.CompressionMode.Decompress);
+                    streamSize = UncompressedSize;
                     break;
+
+                //case 10:
+                //    readStream = new BlastStream(zipFs);
+                //    streamSize = UncompressedSize;
+                //    break;
+
+                case 12:
+                    readStream = new CBZip2InputStream(zipFs, false);
+                    streamSize = UncompressedSize;
+                    break;
+
+                case 14:
+                    {
+                        zipFs.ReadByte(); // Major version
+                        zipFs.ReadByte(); // Minor version
+                        int headerSize = zipFs.ReadByte() + (zipFs.ReadByte() << 8);
+                        byte[] header = new byte[headerSize];
+                        zipFs.Read(header, 0, headerSize);
+                        readStream = new LzmaStream(header, zipFs);
+                        streamSize = UncompressedSize;
+                        break;
+                    }
+
+                case 20:
+                case 93:
+                    readStream = new ZstdSharp.DecompressionStream(zipFs);
+                    streamSize = UncompressedSize;
+                    break;
+
+                case 98:
+                    {
+                        int headerSize = 2;
+                        byte[] header = new byte[headerSize];
+                        zipFs.Read(header, 0, headerSize);
+                        readStream = new PpmdStream(new PpmdProperties(header), zipFs, false);
+                        streamSize = UncompressedSize;
+                        break;
+                    }
             }
 
             return readStream == null ? ZipReturn.ZipErrorGettingDataStream : ZipReturn.ZipGood;
         }
 
-        public ZipReturn LocalFileOpenWriteStream(Stream zipFs, bool raw, bool trrntZip, ulong uncompressedSize, ushort compressionMethod, out Stream writeStream)
+        internal ZipReturn LocalFileOpenWriteStream(Stream zipFs, bool raw, ulong uncompressedSize, ushort compressionMethod, out Stream writeStream)
         {
             UncompressedSize = uncompressedSize;
+            _compressedSize = 0;
+            RelativeOffsetOfLocalHeader = 0;
             _compressionMethod = compressionMethod;
 
             LocalFileHeaderWrite(zipFs);
             _dataLocation = (ulong)zipFs.Position;
 
+            writeStream = null;
             if (raw)
             {
                 writeStream = zipFs;
-                TrrntZip = trrntZip;
             }
             else
             {
                 if (compressionMethod == 0)
                 {
                     writeStream = zipFs;
-                    TrrntZip = false;
                 }
-                else
+                else if (compressionMethod == 93)
+                {
+                    writeStream = new ZstdSharp.CompressionStream(zipFs, 18);
+                }
+                else if(compressionMethod == 8)
                 {
                     writeStream = new ZlibBaseStream(zipFs, CompressionMode.Compress, CompressionLevel.BestCompression, ZlibStreamFlavor.DEFLATE, true);
-                    TrrntZip = true;
                 }
             }
 
             return writeStream == null ? ZipReturn.ZipErrorGettingDataStream : ZipReturn.ZipGood;
         }
 
-        public ZipReturn LocalFileCloseWriteStream(Stream zipFs, byte[] crc32)
+        internal ZipReturn LocalFileCloseWriteStream(Stream zipFs, byte[] crc32)
         {
 
             _compressedSize = (ulong)zipFs.Position - _dataLocation;
@@ -633,27 +692,27 @@ namespace Compress.ZipFile
             }
 
             CRC = crc32;
-            WriteCompressedSize(zipFs);
+            LocalFileHeaderPostCompressWrite(zipFs);
 
             return ZipReturn.ZipGood;
         }
 
-        private void FixFileForZip64(Stream zipFs)
+        private void FixFileForZip64(Stream zipFs, int oldExtraFieldLength, int newExtraFieldLength)
         {
             long posNow = zipFs.Position;
-            using (BinaryWriter bw = new BinaryWriter(zipFs, Encoding.UTF8, true))
+            using (BinaryWriter bw = new(zipFs, Encoding.UTF8, true))
             {
-                // _crc32Location - 10  needs set to 45  
-                zipFs.Seek((long)_crc32Location - 10, SeekOrigin.Begin);
+                zipFs.Seek((long)RelativeOffsetOfLocalHeader + 4, SeekOrigin.Begin);
                 ushort versionNeededToExtract = 45;
                 bw.Write(versionNeededToExtract);
 
-                zipFs.Seek((long)_crc32Location + 14, SeekOrigin.Begin);
-                ushort extraFieldLength = 20;
-                bw.Write(extraFieldLength);
+                zipFs.Seek((long)RelativeOffsetOfLocalHeader + 28, SeekOrigin.Begin);
+                bw.Write((ushort)newExtraFieldLength);
             }
-            ExpandFile(zipFs, (long)_extraLocation, posNow, 20);
-            zipFs.Position = posNow + 20;
+
+            int expandBy = newExtraFieldLength - oldExtraFieldLength;
+            ExpandFile(zipFs, (long)_extraLocation, posNow, expandBy);
+            zipFs.Position = posNow + expandBy;
         }
 
         private static void ExpandFile(Stream stream, long offset, long length, int extraBytes)
@@ -673,55 +732,7 @@ namespace Compress.ZipFile
             }
         }
 
-        private void WriteCompressedSize(Stream zipFs)
-        {
-            if (_compressedSize >= 0xffffffff && !Zip64)
-            {
-                Zip64 = true;
-                FixFileForZip64(zipFs);
-            }
-
-
-            long posNow = zipFs.Position;
-            zipFs.Seek((long)_crc32Location, SeekOrigin.Begin);
-            using (BinaryWriter bw = new BinaryWriter(zipFs, Encoding.UTF8, true))
-            {
-                uint tCompressedSize;
-                uint tUncompressedSize;
-                if (Zip64)
-                {
-                    tCompressedSize = 0xffffffff;
-                    tUncompressedSize = 0xffffffff;
-                }
-                else
-                {
-                    tCompressedSize = (uint)_compressedSize;
-                    tUncompressedSize = (uint)UncompressedSize;
-                }
-
-                bw.Write(CRC[3]);
-                bw.Write(CRC[2]);
-                bw.Write(CRC[1]);
-                bw.Write(CRC[0]);
-                bw.Write(tCompressedSize);
-                bw.Write(tUncompressedSize);
-
-
-                // also need to write extradata
-                if (Zip64)
-                {
-                    zipFs.Seek((long)_extraLocation, SeekOrigin.Begin);
-                    bw.Write((ushort)0x0001); // id
-                    bw.Write((ushort)16); // data length
-                    bw.Write(UncompressedSize);
-                    bw.Write(_compressedSize);
-                }
-            }
-
-            zipFs.Seek(posNow, SeekOrigin.Begin);
-        }
-
-        public static void LocalFileAddZeroLengthFile(Stream zipFs)
+        internal static void LocalFileAddZeroLengthFile(Stream zipFs)
         {
             zipFs.WriteByte(03);
             zipFs.WriteByte(00);
@@ -736,6 +747,16 @@ namespace Compress.ZipFile
             tCRC[0] = br.ReadByte();
             return tCRC;
         }
+
+        private static void WriteCRC(BinaryWriter bw, byte[] CRC)
+        {
+            bw.Write(CRC[3]);
+            bw.Write(CRC[2]);
+            bw.Write(CRC[1]);
+            bw.Write(CRC[0]);
+
+        }
+
     }
 
 }

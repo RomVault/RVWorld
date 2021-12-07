@@ -1,6 +1,6 @@
 ﻿using System;
 using System.IO;
-using RVCore.RvDB;
+using RomVaultCore.RvDB;
 
 namespace ROMVault
 {
@@ -63,7 +63,7 @@ namespace ROMVault
 
             string[] path = extraPath.Split('\\');
 
-            RvFile fExtra = DB.DirTree.Child(0);
+            RvFile fExtra = DB.DirRoot.Child(0);
 
             foreach (string p in path)
             {
@@ -145,7 +145,7 @@ namespace ROMVault
 
             string[] path = extraPath.Split('\\');
 
-            RvFile fExtra = DB.DirTree.Child(0);
+            RvFile fExtra = DB.DirRoot.Child(0);
 
             foreach (string p in path)
             {

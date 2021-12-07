@@ -1,9 +1,8 @@
 ﻿using System.IO;
 using System.Text;
-using Compress.SevenZip.Compress.LZMA;
-using Compress.SevenZip.Compress.ZSTD;
 using Compress.SevenZip.Structure;
-using Compress.Utils;
+using Compress.Support.Compression.LZMA;
+using Compress.Support.Utils;
 
 namespace Compress.SevenZip
 {
@@ -23,7 +22,7 @@ namespace Compress.SevenZip
             ulong emptyFileCount = 0;
             for (int i = 0; i < fileCount; i++)
             {
-                _header.FileInfo.Names[i] = _localFiles[i].FileName;
+                _header.FileInfo.Names[i] = _localFiles[i].Filename;
 
                 if (_localFiles[i].UncompressedSize != 0)
                 {
@@ -37,7 +36,6 @@ namespace Compress.SevenZip
 
                 emptyStreamCount += 1;
             }
-            ulong outFileCount = (ulong)_localFiles.Count - emptyStreamCount;
 
             _header.FileInfo.EmptyStreamFlags = null;
             _header.FileInfo.EmptyFileFlags = null;
@@ -82,158 +80,75 @@ namespace Compress.SevenZip
 
 
             //StreamsInfo
+
             _header.StreamsInfo = new StreamsInfo { PackPosition = 0 };
 
-            //StreamsInfo.PackedStreamsInfo
-            if (_compressed!=sevenZipCompressType.uncompressed)
+            _header.StreamsInfo.PackedStreams = new PackedStreamInfo[_packedOutStreams.Count];
+            for (int i = 0; i < _packedOutStreams.Count; i++)
             {
-                _header.StreamsInfo.PackedStreams = new PackedStreamInfo[1];
-                _header.StreamsInfo.PackedStreams[0] = new PackedStreamInfo { PackedSize = _packStreamSize };
+                _header.StreamsInfo.PackedStreams[i] = new PackedStreamInfo { PackedSize = _packedOutStreams[i].packedSize };
             }
-            else
+
+            _header.StreamsInfo.Folders = new Folder[_packedOutStreams.Count];
+            for (int i = 0; i < _packedOutStreams.Count; i++)
             {
-                _header.StreamsInfo.PackedStreams = new PackedStreamInfo[outFileCount];
-                int fileIndex = 0;
-                for (int i = 0; i < fileCount; i++)
-                {
-                    if (_localFiles[i].UncompressedSize == 0)
-                    {
-                        continue;
-                    }
-                    _header.StreamsInfo.PackedStreams[fileIndex++] = new PackedStreamInfo { PackedSize = _localFiles[i].UncompressedSize };
-                }
-            }
-            //StreamsInfo.PackedStreamsInfo, no CRC or StreamPosition required
+                ulong unpackedStreamSize = 0;
+                foreach (UnpackedStreamInfo v in _packedOutStreams[i].unpackedStreams)
+                    unpackedStreamSize += v.UnpackedSize;
 
-            if (_compressed != sevenZipCompressType.uncompressed)
-            {
-                //StreamsInfo.Folders
-                _header.StreamsInfo.Folders = new Folder[1];
-
-                //StreamsInfo.Folders.Coder
-                // flags 0x23
-
-                Folder folder = new Folder
+                _header.StreamsInfo.Folders[i] = new Folder()
                 {
                     BindPairs = null,
-                    Coders = new[] {
+                    Coders = new Coder[] {
                          new Coder {
-                            Method = new byte[] { 3, 1, 1 },
+                            Method = _packedOutStreams[i].Method,
                             NumInStreams = 1,
                             NumOutStreams = 1,
-                            Properties = _codeMSbytes
+                            Properties = _packedOutStreams[i].Properties
                         }
                     },
-                    PackedStreamIndices = new[] { (ulong)0 },
-                    UnpackedStreamSizes = new[] { _unpackedStreamSize },
-                    UnpackedStreamInfo = new UnpackedStreamInfo[outFileCount],
+                    PackedStreamIndices = new ulong[] { (ulong)i },
+                    UnpackedStreamSizes = new ulong[] { unpackedStreamSize },
+                    UnpackedStreamInfo = _packedOutStreams[i].unpackedStreams.ToArray(),
                     UnpackCRC = null
                 };
-
-                switch (_lzmaStream)
-                {
-                    case LzmaStream _:
-                        folder.Coders[0].Method = new byte[] { 3, 1, 1 };
-                        break;
-                    case ZstandardStream _:
-                        folder.Coders[0].Method = new byte[] { 4, 247, 17, 1 };
-                        break;
-                }
-
-
-                int fileIndex = 0;
-                for (int i = 0; i < fileCount; i++)
-                {
-                    if (_localFiles[i].UncompressedSize == 0)
-                    {
-                        continue;
-                    }
-                    UnpackedStreamInfo unpackedStreamInfo = new UnpackedStreamInfo
-                    {
-                        UnpackedSize = _localFiles[i].UncompressedSize,
-                        Crc = Util.bytestouint(_localFiles[i].CRC)
-                    };
-                    folder.UnpackedStreamInfo[fileIndex++] = unpackedStreamInfo;
-                }
-                _header.StreamsInfo.Folders[0] = folder;
-            }
-            else
-            {
-                _header.StreamsInfo.Folders = new Folder[outFileCount];
-                int fileIndex = 0;
-                for (int i = 0; i < fileCount; i++)
-                {
-                    if (_localFiles[i].UncompressedSize == 0)
-                    {
-                        continue;
-                    }
-
-                    Folder folder = new Folder
-                    {
-                        BindPairs = null,
-                        Coders = new[] {
-                            new Coder {
-                                Method = new byte[] {0},
-                                NumInStreams = 1,
-                                NumOutStreams = 1,
-                                Properties = null
-                            }
-                        },
-                        PackedStreamIndices = new[] { (ulong)i },
-                        UnpackedStreamSizes = new[] { _localFiles[i].UncompressedSize },
-                        UnpackCRC = null,
-
-                        UnpackedStreamInfo = new[] {
-                            new UnpackedStreamInfo {
-                                UnpackedSize = _localFiles[i].UncompressedSize,
-                                Crc = Util.bytestouint(_localFiles[i].CRC)
-                            }
-                        }
-                    };
-
-                    _header.StreamsInfo.Folders[fileIndex++] = folder;
-                }
             }
         }
 
-
-
         private void CloseWriting7Zip()
         {
-            if (_compressed != sevenZipCompressType.uncompressed)
+#if solid
+            if (_packedOutStreams[0].compType != SevenZipCompressType.uncompressed)
             {
-                _lzmaStream.Flush();
-                _lzmaStream.Close();
+                _compressStream.Flush();
+                _compressStream.Close();
             }
-
-            _packStreamSize = (ulong)_zipFs.Position - _packStreamStart;
-
+            _packedOutStreams[0].packedSize = (ulong)_zipFs.Position - _packedOutStreams[0].packedStart;
+#endif
             Create7ZStructure();
 
             byte[] newHeaderByte;
             using (Stream headerMem = new MemoryStream())
             {
-                using (BinaryWriter headerBw = new BinaryWriter(headerMem, Encoding.UTF8, true))
-                {
-                    _header.WriteHeader(headerBw);
+                using BinaryWriter headerBw = new(headerMem, Encoding.UTF8, true);
+                _header.WriteHeader(headerBw);
 
-                    newHeaderByte = new byte[headerMem.Length];
-                    headerMem.Position = 0;
-                    headerMem.Read(newHeaderByte, 0, newHeaderByte.Length);
-                }
+                newHeaderByte = new byte[headerMem.Length];
+                headerMem.Position = 0;
+                headerMem.Read(newHeaderByte, 0, newHeaderByte.Length);
             }
 
             uint mainHeaderCRC = CRC.CalculateDigest(newHeaderByte, 0, (uint)newHeaderByte.Length);
 
-            #region Header Compression
+#region Header Compression
             long packedHeaderPos = _zipFs.Position;
-            LzmaEncoderProperties ep = new LzmaEncoderProperties(true, GetDictionarySizeFromUncompressedSize((ulong)newHeaderByte.Length), 64);
-            LzmaStream lzs = new LzmaStream(ep, false, _zipFs);
+            LzmaEncoderProperties ep = new(true, GetDictionarySizeFromUncompressedSize((ulong)newHeaderByte.Length), 64);
+            LzmaStream lzs = new(ep, false, _zipFs);
             byte[] lzmaStreamProperties = lzs.Properties;
             lzs.Write(newHeaderByte, 0, newHeaderByte.Length);
             lzs.Close();
 
-            StreamsInfo streamsInfo = new StreamsInfo
+            StreamsInfo streamsInfo = new()
             {
                 PackPosition = (ulong)(packedHeaderPos - _baseOffset),
                 Folders = new[] {
@@ -262,22 +177,19 @@ namespace Compress.SevenZip
 
             using (Stream headerMem = new MemoryStream())
             {
-                using (BinaryWriter bw = new BinaryWriter(headerMem, Encoding.UTF8, true))
-                {
-                    bw.Write((byte)HeaderProperty.kEncodedHeader);
-                    streamsInfo.WriteHeader(bw);
+                using BinaryWriter bw = new(headerMem, Encoding.UTF8, true);
+                bw.Write((byte)HeaderProperty.kEncodedHeader);
+                streamsInfo.WriteHeader(bw);
 
-                    newHeaderByte = new byte[headerMem.Length];
-                    headerMem.Position = 0;
-                    headerMem.Read(newHeaderByte, 0, newHeaderByte.Length);
-
-                }
+                newHeaderByte = new byte[headerMem.Length];
+                headerMem.Position = 0;
+                headerMem.Read(newHeaderByte, 0, newHeaderByte.Length);
             }
             mainHeaderCRC = CRC.CalculateDigest(newHeaderByte, 0, (uint)newHeaderByte.Length);
-            #endregion
+#endregion
 
 
-            using (BinaryWriter bw = new BinaryWriter(_zipFs, Encoding.UTF8, true))
+            using (BinaryWriter bw = new(_zipFs, Encoding.UTF8, true))
             {
                 ulong headerPosition = (ulong)_zipFs.Position + 32; //tzip header is 32 bytes
                 WriteRomVault7Zip(bw, headerPosition, (ulong)newHeaderByte.Length, mainHeaderCRC);

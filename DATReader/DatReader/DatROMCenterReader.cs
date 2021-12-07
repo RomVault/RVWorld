@@ -5,20 +5,9 @@ using RVIO;
 
 namespace DATReader.DatReader
 {
-    class DatROMCenterReader
+    public static class DatROMCenterReader
     {
-
-        private ReportError _errorReport;
-
-        private string datVersion;
-        private string plugin;
-
-        public DatROMCenterReader(ReportError errorReport)
-        {
-            _errorReport = errorReport;
-        }
-
-        public bool ReadDat(string strFilename, out DatHeader datHeader)
+        public static bool ReadDat(string strFilename, ReportError errorReport, out DatHeader datHeader)
         {
             datHeader = new DatHeader
             {
@@ -37,36 +26,36 @@ namespace DATReader.DatReader
                     {
                         case "[credits]":
                             //getcredits
-                            if (!LoadCredits(dfl, datHeader))
+                            if (!LoadCredits(dfl, datHeader,errorReport))
                                 return false;
                             break;
                         case "[dat]":
                             //getdat
-                            if (!LoadDat(dfl, datHeader))
+                            if (!LoadDat(dfl, datHeader, errorReport))
                                 return false;
                             break;
                         case "[emulator]":
                             //emulator
-                            if (!LoadEmulator(dfl, datHeader))
+                            if (!LoadEmulator(dfl, datHeader, errorReport))
                                 return false;
                             break;
                         case "[games]":
                             //games
-                            if (!LoadGame(dfl, datHeader.BaseDir))
+                            if (!LoadGame(dfl, datHeader.BaseDir, errorReport))
                                 return false;
                             break;
                         case "[resources]":
                             //resources 
-                            if (!LoadGame(dfl, datHeader.BaseDir))
+                            if (!LoadGame(dfl, datHeader.BaseDir, errorReport))
                                 return false;
                             break;
                         case "[disks]":
                             //games
-                            if (!LoadDisks(dfl, datHeader.BaseDir))
+                            if (!LoadDisks(dfl, datHeader.BaseDir, errorReport))
                                 return false;
                             break;
                         default:
-                            _errorReport?.Invoke(dfl.Filename, "Unknown Line " + dfl.Next + " , " + dfl.LineNumber);
+                            errorReport?.Invoke(dfl.Filename, "Unknown Line " + dfl.Next + " , " + dfl.LineNumber);
                             return false;
                     }
                 }
@@ -77,11 +66,11 @@ namespace DATReader.DatReader
         }
 
 
-        private bool LoadCredits(DatFileLoader dfl, DatHeader datHeader)
+        private static bool LoadCredits(DatFileLoader dfl, DatHeader datHeader, ReportError errorReport)
         {
             if (dfl.Next.ToLower() != "[credits]")
             {
-                _errorReport?.Invoke(dfl.Filename, "Looking for [CREDITS] but found " + dfl.Next + " , " + dfl.LineNumber);
+                errorReport?.Invoke(dfl.Filename, "Looking for [CREDITS] but found " + dfl.Next + " , " + dfl.LineNumber);
                 return false;
             }
 
@@ -120,18 +109,18 @@ namespace DATReader.DatReader
                         datHeader.Comment = value;
                         break;
                     default:
-                        _errorReport?.Invoke(dfl.Filename, "Unknown Line " + dfl.Next + " found in [CREDITS], " + dfl.LineNumber);
+                        errorReport?.Invoke(dfl.Filename, "Unknown Line " + dfl.Next + " found in [CREDITS], " + dfl.LineNumber);
                         return false;
                 }
             }
             return true;
         }
 
-        private bool LoadDat(DatFileLoader dfl, DatHeader datHeader)
+        private static bool LoadDat(DatFileLoader dfl, DatHeader datHeader, ReportError errorReport)
         {
             if (dfl.Next.ToLower() != "[dat]")
             {
-                _errorReport?.Invoke(dfl.Filename, "Looking for [DAT] but found " + dfl.Next + " , " + dfl.LineNumber);
+                errorReport?.Invoke(dfl.Filename, "Looking for [DAT] but found " + dfl.Next + " , " + dfl.LineNumber);
                 return false;
             }
 
@@ -149,10 +138,10 @@ namespace DATReader.DatReader
                 switch (element.ToLower())
                 {
                     case "version":
-                        datVersion = value;
+                        //datVersion = value;
                         break;
                     case "plugin":
-                        plugin = value;
+                        //plugin = value;
                         break;
                     case "split":
                         datHeader.Split = value;
@@ -162,18 +151,18 @@ namespace DATReader.DatReader
                         break;
 
                     default:
-                        _errorReport?.Invoke(dfl.Filename, "Unknown Line " + dfl.Next + " found in [DAT], " + dfl.LineNumber);
+                        errorReport?.Invoke(dfl.Filename, "Unknown Line " + dfl.Next + " found in [DAT], " + dfl.LineNumber);
                         return false;
                 }
             }
             return true;
         }
 
-        private bool LoadEmulator(DatFileLoader dfl, DatHeader datHeader)
+        private static bool LoadEmulator(DatFileLoader dfl, DatHeader datHeader, ReportError errorReport)
         {
             if (dfl.Next.ToLower() != "[emulator]")
             {
-                _errorReport?.Invoke(dfl.Filename, "Looking for [EMULATOR] but found " + dfl.Next + " , " + dfl.LineNumber);
+                errorReport?.Invoke(dfl.Filename, "Looking for [EMULATOR] but found " + dfl.Next + " , " + dfl.LineNumber);
                 return false;
             }
 
@@ -206,18 +195,18 @@ namespace DATReader.DatReader
                     case "romspaths":
                         break;
                     default:
-                        _errorReport?.Invoke(dfl.Filename, "Unknown Line " + dfl.Next + " found in [EMULATOR], " + dfl.LineNumber);
+                        errorReport?.Invoke(dfl.Filename, "Unknown Line " + dfl.Next + " found in [EMULATOR], " + dfl.LineNumber);
                         return false;
                 }
             }
             return true;
         }
 
-        private bool LoadGame(DatFileLoader dfl, DatDir parentDir)
+        private static bool LoadGame(DatFileLoader dfl, DatDir parentDir, ReportError errorReport)
         {
             if (dfl.Next.ToLower() != "[games]" && dfl.Next.ToLower() != "[resources]")
             {
-                _errorReport?.Invoke(dfl.Filename, "Looking for [GAMES] but found " + dfl.Next + " , " + dfl.LineNumber);
+                errorReport?.Invoke(dfl.Filename, "Looking for [GAMES] but found " + dfl.Next + " , " + dfl.LineNumber);
                 return false;
             }
 
@@ -280,11 +269,11 @@ namespace DATReader.DatReader
             return true;
         }
 
-        private bool LoadDisks(DatFileLoader dfl, DatDir parentDir)
+        private static bool LoadDisks(DatFileLoader dfl, DatDir parentDir, ReportError errorReport)
         {
             if (dfl.Next.ToLower() != "[disks]")
             {
-                _errorReport?.Invoke(dfl.Filename, "Looking for [DISKS] but found " + dfl.Next + " , " + dfl.LineNumber);
+                errorReport?.Invoke(dfl.Filename, "Looking for [DISKS] but found " + dfl.Next + " , " + dfl.LineNumber);
                 return false;
             }
 
@@ -338,7 +327,7 @@ namespace DATReader.DatReader
                 DatFile dRom = new DatFile(DatFileType.UnSet)
                 {
                     isDisk = true,
-                    Name = romName,
+                    Name = VarFix.CleanCHD(romName),
                     SHA1 = VarFix.CleanMD5SHA1(romCRC, 40),
                     Merge = merge
                 };
@@ -351,7 +340,7 @@ namespace DATReader.DatReader
         }
 
 
-        private bool splitLine(string s, out string Element, out string Value)
+        private static bool splitLine(string s, out string Element, out string Value)
         {
             int i = s.IndexOf("=");
             if (i == -1)

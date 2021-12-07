@@ -8,7 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Windows.Forms;
-using RVCore;
+using RomVaultCore;
 
 namespace ROMVault
 {
@@ -19,48 +19,84 @@ namespace ROMVault
             InitializeComponent();
         }
 
+        private void AddLabel(Point location, Size size, string name, string text)
+        {
+            Label label = new Label
+            {
+                Font = new Font("Microsoft Sans Serif", 12F, FontStyle.Bold, GraphicsUnit.Point),
+                Location = location,
+                TextAlign = ContentAlignment.MiddleLeft,
+                Name = name,
+                Size = size,
+                TabIndex = 0,
+                Text = text
+            };
+            Controls.Add(label);
+        }
+
         private void FrmKey_Load(object sender, EventArgs e)
         {
             List<RepStatus> displayList = new List<RepStatus>
             {
-                RepStatus.Missing,
                 RepStatus.Correct,
-                RepStatus.NotCollected,
-                RepStatus.UnNeeded,
+                RepStatus.Missing,
                 RepStatus.Unknown,
+                RepStatus.UnNeeded,
+                RepStatus.NotCollected,
                 RepStatus.InToSort,
-                RepStatus.Corrupt,
-                RepStatus.UnScanned,
                 RepStatus.Ignore,
+
                 RepStatus.CanBeFixed,
+                RepStatus.NeededForFix,
                 RepStatus.MoveToSort,
                 RepStatus.Delete,
-                RepStatus.NeededForFix
+
+
+                RepStatus.Corrupt,
+                RepStatus.UnScanned,
             };
-            Height = displayList.Count*44 + 32;
+            Height = displayList.Count * 46 + 110;
+            AddLabel(new Point(6,6),new Size(538,20),"LabelBasic","Basic Statuses");
+            int eOffset = 28;
+
             for (int i = 0; i < displayList.Count; i++)
             {
-                PictureBox pictureBox = new PictureBox();
-                pictureBox.BorderStyle = BorderStyle.FixedSingle;
-                pictureBox.Location = new Point(4, 4 + i*44);
-                pictureBox.Name = "pictureBox" + i;
-                pictureBox.Size = new Size(48, 42);
-                pictureBox.TabIndex = 0;
-                pictureBox.TabStop = false;
+                if (i == 7)
+                {
+                    AddLabel(new Point(6, i * 46 + eOffset), new Size(538, 20), "LabelFix", "Fix Statuses");
+                    eOffset += 20;
+                }
+
+                if (i == 11)
+                {
+                    AddLabel(new Point(6, i * 46 + eOffset), new Size(538, 20), "LabelProblem", "Problem Statuses");
+                    eOffset += 20;
+                }
+                PictureBox pictureBox = new PictureBox
+                {
+                    BorderStyle = BorderStyle.FixedSingle,
+                    Location = new Point(6, i * 46 + eOffset),
+                    Name = "pictureBox" + i,
+                    Size = new Size(48, 42),
+                    TabIndex = 0,
+                    TabStop = false
+                };
 
                 Controls.Add(pictureBox);
 
                 Bitmap bm = rvImages.GetBitmap("G_" + displayList[i]);
                 pictureBox.Image = bm;
 
-                Label label = new Label();
-                label.BackColor = SystemColors.Control;
-                label.BorderStyle = BorderStyle.FixedSingle;
-                label.Location = new Point(54, 4 + i*44);
-                label.TextAlign = ContentAlignment.MiddleLeft;
-                label.Name = "label" + i;
-                label.Size = new Size(542, 42);
-                label.TabIndex = 0;
+                Label label = new Label
+                {
+                    BackColor = SystemColors.Control,
+                    BorderStyle = BorderStyle.FixedSingle,
+                    Location = new Point(56, i * 46 + eOffset),
+                    TextAlign = ContentAlignment.MiddleLeft,
+                    Name = "label" + i,
+                    Size = new Size(538, 42),
+                    TabIndex = 0
+                };
 
                 string text;
                 switch (displayList[i])

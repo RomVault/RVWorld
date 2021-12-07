@@ -1,13 +1,11 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Diagnostics;
 using Compress;
 using Compress.SevenZip;
 using Compress.ZipFile;
 using RVIO;
-using File = Compress.File.File;
 
-namespace Trrntzip
+namespace TrrntZip
 {
     public delegate void StatusCallback(int threadId, int precent);
 
@@ -25,7 +23,7 @@ namespace Trrntzip
             _buffer = new byte[1024 * 1024];
         }
 
-        public TrrntZipStatus Process(FileInfo fi)
+        public TrrntZipStatus Process(FileInfo fi,PauseCancel pc=null)
         {
             if (Program.VerboseLogging)
             {
@@ -40,7 +38,8 @@ namespace Trrntzip
 
             for (int i = 0; i < zipFile.LocalFilesCount(); i++)
             {
-                Debug.WriteLine("Name = " + zipFile.Filename(i) + " , " + zipFile.UncompressedSize(i));
+                LocalFile lf = zipFile.GetLocalFile(i);
+                Debug.WriteLine("Name = " + lf.Filename + " , " + lf.UncompressedSize);
             }
 
             if ((tzs & TrrntZipStatus.CorruptZip) == TrrntZipStatus.CorruptZip)
@@ -49,10 +48,13 @@ namespace Trrntzip
                 return TrrntZipStatus.CorruptZip;
             }
 
+
             // the zip file may have found a valid trrntzip header, but we now check that all the file info
             // is actually valid, and may invalidate it being a valid trrntzip if any problem is found.
 
             List<ZippedFile> zippedFiles = ReadZipContent(zipFile);
+
+            zipType localOutputType = Program.OutZip;
             
             // check if the compression type has changed
             zipType inputType;
@@ -66,15 +68,15 @@ namespace Trrntzip
                     tzs |= TorrentZipCheck.CheckSevenZipFiles(ref zippedFiles, ThreadId, StatusLogCallBack);
                     inputType = zipType.sevenzip;
                     break;
-                case File _:
-                    inputType = zipType.iso;
+                case Compress.File.File _:
+                    inputType = zipType.file;
+                    if (localOutputType == zipType.archive)
+                        localOutputType = zipType.zip;
                     break;
                 default:
                     return TrrntZipStatus.Unknown;
             }
-
-            zipType outputType = Program.OutZip == zipType.both ? inputType : Program.OutZip;
-            if (outputType == zipType.iso) outputType = zipType.zip;
+            zipType outputType = localOutputType == zipType.archive ? inputType : Program.OutZip;
 
             bool compressionChanged = inputType != outputType;
 
@@ -84,6 +86,7 @@ namespace Trrntzip
             if (((tzs == TrrntZipStatus.ValidTrrntzip) && !compressionChanged && !Program.ForceReZip) || Program.CheckOnly)
             {
                 StatusLogCallBack?.Invoke(ThreadId, "Skipping File");
+                zipFile.ZipFileClose();
                 return tzs;
             }
 
@@ -102,7 +105,7 @@ namespace Trrntzip
             }
 
             StatusLogCallBack?.Invoke(ThreadId, "TorrentZipping");
-            TrrntZipStatus fixedTzs = TorrentZipRebuild.ReZipFiles(zippedFiles, zipFile, _buffer, StatusCallBack, StatusLogCallBack, ThreadId);
+            TrrntZipStatus fixedTzs = TorrentZipRebuild.ReZipFiles(zippedFiles, zipFile, _buffer, StatusCallBack, StatusLogCallBack, ThreadId, pc);
             return fixedTzs;
         }
 
@@ -112,14 +115,14 @@ namespace Trrntzip
             string ext = Path.GetExtension(fi.Name);
             switch (ext)
             {
-                case ".iso":
-                    zipFile = new File();
-                    break;
                 case ".7z":
                     zipFile = new SevenZ();
                     break;
-                default:
+                case ".zip":
                     zipFile = new Zip();
+                    break;
+                default:
+                    zipFile = new Compress.File.File();
                     break;
             }
 
@@ -145,13 +148,14 @@ namespace Trrntzip
             List<ZippedFile> zippedFiles = new List<ZippedFile>();
             for (int i = 0; i < zipFile.LocalFilesCount(); i++)
             {
+                LocalFile lf = zipFile.GetLocalFile(i);
                 zippedFiles.Add(
                     new ZippedFile
                     {
                         Index = i,
-                        Name = zipFile.Filename(i),
-                        ByteCRC = zipFile.CRC32(i),
-                        Size = zipFile.UncompressedSize(i)
+                        Name = lf.Filename,
+                        ByteCRC = lf.CRC,
+                        Size = lf.UncompressedSize
                     }
                 );
             }

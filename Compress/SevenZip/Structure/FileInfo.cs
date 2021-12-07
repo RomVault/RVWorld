@@ -1,6 +1,5 @@
 ﻿using System;
 using System.IO;
-using System.Runtime.InteropServices;
 using System.Text;
 
 namespace Compress.SevenZip.Structure
@@ -97,20 +96,18 @@ namespace Compress.SevenZip.Structure
 
 
             byte[] namebyte;
-            using (MemoryStream nameMem = new MemoryStream())
+            using (MemoryStream nameMem = new())
             {
-                using (BinaryWriter nameBw = new BinaryWriter(nameMem, Encoding.UTF8, true))
+                using BinaryWriter nameBw = new(nameMem, Encoding.UTF8, true);
+                nameBw.Write((byte)0); //not external
+                foreach (string name in Names)
                 {
-                    nameBw.Write((byte)0); //not external
-                    foreach (string name in Names)
-                    {
-                        nameBw.WriteName(name);
-                    }
-
-                    namebyte = new byte[nameMem.Length];
-                    nameMem.Position = 0;
-                    nameMem.Read(namebyte, 0, namebyte.Length);
+                    nameBw.WriteName(name);
                 }
+
+                namebyte = new byte[nameMem.Length];
+                nameMem.Position = 0;
+                nameMem.Read(namebyte, 0, namebyte.Length);
             }
 
             bw.Write((byte)HeaderProperty.kName);

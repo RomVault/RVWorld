@@ -6,8 +6,8 @@
 
 using System;
 using System.Windows.Forms;
-using RVCore;
-using RVCore.RvDB;
+using RomVaultCore;
+using RomVaultCore.RvDB;
 
 namespace ROMVault
 {
@@ -23,7 +23,7 @@ namespace ROMVault
             Opacity = 0;
             timer1.Interval = 50;
 
-            label1.Text = $@"Registered to : {Settings.Username}                      Contact Email : {Settings.EMail}";
+            label1.Text = $@"Registered to : {UISettings.Username}                      Contact Email : {UISettings.EMail}";
 
 
             _thWrk = new ThreadWorker(StartUpCode) {wReport = BgwProgressChanged, wFinal = BgwRunWorkerCompleted};
@@ -39,7 +39,6 @@ namespace ROMVault
         private static void StartUpCode(ThreadWorker e)
         {
             RepairStatus.InitStatusCheck();
-            Settings.rvSettings=Settings.SetDefaults();
             DB.Read(e);
         }
 
@@ -49,7 +48,7 @@ namespace ROMVault
 
             if (InvokeRequired)
             {
-                Invoke(new MethodInvoker(() => BgwProgressChanged(e)));
+                BeginInvoke(new MethodInvoker(() => BgwProgressChanged(e)));
                 return;
             }
 
@@ -81,7 +80,7 @@ namespace ROMVault
         {
             if (InvokeRequired)
             {
-                Invoke(new MethodInvoker(() => BgwRunWorkerCompleted()));
+                BeginInvoke(new MethodInvoker(() => BgwRunWorkerCompleted()));
                 return;
             }
 

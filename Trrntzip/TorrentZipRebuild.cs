@@ -3,16 +3,16 @@ using System.Collections.Generic;
 using System.IO;
 using Compress;
 using Compress.SevenZip;
-using Compress.Utils;
+using Compress.Support.Utils;
 using Compress.ZipFile;
 using File = RVIO.File;
 using Path = RVIO.Path;
 
-namespace Trrntzip
+namespace TrrntZip
 {
     public static class TorrentZipRebuild
     {
-        public static TrrntZipStatus ReZipFiles(List<ZippedFile> zippedFiles, ICompress originalZipFile, byte[] buffer, StatusCallback statusCallBack, LogCallback logCallback, int threadId)
+        public static TrrntZipStatus ReZipFiles(List<ZippedFile> zippedFiles, ICompress originalZipFile, byte[] buffer, StatusCallback statusCallBack, LogCallback logCallback, int threadId, PauseCancel pc)
         {
             zipType inputType;
             switch (originalZipFile)
@@ -24,19 +24,18 @@ namespace Trrntzip
                     inputType = zipType.sevenzip;
                     break;
                 case Compress.File.File _:
-                    inputType = zipType.iso;
+                    inputType = zipType.file;
                     break;
                 default:
                     return TrrntZipStatus.Unknown;
             }
 
-            zipType outputType = Program.OutZip == zipType.both ? inputType : Program.OutZip;
-            if (outputType == zipType.iso) outputType = zipType.zip;
+            zipType outputType = Program.OutZip == zipType.archive ? inputType : Program.OutZip;
 
             int bufferSize = buffer.Length;
 
             string filename = originalZipFile.ZipFilename;
-			string tmpFilename = Path.Combine(Path.GetDirectoryName(filename),Path.GetFileNameWithoutExtension(filename) + ".tmp");
+            string tmpFilename = Path.Combine(Path.GetDirectoryName(filename), Path.GetFileNameWithoutExtension(filename) + ".tmp");
 
             string outExt = outputType == zipType.zip ? ".zip" : ".7z";
             string outfilename = Path.Combine(Path.GetDirectoryName(filename), Path.GetFileNameWithoutExtension(filename) + outExt);
@@ -59,8 +58,12 @@ namespace Trrntzip
 
             try
             {
-                zipFileOut.ZipFileCreate(tmpFilename);
-
+                if (outputType == zipType.zip)
+                    ((Zip)zipFileOut).ZipFileCreate(tmpFilename, OutputZipType.TrrntZip);
+                else
+                {
+                    zipFileOut.ZipFileCreate(tmpFilename);
+                }
 
                 ulong fileSizeTotal = 0;
                 ulong fileSizeProgress = 0;
@@ -120,6 +123,18 @@ namespace Trrntzip
                     ulong sizetogo = streamSize;
                     while (sizetogo > 0)
                     {
+                        if (pc != null)
+                        {
+                            pc.WaitOne();
+                            if (pc.Cancelled)
+                            {
+                                zipFileOut.ZipFileCloseFailed();
+                                originalZipFile.ZipFileClose();
+                                File.Delete(tmpFilename);
+                                return TrrntZipStatus.Cancel;
+                            }
+                        }
+
                         int sizenow = sizetogo > (ulong)bufferSize ? bufferSize : (int)sizetogo;
 
                         fileSizeProgress += (ulong)sizenow;
@@ -149,6 +164,9 @@ namespace Trrntzip
 
                     if (crc != t.CRC)
                     {
+                        zipFileOut.ZipFileCloseFailed();
+                        originalZipFile.ZipFileClose();
+                        File.Delete(tmpFilename);
                         return TrrntZipStatus.CorruptZip;
                     }
 

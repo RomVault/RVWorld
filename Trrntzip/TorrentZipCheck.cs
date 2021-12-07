@@ -16,7 +16,7 @@ using System.Collections.Generic;
 
 ***************************************************************************************************************/
 
-namespace Trrntzip
+namespace TrrntZip
 {
     public static class TorrentZipCheck
     {

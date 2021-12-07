@@ -1,9 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
-using System.Security.Policy;
 using System.Text;
-using Compress.SevenZip.Compress.ZSTD;
 using Compress.SevenZip.Structure;
 using FileInfo = RVIO.FileInfo;
 
@@ -12,47 +9,21 @@ namespace Compress.SevenZip
     public partial class SevenZ : ICompress
     {
 
-        public enum sevenZipCompressType
+        public enum SevenZipCompressType
         {
             uncompressed,
             lzma,
             zstd
         }
 
-        public static bool supportZstd
+        private class SevenZipLocalFile : LocalFile
         {
-            get;
-            private set;
-        }
-
-        public static void TestForZstd()
-        {
-            supportZstd = false;
-            if (Environment.OSVersion.Platform == PlatformID.Win32NT)
-            {
-                var root = Path.GetDirectoryName(typeof(ZstandardInterop).Assembly.Location);
-                var path = Environment.Is64BitProcess ? "x64" : "x86";
-                var file = Path.Combine(root, path, "libzstd.dll");
-                supportZstd = RVIO.File.Exists(file);
-            }
-        }
-
-
-
-        private class LocalFile
-        {
-            public string FileName;
-            public ulong UncompressedSize;
-            public bool IsDirectory;
-            public byte[] CRC;
             public int StreamIndex;
             public ulong StreamOffset;
-            public long LastModified;
-            public ZipReturn FileStatus = ZipReturn.ZipUntested;
         }
 
 
-        private List<LocalFile> _localFiles = new List<LocalFile>();
+        private List<SevenZipLocalFile> _localFiles = new();
 
         private FileInfo _zipFileInfo;
 
@@ -60,7 +31,6 @@ namespace Compress.SevenZip
 
         private SignatureHeader _signatureHeader;
 
-        private sevenZipCompressType _compressed = sevenZipCompressType.lzma;
 
 
         private long _baseOffset;
@@ -76,41 +46,10 @@ namespace Compress.SevenZip
         {
             return _localFiles.Count;
         }
-
-        public string Filename(int i)
+        
+        public LocalFile GetLocalFile(int i)
         {
-            return _localFiles[i].FileName;
-        }
-
-        public ulong? LocalHeader(int i)
-        {
-            return 0;
-        }
-
-        public ulong UncompressedSize(int i)
-        {
-            return _localFiles[i].UncompressedSize;
-        }
-
-        public int StreamIndex(int i)
-        {
-            return _localFiles[i].StreamIndex;
-
-        }
-
-        public ZipReturn FileStatus(int i)
-        {
-            return _localFiles[i].FileStatus;
-        }
-
-        public byte[] CRC32(int i)
-        {
-            return _localFiles[i].CRC;
-        }
-
-        public long LastModified(int i)
-        {
-            return _localFiles[i].LastModified;
+            return _localFiles[i];
         }
 
         public void ZipFileCloseFailed()
@@ -139,21 +78,7 @@ namespace Compress.SevenZip
 
             ZipOpen = ZipOpenType.Closed;
         }
-
-        public bool IsDirectory(int i)
-        {
-            return _localFiles[i].IsDirectory;
-        }
-
-
-
-
-
-
-
-
-
-
+        
 
         public void ZipFileClose()
         {
@@ -185,7 +110,7 @@ namespace Compress.SevenZip
 
         public StringBuilder HeaderReport()
         {
-            StringBuilder sb = new StringBuilder();
+            StringBuilder sb = new();
 
             if (_header == null)
             {

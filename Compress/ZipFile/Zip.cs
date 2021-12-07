@@ -11,16 +11,17 @@ namespace Compress.ZipFile
 {
     public partial class Zip : ICompress
     { 
-        private readonly List<LocalFile> _localFiles = new List<LocalFile>();
-
+        private readonly List<ZipLocalFile> _localFiles = new();
 
         private FileInfo _zipFileInfo;
 
-
-        private byte[] _fileComment;
         private Stream _zipFs;
 
         private uint _localFilesCount;
+
+        private ulong _centralDirStart;
+        private ulong _centralDirSize;
+        private ulong _endOfCentralDir64;
 
         private bool _zip64;
 
@@ -28,86 +29,51 @@ namespace Compress.ZipFile
 
         public long TimeStamp => _zipFileInfo?.LastWriteTime ?? 0;
 
+        public byte[] FileComment { get; private set; }
+
+        public Zip()
+        {
+           CompressUtils.EncodeSetup();
+        }
+
         public ZipOpenType ZipOpen { get; private set; }
 
 
-        public ZipStatus ZipStatus { get; set; }
+        public ZipStatus ZipStatus { get; private set; }
+
+        // If writeZipType == trrntzip then it will force a trrntzip file and error out if not.
+        // If writeZipType == None it will still try and make a trrntzip if everything is supplied matching trrntzip parameters.
+        private OutputZipType writeZipType = OutputZipType.None;
+
+        private ulong offset = 0;
 
         public int LocalFilesCount()
         {
             return _localFiles.Count;
         }
 
-        public string Filename(int i)
+        public LocalFile GetLocalFile(int i)
         {
-            return _localFiles[i].FileName;
+            return _localFiles[i];
         }
-
-        public ulong UncompressedSize(int i)
-        {
-            return _localFiles[i].UncompressedSize;
-        }
-
-        public ulong? LocalHeader(int i)
-        {
-            return (_localFiles[i].GeneralPurposeBitFlag & 8) == 0 ? (ulong?)_localFiles[i].RelativeOffsetOfLocalHeader : null;
-        }
-
-        public byte[] CRC32(int i)
-        {
-            return _localFiles[i].CRC;
-        }
-
-        public bool IsDirectory(int i)
-        {
-            try
-            {
-                if (_localFiles[i].UncompressedSize != 0)
-                    return false;
-                string filename = _localFiles[i].FileName;
-                char lastChar = filename[filename.Length - 1];
-                return lastChar == '/' || lastChar == '\\';
-            }
-            catch (Exception ex)
-            {
-                ArgumentException argEx = new ArgumentException("Error in file " + _zipFileInfo?.FullName + " : " + ex.Message, ex.InnerException);
-                throw argEx;
-            }
-
-        }
-
-        public long LastModified(int i)
-        {
-            return _localFiles[i].DateTime;
-        }
-
-        public long? Created(int i)
-        {
-            return _localFiles[i].DateTimeCreate;
-        }
-
-        public long? Accessed(int i)
-        {
-            return _localFiles[i].DateTimeAccess;
-        }
-
+        
         public void ZipFileClose()
         {
-            if (ZipOpen == ZipOpenType.Closed)
+            switch (ZipOpen)
             {
-                return;
-            }
+                case ZipOpenType.Closed:
+                    return;
 
-            if (ZipOpen == ZipOpenType.OpenRead)
-            {
-                zipFileCloseRead();
-                return;
-            }
+                case ZipOpenType.OpenRead:
+                    zipFileCloseRead();
+                    return;
 
-            zipFileCloseWrite();
+                default:
+                    zipFileCloseWrite();
+                    break;
+            }
         }
 
-        public byte[] Filecomment => _fileComment;
 
         /*
         public void BreakTrrntZip(string filename)

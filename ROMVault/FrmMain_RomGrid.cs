@@ -3,11 +3,11 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.Windows.Forms;
-using Compress.ZipFile;
+using Compress;
 using FileHeaderReader;
-using RVCore;
-using RVCore.RvDB;
-using RVCore.Utils;
+using RomVaultCore;
+using RomVaultCore.RvDB;
+using RomVaultCore.Utils;
 
 namespace ROMVault
 {
@@ -27,11 +27,8 @@ namespace ROMVault
         Status = 11,
         DateModDat = 12,
         DateModFile = 13,
-        DateCreateDat = 14,
-        DateCreateFile = 15,
-        DateAccessDat = 16,
-        DateAccessFile = 17,
-        ZipIndex = 18
+        ZipIndex = 14,
+        DupeCount = 15
 
     }
 
@@ -42,12 +39,9 @@ namespace ROMVault
         private int romSortIndex = -1;
         private SortOrder romSortDir = SortOrder.None;
 
+        private bool showStatus;
         private bool showDatModDate;
         private bool showFileModDate;
-        private bool showDatCreateDate;
-        private bool showFileCreateDate;
-        private bool showDatAccessDate;
-        private bool showFileAccessDate;
 
 
         private void UpdateRomGrid(RvFile tGame)
@@ -66,12 +60,9 @@ namespace ROMVault
             RomGrid.Rows.Clear();
 
             altFound = false;
+            showStatus = false;
             showDatModDate = false;
             showFileModDate = false;
-            showDatCreateDate = false;
-            showFileCreateDate = false;
-            showDatAccessDate = false;
-            showFileAccessDate = false;
 
             List<RvFile> fileList = new List<RvFile>();
             AddDir(tGame, "", ref fileList);
@@ -82,18 +73,18 @@ namespace ROMVault
             RomGrid.Columns[(int)eRomGrid.AltSHA1].Visible = altFound;
             RomGrid.Columns[(int)eRomGrid.AltMD5].Visible = altFound;
 
+            RomGrid.Columns[(int)eRomGrid.Status].Visible = showStatus;
             RomGrid.Columns[(int)eRomGrid.DateModDat].Visible = showDatModDate;
             RomGrid.Columns[(int)eRomGrid.DateModFile].Visible = showFileModDate;
-            RomGrid.Columns[(int)eRomGrid.DateCreateDat].Visible = showDatCreateDate;
-            RomGrid.Columns[(int)eRomGrid.DateCreateFile].Visible = showFileCreateDate;
-            RomGrid.Columns[(int)eRomGrid.DateAccessDat].Visible = showDatAccessDate;
-            RomGrid.Columns[(int)eRomGrid.DateAccessFile].Visible = showFileAccessDate;
 
             RomGrid.RowCount = romGrid.Length;
         }
 
         private void AddDir(RvFile tGame, string pathAdd, ref List<RvFile> fileList)
         {
+            if (tGame == null)
+                return;
+
             for (int l = 0; l < tGame.ChildCount; l++)
             {
                 RvFile tBase = tGame.Child(l);
@@ -133,16 +124,12 @@ namespace ROMVault
                 {
                     altFound = (tFile.AltSize != null) || (tFile.AltCRC != null) || (tFile.AltSHA1 != null) || (tFile.AltMD5 != null);
                 }
+                showStatus |= !string.IsNullOrWhiteSpace(tFile.Status);
 #if dt
                 showDatModDate |= (tFile.DatModTimeStamp != null);
-                showFileModDate |= (tFile.FileModTimeStamp != ZipUtils.trrntzipDateTime) &
+                showFileModDate |= (tFile.FileModTimeStamp != CompressUtils.TrrntzipDateTime) &
                                    ((tFile.DatModTimeStamp == null) | (tFile.DatModTimeStamp != null & tFile.DatModTimeStamp != tFile.FileModTimeStamp));
 
-                showDatCreateDate |= (tFile.DatCreatedTimeStamp != null);
-                showFileCreateDate |= (tFile.FileCreatedTimeStamp ?? 0) != (tFile.DatCreatedTimeStamp ?? 0);
-
-                showDatAccessDate |= (tFile.DatLastAccessTimeStamp != null);
-                showFileAccessDate |= (tFile.FileLastAccessTimeStamp ?? 0) != (tFile.DatLastAccessTimeStamp ?? 0);
 #endif     
             }
         }
@@ -236,43 +223,18 @@ namespace ROMVault
                     e.Value = tmp.ToString("yyyy/MM/dd HH:mm:ss");
                     break;
                 }
-                case eRomGrid.DateCreateDat:
-                    {
-                        if (tFile.DatCreatedTimeStamp == null)
-                            break;
-                        DateTime tmp = new DateTime((long)tFile.DatCreatedTimeStamp);
-                        e.Value = tmp.ToString("yyyy/MM/dd HH:mm:ss");
-                        break;
-                    }
-                case eRomGrid.DateCreateFile:
-                    {
-                        if (tFile.FileCreatedTimeStamp == null)
-                            break;
-                        DateTime tmp = new DateTime((long)tFile.FileCreatedTimeStamp);
-                        e.Value = tmp.ToString("yyyy/MM/dd HH:mm:ss");
-                        break;
-                    }
-                case eRomGrid.DateAccessDat:
-                    {
-                        if (tFile.DatLastAccessTimeStamp == null)
-                            break;
-                        DateTime tmp = new DateTime((long)tFile.DatLastAccessTimeStamp);
-                        e.Value = tmp.ToString("yyyy/MM/dd HH:mm:ss");
-                        break;
-                    }
-                case eRomGrid.DateAccessFile:
-                    {
-                        if (tFile.FileLastAccessTimeStamp == null)
-                            break;
-                        DateTime tmp = new DateTime((long)tFile.FileLastAccessTimeStamp);
-                        e.Value = tmp.ToString("yyyy/MM/dd HH:mm:ss");
-                        break;
-                    }
 #endif
                 case eRomGrid.ZipIndex:
                     if (tFile.FileType == FileType.ZipFile)
                         e.Value = tFile.ZipFileIndex == -1 ? "" : tFile.ZipFileIndex.ToString();
                     break;
+                case eRomGrid.DupeCount:
+                    if (tFile.FileGroup != null)
+                    {
+                        e.Value = tFile.FileGroup.Files.Count.ToString();
+                    }
+                    break;
+
             }
         }
 
@@ -356,6 +318,15 @@ namespace ROMVault
                 int retVal = 0;
                 switch ((eRomGrid)_colIndex)
                 {
+                    case eRomGrid.Got:   // then by name
+                        retVal = x.GotStatus - y.GotStatus;
+                        if (retVal != 0)
+                            break;
+                        retVal = x.RepStatus - y.RepStatus;
+                        if (retVal != 0)
+                            break;
+                        retVal = string.Compare(x.UiDisplayName ?? "", y.UiDisplayName ?? "", StringComparison.Ordinal);
+                        break;
                     case eRomGrid.Rom:
                         retVal = string.Compare(x.UiDisplayName ?? "", y.UiDisplayName ?? "", StringComparison.Ordinal);
                         break;
@@ -404,6 +375,23 @@ namespace ROMVault
 
         private void RomGridMouseUp(object sender, MouseEventArgs e)
         {
+            if (e == null || e.Button == MouseButtons.Left)
+            {
+                var hitTest = RomGrid.HitTest(e.X, e.Y);
+                if (hitTest.ColumnIndex != (int)eRomGrid.DupeCount)
+                    return;
+                if (hitTest.RowIndex < 0)
+                    return;
+
+                RvFile tFile = romGrid[hitTest.RowIndex];
+                FrmRomInfo fri = new FrmRomInfo();
+                fri.SetRom(tFile);
+                fri.ShowDialog();
+                return;
+            }
+
+
+
             if (e == null || e.Button != MouseButtons.Right)
             {
                 return;

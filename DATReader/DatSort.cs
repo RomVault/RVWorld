@@ -7,25 +7,22 @@ namespace DATReader
 
         public static int TrrntZipStringCompare(string string1, string string2)
         {
-            char[] bytes1 = string1.ToCharArray();
-            char[] bytes2 = string2.ToCharArray();
-
             int pos1 = 0;
             int pos2 = 0;
 
             for (; ; )
             {
-                if (pos1 == bytes1.Length)
+                if (pos1 == string1.Length)
                 {
-                    return pos2 == bytes2.Length ? 0 : -1;
+                    return pos2 == string2.Length ? 0 : -1;
                 }
-                if (pos2 == bytes2.Length)
+                if (pos2 == string2.Length)
                 {
                     return 1;
                 }
 
-                int byte1 = bytes1[pos1++];
-                int byte2 = bytes2[pos2++];
+                int byte1 = string1[pos1++];
+                int byte2 = string2[pos2++];
 
                 if (byte1 >= 65 && byte1 <= 90)
                 {
@@ -47,7 +44,7 @@ namespace DATReader
             }
         }
 
-        public static int TrrntZipStringCompareCase(string string1, string string2)
+        internal static int TrrntZipStringCompareCase(string string1, string string2)
         {
             int res = Math.Sign(TrrntZipStringCompare(string1, string2));
             return res != 0 ? res : Math.Sign(string.Compare(string1, string2, StringComparison.Ordinal));

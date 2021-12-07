@@ -1,7 +1,8 @@
 ﻿using System;
+using System.Drawing;
 using System.Windows.Forms;
-using RVCore;
-using RVCore.RvDB;
+using RomVaultCore;
+using RomVaultCore.RvDB;
 
 namespace ROMVault
 {
@@ -68,6 +69,42 @@ namespace ROMVault
         private Label _labelTruripScore;
         private TextBox _textTruripScore;
 
+
+
+        private void AddTextBox(int line, string name, int x, int x1, out Label lBox, out TextBox tBox)
+        {
+            int y = 14 + line * 16;
+
+            lBox = new Label
+            {
+                Location = SPoint(x, y + 1),
+                Size = SSize(x1 - x - 2, 13),
+                Text = name + @" :",
+                TextAlign = ContentAlignment.TopRight
+            };
+            tBox = new TextBox
+            {
+                AutoSize = false,
+                Location = SPoint(x1, y),
+                Size = SSize(20, 17),
+                BorderStyle = BorderStyle.FixedSingle,
+                ReadOnly = true,
+                TabStop = false
+            };
+            gbSetInfo.Controls.Add(lBox);
+            gbSetInfo.Controls.Add(tBox);
+        }
+
+
+        private Point SPoint(int x, int y)
+        {
+            return new Point((int)(x * _scaleFactorX), (int)(y * _scaleFactorY));
+        }
+
+        private Size SSize(int x, int y)
+        {
+            return new Size((int)(x * _scaleFactorX), (int)(y * _scaleFactorY));
+        }
 
 
 

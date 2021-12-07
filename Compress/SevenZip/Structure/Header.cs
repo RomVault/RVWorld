@@ -1,8 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Text;
-using Compress.SevenZip.Compress.LZMA;
-using Compress.Utils;
+using Compress.Support.Compression.LZMA;
 
 namespace Compress.SevenZip.Structure
 {
@@ -50,56 +49,54 @@ namespace Compress.SevenZip.Structure
         {
             header = null;
 
-            using (BinaryReader br = new BinaryReader(stream, Encoding.UTF8, true))
+            using BinaryReader br = new(stream, Encoding.UTF8, true);
+            HeaderProperty hp = (HeaderProperty)br.ReadByte();
+            switch (hp)
             {
-                HeaderProperty hp = (HeaderProperty)br.ReadByte();
-                switch (hp)
-                {
-                    case HeaderProperty.kEncodedHeader:
+                case HeaderProperty.kEncodedHeader:
+                    {
+                        StreamsInfo streamsInfo = new();
+                        streamsInfo.Read(br);
+
+                        if (streamsInfo.Folders.Length > 1)
                         {
-                            StreamsInfo streamsInfo = new StreamsInfo();
-                            streamsInfo.Read(br);
-
-                            if (streamsInfo.Folders.Length > 1)
-                            {
-                                return ZipReturn.ZipUnsupportedCompression;
-                            }
-
-                            Folder firstFolder = streamsInfo.Folders[0];
-                            if (firstFolder.Coders.Length > 1)
-                            {
-                                return ZipReturn.ZipUnsupportedCompression;
-                            }
-
-                            byte[] method = firstFolder.Coders[0].Method;
-                            if (!((method.Length == 3) && (method[0] == 3) && (method[1] == 1) && (method[2] == 1))) // LZMA
-                            {
-                                return ZipReturn.ZipUnsupportedCompression;
-                            }
-
-                            stream.Seek(baseOffset + (long)streamsInfo.PackPosition, SeekOrigin.Begin);
-                            using (LzmaStream decoder = new LzmaStream(firstFolder.Coders[0].Properties, stream))
-                            {
-                                ZipReturn zr = ReadHeaderOrPackedHeader(decoder, baseOffset, out header);
-                                if (zr != ZipReturn.ZipGood)
-                                {
-                                    return zr;
-                                }
-                            }
-
-                            return ZipReturn.ZipGood;
+                            return ZipReturn.ZipUnsupportedCompression;
                         }
 
-                    case HeaderProperty.kHeader:
+                        Folder firstFolder = streamsInfo.Folders[0];
+                        if (firstFolder.Coders.Length > 1)
                         {
-                            header = new Header();
-                            header.Read(br);
-                            return ZipReturn.ZipGood;
+                            return ZipReturn.ZipUnsupportedCompression;
                         }
-                }
 
-                return ZipReturn.ZipCentralDirError;
+                        byte[] method = firstFolder.Coders[0].Method;
+                        if (!((method.Length == 3) && (method[0] == 3) && (method[1] == 1) && (method[2] == 1))) // LZMA
+                        {
+                            return ZipReturn.ZipUnsupportedCompression;
+                        }
+
+                        stream.Seek(baseOffset + (long)streamsInfo.PackPosition, SeekOrigin.Begin);
+                        using (LzmaStream decoder = new(firstFolder.Coders[0].Properties, stream))
+                        {
+                            ZipReturn zr = ReadHeaderOrPackedHeader(decoder, baseOffset, out header);
+                            if (zr != ZipReturn.ZipGood)
+                            {
+                                return zr;
+                            }
+                        }
+
+                        return ZipReturn.ZipGood;
+                    }
+
+                case HeaderProperty.kHeader:
+                    {
+                        header = new Header();
+                        header.Read(br);
+                        return ZipReturn.ZipGood;
+                    }
             }
+
+            return ZipReturn.ZipCentralDirError;
         }
 
         public void Report(ref StringBuilder sb)

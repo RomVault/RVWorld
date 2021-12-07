@@ -47,7 +47,7 @@ namespace Compress.SevenZip
     {
         public static readonly Encoding Enc = Encoding.GetEncoding(28591);
 
-        public static void memset(byte[] buffer, int start, byte val, int len)
+        public static void MemSet(byte[] buffer, int start, byte val, int len)
         {
             for (int i = 0; i < len; i++)
             {
@@ -55,7 +55,7 @@ namespace Compress.SevenZip
             }
         }
 
-        public static void memcpyr(byte[] destBuffer, int destPoint, byte[] sourceBuffer, int sourcePoint, int len)
+        public static void MemCrypt(byte[] destBuffer, int destPoint, byte[] sourceBuffer, int sourcePoint, int len)
         {
             for (int i = len - 1; i >= 0; i--)
             {
@@ -64,7 +64,7 @@ namespace Compress.SevenZip
         }
 
 
-        public static bool memcmp(byte[] buffer1, int offset, byte[] buffer2, int len)
+        public static bool MemCmp(byte[] buffer1, int offset, byte[] buffer2, int len)
         {
             for (int i = 0; i < len; i++)
             {
@@ -147,7 +147,7 @@ namespace Compress.SevenZip
 
         public static string ReadName(this BinaryReader br)
         {
-            StringBuilder stringBuilder = new StringBuilder();
+            StringBuilder stringBuilder = new();
             for (; ; )
             {
                 char c = (char)br.ReadUInt16();
@@ -334,7 +334,7 @@ namespace Compress.SevenZip
             }
         }
 
-        public static byte[] uinttobytes(uint? crc)
+        public static byte[] UIntToBytes(uint? crc)
         {
             if (crc == null)
             {
@@ -350,7 +350,7 @@ namespace Compress.SevenZip
             return b;
         }
 
-        public static uint? bytestouint(byte[] crc)
+        public static uint? BytesToUint(byte[] crc)
         {
             if (crc == null)
             {

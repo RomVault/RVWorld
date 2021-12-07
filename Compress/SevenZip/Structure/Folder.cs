@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Text;
-using Compress.Utils;
+using Compress.Support.Utils;
 
 namespace Compress.SevenZip.Structure
 {
@@ -175,8 +175,7 @@ namespace Compress.SevenZip.Structure
 
                     case HeaderProperty.kCRC:
                         {
-                            uint?[] crcs;
-                            Util.UnPackCRCs(br, (ulong)Folders.Length, out crcs);
+                            Util.UnPackCRCs(br, (ulong)Folders.Length, out uint?[] crcs);
                             for (int i = 0; i < Folders.Length; i++)
                             {
                                 Folders[i].UnpackCRC = crcs[i];
@@ -250,8 +249,10 @@ namespace Compress.SevenZip.Structure
                                 if (folder.UnpackedStreamInfo == null)
                                 {
                                     folder.UnpackedStreamInfo = new UnpackedStreamInfo[1];
-                                    folder.UnpackedStreamInfo[0] = new UnpackedStreamInfo();
-                                    folder.UnpackedStreamInfo[0].UnpackedSize = folder.GetUnpackSize();
+                                    folder.UnpackedStreamInfo[0] = new UnpackedStreamInfo
+                                    {
+                                        UnpackedSize = folder.GetUnpackSize()
+                                    };
                                 }
 
                                 if ((folder.UnpackedStreamInfo.Length != 1) || !folder.UnpackCRC.HasValue)
@@ -261,8 +262,7 @@ namespace Compress.SevenZip.Structure
                             }
 
                             int crcIndex = 0;
-                            uint?[] crc;
-                            Util.UnPackCRCs(br, numCRC, out crc);
+                            Util.UnPackCRCs(br, numCRC, out uint?[] crc);
                             for (uint i = 0; i < Folders.Length; i++)
                             {
                                 Folder folder = Folders[i];
@@ -384,7 +384,7 @@ namespace Compress.SevenZip.Structure
                 Folder folder = Folders[f];
                 for (int i = 0; i < folder.UnpackedStreamInfo.Length; i++)
                 {
-                    bw.Write(Util.uinttobytes(folder.UnpackedStreamInfo[i].Crc));
+                    bw.Write(Util.UIntToBytes(folder.UnpackedStreamInfo[i].Crc));
                 }
             }
 

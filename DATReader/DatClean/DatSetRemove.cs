@@ -24,7 +24,6 @@ namespace DATReader.DatClean
                     {
                         found = false;
 
-
                         for (int r = 0; r < mGame.ChildCount; r++)
                         {
                             DatFile df0 = (DatFile)mGame.Child(r);
@@ -158,7 +157,8 @@ namespace DATReader.DatClean
         {
             for (int g = 0; g < tDat.ChildCount; g++)
             {
-                DatDir mGame = (DatDir)tDat.Child(g);
+                if (!(tDat.Child(g) is DatDir mGame))
+                    continue;
 
                 if (mGame.DGame == null)
                 {
@@ -241,7 +241,8 @@ namespace DATReader.DatClean
                 }
                 else
                 {
-                    RemoveUnNeededDirectoriesFromZip(mGame);
+                    if (mGame.DatFileType != DatFileType.DirRVZip)
+                        RemoveUnNeededDirectoriesFromZip(mGame);
                 }
             }
         }

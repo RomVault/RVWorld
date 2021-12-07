@@ -17,6 +17,7 @@
         Dir7Zip,
 
         File,
+        //FileRvZip,
         FileTorrentZip,
         File7Zip
     }

@@ -8,34 +8,46 @@ using System;
 using System.Drawing;
 using System.Reflection;
 using System.Windows.Forms;
-using RVCore;
+using RomVaultCore;
 
 namespace ROMVault
 {
+    public delegate void Finished();
+
     public partial class FrmProgressWindow : Form
     {
         private readonly string _titleRoot;
         private readonly Form _parentForm;
         private bool _errorOpen;
         private bool _bDone;
+        public bool Cancelled;
 
         private readonly ThreadWorker _thWrk;
+        private readonly Finished _funcFinished;
 
-        public FrmProgressWindow(Form parentForm, string titleRoot, WorkerStart function)
+        public FrmProgressWindow(Form parentForm, string titleRoot, WorkerStart function, Finished funcFinished)
         {
+            Cancelled = false;
             _parentForm = parentForm;
             _titleRoot = titleRoot;
+            _funcFinished = funcFinished;
             InitializeComponent();
 
-            //Type dgvType = ErrorGrid.GetType();
-            //PropertyInfo pi = dgvType.GetProperty("DoubleBuffered", BindingFlags.Instance | BindingFlags.NonPublic);
-            //pi.SetValue(ErrorGrid, true, null);
+            Type dgvType = ErrorGrid.GetType();
+            PropertyInfo pi = dgvType.GetProperty("DoubleBuffered", BindingFlags.Instance | BindingFlags.NonPublic);
+            pi.SetValue(ErrorGrid, true, null);
 
             ClientSize = new Size(511, 131);
 
             _titleRoot = titleRoot;
 
             _thWrk = new ThreadWorker(function);
+        }
+
+        public void HideCancelButton()
+        {
+            cancelButton.Text = "Close";
+            cancelButton.Enabled = false;
         }
 
         protected override CreateParams CreateParams
@@ -182,9 +194,9 @@ namespace ROMVault
         private void UpdateStatusText()
         {
             int range = progressBar.Maximum - progressBar.Minimum;
-            int percent = range > 0 ? progressBar.Value*100/range : 0;
+            int percent = range > 0 ? progressBar.Value * 100 / range : 0;
 
-            Text =  $"{_titleRoot} - {percent}% complete";
+            Text = $"{_titleRoot} - {percent}% complete";
         }
 
         private void UpdateStatusText2()
@@ -203,12 +215,14 @@ namespace ROMVault
 
             if (_errorOpen)
             {
+                cancelButton.Visible = true;
                 cancelButton.Text = "Close";
                 cancelButton.Enabled = true;
                 _bDone = true;
             }
             else
             {
+                _funcFinished?.Invoke();
                 _parentForm.Show();
                 Close();
             }
@@ -222,10 +236,13 @@ namespace ROMVault
                 {
                     _parentForm.Show();
                 }
+                _funcFinished?.Invoke();
                 Close();
             }
             else
             {
+                Cancelled = true;
+                cancelButton.Visible = true;
                 cancelButton.Text = "Cancelling";
                 cancelButton.Enabled = false;
                 _thWrk.Cancel();

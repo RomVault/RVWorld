@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Windows.Forms;
-using RVCore;
-using RVCore.RvDB;
-using RVCore.Utils;
+using RomVaultCore;
+using RomVaultCore.RvDB;
+using RomVaultCore.Utils;
 
 namespace ROMVault
 {
@@ -139,7 +139,7 @@ namespace ROMVault
             _tDat = null;
 
             if (root == null)
-                root = DB.DirTree.Child(0);
+                root = DB.DirRoot.Child(0);
 
             MakeFixFilesRecurse(root, true, scrubIt);
 
@@ -343,17 +343,17 @@ namespace ROMVault
 
                 _ts.WriteLine("Complete DAT Sets");
                 _ts.WriteLine("-----------------------------------------");
-                FindAllDats(DB.DirTree.Child(0), ReportType.Complete);
+                FindAllDats(DB.DirRoot.Child(0), ReportType.Complete);
                 _ts.WriteLine("");
                 _ts.WriteLine("");
                 _ts.WriteLine("Empty DAT Sets");
                 _ts.WriteLine("-----------------------------------------");
-                FindAllDats(DB.DirTree.Child(0), ReportType.CompletelyMissing);
+                FindAllDats(DB.DirRoot.Child(0), ReportType.CompletelyMissing);
                 _ts.WriteLine("");
                 _ts.WriteLine("");
                 _ts.WriteLine("Partial DAT Sets - (Listing Missing ROMs)");
                 _ts.WriteLine("-----------------------------------------");
-                FindAllDats(DB.DirTree.Child(0), ReportType.PartialMissing);
+                FindAllDats(DB.DirRoot.Child(0), ReportType.PartialMissing);
                 _ts.Close();
             }
         }
@@ -374,7 +374,7 @@ namespace ROMVault
 
                 _ts.WriteLine("Listing Fixes");
                 _ts.WriteLine("-----------------------------------------");
-                FindAllDats(DB.DirTree.Child(0), ReportType.Fixing);
+                FindAllDats(DB.DirRoot.Child(0), ReportType.Fixing);
                 _ts.Close();
             }
         }

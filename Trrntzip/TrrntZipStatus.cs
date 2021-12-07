@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Trrntzip
+namespace TrrntZip
 {
     [Flags]
     public enum TrrntZipStatus
@@ -13,6 +13,7 @@ namespace Trrntzip
         BadDirectorySeparator = 16,
         Unsorted = 32,
         ExtraDirectoryEnteries = 64,
-        RepeatFilesFound = 128
+        RepeatFilesFound = 128,
+        Cancel=256
     }
 }

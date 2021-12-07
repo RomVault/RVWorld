@@ -4,26 +4,17 @@ using DATReader.Utils;
 
 namespace DATReader.DatReader
 {
-    public class DatDOSReader
+    public static class DatDOSReader
     {
-        private readonly ReportError _errorReport;
-        private string _filename;
-
-        public DatDOSReader(ReportError errorReport)
+        public static bool ReadDat(string strFilename, ReportError errorReport, out DatHeader datHeader)
         {
-            _errorReport = errorReport;
-        }
-        public bool ReadDat(string strFilename, out DatHeader datHeader)
-        {
-            _filename = strFilename;
-
             using (DatFileLoader dfl = new DatFileLoader())
             {
                 datHeader = new DatHeader { BaseDir = new DatDir(DatFileType.UnSet) };
                 int errorCode = dfl.LoadDat(strFilename, System.Text.Encoding.UTF8);
                 if (errorCode != 0)
                 {
-                    _errorReport?.Invoke(strFilename, new Win32Exception(errorCode).Message);
+                    errorReport?.Invoke(strFilename, new Win32Exception(errorCode).Message);
                     return false;
                 }
 
@@ -35,7 +26,7 @@ namespace DATReader.DatReader
                 if (dfl.Next.ToLower() == "doscenter")
                 {
                     dfl.Gn();
-                    if (!LoadHeaderFromDat(dfl, datHeader))
+                    if (!LoadHeaderFromDat(dfl, strFilename, datHeader, errorReport))
                     {
                         return false;
                     }
@@ -48,14 +39,14 @@ namespace DATReader.DatReader
                     {
                         case "game":
                             dfl.Gn();
-                            if (!LoadGameFromDat(dfl, datHeader.BaseDir))
+                            if (!LoadGameFromDat(dfl, datHeader.BaseDir, errorReport))
                             {
                                 return false;
                             }
                             dfl.Gn();
                             break;
                         default:
-                            _errorReport?.Invoke(dfl.Filename, "Error: key word '" + dfl.Next + "' not known, on line " + dfl.LineNumber);
+                            errorReport?.Invoke(dfl.Filename, "Error: key word '" + dfl.Next + "' not known, on line " + dfl.LineNumber);
                             dfl.Gn();
                             break;
                     }
@@ -66,16 +57,16 @@ namespace DATReader.DatReader
         }
 
 
-        private bool LoadHeaderFromDat(DatFileLoader dfl, DatHeader datHeader)
+        private static bool LoadHeaderFromDat(DatFileLoader dfl, string filename, DatHeader datHeader, ReportError errorReport)
         {
             if (dfl.Next != "(")
             {
-                _errorReport?.Invoke(dfl.Filename, "( not found after DOSCenter, on line " + dfl.LineNumber);
+                errorReport?.Invoke(dfl.Filename, "( not found after DOSCenter, on line " + dfl.LineNumber);
                 return false;
             }
             dfl.Gn();
 
-            datHeader.Filename = _filename;
+            datHeader.Filename = filename;
 
             while (dfl.Next != ")")
             {
@@ -126,7 +117,7 @@ namespace DATReader.DatReader
                             dfl.Gn();
                             break;
                         default:
-                            _errorReport?.Invoke(dfl.Filename, "Error: key word '" + dfl.Next + "' not known in DOSReader, on line " + dfl.LineNumber);
+                            errorReport?.Invoke(dfl.Filename, "Error: key word '" + dfl.Next + "' not known in DOSReader, on line " + dfl.LineNumber);
                             dfl.Gn();
                             break;
                     }
@@ -136,11 +127,11 @@ namespace DATReader.DatReader
         }
 
 
-        private bool LoadGameFromDat(DatFileLoader dfl, DatDir parentDir)
+        private static bool LoadGameFromDat(DatFileLoader dfl, DatDir parentDir, ReportError errorReport)
         {
             if (dfl.Next != "(")
             {
-                _errorReport?.Invoke(dfl.Filename, "( not found after game, on line " + dfl.LineNumber);
+                errorReport?.Invoke(dfl.Filename, "( not found after game, on line " + dfl.LineNumber);
                 return false;
             }
             dfl.Gn();
@@ -149,7 +140,7 @@ namespace DATReader.DatReader
 
             if (sNext != "name")
             {
-                _errorReport?.Invoke(dfl.Filename, "Name not found as first object in ( ), on line " + dfl.LineNumber);
+                errorReport?.Invoke(dfl.Filename, "Name not found as first object in ( ), on line " + dfl.LineNumber);
                 return false;
             }
 
@@ -169,7 +160,7 @@ namespace DATReader.DatReader
                 {
                     case "file":
                         dfl.Gn();
-                        if (!LoadFileFromDat(dfl, dDir))
+                        if (!LoadFileFromDat(dfl, dDir, errorReport))
                         {
                             return false;
                         }
@@ -177,14 +168,14 @@ namespace DATReader.DatReader
                         break;
                     case "rom":
                         dfl.Gn();
-                        if (!LoadFileFromDat(dfl, dDir))
+                        if (!LoadFileFromDat(dfl, dDir, errorReport))
                         {
                             return false;
                         }
                         dfl.Gn();
                         break;
                     default:
-                        _errorReport?.Invoke(dfl.Filename, "Error: key word '" + dfl.Next + "' not known in game, on line " + dfl.LineNumber);
+                        errorReport?.Invoke(dfl.Filename, "Error: key word '" + dfl.Next + "' not known in game, on line " + dfl.LineNumber);
                         dfl.Gn();
                         break;
                 }
@@ -193,18 +184,18 @@ namespace DATReader.DatReader
             return true;
         }
 
-        private bool LoadFileFromDat(DatFileLoader dfl, DatDir parentDir)
+        private static bool LoadFileFromDat(DatFileLoader dfl, DatDir parentDir, ReportError errorReport)
         {
             if (dfl.Next != "(")
             {
-                _errorReport?.Invoke(dfl.Filename, "( not found after file, on line " + dfl.LineNumber);
+                errorReport?.Invoke(dfl.Filename, "( not found after file, on line " + dfl.LineNumber);
                 return false;
             }
             dfl.Gn();
 
             if (dfl.Next.ToLower() != "name")
             {
-                _errorReport?.Invoke(dfl.Filename, "Name not found as first object in ( ), on line " + dfl.LineNumber);
+                errorReport?.Invoke(dfl.Filename, "Name not found as first object in ( ), on line " + dfl.LineNumber);
                 return false;
             }
 
@@ -232,7 +223,7 @@ namespace DATReader.DatReader
                         dfl.Gn();
                         break;
                     default:
-                        _errorReport?.Invoke(dfl.Filename, "Error: key word '" + dfl.Next + "' not known in rom, on line " + dfl.LineNumber);
+                        errorReport?.Invoke(dfl.Filename, "Error: key word '" + dfl.Next + "' not known in rom, on line " + dfl.LineNumber);
                         dfl.Gn();
                         break;
                 }

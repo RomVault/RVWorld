@@ -1,6 +1,6 @@
 ﻿using System;
 using System.IO;
-using Compress.Utils;
+using Compress.Support.Utils;
 using Path = RVIO.Path;
 using FileInfo = RVIO.FileInfo;
 using FileStream = RVIO.FileStream;
@@ -27,41 +27,22 @@ namespace Compress.File
             return 1;
         }
 
-        public string Filename(int i)
+        public LocalFile GetLocalFile(int i)
         {
-            return Path.GetFileName(ZipFilename);
+            LocalFile lf = new()
+            {
+                Filename = Path.GetFileName(ZipFilename),
+                UncompressedSize = _fileInfo != null ? (ulong)_fileInfo.Length : (ulong)_inStream.Length,
+                CRC = _crc,
+                IsDirectory = RVIO.Directory.Exists(ZipFilename),
+                ModifiedTime = _fileInfo?.LastWriteTime,
+                AccessedTime = _fileInfo?.LastAccessTime,
+                CreatedTime = _fileInfo?.CreationTime
+
+            };
+            return lf;
         }
 
-        public bool IsDirectory(int i)
-        {
-            return RVIO.Directory.Exists(ZipFilename);
-        }
-
-        public ulong UncompressedSize(int i)
-        {
-            return _fileInfo != null ? (ulong)_fileInfo.Length : (ulong)_inStream.Length;
-        }
-
-        public ulong? LocalHeader(int i)
-        {
-            return 0;
-        }
-
-        public ZipReturn FileStatus(int i)
-        {
-            return ZipReturn.ZipGood;
-        }
-
-        public byte[] CRC32(int i)
-        {
-            return _crc;
-        }
-
-        public long LastModified(int i)
-        {
-            return _fileInfo.LastWriteTime;
-        }
-     
         public ZipReturn ZipFileCreate(string newFilename)
         {
             if (ZipOpen != ZipOpenType.Closed)
@@ -69,7 +50,7 @@ namespace Compress.File
                 return ZipReturn.ZipFileAlreadyOpen;
             }
 
-            DirUtil.CreateDirForFile(newFilename);
+            CompressUtils.CreateDirForFile(newFilename);
             _fileInfo = new FileInfo(newFilename);
 
             int errorCode = FileStream.OpenFileWrite(newFilename, out _inStream);
@@ -158,12 +139,6 @@ namespace Compress.File
             }
             ZipOpen = ZipOpenType.OpenRead;
 
-            if (!readHeaders)
-            {
-                return ZipReturn.ZipGood;
-            }
-
-            //return ZipFileReadHeaders();
             return ZipReturn.ZipGood;
         }
 
@@ -195,7 +170,7 @@ namespace Compress.File
 
         public void ZipFileCloseFailed()
         {
-            throw new NotImplementedException();
+            //throw new NotImplementedException();
         }
 
         public ZipReturn ZipFileOpenReadStream(int index, out Stream stream, out ulong streamSize)

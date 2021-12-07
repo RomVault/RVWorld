@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using Compress.SevenZip.Structure;
-using Compress.Utils;
+using Compress.Support.Utils;
 using FileInfo = RVIO.FileInfo;
 using FileStream = RVIO.FileStream;
 
@@ -73,7 +73,7 @@ namespace Compress.SevenZip
         {
             try
             {
-                SignatureHeader signatureHeader = new SignatureHeader();
+                SignatureHeader signatureHeader = new();
                 if (!signatureHeader.Read(_zipFs))
                 {
                     return ZipReturn.ZipSignatureError;
@@ -115,27 +115,27 @@ namespace Compress.SevenZip
         }
 
 
-        private void PopulateLocalFiles(out List<LocalFile> localFiles)
+        private void PopulateLocalFiles(out List<SevenZipLocalFile> localFiles)
         {
             int emptyFileIndex = 0;
             int folderIndex = 0;
             int unpackedStreamsIndex = 0;
             ulong streamOffset = 0;
-            localFiles = new List<LocalFile>();
+            localFiles = new List<SevenZipLocalFile>();
 
             if (_header == null)
                 return;
 
             for (int i = 0; i < _header.FileInfo.Names.Length; i++)
             {
-                LocalFile lf = new LocalFile { FileName = _header.FileInfo.Names[i] };
+                SevenZipLocalFile lf = new() { Filename = _header.FileInfo.Names[i] };
 
                 if ((_header.FileInfo.EmptyStreamFlags == null) || !_header.FileInfo.EmptyStreamFlags[i])
                 {
                     lf.StreamIndex = folderIndex;
                     lf.StreamOffset = streamOffset;
                     lf.UncompressedSize = _header.StreamsInfo.Folders[folderIndex].UnpackedStreamInfo[unpackedStreamsIndex].UnpackedSize;
-                    lf.CRC = Util.uinttobytes(_header.StreamsInfo.Folders[folderIndex].UnpackedStreamInfo[unpackedStreamsIndex].Crc);
+                    lf.CRC = Util.UIntToBytes(_header.StreamsInfo.Folders[folderIndex].UnpackedStreamInfo[unpackedStreamsIndex].Crc);
 
                     streamOffset += lf.UncompressedSize;
                     unpackedStreamsIndex++;
@@ -155,17 +155,19 @@ namespace Compress.SevenZip
 
                     if (lf.IsDirectory)
                     {
-                        if (lf.FileName.Substring(lf.FileName.Length - 1, 1) != "/")
+                        if (lf.Filename.Substring(lf.Filename.Length - 1, 1) != "/")
                         {
-                            lf.FileName += "/";
+                            lf.Filename += "/";
                         }
                     }
                 }
-
+                
                 if (_header.FileInfo.TimeLastWrite != null)
-                {
-                    lf.LastModified = DateTime.FromFileTimeUtc((long)_header.FileInfo.TimeLastWrite[i]).Ticks;
-                }
+                    lf.ModifiedTime = DateTime.FromFileTimeUtc((long)_header.FileInfo.TimeLastWrite[i]).Ticks;
+                if (_header.FileInfo.TimeCreation != null)
+                    lf.CreatedTime = DateTime.FromFileTimeUtc((long)_header.FileInfo.TimeCreation[i]).Ticks;
+                if (_header.FileInfo.TimeLastAccess != null)
+                    lf.AccessedTime = DateTime.FromFileTimeUtc((long)_header.FileInfo.TimeLastAccess[i]).Ticks;
 
                 localFiles.Add(lf);
             }

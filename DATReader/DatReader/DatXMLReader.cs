@@ -5,15 +5,15 @@ using DATReader.Utils;
 
 namespace DATReader.DatReader
 {
-    public class DatXmlReader
+    public static class DatXmlReader
     {
-        private string _filename;
-        public bool ReadDat(XmlDocument doc, string strFilename, out DatHeader datHeader)
+        // new version of this file also reads rvdats
+
+        public static bool ReadDat(XmlDocument doc, string strFilename, out DatHeader datHeader)
         {
             datHeader = new DatHeader { BaseDir = new DatDir(DatFileType.UnSet) };
-            _filename = strFilename;
 
-            if (!LoadHeaderFromDat(doc, datHeader))
+            if (!LoadHeaderFromDat(doc, strFilename, datHeader))
             {
                 return false;
             }
@@ -53,12 +53,12 @@ namespace DATReader.DatReader
             return true;
         }
 
-        public bool ReadMameDat(XmlDocument doc, string strFilename, out DatHeader datHeader)
+        public static bool ReadMameDat(XmlDocument doc, string strFilename, out DatHeader datHeader)
         {
             datHeader = new DatHeader { BaseDir = new DatDir(DatFileType.UnSet) };
-            _filename = strFilename;
+            datHeader.MameXML = true;
 
-            if (!LoadMameHeaderFromDat(doc, datHeader))
+            if (!LoadMameHeaderFromDat(doc, strFilename, datHeader))
             {
                 return false;
             }
@@ -100,7 +100,7 @@ namespace DATReader.DatReader
         }
 
 
-        private bool LoadHeaderFromDat(XmlDocument doc, DatHeader datHeader)
+        private static bool LoadHeaderFromDat(XmlDocument doc, string filename, DatHeader datHeader)
         {
             if (doc.DocumentElement == null)
             {
@@ -108,7 +108,7 @@ namespace DATReader.DatReader
             }
             XmlNode head = doc.DocumentElement.SelectSingleNode("header");
 
-            datHeader.Filename = _filename;
+            datHeader.Filename = filename;
 
             if (head == null)
             {
@@ -143,6 +143,7 @@ namespace DATReader.DatReader
 
                 // noautodir, nogame
                 datHeader.Dir = VarFix.String(packingNode.Attributes.GetNamedItem("dir")).ToLower();
+
             }
 
             // Look for: <notzipped>true</notzipped>
@@ -152,7 +153,7 @@ namespace DATReader.DatReader
             return true;
         }
 
-        private bool LoadMameHeaderFromDat(XmlDocument doc, DatHeader datHeader)
+        private static bool LoadMameHeaderFromDat(XmlDocument doc, string filename, DatHeader datHeader)
         {
             if (doc.DocumentElement == null)
             {
@@ -165,7 +166,7 @@ namespace DATReader.DatReader
                 return false;
             }
 
-            datHeader.Filename = _filename;
+            datHeader.Filename = filename;
             datHeader.Name = VarFix.String(head.Attributes.GetNamedItem("build"));
             datHeader.Description = VarFix.String(head.Attributes.GetNamedItem("build"));
 
@@ -215,7 +216,7 @@ namespace DATReader.DatReader
                 return;
             }
 
-            DatGame dGame=new DatGame();
+            DatGame dGame = new DatGame();
             DatDir dDir = new DatDir(DatFileType.UnSet)
             {
                 Name = VarFix.String(gameNode.Attributes.GetNamedItem("name")),
@@ -282,15 +283,6 @@ namespace DATReader.DatReader
                     LoadDeviceRef(dGame, deviceRef[i]);
                 }
             }
-
-            XmlNodeList slotList = gameNode.SelectNodes("slot");
-            if (slotList != null)
-            {
-                for (int i = 0; i < slotList.Count; i++)
-                {
-                    LoadSlot(dGame, slotList[i]);
-                }
-            }
         }
 
         private static void LoadRomFromDat(DatDir parentDir, XmlNode romNode)
@@ -310,7 +302,7 @@ namespace DATReader.DatReader
                 Merge = VarFix.String(romNode.Attributes.GetNamedItem("merge")),
                 Status = VarFix.ToLower(romNode.Attributes.GetNamedItem("status")),
                 Region = VarFix.ToLower(romNode.Attributes.GetNamedItem("region")),
-                DateModified =VarFix.String(romNode.Attributes.GetNamedItem("date")),
+                DateModified = VarFix.String(romNode.Attributes.GetNamedItem("date")),
                 //DateCreated = VarFix.String(romNode.Attributes.GetNamedItem("CreationDate")),
                 //DateAccessed = VarFix.String(romNode.Attributes.GetNamedItem("LastAccessDate")),
             };
@@ -327,7 +319,7 @@ namespace DATReader.DatReader
 
             DatFile rvRom = new DatFile(DatFileType.UnSet)
             {
-                Name = VarFix.String(romNode.Attributes.GetNamedItem("name")) + ".chd",
+                Name = VarFix.CleanCHD(romNode.Attributes.GetNamedItem("name")),
                 SHA1 = VarFix.CleanMD5SHA1(romNode.Attributes.GetNamedItem("sha1"), 40),
                 MD5 = VarFix.CleanMD5SHA1(romNode.Attributes.GetNamedItem("md5"), 32),
                 Merge = VarFix.String(romNode.Attributes.GetNamedItem("merge")),
@@ -353,26 +345,6 @@ namespace DATReader.DatReader
             if (dGame.device_ref == null)
                 dGame.device_ref = new List<string>();
             dGame.device_ref.Add(name);
-        }
-
-        private static void LoadSlot(DatGame dGame, XmlNode slot)
-        {
-            XmlNodeList slotList = slot.SelectNodes("slotoption");
-            if (slotList == null)
-                return;
-
-            for (int i = 0; i < slotList.Count; i++)
-            {
-                if (slotList[i].Attributes == null)
-                    continue;
-
-                string name = VarFix.String(slotList[i].Attributes.GetNamedItem("devname"));
-
-                if (dGame.slot == null)
-                    dGame.slot = new List<string>();
-
-                dGame.slot.Add(name);
-            }
         }
     }
 }

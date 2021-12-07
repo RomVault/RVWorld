@@ -4,9 +4,9 @@ using RVIO;
 
 namespace DATReader.DatWriter
 {
-    public class DatXMLWriter
+    public static class DatXMLWriter
     {
-        public void WriteDat(string strFilename, DatHeader datHeader, bool newStyle = false)
+        public static void WriteDat(string strFilename, DatHeader datHeader, bool newStyle = false)
         {
             string dir = Path.GetDirectoryName(strFilename);
             if (!string.IsNullOrWhiteSpace(dir) && !Directory.Exists(dir))
@@ -14,24 +14,36 @@ namespace DATReader.DatWriter
 
             using (DatStreamWriter sw = new DatStreamWriter(strFilename))
             {
-                sw.WriteLine("<?xml version=\"1.0\"?>");
-                if (newStyle)
-                    sw.WriteLine("<RVDatFile>", 1);
-                else
-                    sw.WriteLine("<DatFile>", 1);
-
-                WriteHeader(sw, datHeader);
-
-                writeBase(sw, datHeader.BaseDir, newStyle);
-
-                if (newStyle)
-                    sw.WriteLine("</RVDatFile>", -1);
-                else
-                    sw.WriteLine("</DatFile>", -1);
+                WriteToStream(sw, datHeader, newStyle);
+            }
+        }
+        public static void WriteDat(System.IO.Stream strOut, DatHeader datHeader, bool newStyle = false)
+        {
+            using (DatStreamWriter sw = new DatStreamWriter(strOut))
+            {
+                WriteToStream(sw, datHeader, newStyle);
             }
         }
 
-        private void WriteHeader(DatStreamWriter sw, DatHeader datHeader)
+        private static void WriteToStream(DatStreamWriter sw, DatHeader datHeader, bool newStyle)
+        {
+            sw.WriteLine("<?xml version=\"1.0\"?>");
+            if (newStyle)
+                sw.WriteLine("<RVDatFile>", 1);
+            else
+                sw.WriteLine("<DatFile>", 1);
+
+            WriteHeader(sw, datHeader);
+
+            writeBase(sw, datHeader.BaseDir, newStyle);
+
+            if (newStyle)
+                sw.WriteLine("</RVDatFile>", -1);
+            else
+                sw.WriteLine("</DatFile>", -1);
+        }
+
+        private static void WriteHeader(DatStreamWriter sw, DatHeader datHeader)
         {
             sw.WriteLine("<header>", 1);
             sw.WriteNode("name", datHeader.Name);
@@ -53,7 +65,7 @@ namespace DATReader.DatWriter
             sw.WriteLine("</header>", -1);
         }
 
-        private void writeBase(DatStreamWriter sw, DatDir baseDirIn, bool newStyle)
+        private static void writeBase(DatStreamWriter sw, DatDir baseDirIn, bool newStyle)
         {
             DatBase[] dirChildren = baseDirIn.ToArray();
 
@@ -61,8 +73,7 @@ namespace DATReader.DatWriter
                 return;
             foreach (DatBase baseObj in dirChildren)
             {
-                DatDir baseDir = baseObj as DatDir;
-                if (baseDir != null)
+                if (baseObj is DatDir baseDir)
                 {
                     if (baseDir.DGame != null)
                     {
@@ -93,12 +104,17 @@ namespace DATReader.DatWriter
 
                         if (!g.IsEmuArc)
                         {
-                            //         sw.WriteItem("cloneof", g.CloneOf);
-                            //         sw.WriteItem("romof", g.RomOf);
+                            sw.WriteItem("cloneof", g.CloneOf);
+                            sw.WriteItem("romof", g.RomOf);
                         }
+                        if (!string.IsNullOrWhiteSpace(g.IsBios) && g.IsBios != "no") sw.WriteItem("isbios", g.IsBios);
+                        if (!string.IsNullOrWhiteSpace(g.IsDevice) && g.IsDevice != "no") sw.WriteItem("isdevice", g.IsDevice);
+                        if (!string.IsNullOrWhiteSpace(g.Runnable) && g.Runnable != "yes") sw.WriteItem("runnable", g.Runnable);
                         sw.WriteEnd(@">", 1);
 
                         sw.WriteNode("description", g.Description);
+                        //if (newStyle && !string.IsNullOrWhiteSpace(g.Comments))
+                        //    sw.WriteNode("comments", g.Comments);
                         if (g.IsEmuArc)
                         {
                             sw.WriteLine("<tea>", 1);
@@ -126,6 +142,15 @@ namespace DATReader.DatWriter
                         }
 
                         writeBase(sw, baseDir, newStyle);
+
+                        if (g.device_ref != null)
+                        {
+                            foreach (string d in g.device_ref)
+                            {
+                                sw.WriteLine($@"<device_ref name=""{d}""/>");
+                            }
+                        }
+
                         sw.WriteLine(newStyle ? @"</set>" : @"</game>", -1);
                     }
                     else
@@ -146,15 +171,15 @@ namespace DATReader.DatWriter
                         //sw.WriteItem("merge", baseRom.Merge);
                         if (baseRom.DateModified != "1996/12/24 23:32:00")
                             sw.WriteItem("date", baseRom.DateModified);
-                        if (baseRom.DateCreated != null)
-                            sw.WriteItem("cDate", baseRom.DateCreated);
-                        if (baseRom.DateAccessed!=null)
-                            sw.WriteItem("aDate",baseRom.DateAccessed);
                         sw.WriteEnd("/>");
                     }
                     else
                     {
-                        sw.Write(newStyle ? @"<file" : @"<rom");
+                        if (baseRom.isDisk)
+                            sw.Write(@"<disk");
+                        else
+                            sw.Write(newStyle ? @"<file" : @"<rom");
+
                         sw.WriteItem("name", baseRom.Name);
                         //sw.WriteItem("merge", baseRom.Merge);
                         sw.WriteItem("size", baseRom.Size);
@@ -163,10 +188,6 @@ namespace DATReader.DatWriter
                         sw.WriteItem("md5", baseRom.MD5);
                         if (baseRom.DateModified != "1996/12/24 23:32:00")
                             sw.WriteItem("date", baseRom.DateModified);
-                        if (baseRom.DateCreated != null)
-                            sw.WriteItem("cDate", baseRom.DateCreated);
-                        if (baseRom.DateAccessed != null)
-                            sw.WriteItem("aDate", baseRom.DateAccessed);
                         if (baseRom.Status != null && baseRom.Status.ToLower() != "good")
                             sw.WriteItem("status", baseRom.Status);
                         sw.WriteEnd("/>");
@@ -177,12 +198,22 @@ namespace DATReader.DatWriter
 
         private static string Etxt(string e)
         {
-            string ret = e;
-            ret = ret.Replace("&", "&amp;");
-            ret = ret.Replace("\"", "&quot;");
-            ret = ret.Replace("'", "&apos;");
-            ret = ret.Replace("<", "&lt;");
-            ret = ret.Replace(">", "&gt;");
+            string ret = "";
+            foreach (char c in e)
+            {
+                if (c == '&') { ret += "&amp;"; continue; }
+                if (c == '\"') { ret += "&quot;"; continue; }
+                if (c == '\'') { ret += "&apos;"; continue; }
+                if (c == '<') { ret += "&lt;"; continue; }
+                if (c == '>') { ret += "&gt;"; continue; }
+                //if (c == 127) { ret += "&#7f;"; continue; }
+                if (c < ' ')
+                {
+                    ret += $"&#{((int)c).ToString("X2")};";
+                    continue;
+                }
+                ret += c;
+            }
 
             return ret;
         }
@@ -201,6 +232,11 @@ namespace DATReader.DatWriter
             {
                 _sw = File.CreateText(path);
             }
+            public DatStreamWriter(System.IO.Stream stOut)
+            {
+                _sw= new System.IO.StreamWriter(stOut);
+            }
+
             public void Dispose()
             {
                 _sw.Close();

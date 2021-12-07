@@ -1,9 +1,36 @@
 <?xml version="1.0" encoding="utf-8"?>
-<wsdl:definitions xmlns:wsap="http://schemas.xmlsoap.org/ws/2004/08/addressing/policy" xmlns:wsa10="http://www.w3.org/2005/08/addressing" xmlns:tns="http://tempuri.org/" xmlns:msc="http://schemas.microsoft.com/ws/2005/12/wsdl/contract" xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:wsx="http://schemas.xmlsoap.org/ws/2004/09/mex" xmlns:wsp="http://schemas.xmlsoap.org/ws/2004/09/policy" xmlns:wsam="http://www.w3.org/2007/05/addressing/metadata" xmlns:wsa="http://schemas.xmlsoap.org/ws/2004/08/addressing" xmlns:wsaw="http://www.w3.org/2006/05/addressing/wsdl" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:soap12="http://schemas.xmlsoap.org/wsdl/soap12/" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd" xmlns:xsd="http://www.w3.org/2001/XMLSchema" name="RVService" targetNamespace="http://tempuri.org/" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">
+<wsdl:definitions xmlns:wsam="http://www.w3.org/2007/05/addressing/metadata" xmlns:wsx="http://schemas.xmlsoap.org/ws/2004/09/mex" xmlns:wsap="http://schemas.xmlsoap.org/ws/2004/08/addressing/policy" xmlns:msc="http://schemas.microsoft.com/ws/2005/12/wsdl/contract" xmlns:wsp="http://schemas.xmlsoap.org/ws/2004/09/policy" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd" xmlns:soap12="http://schemas.xmlsoap.org/wsdl/soap12/" xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:tns="http://tempuri.org/" xmlns:wsa10="http://www.w3.org/2005/08/addressing" xmlns:wsaw="http://www.w3.org/2006/05/addressing/wsdl" xmlns:wsa="http://schemas.xmlsoap.org/ws/2004/08/addressing" name="RVService" targetNamespace="http://tempuri.org/" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">
+  <wsp:Policy wsu:Id="BasicHttpsBinding_IRVService_policy">
+    <wsp:ExactlyOne>
+      <wsp:All>
+        <sp:TransportBinding xmlns:sp="http://schemas.xmlsoap.org/ws/2005/07/securitypolicy">
+          <wsp:Policy>
+            <sp:TransportToken>
+              <wsp:Policy>
+                <sp:HttpsToken RequireClientCertificate="false" />
+              </wsp:Policy>
+            </sp:TransportToken>
+            <sp:AlgorithmSuite>
+              <wsp:Policy>
+                <sp:Basic256 />
+              </wsp:Policy>
+            </sp:AlgorithmSuite>
+            <sp:Layout>
+              <wsp:Policy>
+                <sp:Strict />
+              </wsp:Policy>
+            </sp:Layout>
+          </wsp:Policy>
+        </sp:TransportBinding>
+      </wsp:All>
+    </wsp:ExactlyOne>
+  </wsp:Policy>
   <wsdl:types>
     <xsd:schema targetNamespace="http://tempuri.org/Imports">
       <xsd:import schemaLocation="http://services.romvault.com/RVService.svc?xsd=xsd0" namespace="http://tempuri.org/" />
       <xsd:import schemaLocation="http://services.romvault.com/RVService.svc?xsd=xsd1" namespace="http://schemas.microsoft.com/2003/10/Serialization/" />
+      <xsd:import schemaLocation="http://services.romvault.com/RVService.svc?xsd=xsd2" namespace="http://schemas.microsoft.com/2003/10/Serialization/Arrays" />
+      <xsd:import schemaLocation="http://services.romvault.com/RVService.svc?xsd=xsd3" namespace="http://schemas.datacontract.org/2004/07/RVServices" />
     </xsd:schema>
   </wsdl:types>
   <wsdl:message name="IRVService_StartUp_InputMessage">
@@ -29,18 +56,6 @@
   </wsdl:message>
   <wsdl:message name="IRVService_SendUser_OutputMessage">
     <wsdl:part name="parameters" element="tns:SendUserResponse" />
-  </wsdl:message>
-  <wsdl:message name="IRVService_CheckPassword_InputMessage">
-    <wsdl:part name="parameters" element="tns:CheckPassword" />
-  </wsdl:message>
-  <wsdl:message name="IRVService_CheckPassword_OutputMessage">
-    <wsdl:part name="parameters" element="tns:CheckPasswordResponse" />
-  </wsdl:message>
-  <wsdl:message name="IRVService_CheckPasswordV_InputMessage">
-    <wsdl:part name="parameters" element="tns:CheckPasswordV" />
-  </wsdl:message>
-  <wsdl:message name="IRVService_CheckPasswordV_OutputMessage">
-    <wsdl:part name="parameters" element="tns:CheckPasswordVResponse" />
   </wsdl:message>
   <wsdl:message name="IRVService_GetLatestVersion_InputMessage">
     <wsdl:part name="parameters" element="tns:GetLatestVersion" />
@@ -78,6 +93,60 @@
   <wsdl:message name="IRVService_SendErrorMessageV2_OutputMessage">
     <wsdl:part name="parameters" element="tns:SendErrorMessageV2Response" />
   </wsdl:message>
+  <wsdl:message name="IRVService_CheckFCUser_InputMessage">
+    <wsdl:part name="parameters" element="tns:CheckFCUser" />
+  </wsdl:message>
+  <wsdl:message name="IRVService_CheckFCUser_OutputMessage">
+    <wsdl:part name="parameters" element="tns:CheckFCUserResponse" />
+  </wsdl:message>
+  <wsdl:message name="IRVService_GetFCUsername_InputMessage">
+    <wsdl:part name="parameters" element="tns:GetFCUsername" />
+  </wsdl:message>
+  <wsdl:message name="IRVService_GetFCUsername_OutputMessage">
+    <wsdl:part name="parameters" element="tns:GetFCUsernameResponse" />
+  </wsdl:message>
+  <wsdl:message name="IRVService_CheckDVUser_InputMessage">
+    <wsdl:part name="parameters" element="tns:CheckDVUser" />
+  </wsdl:message>
+  <wsdl:message name="IRVService_CheckDVUser_OutputMessage">
+    <wsdl:part name="parameters" element="tns:CheckDVUserResponse" />
+  </wsdl:message>
+  <wsdl:message name="IRVService_GetDVInfo_InputMessage">
+    <wsdl:part name="parameters" element="tns:GetDVInfo" />
+  </wsdl:message>
+  <wsdl:message name="IRVService_GetDVInfo_OutputMessage">
+    <wsdl:part name="parameters" element="tns:GetDVInfoResponse" />
+  </wsdl:message>
+  <wsdl:message name="IRVService_GetDVGroupInfo_InputMessage">
+    <wsdl:part name="parameters" element="tns:GetDVGroupInfo" />
+  </wsdl:message>
+  <wsdl:message name="IRVService_GetDVGroupInfo_OutputMessage">
+    <wsdl:part name="parameters" element="tns:GetDVGroupInfoResponse" />
+  </wsdl:message>
+  <wsdl:message name="IRVService_ListOfGroups_InputMessage">
+    <wsdl:part name="parameters" element="tns:ListOfGroups" />
+  </wsdl:message>
+  <wsdl:message name="IRVService_ListOfGroups_OutputMessage">
+    <wsdl:part name="parameters" element="tns:ListOfGroupsResponse" />
+  </wsdl:message>
+  <wsdl:message name="IRVService_ListOfGroupsV2_InputMessage">
+    <wsdl:part name="parameters" element="tns:ListOfGroupsV2" />
+  </wsdl:message>
+  <wsdl:message name="IRVService_ListOfGroupsV2_OutputMessage">
+    <wsdl:part name="parameters" element="tns:ListOfGroupsV2Response" />
+  </wsdl:message>
+  <wsdl:message name="IRVService_GetDVDat_InputMessage">
+    <wsdl:part name="parameters" element="tns:GetDVDat" />
+  </wsdl:message>
+  <wsdl:message name="IRVService_GetDVDat_OutputMessage">
+    <wsdl:part name="parameters" element="tns:GetDVDatResponse" />
+  </wsdl:message>
+  <wsdl:message name="IRVService_GetDVCue_InputMessage">
+    <wsdl:part name="parameters" element="tns:GetDVCue" />
+  </wsdl:message>
+  <wsdl:message name="IRVService_GetDVCue_OutputMessage">
+    <wsdl:part name="parameters" element="tns:GetDVCueResponse" />
+  </wsdl:message>
   <wsdl:portType name="IRVService">
     <wsdl:operation name="StartUp">
       <wsdl:input wsaw:Action="http://tempuri.org/IRVService/StartUp" message="tns:IRVService_StartUp_InputMessage" />
@@ -94,14 +163,6 @@
     <wsdl:operation name="SendUser">
       <wsdl:input wsaw:Action="http://tempuri.org/IRVService/SendUser" message="tns:IRVService_SendUser_InputMessage" />
       <wsdl:output wsaw:Action="http://tempuri.org/IRVService/SendUserResponse" message="tns:IRVService_SendUser_OutputMessage" />
-    </wsdl:operation>
-    <wsdl:operation name="CheckPassword">
-      <wsdl:input wsaw:Action="http://tempuri.org/IRVService/CheckPassword" message="tns:IRVService_CheckPassword_InputMessage" />
-      <wsdl:output wsaw:Action="http://tempuri.org/IRVService/CheckPasswordResponse" message="tns:IRVService_CheckPassword_OutputMessage" />
-    </wsdl:operation>
-    <wsdl:operation name="CheckPasswordV">
-      <wsdl:input wsaw:Action="http://tempuri.org/IRVService/CheckPasswordV" message="tns:IRVService_CheckPasswordV_InputMessage" />
-      <wsdl:output wsaw:Action="http://tempuri.org/IRVService/CheckPasswordVResponse" message="tns:IRVService_CheckPasswordV_OutputMessage" />
     </wsdl:operation>
     <wsdl:operation name="GetLatestVersion">
       <wsdl:input wsaw:Action="http://tempuri.org/IRVService/GetLatestVersion" message="tns:IRVService_GetLatestVersion_InputMessage" />
@@ -126,6 +187,42 @@
     <wsdl:operation name="SendErrorMessageV2">
       <wsdl:input wsaw:Action="http://tempuri.org/IRVService/SendErrorMessageV2" message="tns:IRVService_SendErrorMessageV2_InputMessage" />
       <wsdl:output wsaw:Action="http://tempuri.org/IRVService/SendErrorMessageV2Response" message="tns:IRVService_SendErrorMessageV2_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="CheckFCUser">
+      <wsdl:input wsaw:Action="http://tempuri.org/IRVService/CheckFCUser" message="tns:IRVService_CheckFCUser_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IRVService/CheckFCUserResponse" message="tns:IRVService_CheckFCUser_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="GetFCUsername">
+      <wsdl:input wsaw:Action="http://tempuri.org/IRVService/GetFCUsername" message="tns:IRVService_GetFCUsername_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IRVService/GetFCUsernameResponse" message="tns:IRVService_GetFCUsername_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="CheckDVUser">
+      <wsdl:input wsaw:Action="http://tempuri.org/IRVService/CheckDVUser" message="tns:IRVService_CheckDVUser_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IRVService/CheckDVUserResponse" message="tns:IRVService_CheckDVUser_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="GetDVInfo">
+      <wsdl:input wsaw:Action="http://tempuri.org/IRVService/GetDVInfo" message="tns:IRVService_GetDVInfo_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IRVService/GetDVInfoResponse" message="tns:IRVService_GetDVInfo_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="GetDVGroupInfo">
+      <wsdl:input wsaw:Action="http://tempuri.org/IRVService/GetDVGroupInfo" message="tns:IRVService_GetDVGroupInfo_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IRVService/GetDVGroupInfoResponse" message="tns:IRVService_GetDVGroupInfo_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="ListOfGroups">
+      <wsdl:input wsaw:Action="http://tempuri.org/IRVService/ListOfGroups" message="tns:IRVService_ListOfGroups_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IRVService/ListOfGroupsResponse" message="tns:IRVService_ListOfGroups_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="ListOfGroupsV2">
+      <wsdl:input wsaw:Action="http://tempuri.org/IRVService/ListOfGroupsV2" message="tns:IRVService_ListOfGroupsV2_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IRVService/ListOfGroupsV2Response" message="tns:IRVService_ListOfGroupsV2_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="GetDVDat">
+      <wsdl:input wsaw:Action="http://tempuri.org/IRVService/GetDVDat" message="tns:IRVService_GetDVDat_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IRVService/GetDVDatResponse" message="tns:IRVService_GetDVDat_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="GetDVCue">
+      <wsdl:input wsaw:Action="http://tempuri.org/IRVService/GetDVCue" message="tns:IRVService_GetDVCue_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IRVService/GetDVCueResponse" message="tns:IRVService_GetDVCue_OutputMessage" />
     </wsdl:operation>
   </wsdl:portType>
   <wsdl:binding name="BasicHttpBinding_IRVService" type="tns:IRVService">
@@ -159,24 +256,6 @@
     </wsdl:operation>
     <wsdl:operation name="SendUser">
       <soap:operation soapAction="http://tempuri.org/IRVService/SendUser" style="document" />
-      <wsdl:input>
-        <soap:body use="literal" />
-      </wsdl:input>
-      <wsdl:output>
-        <soap:body use="literal" />
-      </wsdl:output>
-    </wsdl:operation>
-    <wsdl:operation name="CheckPassword">
-      <soap:operation soapAction="http://tempuri.org/IRVService/CheckPassword" style="document" />
-      <wsdl:input>
-        <soap:body use="literal" />
-      </wsdl:input>
-      <wsdl:output>
-        <soap:body use="literal" />
-      </wsdl:output>
-    </wsdl:operation>
-    <wsdl:operation name="CheckPasswordV">
-      <soap:operation soapAction="http://tempuri.org/IRVService/CheckPasswordV" style="document" />
       <wsdl:input>
         <soap:body use="literal" />
       </wsdl:input>
@@ -238,10 +317,269 @@
         <soap:body use="literal" />
       </wsdl:output>
     </wsdl:operation>
+    <wsdl:operation name="CheckFCUser">
+      <soap:operation soapAction="http://tempuri.org/IRVService/CheckFCUser" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetFCUsername">
+      <soap:operation soapAction="http://tempuri.org/IRVService/GetFCUsername" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="CheckDVUser">
+      <soap:operation soapAction="http://tempuri.org/IRVService/CheckDVUser" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetDVInfo">
+      <soap:operation soapAction="http://tempuri.org/IRVService/GetDVInfo" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetDVGroupInfo">
+      <soap:operation soapAction="http://tempuri.org/IRVService/GetDVGroupInfo" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="ListOfGroups">
+      <soap:operation soapAction="http://tempuri.org/IRVService/ListOfGroups" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="ListOfGroupsV2">
+      <soap:operation soapAction="http://tempuri.org/IRVService/ListOfGroupsV2" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetDVDat">
+      <soap:operation soapAction="http://tempuri.org/IRVService/GetDVDat" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetDVCue">
+      <soap:operation soapAction="http://tempuri.org/IRVService/GetDVCue" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+  </wsdl:binding>
+  <wsdl:binding name="BasicHttpsBinding_IRVService" type="tns:IRVService">
+    <wsp:PolicyReference URI="#BasicHttpsBinding_IRVService_policy" />
+    <soap:binding transport="http://schemas.xmlsoap.org/soap/http" />
+    <wsdl:operation name="StartUp">
+      <soap:operation soapAction="http://tempuri.org/IRVService/StartUp" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="StartUpV">
+      <soap:operation soapAction="http://tempuri.org/IRVService/StartUpV" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="StartUpV2">
+      <soap:operation soapAction="http://tempuri.org/IRVService/StartUpV2" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="SendUser">
+      <soap:operation soapAction="http://tempuri.org/IRVService/SendUser" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetLatestVersion">
+      <soap:operation soapAction="http://tempuri.org/IRVService/GetLatestVersion" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="UpdateCheck">
+      <soap:operation soapAction="http://tempuri.org/IRVService/UpdateCheck" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetUpdateLink">
+      <soap:operation soapAction="http://tempuri.org/IRVService/GetUpdateLink" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="SendErrorMessage">
+      <soap:operation soapAction="http://tempuri.org/IRVService/SendErrorMessage" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="SendErrorMessageV">
+      <soap:operation soapAction="http://tempuri.org/IRVService/SendErrorMessageV" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="SendErrorMessageV2">
+      <soap:operation soapAction="http://tempuri.org/IRVService/SendErrorMessageV2" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="CheckFCUser">
+      <soap:operation soapAction="http://tempuri.org/IRVService/CheckFCUser" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetFCUsername">
+      <soap:operation soapAction="http://tempuri.org/IRVService/GetFCUsername" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="CheckDVUser">
+      <soap:operation soapAction="http://tempuri.org/IRVService/CheckDVUser" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetDVInfo">
+      <soap:operation soapAction="http://tempuri.org/IRVService/GetDVInfo" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetDVGroupInfo">
+      <soap:operation soapAction="http://tempuri.org/IRVService/GetDVGroupInfo" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="ListOfGroups">
+      <soap:operation soapAction="http://tempuri.org/IRVService/ListOfGroups" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="ListOfGroupsV2">
+      <soap:operation soapAction="http://tempuri.org/IRVService/ListOfGroupsV2" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetDVDat">
+      <soap:operation soapAction="http://tempuri.org/IRVService/GetDVDat" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetDVCue">
+      <soap:operation soapAction="http://tempuri.org/IRVService/GetDVCue" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
   </wsdl:binding>
   <wsdl:service name="RVService">
     <wsdl:port name="BasicHttpBinding_IRVService" binding="tns:BasicHttpBinding_IRVService">
       <soap:address location="http://services.romvault.com/RVService.svc" />
+    </wsdl:port>
+    <wsdl:port name="BasicHttpsBinding_IRVService" binding="tns:BasicHttpsBinding_IRVService">
+      <soap:address location="https://services.romvault.com/RVService.svc" />
     </wsdl:port>
   </wsdl:service>
 </wsdl:definitions>

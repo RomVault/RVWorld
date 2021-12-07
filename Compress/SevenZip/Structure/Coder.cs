@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Text;
-using Compress.Utils;
+using Compress.Support.Utils;
 
 namespace Compress.SevenZip.Structure
 {
@@ -106,7 +106,7 @@ namespace Compress.SevenZip.Structure
             {
                 DecoderType = DecompressType.LZMA2;
             }
-            else if (SevenZ.supportZstd && Method.Length == 4 && Method[0] == 4 && Method[1] == 247 && Method[2] == 17 && Method[3] == 1)
+            else if (Method.Length == 4 && Method[0] == 4 && Method[1] == 247 && Method[2] == 17 && Method[3] == 1)
             {
                 DecoderType = DecompressType.ZSTD;
             }

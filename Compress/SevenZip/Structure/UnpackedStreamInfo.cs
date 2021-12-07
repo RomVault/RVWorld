@@ -1,5 +1,5 @@
 ﻿using System.Text;
-using Compress.Utils;
+using Compress.Support.Utils;
 
 namespace Compress.SevenZip.Structure
 {

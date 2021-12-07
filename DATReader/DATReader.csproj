@@ -1,83 +1,11 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+<Project Sdk="Microsoft.NET.Sdk">
+
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{2FFD495B-2ECA-49A5-983B-F2E10D64830E}</ProjectGuid>
-    <OutputType>Library</OutputType>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>DATReader</RootNamespace>
-    <AssemblyName>DATReader</AssemblyName>
-    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
-    <FileAlignment>512</FileAlignment>
-    <TargetFrameworkProfile />
+    <TargetFramework>netstandard2.0</TargetFramework>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'DebugNewDat|AnyCPU'">
-    <DebugSymbols>true</DebugSymbols>
-    <OutputPath>bin\DebugNewDat\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <DebugType>full</DebugType>
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <ErrorReport>prompt</ErrorReport>
-    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
-  </PropertyGroup>
+
   <ItemGroup>
-    <Reference Include="System" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.Xml" />
+    <ProjectReference Include="..\RVIO\RVIO.csproj" />
   </ItemGroup>
-  <ItemGroup>
-    <Compile Include="DatClean\DatClean.cs" />
-    <Compile Include="DatClean\DatSetCleanFilenames.cs" />
-    <Compile Include="DatClean\DatSetRemove.cs" />
-    <Compile Include="DatClean\DatSetMakeMergeSet.cs" />
-    <Compile Include="DatClean\DatSetMakeNonMergeSet.cs" />
-    <Compile Include="DatClean\DatSetCompressionType.cs" />
-    <Compile Include="DatSort.cs" />
-    <Compile Include="Utils\ArrByte.cs" />
-    <Compile Include="Utils\DatFindParentSets.cs" />
-    <Compile Include="DatClean\DatSetMakeSplitSet.cs" />
-    <Compile Include="DatReader\DatCmpReader.cs" />
-    <Compile Include="DatReader\DatDOSReader.cs" />
-    <Compile Include="Utils\DatFileLoader.cs" />
-    <Compile Include="DatReader\DatMessXmlReader.cs" />
-    <Compile Include="DatReader.cs" />
-    <Compile Include="DatReader\DatROMCenterReader.cs" />
-    <Compile Include="DatReader\DatXMLReader.cs" />
-    <Compile Include="Utils\AlphanumComparatorFast.cs" />
-    <Compile Include="DatStore\DatBase.cs" />
-    <Compile Include="DatStore\DatHeader.cs" />
-    <Compile Include="DatStore\DatDir.cs" />
-    <Compile Include="DatStore\DatGame.cs" />
-    <Compile Include="DatStore\DatFile.cs" />
-    <Compile Include="DatWriter\DatXMLWriter.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Utils\DatHasRomOf.cs" />
-    <Compile Include="Utils\VarFix.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\RVIO\RVIO.csproj">
-      <Project>{ff8a7a0a-6319-49e0-a6e6-df3754bffdd1}</Project>
-      <Name>RVIO</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+
 </Project>

@@ -1,5 +1,6 @@
 ﻿using System.IO;
 using System.Text;
+using Compress.Support.Utils;
 
 namespace Compress.SevenZip
 {
@@ -36,9 +37,10 @@ namespace Compress.SevenZip
 
             const string sig = "RomVault7Z01";
             byte[] rv7Zid = Util.Enc.GetBytes(sig);
-
             byte[] header = new byte[12];
             _zipFs.Read(header, 0, 12);
+            
+            
             for (int i = 0; i < 12; i++)
             {
                 if (header[i] != rv7Zid[i])
@@ -50,7 +52,7 @@ namespace Compress.SevenZip
             uint headerCRC;
             ulong headerOffset; // is location of header in file
             ulong headerSize;
-            using (BinaryReader br = new BinaryReader(_zipFs, Encoding.UTF8, true))
+            using (BinaryReader br = new(_zipFs, Encoding.UTF8, true))
             {
                 headerCRC = br.ReadUInt32();
                 headerOffset = br.ReadUInt64();
@@ -65,6 +67,7 @@ namespace Compress.SevenZip
 
             return headerSize == testHeaderLength;
         }
+
         private bool Istorrent7Z()
         {
             const int crcsz = 128;
@@ -84,7 +87,7 @@ namespace Compress.SevenZip
             int ar = _zipFs.Read(buffer, bufferPos, crcsz);
             if (ar < crcsz)
             {
-                Util.memset(buffer, bufferPos + ar, 0, crcsz - ar);
+                Util.MemSet(buffer, bufferPos + ar, 0, crcsz - ar);
             }
             bufferPos = crcsz;
 
@@ -105,12 +108,12 @@ namespace Compress.SevenZip
                 {
                     ar = kSignatureSize;
                 }
-                Util.memset(buffer, bufferPos + ar, 0, crcsz - ar);
-                Util.memcpyr(buffer, crcsz * 2 + 8, buffer, bufferPos + ar, t7ZsigSize + 4);
+                Util.MemSet(buffer, bufferPos + ar, 0, crcsz - ar);
+                Util.MemCrypt(buffer, crcsz * 2 + 8, buffer, bufferPos + ar, t7ZsigSize + 4);
             }
             else
             {
-                Util.memcpyr(buffer, crcsz * 2 + 8, buffer, crcsz * 2, t7ZsigSize + 4);
+                Util.MemCrypt(buffer, crcsz * 2 + 8, buffer, crcsz * 2, t7ZsigSize + 4);
             }
 
             foffs = _zipFs.Length;
@@ -121,15 +124,15 @@ namespace Compress.SevenZip
             buffer[crcsz * 2 + 1] = (byte)((foffs >> 8) & 0xff);
             buffer[crcsz * 2 + 2] = (byte)((foffs >> 16) & 0xff);
             buffer[crcsz * 2 + 3] = (byte)((foffs >> 24) & 0xff);
-            buffer[crcsz * 2 + 4] = 0;
-            buffer[crcsz * 2 + 5] = 0;
-            buffer[crcsz * 2 + 6] = 0;
-            buffer[crcsz * 2 + 7] = 0;
+            buffer[crcsz * 2 + 4] = (byte)((foffs >> 32) & 0xff);
+            buffer[crcsz * 2 + 5] = (byte)((foffs >> 40) & 0xff);
+            buffer[crcsz * 2 + 6] = (byte)((foffs >> 48) & 0xff);
+            buffer[crcsz * 2 + 7] = (byte)((foffs >> 56) & 0xff);
 
-            if (Util.memcmp(buffer, 0, kSignature, kSignatureSize))
+            if (Util.MemCmp(buffer, 0, kSignature, kSignatureSize))
             {
                 t7Zid[16] = buffer[crcsz * 2 + 4 + 8 + 16];
-                if (Util.memcmp(buffer, crcsz * 2 + 4 + 8, t7Zid, t7ZidSize))
+                if (Util.MemCmp(buffer, crcsz * 2 + 4 + 8, t7Zid, t7ZidSize))
                 {
                     uint inCrc32 = (uint)(buffer[crcsz * 2 + 8 + 0] +
                                            (buffer[crcsz * 2 + 8 + 1] << 8) +
@@ -141,7 +144,7 @@ namespace Compress.SevenZip
                     buffer[crcsz * 2 + 8 + 2] = 0xff;
                     buffer[crcsz * 2 + 8 + 3] = 0xff;
 
-                    uint calcCrc32 = Utils.CRC.CalculateDigest(buffer, 0, crcsz * 2 + 8 + t7ZsigSize + 4);
+                    uint calcCrc32 = CRC.CalculateDigest(buffer, 0, crcsz * 2 + 8 + t7ZsigSize + 4);
 
                     if (inCrc32 == calcCrc32)
                     {

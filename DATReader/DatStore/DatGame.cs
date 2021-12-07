@@ -19,7 +19,6 @@ namespace DATReader.DatStore
         public string Runnable;
 
         public List<string> device_ref;
-        public List<string> slot;
 
         public bool IsEmuArc;
         public string TitleId;
@@ -34,5 +33,7 @@ namespace DATReader.DatStore
         public string CRC;
         public string Source;
         public string RelatedTo;
+
+        //public string Comments;
     }
 }
