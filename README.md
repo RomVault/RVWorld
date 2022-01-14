@@ -25,6 +25,6 @@ Insert dependencies and requirements here.
 
 ## Contact
 
-Web: https://www.romvault.com
-Email: support@romvault.com
-ADC++: adcs://romvault.hopto.org:1640
+* Web: https://www.romvault.com
+* Email: support@romvault.com
+* ADC++: adcs://romvault.hopto.org:1640
