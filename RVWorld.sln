@@ -39,6 +39,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "DAT", "DAT", "{D3EDF86D-8E0
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tZip", "tZip", "{9839A9ED-8289-45BA-BA33-8FA985645E6C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RVWorldRelease", "RVWorldRelease\RVWorldRelease.csproj", "{7809A26D-80CB-4842-8456-A12C56803CF9}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -229,6 +231,16 @@ Global
 		{63CD2C3E-F5FE-499D-B414-635FC66C372D}.Release|x64.Build.0 = Release|Any CPU
 		{63CD2C3E-F5FE-499D-B414-635FC66C372D}.Release|x86.ActiveCfg = Release|Any CPU
 		{63CD2C3E-F5FE-499D-B414-635FC66C372D}.Release|x86.Build.0 = Release|Any CPU
+		{7809A26D-80CB-4842-8456-A12C56803CF9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7809A26D-80CB-4842-8456-A12C56803CF9}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{7809A26D-80CB-4842-8456-A12C56803CF9}.Debug|x64.Build.0 = Debug|Any CPU
+		{7809A26D-80CB-4842-8456-A12C56803CF9}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{7809A26D-80CB-4842-8456-A12C56803CF9}.Debug|x86.Build.0 = Debug|Any CPU
+		{7809A26D-80CB-4842-8456-A12C56803CF9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7809A26D-80CB-4842-8456-A12C56803CF9}.Release|x64.ActiveCfg = Release|Any CPU
+		{7809A26D-80CB-4842-8456-A12C56803CF9}.Release|x64.Build.0 = Release|Any CPU
+		{7809A26D-80CB-4842-8456-A12C56803CF9}.Release|x86.ActiveCfg = Release|Any CPU
+		{7809A26D-80CB-4842-8456-A12C56803CF9}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

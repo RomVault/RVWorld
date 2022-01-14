@@ -1,0 +1,36 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="Build">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{7809A26D-80CB-4842-8456-A12C56803CF9}</ProjectGuid>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <OutputPath>bin\Debug\</OutputPath>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <OutputPath>bin\Release\</OutputPath>
+  </PropertyGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <PropertyGroup>
+    <RomVaultReleaseName>RomVault</RomVaultReleaseName>
+    <RomVaultReleaseVersion>0.0.0</RomVaultReleaseVersion>
+    <RomVaultXReleaseName>RomVaultX</RomVaultXReleaseName>
+    <RomVaultXReleaseVersion>0.0.0</RomVaultXReleaseVersion>
+    <TorrentZipReleaseName>TorrentZip</TorrentZipReleaseName>
+    <TorrentZipReleaseVersion>0.0.0</TorrentZipReleaseVersion>
+    <ZipReleasePath>1</ZipReleasePath>
+  </PropertyGroup>
+  <Target Name="Build">
+    <!-- <CallTarget Targets="GetReleasesInfo" /> -->
+    <!-- <CallTarget Targets="Clean" /> -->
+    <!-- <CallTarget Condition="$(Configuration) == 'Release'" Targets="CreateILMergeFiles" /> -->
+    <!-- <CallTarget Targets="CreateReleaseFiles" /> -->
+    <!-- <CallTarget Targets="CreateOptionsFiles" /> -->
+    <!-- <CallTarget Condition="$(ZipReleasePath) == '1'" Targets="ZipReleasePath" /> -->
+    <!-- <CallTarget Targets="CreatePackagesFiles" /> -->
+  </Target>
+</Project>
