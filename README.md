@@ -2,17 +2,29 @@
 
 ## The home of RomVault 3.0
 
-RomVaultX is the DeDup'ed version of RomVault, where everything is stored using the files SHA1
-
+* CHDlib           --  Description here
 * Compress         --  7Zip & Zip compression libraries
 * DATReader        --  Reads DAT files into a Class structure
-* DATReaderTest    --  Stand alone DATReader Test
 * Dir2Dat          --  Use DATReader to perform Dir2Dat (Experimental)
-* FileHeaderReader --  No-Intro File reader code.
+* FileHeaderReader --  No-Intro File reader code
 * ROMVault         --  The UI code for ROMVault3
-* RVCore           --  The Core Engine for ROMVault3
+* RomVaultCmd      --  Commandline version of ROMVault3
+* RomVaultCore     --  The Core Engine for ROMVault3
+* RomVaultX        --  Deduped version of RomVault, where everything is stored using the file's SHA1
+* RomVaultXCore    --  The Core Engine for RomVaultX
 * RVIO             --  File code that enabled long filenames
-* RomVaultX        --  DeDup'ed Sqlite version of RomVault
-* Trrntzip         --  Trrntzip core library code
-* TrrntzipCMD      --  Commandline version of Trrntzip
-* TrrntzipUI       --  UI version of Trrntzip
+* RVWorldRelease   --  Creates packages, releases, tests, merges and pushes for Debug and Release
+* Trrntzip         --  TorrentZip core library code
+* TrrntzipCMD      --  Commandline version of TorrentZip
+* TrrntzipUI       --  UI version of TorrentZip
+* RVUnZip          --  Description here
+
+## Dependencies and Requirements
+
+Insert dependencies and requirements here.
+
+## Contact
+
+* Web: https://www.romvault.com
+* Email: support@romvault.com
+* ADC++: adcs://romvault.hopto.org:1640
