@@ -149,8 +149,6 @@ namespace ROMVault
             }
 
             _updatingGameGrid = false;
-
-            UpdateSelectedGame();
         }
 
         private static int DigitLength(int number)
@@ -266,9 +264,11 @@ namespace ROMVault
                     if (tRvDir.Game != null)
                     {
                         e.Value = tRvDir.Game.GetData(RvGame.GameData.Description);
-                    }
+					} else if (tRvDir.Dat != null) {
+						e.Value = tRvDir.Dat.GetData(RvDat.DatData.Description);
+					}
 
-                    break;
+					break;
                 case 3: // CCorrect
                     {
                         Bitmap bmp = new Bitmap(GameGrid.Columns[3].Width, 18);

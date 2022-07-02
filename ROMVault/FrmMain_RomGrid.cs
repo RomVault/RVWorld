@@ -89,26 +89,14 @@ namespace ROMVault
             {
                 RvFile tBase = tGame.Child(l);
 
-                RvFile tFile = tBase;
-                if (tFile.IsFile)
+                if (tBase.IsFile)
                 {
-                    AddRom(tFile, pathAdd, ref fileList);
+                    AddRom(tBase, pathAdd, ref fileList);
                 }
 
-                if (tGame.Dat == null)
+                if (tBase.IsDir)
                 {
-                    continue;
-                }
-
-                RvFile tDir = tBase;
-                if (!tDir.IsDir)
-                {
-                    continue;
-                }
-
-                if (tDir.Game == null)
-                {
-                    AddDir(tDir, pathAdd + tDir.Name + "/", ref fileList);
+                    AddDir(tBase, pathAdd + tBase.Name + "/", ref fileList);
                 }
             }
         }
