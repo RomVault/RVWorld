@@ -1,26 +1,31 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 
 namespace FileHeaderReader
 {
+    [Flags]
     public enum HeaderFileType
     {
         Nothing = 0,
-        ZIP,
-        GZ,
-        SevenZip,
-        RAR,
+        ZIP=1,
+        GZ=2,
+        SevenZip=3,
+        RAR=4,
 
-        CHD,
+        CHD=5,
 
-        A7800,
-        Lynx,
-        NES,
-        FDS,
-        PCE,
-        PSID,
-        SNES,
-        SPC
+        A7800=6,
+        Lynx=7,
+        NES=8,
+        FDS=9,
+        PCE=10,
+        PSID=11,
+        SNES=12,
+        SPC=13,
+
+        HeaderMask=0x1f,
+        Required=0x80
     }
 
     public static class FileHeaderReader
@@ -100,15 +105,17 @@ namespace FileHeaderReader
 
         public static bool AltHeaderFile(HeaderFileType fileType)
         {
-            return (fileType == HeaderFileType.A7800) ||
-                   (fileType == HeaderFileType.FDS) ||
-                   (fileType == HeaderFileType.Lynx) ||
-                   (fileType == HeaderFileType.NES) ||
-                   (fileType == HeaderFileType.PCE) ||
-                   (fileType == HeaderFileType.PSID) ||
-                   (fileType == HeaderFileType.SNES) ||
-                   (fileType == HeaderFileType.SPC) ||
-                   (fileType == HeaderFileType.CHD);
+            HeaderFileType header = fileType & HeaderFileType.HeaderMask;
+
+            return (header == HeaderFileType.A7800) ||
+                   (header == HeaderFileType.FDS) ||
+                   (header == HeaderFileType.Lynx) ||
+                   (header == HeaderFileType.NES) ||
+                   (header == HeaderFileType.PCE) ||
+                   (header == HeaderFileType.PSID) ||
+                   (header == HeaderFileType.SNES) ||
+                   (header == HeaderFileType.SPC) ||
+                   (header == HeaderFileType.CHD);
         }
 
         public static HeaderFileType GetType(Stream sIn, out int offset)

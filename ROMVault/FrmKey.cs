@@ -1,7 +1,7 @@
 ﻿/******************************************************
  *     ROMVault3 is written by Gordon J.              *
  *     Contact gordon@romvault.com                    *
- *     Copyright 2020                                 *
+ *     Copyright 2022                                 *
  ******************************************************/
 
 using System;
@@ -39,7 +39,9 @@ namespace ROMVault
             List<RepStatus> displayList = new List<RepStatus>
             {
                 RepStatus.Correct,
+                RepStatus.CorrectMIA,
                 RepStatus.Missing,
+                RepStatus.MissingMIA,
                 RepStatus.Unknown,
                 RepStatus.UnNeeded,
                 RepStatus.NotCollected,
@@ -47,6 +49,7 @@ namespace ROMVault
                 RepStatus.Ignore,
 
                 RepStatus.CanBeFixed,
+                RepStatus.CanBeFixedMIA,
                 RepStatus.NeededForFix,
                 RepStatus.MoveToSort,
                 RepStatus.Delete,
@@ -61,13 +64,13 @@ namespace ROMVault
 
             for (int i = 0; i < displayList.Count; i++)
             {
-                if (i == 7)
+                if (i == 8)
                 {
                     AddLabel(new Point(6, i * 46 + eOffset), new Size(538, 20), "LabelFix", "Fix Statuses");
                     eOffset += 20;
                 }
 
-                if (i == 11)
+                if (i == 12)
                 {
                     AddLabel(new Point(6, i * 46 + eOffset), new Size(538, 20), "LabelProblem", "Problem Statuses");
                     eOffset += 20;
@@ -79,13 +82,13 @@ namespace ROMVault
                     Name = "pictureBox" + i,
                     Size = new Size(48, 42),
                     TabIndex = 0,
-                    TabStop = false
+                    TabStop = false,
+                    BackColor = Color.White
                 };
 
                 Controls.Add(pictureBox);
 
-                Bitmap bm = rvImages.GetBitmap("G_" + displayList[i]);
-                pictureBox.Image = bm;
+                pictureBox.Image = rvImages.GetBitmap("G_" + displayList[i]);
 
                 Label label = new Label
                 {
@@ -104,8 +107,14 @@ namespace ROMVault
                     case RepStatus.Missing:
                         text = "Red - This ROM is missing.";
                         break;
+                    case RepStatus.MissingMIA:
+                        text = "Salmon - This ROM is known missing (MIA).";
+                        break;
                     case RepStatus.Correct:
                         text = "Green - This ROM is Correct.";
+                        break;
+                    case RepStatus.CorrectMIA:
+                        text = "SuperGreen - This ROM is a Found MIA rom, good job on finding an MIA rom.";
                         break;
                     case RepStatus.NotCollected:
                         text = "Gray - This ROM is not collected. Either it is in the parent set, or it is a 'BadDump ROM'";
@@ -130,6 +139,9 @@ namespace ROMVault
                         break;
                     case RepStatus.CanBeFixed:
                         text = "Yellow - This ROM is missing here but has been found somewhere else, and so can be fixed.";
+                        break;
+                    case RepStatus.CanBeFixedMIA:
+                        text = "SuperYellow - This ROM is MIA missing here but has been found somewhere else, and so you can fix an MIA rom.";
                         break;
                     case RepStatus.MoveToSort:
                         text = "Purple - This ROM is not found in any DAT set, and so will be moved out to ToSort.";

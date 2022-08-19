@@ -15,7 +15,7 @@ namespace DATReader.DatClean
 
     public static partial class DatClean
     {
-    
+
         public static void DirectoryExpand(DatDir dDir)
         {
             DatBase[] arrDir = dDir.ToArray();
@@ -47,14 +47,14 @@ namespace DATReader.DatClean
                             string part1 = dirName.Substring(split + 1);
 
                             db.Name = part1;
-                            DatDir dirFind = new DatDir(DatFileType.Dir) { Name = part0 };
+                            DatDir dirFind = new DatDir(part0, DatFileType.Dir);
                             if (dDir.ChildNameSearch(dirFind, out int index) != 0)
                             {
                                 dDir.ChildAdd(dirFind);
                             }
                             else
                             {
-                                dirFind = (DatDir)dDir.Child(index);
+                                dirFind = (DatDir)dDir[index];
                             }
 
                             if (part1.Length > 0)
@@ -93,6 +93,27 @@ namespace DATReader.DatClean
             }
         }
 
+        public static void CheckDeDuped(DatDir dDir)
+        {
+            DatBase[] arrDir = dDir.ToArray();
+            if (arrDir == null)
+                return;
+
+            foreach (DatBase db in arrDir)
+            {
+                if (db is DatFile dbFile)
+                {
+                    if (dbFile.Status?.ToLower() == "deduped")
+                        dbFile.DatStatus = DatFileStatus.InDatMerged;
+                }
+                if (db is DatDir ddir)
+                {
+                    CheckDeDuped(ddir);
+                }
+
+            }
+        }
+
         private static bool CheckDir(DatBase db)
         {
             DatFileType dft = db.DatFileType;
@@ -108,45 +129,5 @@ namespace DATReader.DatClean
                     return true;
             }
         }
-
-        /*
-        public static void SetCompressionMethod(DatFileType ft, bool CompressionOverrideDAT, bool FilesOnly, DatHeader dh)
-        {
-            if (!CompressionOverrideDAT)
-            {
-                switch (dh.Compression?.ToLower())
-                {
-                    case "unzip":
-                    case "file":
-                        ft = DatFileType.Dir;
-                        break;
-                    case "7zip":
-                    case "7z":
-                        ft = DatFileType.Dir7Zip;
-                        break;
-                    case "zip":
-                        ft = DatFileType.DirTorrentZip;
-                        break;
-                }
-            }
-
-            if (FilesOnly)
-                ft = DatFileType.Dir;
-
-            switch (ft)
-            {
-                case DatFileType.Dir:
-                    DatSetCompressionType.SetFile(dh.BaseDir);
-                    return;
-                case DatFileType.Dir7Zip:
-                    DatSetCompressionType.SetZip(dh.BaseDir, true);
-                    return;
-                default:
-                    DatSetCompressionType.SetZip(dh.BaseDir);
-                    return;
-            }
-        }
-        */
-
     }
 }

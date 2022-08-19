@@ -59,13 +59,13 @@ namespace ROMVault
 
         }
 
-        private void UpdateGameGrid()
+        private void UpdateGameGrid(bool onTimer = false)
         {
             if (gameGridSource == null)
                 return;
 
             _updatingGameGrid = true;
-            
+
             List<RvFile> gameList = new List<RvFile>();
 
             _gameGridColumnXPositions = new int[(int)RepStatus.EndValue];
@@ -87,7 +87,7 @@ namespace ROMVault
                 ReportStatus tDirStat = tChildDir.DirStatus;
 
                 bool gCorrect = tDirStat.HasCorrect();
-                bool gMissing = tDirStat.HasMissing();
+                bool gMissing = tDirStat.HasMissing(true);
                 bool gUnknown = tDirStat.HasUnknown();
                 bool gInToSort = tDirStat.HasInToSort();
                 bool gFixes = tDirStat.HasFixesNeeded();
@@ -150,7 +150,7 @@ namespace ROMVault
 
             _updatingGameGrid = false;
 
-            UpdateSelectedGame();
+            UpdateSelectedGame(onTimer);
         }
 
         private static int DigitLength(int number)
@@ -172,7 +172,7 @@ namespace ROMVault
             UpdateSelectedGame();
         }
 
-        private void UpdateSelectedGame()
+        private void UpdateSelectedGame(bool onTimer = false)
         {
             if (_updatingGameGrid)
             {
@@ -189,7 +189,7 @@ namespace ROMVault
             RvFile tGame = gameGrid[GameGrid.SelectedRows[0].Index];
 
             UpdateGameMetaData(tGame);
-            UpdateRomGrid(tGame);
+            UpdateRomGrid(tGame, onTimer);
         }
 
 
@@ -199,7 +199,7 @@ namespace ROMVault
                 return;
 
             RvFile tRvDir = gameGrid[e.RowIndex];
-            
+
             switch (e.ColumnIndex)
             {
                 case 0: // CType
@@ -233,13 +233,12 @@ namespace ROMVault
                         Bitmap bmp = new Bitmap(GameGrid.Columns[0].Width, 18);
                         using (Graphics g = Graphics.FromImage(bmp))
                         {
-                            Bitmap bm = rvImages.GetBitmap(bitmapName);
+                            g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+                            Bitmap bm = rvImages.GetBitmap(bitmapName, false);
                             if (bm != null)
                             {
-                                float xSize = (float)bm.Width / bm.Height * (18 - 1);
-
-                                g.DrawImage(bm, (GameGrid.Columns[0].Width - xSize) / 2, 0, xSize, 18 - 1);
-                                bm.Dispose();
+                                float xSize = (float)bm.Width / bm.Height * 18;
+                                g.DrawImage(bm, (GameGrid.Columns[0].Width - xSize) / 2, 0, xSize, 18);
                             }
                             else
                             {
@@ -274,6 +273,7 @@ namespace ROMVault
                         Bitmap bmp = new Bitmap(GameGrid.Columns[3].Width, 18);
                         using (Graphics g = Graphics.FromImage(bmp))
                         {
+                            g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
                             g.Clear(Color.White);
                             g.TextRenderingHint = TextRenderingHint.SingleBitPerPixelGridFit;
 
@@ -295,11 +295,10 @@ namespace ROMVault
                                 }
 
                                 gOff = _gameGridColumnXPositions[columnIndex];
-                                Bitmap bmg = rvImages.GetBitmap(@"G_" + RepairStatus.DisplayOrder[l]);
+                                Bitmap bmg = rvImages.GetBitmap(@"G_" + RepairStatus.DisplayOrder[l], false);
                                 if (bmg != null)
                                 {
                                     g.DrawImage(bmg, gOff, 0, 21, 18);
-                                    bmg.Dispose();
                                 }
                                 else
                                 {
@@ -333,8 +332,6 @@ namespace ROMVault
                         break;
                     }
                 default:
-                    Console.WriteLine(
-                        $@"WARN: GameGridCellFormatting() unknown column: {GameGrid.Columns[e.ColumnIndex].Name}");
                     break;
             }
 
@@ -356,6 +353,13 @@ namespace ROMVault
 
             RvFile tRvDir = gameGrid[e.RowIndex];
             ReportStatus tDirStat = tRvDir.DirStatus;
+
+            if (tRvDir.GotStatus == GotStatus.FileLocked)
+            {
+                e.CellStyle.BackColor = _displayColor[(int)RepStatus.UnScanned];
+                e.CellStyle.ForeColor = _fontColor[(int)RepStatus.UnScanned];
+                return;
+            }
 
             foreach (RepStatus t1 in RepairStatus.DisplayOrder)
             {
@@ -461,22 +465,32 @@ namespace ROMVault
                 return;
             }
 
-            int currentMouseOverRow = GameGrid.HitTest(e.X, e.Y).RowIndex;
-            if (currentMouseOverRow < 0)
-            {
+            DataGridView.HitTestInfo hitTest = GameGrid.HitTest(e.X, e.Y);
+
+            int mouseRow = hitTest.RowIndex;
+            if (mouseRow < 0)
                 return;
+
+            int mouseColumn = hitTest.ColumnIndex;
+
+            string clipText = null;
+            string filename = GameGrid.Rows[mouseRow].Cells[1].FormattedValue?.ToString() ?? "";
+            string description = GameGrid.Rows[mouseRow].Cells[2].FormattedValue?.ToString() ?? "";
+
+            switch (mouseColumn)
+            {
+                case 0: clipText = $"Name : {filename}\nDesc : {description}\n"; break;
+                case 1: clipText = filename; break;
+                case 2: clipText = description; break;
             }
 
-            object r1 = GameGrid.Rows[currentMouseOverRow].Cells[1].FormattedValue;
-            string filename = r1?.ToString() ?? "";
-            object r2 = GameGrid.Rows[currentMouseOverRow].Cells[2].FormattedValue;
-            string description = r2?.ToString() ?? "";
+            if (string.IsNullOrEmpty(clipText))
+                return;
 
             try
             {
                 Clipboard.Clear();
-                Clipboard.SetText("Name : " + filename + Environment.NewLine + "Desc : " + description +
-                                  Environment.NewLine);
+                Clipboard.SetText(clipText);
             }
             catch
             {
@@ -522,6 +536,8 @@ namespace ROMVault
                 string path = tGame.Parent.DatTreeFullName;
                 if (Settings.rvSettings?.EInfo == null)
                     return;
+                if (path == "Error")
+                    return;
 
                 foreach (EmulatorInfo ei in Settings.rvSettings.EInfo)
                 {
@@ -535,7 +551,7 @@ namespace ROMVault
                     string dirname = tGame.Parent.FullName;
                     if (dirname.StartsWith("RomRoot\\"))
                         dirname = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly().Location), dirname);
-                   
+
                     commandLineOptions = commandLineOptions.Replace("{gamename}", Path.GetFileNameWithoutExtension(tGame.Name));
                     commandLineOptions = commandLineOptions.Replace("{gamefilename}", tGame.Name);
                     commandLineOptions = commandLineOptions.Replace("{gamedirectory}", dirname);

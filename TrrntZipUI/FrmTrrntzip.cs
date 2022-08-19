@@ -16,6 +16,7 @@ namespace TrrntZipUI
         private int _fileIndex;
 
         private int FileCount;
+        private int FileCountProcessed;
 
         private BlockingCollection<cFile> bccFile;
 
@@ -52,6 +53,7 @@ namespace TrrntZipUI
         {
             UiUpdate = true;
             InitializeComponent();
+            DropBox.Image = null;
 
             Type dgvType = dataGrid.GetType();
             PropertyInfo pi = dgvType.GetProperty("DoubleBuffered", BindingFlags.Instance | BindingFlags.NonPublic);
@@ -193,6 +195,9 @@ namespace TrrntZipUI
 
         private void PDragDrop(object sender, DragEventArgs e)
         {
+            if (_working)
+                return;
+
             string[] file = (string[])e.Data.GetData(DataFormats.FileDrop);
 
             dataGrid.Columns[0].SortMode = DataGridViewColumnSortMode.NotSortable;
@@ -209,6 +214,7 @@ namespace TrrntZipUI
 
             StartWorking();
 
+            FileCountProcessed = 0;
             scanningForFiles = true;
             FileAdder pm = new FileAdder(bccFile, file, UpdateFileCount, ProcessFileEndCallback);
             Thread procT = new Thread(pm.ProcFiles);
@@ -222,7 +228,8 @@ namespace TrrntZipUI
         private void StartWorking()
         {
             _working = true;
-            DropBox.Enabled = false;
+            //DropBox.Enabled = false;
+            DropBox.Image = rvImages1.giphy;
             cboInType.Enabled = false;
             cboOutType.Enabled = false;
             chkForce.Enabled = false;
@@ -238,7 +245,8 @@ namespace TrrntZipUI
         private void StopWorking()
         {
             _working = false;
-            DropBox.Enabled = true;
+            //DropBox.Enabled = true;
+            DropBox.Image =null;
             cboInType.Enabled = true;
             cboOutType.Enabled = true;
             chkForce.Enabled = true;
@@ -336,7 +344,7 @@ namespace TrrntZipUI
 
         private static Bitmap GetBitmap(string bitmapName)
         {
-            object bmObj = rvImages11.ResourceManager.GetObject(bitmapName);
+            object bmObj = rvImages1.ResourceManager.GetObject(bitmapName);
 
             Bitmap bm = null;
             if (bmObj != null)
@@ -353,12 +361,14 @@ namespace TrrntZipUI
             {
                 // Pause
                 btnPause.Image = GetBitmap("Resume");
+                DropBox.Enabled = false;
                 pc.Pause();
             }
             else
             {
                 // Resume after a Pause
                 btnPause.Image = GetBitmap("Pause");
+                DropBox.Enabled = true;
                 pc.UnPause();
             }
         }
@@ -367,14 +377,9 @@ namespace TrrntZipUI
             // start Cancel
             btnPause.Image = GetBitmap("Pause");
             pc.Cancel();
+            DropBox.Enabled = true;
             btnCancel.Enabled = false;
             btnPause.Enabled = false;
-
-            while (bccFile.Count != 0)
-                Thread.Sleep(100);
-
-            StopWorking();
-            pc.ResetCancel();
         }
 
 
@@ -419,8 +424,12 @@ namespace TrrntZipUI
             {
                 scanningForFiles = false;
 
-                if (FileCount==0)
+                if (FileCount == 0)
+                {
                     StopWorking();
+                    if (pc.Cancelled)
+                        pc.ResetCancel();
+                }
             }
             else
             {
@@ -443,8 +452,14 @@ namespace TrrntZipUI
                 }
                 tGrid.Add(tGridn);
 
-                if (!scanningForFiles && (fileId + 1) == FileCount)
+                FileCountProcessed += 1;
+
+                if (!scanningForFiles && FileCountProcessed == FileCount)
+                {
                     StopWorking();
+                    if (pc.Cancelled)
+                        pc.ResetCancel();
+                }
             }
 
         }

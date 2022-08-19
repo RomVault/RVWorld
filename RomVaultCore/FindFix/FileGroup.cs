@@ -25,9 +25,7 @@ namespace RomVaultCore.FindFix
             CRC = sourceFile.CRC.Copy();
             SHA1 = sourceFile.SHA1.Copy();
             MD5 = sourceFile.MD5.Copy();
-            HeaderFT = FileHeaderReader.FileHeaderReader.AltHeaderFile(sourceFile.HeaderFileType)
-                ? sourceFile.HeaderFileType :
-                HeaderFileType.Nothing;
+            HeaderFT = FileHeaderReader.FileHeaderReader.AltHeaderFile(sourceFile.HeaderFileType) ? sourceFile.HeaderFileType : HeaderFileType.Nothing;
             AltSize = sourceFile.AltSize;
             AltCRC = sourceFile.AltCRC.Copy();
             AltSHA1 = sourceFile.AltSHA1.Copy();
@@ -56,7 +54,7 @@ namespace RomVaultCore.FindFix
         }
 
 
-        public void MergeAltFileIntoGroup( RvFile file)
+        public void MergeAltFileIntoGroup(RvFile file)
         {
             if (HeaderFT == HeaderFileType.Nothing && FileHeaderReader.FileHeaderReader.AltHeaderFile(file.HeaderFileType)) HeaderFT = file.HeaderFileType;
             if (AltSize == null && file.Size != null) AltSize = file.Size;
@@ -97,7 +95,7 @@ namespace RomVaultCore.FindFix
 
             return true;
         }
-        
+
         public static bool FindExactMatch(FileGroup fGroup, RvFile file)
         {
             return fGroup.FindExactMatch(file);

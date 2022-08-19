@@ -42,6 +42,7 @@ namespace RomVaultCore.FixFile
                 ReturnCode moveReturnCode = FixAZipFunctions.MoveZipToCorrupt(fixZip, out errorMessage);
                 if (moveReturnCode != ReturnCode.Good)
                 {
+                    errorMessage = $@"Move Zip To Corrupt Error with {moveReturnCode}";
                     return moveReturnCode;
                 }
             }
@@ -134,9 +135,22 @@ namespace RomVaultCore.FixFile
                 ReportError.LogOut($"MoveToSortCount {moveToSortCount} , DeleteCount {deleteCount} , NotThereCount {notThereCount}");
                 ReportError.LogOut("");
             }
-
             ReturnCode returnCode = ReturnCode.Good;
             RepStatus fileRepStatus = RepStatus.UnSet;
+
+            Dictionary<string, RvFile> filesUsedForFix = new Dictionary<string, RvFile>();
+            returnCode = FixAZipMove.CheckFileMove(fixZip, filesUsedForFix, ref totalFixed, out errorMessage);
+            if (returnCode == ReturnCode.Good)
+            {
+                List<RvFile> usedFiles = filesUsedForFix.Values.ToList();
+                FixFileUtils.CheckFilesUsedForFix(usedFiles, fileProcessQueue, false);
+                return ReturnCode.Good;
+            }
+            else if(returnCode!=ReturnCode.Cancel)
+            {
+                errorMessage = $@"Check File Move Error with {returnCode}";
+                return returnCode;
+            }
 
             ICompress tempFixZip = null;
             ICompress toSortCorruptOut = null;
@@ -146,7 +160,6 @@ namespace RomVaultCore.FixFile
                 RvFile toSortGame = null;
                 RvFile toSortCorruptGame = null;
 
-                Dictionary<string, RvFile> filesUsedForFix = new Dictionary<string, RvFile>();
                 List<RvFile> fixZipTemp = new List<RvFile>();
 
                 FileType fixFileType = fixZip.FileType;
@@ -167,6 +180,7 @@ namespace RomVaultCore.FixFile
 
                         // any file we do not have or do not want in the destination zip
                         case RepStatus.Missing:
+                        case RepStatus.MissingMIA:
                         case RepStatus.NotCollected:
                         case RepStatus.Rename:
                         case RepStatus.Delete:
@@ -181,6 +195,7 @@ namespace RomVaultCore.FixFile
 
                                     // do not have this file and cannot fix it here
                                     fixZippedFile.DatStatus == DatStatus.InDatCollect && fixZippedFile.GotStatus == GotStatus.NotGot ||
+                                    fixZippedFile.DatStatus == DatStatus.InDatMIA && fixZippedFile.GotStatus == GotStatus.NotGot ||
                                     fixZippedFile.DatStatus == DatStatus.InDatBad && fixZippedFile.GotStatus == GotStatus.NotGot ||
                                     fixZippedFile.DatStatus == DatStatus.InDatMerged && fixZippedFile.GotStatus == GotStatus.NotGot
                                 )
@@ -201,7 +216,8 @@ namespace RomVaultCore.FixFile
                                 {
                                     CloseZipFile(ref tempFixZip);
                                     CloseToSortGame(toSortGame, ref toSortZipOut);
-                                    CloseToSortCorruptGame(toSortGame, ref toSortZipOut);
+                                    CloseToSortCorruptGame(toSortCorruptGame, ref toSortCorruptOut);
+                                    errorMessage+=$"\nDouble Check Delete Error with {returnCode}";
                                     return returnCode;
                                 }
                             }
@@ -214,6 +230,7 @@ namespace RomVaultCore.FixFile
 
                         // any files we are just moving from the original zip to the destination zip
                         case RepStatus.Correct:
+                        case RepStatus.CorrectMIA:
                         case RepStatus.InToSort:
                         case RepStatus.NeededForFix:
                         case RepStatus.Corrupt:
@@ -223,13 +240,15 @@ namespace RomVaultCore.FixFile
                                 {
                                     CloseZipFile(ref tempFixZip);
                                     CloseToSortGame(toSortGame, ref toSortZipOut);
-                                    CloseToSortCorruptGame(toSortGame, ref toSortZipOut);
+                                    CloseToSortCorruptGame(toSortCorruptGame, ref toSortCorruptOut);
+                                    errorMessage+= $"\nCorrectZipFile Error with {returnCode}";
                                     return returnCode;
                                 }
                                 break;
                             }
 
                         case RepStatus.CanBeFixed:
+                        case RepStatus.CanBeFixedMIA:
                         case RepStatus.CorruptCanBeFixed:
                             {
                                 returnCode = FixAZipCanBeFixed.CanBeFixed(fixZip, fixZippedFile, ref tempFixZip, filesUsedForFix, ref totalFixed, out errorMessage);
@@ -237,7 +256,8 @@ namespace RomVaultCore.FixFile
                                 {
                                     CloseZipFile(ref tempFixZip);
                                     CloseToSortGame(toSortGame, ref toSortZipOut);
-                                    CloseToSortCorruptGame(toSortGame, ref toSortZipOut);
+                                    CloseToSortCorruptGame(toSortCorruptGame, ref toSortCorruptOut);
+                                    errorMessage += $"\nCanBeFixed Error with {returnCode}";
                                     return returnCode;
                                 }
                                 break;
@@ -245,12 +265,13 @@ namespace RomVaultCore.FixFile
 
                         case RepStatus.MoveToSort:
                             {
-                                returnCode = FixAZipMoveToSort.MovetoSort(fixZip, fixZippedFile, ref toSortGame, ref toSortZipOut, iRom, filesUsedForFix);
+                                returnCode = FixAZipMoveToSort.MovetoSort(fixZip, fixZippedFile, ref toSortGame, ref toSortZipOut, iRom, filesUsedForFix,out errorMessage);
                                 if (returnCode != ReturnCode.Good)
                                 {
                                     CloseZipFile(ref tempFixZip);
                                     CloseToSortGame(toSortGame, ref toSortZipOut);
-                                    CloseToSortCorruptGame(toSortGame, ref toSortZipOut);
+                                    CloseToSortCorruptGame(toSortCorruptGame, ref toSortCorruptOut);
+                                    errorMessage += $"\nMoveToSort Error with {returnCode}";
                                     return returnCode;
                                 }
                                 break;
@@ -262,7 +283,8 @@ namespace RomVaultCore.FixFile
                             {
                                 CloseZipFile(ref tempFixZip);
                                 CloseToSortGame(toSortGame, ref toSortZipOut);
-                                CloseToSortCorruptGame(toSortGame, ref toSortZipOut);
+                                CloseToSortCorruptGame(toSortCorruptGame, ref toSortCorruptOut);
+                                errorMessage += $"\nMoveToCorrupt Error with {returnCode}";
                                 return returnCode;
                             }
                             break;
@@ -413,7 +435,7 @@ namespace RomVaultCore.FixFile
                 toSortZipOut = null;
                 toSortCorruptOut = null;
 
-                errorMessage = ex.Message;
+                errorMessage = "In Fix Zip, ZipFileException:\n" + ex.Message + "\nat\n:" + ex.StackTrace;
                 return ex.returnCode;
             }
             catch (Exception ex)
@@ -425,7 +447,7 @@ namespace RomVaultCore.FixFile
                 toSortZipOut = null;
                 toSortCorruptOut = null;
 
-                errorMessage = ex.Message;
+                errorMessage = "In Fix Zip:\n"+ex.Message + "\nat\n:"+ex.StackTrace;
                 return ReturnCode.LogicError;
             }
             finally

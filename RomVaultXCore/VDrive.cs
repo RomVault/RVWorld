@@ -30,9 +30,9 @@ namespace RVXCore
             Dokan.Unmount(vDriveLetter);
             di = new VDrive();
 #if DEBUG
-            Thread t2 = new Thread(() => { di.Mount(vDriveLetter + ":\\", DokanOptions.DebugMode, 1); });
+            Thread t2 = new Thread(() => { di.Mount(vDriveLetter + ":\\", DokanOptions.DebugMode); });
 #else
-            Thread t2 = new Thread(() => { di.Mount(vDriveLetter + ":\\", DokanOptions.FixedDrive, 10); });
+            Thread t2 = new Thread(() => { di.Mount(vDriveLetter + ":\\", DokanOptions.FixedDrive); });
 #endif
             t2.Start();
         }
@@ -465,5 +465,9 @@ namespace RVXCore
             //coms.Close();
         }
 
+        public NtStatus Mounted(string mountPoint, IDokanFileInfo info)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

@@ -123,7 +123,6 @@
             this.ErrorGrid.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] {
             this.CError,
             this.CErrorFile});
-            this.ErrorGrid.Dock = System.Windows.Forms.DockStyle.Fill;
             this.ErrorGrid.GridColor = System.Drawing.Color.FromArgb(((int)(((byte)(224)))), ((int)(((byte)(224)))), ((int)(((byte)(224)))));
             this.ErrorGrid.Location = new System.Drawing.Point(0, 0);
             this.ErrorGrid.MultiSelect = false;
@@ -178,6 +177,7 @@
             // splitContainer1.Panel2
             // 
             this.splitContainer1.Panel2.Controls.Add(this.ErrorGrid);
+            this.splitContainer1.Panel2.Resize += new System.EventHandler(this.splitContainer1_Panel2_Resize);
             this.splitContainer1.Size = new System.Drawing.Size(511, 320);
             this.splitContainer1.SplitterDistance = 130;
             this.splitContainer1.TabIndex = 8;

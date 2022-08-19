@@ -34,6 +34,8 @@ namespace RomVaultCore.Scanner
             _thWrk = e;
             if (_thWrk == null)
             {
+                _cacheSaveTimer?.Stop();
+                _cacheSaveTimer = null;
                 return;
             }
 
@@ -53,10 +55,9 @@ namespace RomVaultCore.Scanner
             //Scan the list of directories.
             for (int i = 0; i < lstDir.Count; i++)
             {
-                _thWrk.Report(i+1);
+                _thWrk.Report(i + 1);
                 _thWrk.Report(new bgwText("Scanning Dir : " + lstDir[i].FullName));
                 string lDir = lstDir[i].FullName;
-                Console.WriteLine(lDir);
                 if (Directory.Exists(lDir))
                 {
                     lstDir[i].GotStatus = GotStatus.Got;
@@ -79,7 +80,8 @@ namespace RomVaultCore.Scanner
 
             _thWrk.Report(new bgwText("File Scan Complete"));
             _thWrk.Finished = true;
-
+            _cacheSaveTimer?.Stop();
+            _cacheSaveTimer = null;
             _thWrk = null;
 #if !DEBUG
             }
@@ -92,6 +94,8 @@ namespace RomVaultCore.Scanner
                 _thWrk?.Report(new bgwText("Complete"));
                 if (_thWrk != null) _thWrk.Finished = true;
                 _thWrk = null;
+                _cacheSaveTimer?.Stop();
+                _cacheSaveTimer = null;
             }
 #endif
         }
@@ -106,13 +110,13 @@ namespace RomVaultCore.Scanner
         /// </summary>
         /// <param name="dbDir"></param>
         /// <param name="report"></param>
-        private static void CheckADir(RvFile dbDir, bool report)
+        public static void CheckADir(RvFile dbDir, bool report)
         {
-            if (_cacheSaveTimer.Elapsed.TotalMinutes > Settings.rvSettings.CacheSaveTimePeriod)
+            if (_cacheSaveTimer != null && _cacheSaveTimer.Elapsed.TotalMinutes > Settings.rvSettings.CacheSaveTimePeriod)
             {
-                _thWrk.Report("Saving Cache");
+                _thWrk?.Report("Saving Cache");
                 DB.Write();
-                _thWrk.Report("Saving Cache Complete");
+                _thWrk?.Report("Saving Cache Complete");
                 _cacheSaveTimer.Reset();
                 _cacheSaveTimer.Start();
             }
@@ -221,7 +225,7 @@ namespace RomVaultCore.Scanner
                         if (timenow - _lastUpdateTime > TimeSpan.TicksPerSecond / 10)
                         {
                             _lastUpdateTime = timenow;
-                            _thWrk.Report(new bgwValue2(fileIndex+1));
+                            _thWrk.Report(new bgwValue2(fileIndex + 1));
                             _thWrk.Report(new bgwText2(Path.Combine(fullDir, fileChild.Name)));
                         }
                     }

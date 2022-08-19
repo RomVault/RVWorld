@@ -55,8 +55,11 @@ namespace RVIO
         public long CreationTime;
         public long Length;
 
-        public FileInfo()
-        { }
+        public FileInfo(string name, string fullName)
+        {
+            Name = name;
+            FullName = fullName;
+        }
 
         public FileInfo(string path)
         {
@@ -82,8 +85,11 @@ namespace RVIO
         public long LastAccessTime;
         public long CreationTime;
 
-        public DirectoryInfo()
-        { }
+        public DirectoryInfo(string name, string fullName)
+        {
+            Name = name;
+            FullName = fullName;
+        }
         public DirectoryInfo(string path)
         {
             FullName = path;
@@ -113,14 +119,10 @@ namespace RVIO
                 {
                     try
                     {
-                        DirectoryInfo lDi = new DirectoryInfo
-                        {
-                            Name = tDi.Name,
-                            FullName = Path.Combine(FullName, tDi.Name)
-                        };
+                        DirectoryInfo lDi = new DirectoryInfo(tDi.Name, Path.Combine(FullName, tDi.Name));
                         try { lDi.LastWriteTime = tDi.LastWriteTimeUtc.Ticks; } catch { lDi.LastWriteTime = 0; }
-                        try { lDi.LastAccessTime = tDi.LastAccessTimeUtc.Ticks; } catch { lDi.LastWriteTime = 0; }
-                        try { lDi.CreationTime = tDi.CreationTimeUtc.Ticks; } catch { lDi.LastWriteTime = 0; }
+                        try { lDi.LastAccessTime = tDi.LastAccessTimeUtc.Ticks; } catch { lDi.LastAccessTime = 0; }
+                        try { lDi.CreationTime = tDi.CreationTimeUtc.Ticks; } catch { lDi.CreationTime = 0; }
 
                         dirs.Add(lDi);
                     }
@@ -149,15 +151,10 @@ namespace RVIO
                 {
                     try
                     {
-                        FileInfo lFi = new FileInfo
-                        {
-                            Name = tDi.Name,
-                            FullName = Path.Combine(FullName, tDi.Name),
-                            Length = tDi.Length
-                        };
+                        FileInfo lFi = new FileInfo(tDi.Name, Path.Combine(FullName, tDi.Name)) { Length = tDi.Length };
                         try { lFi.LastWriteTime = tDi.LastWriteTimeUtc.Ticks; } catch { lFi.LastWriteTime = 0; }
-                        try { lFi.LastAccessTime = tDi.LastAccessTimeUtc.Ticks; } catch { lFi.LastWriteTime = 0; }
-                        try { lFi.CreationTime = tDi.CreationTimeUtc.Ticks; } catch { lFi.LastWriteTime = 0; }
+                        try { lFi.LastAccessTime = tDi.LastAccessTimeUtc.Ticks; } catch { lFi.LastAccessTime = 0; }
+                        try { lFi.CreationTime = tDi.CreationTimeUtc.Ticks; } catch { lFi.CreationTime = 0; }
 
                         files.Add(lFi);
                     }
@@ -223,6 +220,16 @@ namespace RVIO
 
         }
 
+        public static void WriteAllBytes(string path, byte[] data)
+        {
+            System.IO.File.WriteAllBytes(NameFix.AddLongPathPrefix(path), data);
+        }
+        public static void WriteAllText(string path, string contents)
+        {
+            System.IO.File.WriteAllText(NameFix.AddLongPathPrefix(path), contents);
+        }
+
+
         public static bool SetAttributes(string path, FileAttributes fileAttributes)
         {
             try
@@ -249,7 +256,11 @@ namespace RVIO
 
         public static string ReadAllText(string filename)
         {
-            throw new NotImplementedException();
+            return System.IO.File.ReadAllText(NameFix.AddLongPathPrefix(filename));
+        }
+        public static byte[] ReadAllBytes(string filename)
+        {
+            return System.IO.File.ReadAllBytes(NameFix.AddLongPathPrefix(filename));
         }
     }
 
@@ -262,6 +273,11 @@ namespace RVIO
         public static char DirSeparatorChar
         {
             get { return Unix.IsUnix ? AltDirectorySeparatorChar : DirectorySeparatorChar; }
+        }
+
+        public static string FixSlash(string path)
+        {
+            return !Unix.IsUnix ? path : path.Replace(DirectorySeparatorChar, AltDirectorySeparatorChar);
         }
 
         public static string GetExtension(string path)
@@ -339,10 +355,10 @@ namespace RVIO
                 stream = new System.IO.FileStream(NameFix.AddLongPathPrefix(path), FileMode.Open, FileAccess.Read);
                 return 0;
             }
-            catch (Exception)
+            catch (Exception e)
             {
                 stream = null;
-                return Marshal.GetLastWin32Error();
+                return e.HResult;
             }
         }
 
@@ -353,53 +369,17 @@ namespace RVIO
                 stream = new System.IO.FileStream(NameFix.AddLongPathPrefix(path), FileMode.Create, FileAccess.ReadWrite);
                 return 0;
             }
-            catch (Exception)
+            catch (Exception e)
             {
                 stream = null;
-                return Marshal.GetLastWin32Error();
+                return e.HResult;
             }
         }
     }
 
     public static class NameFix
     {
-        public static string GetShortPath(string path)
-        {
-            if (Unix.IsUnix)
-                return path;
-
-            int remove;
-            string retPath;
-            if (path.StartsWith(@"\\"))
-            {
-                retPath = @"\\?\UNC\" + path.Substring(2);
-                remove = 8;
-            }
-            else
-            {
-                retPath = path;
-                if (path.Substring(1, 1) != ":")
-                    retPath = Path.Combine(System.IO.Directory.GetCurrentDirectory(), retPath);
-
-                retPath = CleanDots(retPath);
-                retPath = @"\\?\" + retPath;
-                remove = 4;
-            }
-
-            const int MAX_PATH = 300;
-            StringBuilder shortPath = new StringBuilder(MAX_PATH);
-            Win32Native.GetShortPathName(retPath, shortPath, MAX_PATH);
-            retPath = shortPath.ToString();
-
-            retPath = retPath.Substring(remove);
-            if (remove == 8) retPath = "\\" + retPath;
-
-            return retPath;
-        }
-
-
-
-        internal static string AddLongPathPrefix(string path)
+        public static string AddLongPathPrefix(string path)
         {
             if (Unix.IsUnix)
                 return path;

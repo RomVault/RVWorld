@@ -25,8 +25,8 @@ namespace DATReader.DatClean
                     DatDir dir = parents[parentCount - 2];
                     DatDir zipDir = parents[parentCount - 1];
 
-                    DatDir tmpFile = new DatDir(DatFileType.Dir)
-                    { Name = zipDir.Name, DGame = zipDir.DGame };
+                    DatDir tmpFile = new DatDir(zipDir.Name,DatFileType.Dir)
+                    { DGame = zipDir.DGame };
 
                     if (dir.ChildNameSearch(tmpFile, out int index) != 0)
                     {
@@ -34,7 +34,7 @@ namespace DATReader.DatClean
                     }
                     else
                     {
-                        tmpFile = (DatDir)dir.Child(index);
+                        tmpFile = (DatDir)dir[index];
                     }
                     dFile.DatFileType = DatFileType.File;
                     tmpFile.ChildAdd(dFile);

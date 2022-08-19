@@ -23,6 +23,7 @@ namespace RomVaultCore.FixFile
         {
             if (!(
                 fixZippedFile.DatStatus == DatStatus.InDatCollect && fixZippedFile.GotStatus == GotStatus.Got ||
+                fixZippedFile.DatStatus == DatStatus.InDatMIA && fixZippedFile.GotStatus == GotStatus.Got ||
                 fixZippedFile.DatStatus == DatStatus.InDatMerged && fixZippedFile.GotStatus == GotStatus.Got ||
                 fixZippedFile.DatStatus == DatStatus.NotInDat && fixZippedFile.GotStatus == GotStatus.Got ||
                 fixZippedFile.DatStatus == DatStatus.InToSort && fixZippedFile.GotStatus == GotStatus.Got ||
@@ -41,7 +42,7 @@ namespace RomVaultCore.FixFile
 
             if (tempFixZip == null)
             {
-                ReturnCode ret1 = FixAZipFunctions.OpenTempFizZip(fixZip, out tempFixZip, out errorMessage);
+                ReturnCode ret1 = FixAZipFunctions.OpenTempFixZip(fixZip, out tempFixZip, out errorMessage);
                 if (ret1 != ReturnCode.Good)
                     return ret1;
             }

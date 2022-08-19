@@ -4,9 +4,9 @@ using System.Globalization;
 using System.IO;
 using System.ServiceModel;
 using System.Threading;
-using RomVaultCore.Connected_Services.RVServices;
 using RomVaultCore.RvDB;
 using RomVaultCore.Utils;
+using RVServ1;
 
 namespace RomVaultCore
 {
@@ -117,7 +117,6 @@ namespace RomVaultCore
             RVServiceClient s = new RVServiceClient(b, e);
 
             s.SendErrorMessageV2(Username + " : " + EMail + " : " + Settings.isLinux, vMajor,vMinor,vBuild, message);
-            s.Close();
         }
 
         private static string GetLogFilname()

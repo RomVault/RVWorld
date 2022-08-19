@@ -9,7 +9,7 @@ namespace RomVaultCore.FindFix
         {
             foreach (FileGroup ff in filegroupList)
             {
-                if (ff.Size == 0 && ff.CRC[0]==0 && ff.CRC[1] == 0 && ff.CRC[2] == 0 && ff.CRC[3] == 0 )
+                if (ff.Size == 0 && ff.CRC[0] == 0 && ff.CRC[1] == 0 && ff.CRC[2] == 0 && ff.CRC[3] == 0)
                     ZeroListCheck(ff);
                 else
                     ListCheck(ff);
@@ -30,13 +30,14 @@ namespace RomVaultCore.FindFix
                     case RepStatus.UnScanned:
                         break;
                     case RepStatus.Missing:
-                        tFile.RepStatus = RepStatus.CanBeFixed;
+                        tFile.RepStatus = tFile.DatStatus == DatStatus.InDatMIA ? RepStatus.CanBeFixedMIA : RepStatus.CanBeFixed;
                         break;
                     case RepStatus.Correct:
+                    case RepStatus.CorrectMIA:
                         break;
                     case RepStatus.Corrupt:
                         if (tFile.DatStatus == DatStatus.InDatCollect)
-                            tFile.RepStatus = RepStatus.CanBeFixed; // corrupt files that are also InDatcollect are treated as missing files, and a fix should be found.
+                            tFile.RepStatus = tFile.DatStatus == DatStatus.InDatMIA ? RepStatus.CanBeFixedMIA : RepStatus.CanBeFixed; // corrupt files that are also InDatcollect are treated as missing files, and a fix should be found.
                         else
                             tFile.RepStatus = RepStatus.Delete; // all other corrupt files should be deleted or moved to tosort/corrupt
                         break;
@@ -81,9 +82,11 @@ namespace RomVaultCore.FindFix
                     case RepStatus.UnScanned:
                         break;
                     case RepStatus.Missing:
+                    case RepStatus.MissingMIA:
                         missingFiles.Add(tFile); // these are checked in step 1 to fixes from the allGotFiles List.
                         break;
                     case RepStatus.Correct:
+                    case RepStatus.CorrectMIA:
                         correctFiles.Add(tFile);
                         break;
                     case RepStatus.Corrupt:
@@ -134,7 +137,7 @@ namespace RomVaultCore.FindFix
                 foreach (RvFile gotFile in allGotFiles)
                 {
                     if (!DBHelper.CheckIfMissingFileCanBeFixedByGotFile(missingFile, gotFile)) continue;
-                    missingFile.RepStatus = missingFile.RepStatus == RepStatus.Corrupt ? RepStatus.CorruptCanBeFixed : RepStatus.CanBeFixed;
+                    missingFile.RepStatus = missingFile.RepStatus == RepStatus.Corrupt ? RepStatus.CorruptCanBeFixed : (missingFile.DatStatus == DatStatus.InDatMIA ? RepStatus.CanBeFixedMIA : RepStatus.CanBeFixed);
                     break;
                 }
                 if (missingFile.RepStatus == RepStatus.Corrupt)
@@ -270,7 +273,7 @@ namespace RomVaultCore.FindFix
             List<RvFile> canBeFixed = new List<RvFile>();
             foreach (RvFile fLoop in files)
             {
-                if (fLoop.RepStatus != RepStatus.CanBeFixed) continue;
+                if (fLoop.RepStatus != RepStatus.CanBeFixed && fLoop.RepStatus!=RepStatus.CanBeFixedMIA) continue;
                 canBeFixed.Add(fLoop);
             }
 

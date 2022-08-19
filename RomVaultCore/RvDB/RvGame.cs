@@ -1,7 +1,7 @@
 ﻿/******************************************************
  *     ROMVault3 is written by Gordon J.              *
  *     Contact gordon@romvault.com                    *
- *     Copyright 2020                                 *
+ *     Copyright 2022                                 *
  ******************************************************/
 
 using System.Collections.Generic;
@@ -35,7 +35,9 @@ namespace RomVaultCore.RvDB
             Enabled = 19,
             CRC = 20,
             RelatedTo = 21,
-            Source = 22
+            Source = 22,
+
+            Category = 23,
 
         }
 

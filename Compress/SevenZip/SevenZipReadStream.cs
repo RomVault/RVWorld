@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.IO.Compression;
 using Compress.SevenZip.Structure;
 using Compress.Support.Compression.BZip2;
 using Compress.Support.Compression.LZMA;
@@ -163,7 +164,7 @@ namespace Compress.SevenZip
                                     coder.DecoderStream = new BCJ2Filter(inputCoders[0], inputCoders[1], inputCoders[2], inputCoders[3]);
                                     break;
                                 case DecompressType.ZSTD:
-                                    coder.DecoderStream = new zStd(inputCoders[0]);
+                                    coder.DecoderStream =new zStdSharp(inputCoders[0]);
                                     break;
                                 default:
                                     return ZipReturn.ZipDecodeError;

@@ -1,13 +1,14 @@
 ﻿/******************************************************
  *     ROMVault3 is written by Gordon J.              *
  *     Contact gordon@romvault.com                    *
- *     Copyright 2020                                 *
+ *     Copyright 2022                                 *
  ******************************************************/
 
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading;
 using RomVaultCore.FixFile.Util;
 using RomVaultCore.RvDB;
 using RVIO;
@@ -120,7 +121,7 @@ namespace RomVaultCore.FixFile
                         {
                             continue;
                         }
-                        if (child.RepStatus == RepStatus.CanBeFixed)
+                        if (child.RepStatus == RepStatus.CanBeFixed || child.RepStatus==RepStatus.CanBeFixedMIA)
                         {
                             count++;
                         }
@@ -212,7 +213,12 @@ namespace RomVaultCore.FixFile
 
                         Report.ReportProgress(new bgwShowFix(strDir, child.Name, null, null, "Rename", null, child.FileName, null));
 
-                        File.Move(Path.Combine(strDir, child.FileName), Path.Combine(strDir, child.Name));
+                        string fixedName = Path.Combine(strDir, child.Name);
+                        File.Move(Path.Combine(strDir, child.FileName), fixedName);
+
+                        while (!File.Exists(fixedName))
+                            Thread.Sleep(50);
+
                         child.FileName = null;
                     }
 
@@ -258,7 +264,7 @@ namespace RomVaultCore.FixFile
                     ReportError.UnhandledExceptionHandler(errorMessage);
                     break;
                 case ReturnCode.FileSystemError:
-                    ReportError.Show(errorMessage);
+                    ReportError.Show($"{errorMessage}\n{returnCode}\n");
                     break;
                 case ReturnCode.FindFixes:
                     ReportError.Show("You Need to Find Fixes before Fixing. (Incorrect File Status's found for fixing.)");
@@ -274,7 +280,7 @@ namespace RomVaultCore.FixFile
                     ReportError.Show("Your Primary ToSort directory could not be found.");
                     break;
                 default:
-                    ReportError.UnhandledExceptionHandler("Unknown result type " + returnCode);
+                    ReportError.UnhandledExceptionHandler($"Unknown result type: {returnCode}\n{errorMessage}\n");
                     break;
             }
             return returnCode;

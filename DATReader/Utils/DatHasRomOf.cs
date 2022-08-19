@@ -7,9 +7,9 @@ namespace DATReader.Utils
     {
         public static bool HasRomOf(DatDir tDat)
         {
-            for (int g = 0; g < tDat.ChildCount; g++)
+            for (int g = 0; g < tDat.Count; g++)
             {
-                if (!(tDat.Child(g) is DatDir mGame))
+                if (!(tDat[g] is DatDir mGame))
                     continue;
 
                 if (mGame.DGame == null)

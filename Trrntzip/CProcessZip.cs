@@ -9,6 +9,7 @@ namespace TrrntZip
     {
         public int fileId;
         public string filename;
+        public bool isDir;
     }
 
     public delegate void ProcessFileStartCallback(int threadId, int fileId, string filename);
@@ -37,14 +38,24 @@ namespace TrrntZip
             {
                 if (pauseCancel.Cancelled)
                 {
+                    ProcessFileEndCallBack?.Invoke(ThreadId, file.fileId,TrrntZipStatus.Cancel);
                     continue;
                 }
                 pauseCancel.WaitOne();
 
                 ProcessFileStartCallBack?.Invoke(ThreadId, file.fileId, file.filename);
                 Debug.WriteLine($"Thread {ThreadId} Starting to Process File {file.filename}");
-                FileInfo fileInfo = new FileInfo(file.filename);
-                TrrntZipStatus trrntZipFileStatus = tz.Process(fileInfo, pauseCancel);
+                TrrntZipStatus trrntZipFileStatus;
+                if (file.isDir)
+                {
+                    DirectoryInfo dirInfo = new DirectoryInfo(file.filename);
+                    trrntZipFileStatus = tz.Process(dirInfo, pauseCancel);
+                }
+                else
+                {
+                    FileInfo fileInfo = new FileInfo(file.filename);
+                    trrntZipFileStatus = tz.Process(fileInfo, pauseCancel);
+                }
                 ProcessFileEndCallBack?.Invoke(ThreadId, file.fileId, trrntZipFileStatus);
                 Debug.WriteLine($"Thread {ThreadId} Finished Process File {file.filename}");
             }

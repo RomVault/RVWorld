@@ -265,7 +265,7 @@ namespace Compress.Support.Compression.Deflate64
                 {
                     if (disposing)
                     {
-                        _stream?.Dispose();
+                        //_stream?.Dispose();
                     }
                 }
                 finally

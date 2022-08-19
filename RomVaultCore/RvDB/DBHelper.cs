@@ -160,6 +160,14 @@ namespace RomVaultCore.RvDB
         public static bool CheckIfMissingFileCanBeFixedByGotFile(RvFile missingFile, RvFile gotFile)
         {
             // should probably be checking that the header type also match
+            if (missingFile.HeaderFileType!=FileHeaderReader.HeaderFileType.Nothing && gotFile.HeaderFileType!=FileHeaderReader.HeaderFileType.Nothing)
+            {
+                if (missingFile.HeaderFileType != gotFile.HeaderFileType)
+                    return false;
+            }
+            if (missingFile.HeaderFileTypeRequired && (gotFile.HeaderFileType == FileHeaderReader.HeaderFileType.Nothing || !gotFile.FileStatusIs(FileStatus.HeaderFileTypeFromHeader)))
+                return false;
+
 
             if (missingFile.FileStatusIs(FileStatus.SHA1FromDAT) && gotFile.FileStatusIs(FileStatus.SHA1Verified) && !ArrByte.BCompare(missingFile.SHA1, gotFile.SHA1))
             {

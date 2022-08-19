@@ -1,7 +1,7 @@
 ﻿/******************************************************
  *     ROMVault3 is written by Gordon J.              *
  *     Contact gordon@romvault.com                    *
- *     Copyright 2020                                 *
+ *     Copyright 2022                                 *
  ******************************************************/
 
 using System;
@@ -15,7 +15,7 @@ namespace RomVaultCore.RvDB
 {
     public static class DBVersion
     {
-        public const int Version = 1;
+        public const int Version = 2;
         public static int VersionNow;
     }
 
@@ -143,15 +143,26 @@ namespace RomVaultCore.RvDB
 
                     if (DBVersion.VersionNow != DBVersion.Version)
                     {
-                        ReportError.Show(
-                            "Data Cache version is out of date you should now rescan your dat directory and roms directory.");
-                        br.Close();
-                        fs.Close();
-                        fs.Dispose();
+                        if (DBVersion.VersionNow == 1 && DBVersion.Version == 2 && Settings.rvSettings.CacheFile.Contains("3_1.Cache"))
+                        {
+                            Settings.rvSettings.CacheFile = Settings.rvSettings.CacheFile.Replace("3_1.Cache", "3_2.Cache");
+                            DirRoot.Read(br, null);
+                            DB.Write();
+                            Settings.WriteConfig(Settings.rvSettings);
+                        }
+                        else
+                        {
 
-                        OpenDefaultDB();
-                        ThWrk = null;
-                        return;
+                            ReportError.Show(
+                                "Data Cache version is out of date you should now rescan your dat directory and roms directory.");
+                            br.Close();
+                            fs.Close();
+                            fs.Dispose();
+
+                            OpenDefaultDB();
+                            ThWrk = null;
+                            return;
+                        }
                     }
                     else
                     {

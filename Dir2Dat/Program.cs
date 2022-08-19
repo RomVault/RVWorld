@@ -23,7 +23,7 @@ namespace Dir2Dat
         {
             DatHeader ThisDat = new DatHeader()
             {
-                BaseDir = new DatDir(DatFileType.Dir)
+                BaseDir = new DatDir("", DatFileType.Dir)
             };
 
             bool style = false;
@@ -172,7 +172,7 @@ namespace Dir2Dat
                 }
                 else
                 {
-                    DatDir nextDir = new DatDir(DatFileType.Dir) { Name = d.Name };
+                    DatDir nextDir = new DatDir(d.Name, DatFileType.Dir);
                     thisDir.ChildAdd(nextDir);
                     ProcessDir(d, nextDir, newStyle);
                 }
@@ -253,7 +253,7 @@ namespace Dir2Dat
             {
                 string comments = CompressUtils.GetString(zf1.FileComment);
 
-                if (comments.Length>13 &&  comments.Substring(0, 13) == "TORRENTZIPPED")
+                if (comments.Length > 13 && comments.Substring(0, 13) == "TORRENTZIPPED")
                 {
                     tCount += 1;
                 }
@@ -270,11 +270,7 @@ namespace Dir2Dat
             //zf1.ZipStatus = ZipStatus.TrrntZip;
 
             //DatDir ZipDir = new DatDir(zf1.ZipStatus == ZipStatus.TrrntZip ? DatFileType.DirTorrentZip : DatFileType.DirRVZip)
-            DatDir ZipDir = new DatDir(DatFileType.UnSet)
-            {
-                Name = Path.GetFileNameWithoutExtension(f.Name),
-                DGame = new DatGame()
-            };
+            DatDir ZipDir = new DatDir(Path.GetFileNameWithoutExtension(f.Name), DatFileType.UnSet) { DGame = new DatGame() };
             ZipDir.DGame.Description = ZipDir.Name;
             thisDir.ChildAdd(ZipDir);
 
@@ -292,9 +288,8 @@ namespace Dir2Dat
                     continue;
                 }
 
-                DatFile df = new DatFile(DatFileType.UnSet)
+                DatFile df = new DatFile(lf.Filename, DatFileType.UnSet)
                 {
-                    Name = lf.Filename,
                     Size = fr[i].Size,
                     CRC = fr[i].CRC,
                     SHA1 = fr[i].SHA1,
@@ -319,11 +314,7 @@ namespace Dir2Dat
 
         private static void Add7Zip(FileInfo f, DatDir thisDir)
         {
-            DatDir ZipDir = new DatDir(DatFileType.Dir7Zip)
-            {
-                Name = Path.GetFileNameWithoutExtension(f.Name),
-                DGame = new DatGame()
-            };
+            DatDir ZipDir = new DatDir(Path.GetFileNameWithoutExtension(f.Name), DatFileType.Dir7Zip) { DGame = new DatGame() };
             ZipDir.DGame.Description = ZipDir.Name;
             thisDir.ChildAdd(ZipDir);
 
@@ -336,9 +327,8 @@ namespace Dir2Dat
                 LocalFile lf = zf1.GetLocalFile(i);
                 if (lf.IsDirectory)
                     continue;
-                DatFile df = new DatFile(DatFileType.File7Zip)
+                DatFile df = new DatFile(lf.Filename,DatFileType.File7Zip)
                 {
-                    Name = lf.Filename,
                     Size = fr[i].Size,
                     CRC = fr[i].CRC,
                     SHA1 = fr[i].SHA1
@@ -351,11 +341,7 @@ namespace Dir2Dat
 
         private static void AddDirAsGame(DirectoryInfo di, DatDir thisDir)
         {
-            DatDir fDir = new DatDir(DatFileType.Dir)
-            {
-                Name = Path.GetFileNameWithoutExtension(di.Name),
-                DGame = new DatGame()
-            };
+            DatDir fDir = new DatDir(Path.GetFileNameWithoutExtension(di.Name), DatFileType.Dir) { DGame = new DatGame() };
             fDir.DGame.Description = fDir.Name;
             thisDir.ChildAdd(fDir);
 
@@ -384,9 +370,8 @@ namespace Dir2Dat
             FileScan fs = new FileScan();
             List<FileScan.FileResults> fr = fs.Scan(zf1, true, true);
 
-            DatFile df = new DatFile(DatFileType.File)
+            DatFile df = new DatFile(f.Name, DatFileType.File)
             {
-                Name = f.Name,
                 Size = fr[0].Size,
                 CRC = fr[0].CRC,
                 SHA1 = fr[0].SHA1

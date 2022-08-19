@@ -28,12 +28,14 @@ namespace ROMVault
             RepStatus.Missing,
             RepStatus.Corrupt,
             RepStatus.CanBeFixed,
+            RepStatus.CanBeFixedMIA,
             RepStatus.CorruptCanBeFixed
         };
 
         private static readonly RepStatus[] Fixing =
         {
             RepStatus.CanBeFixed,
+            RepStatus.CanBeFixedMIA,
             RepStatus.MoveToSort,
             RepStatus.Delete,
             RepStatus.NeededForFix,
@@ -117,7 +119,7 @@ namespace ROMVault
             }
         }
 
-        public static void MakeFixFiles(RvFile root=null, bool scrubIt = true)
+        public static void MakeFixFiles(RvFile root = null, bool scrubIt = true)
         {
             _tDat = null;
             _ts = null;
@@ -163,7 +165,7 @@ namespace ROMVault
                 if (b.Dat != null)
                 {
                     RvFile tDir = b;
-                    if (tDir.IsDir && tDir.Game != null && tDir.DirStatus.HasMissing())
+                    if (tDir.IsDir && tDir.Game != null && tDir.DirStatus.HasMissing(true))
                     {
                         if (_tDat != b.Dat)
                         {
@@ -212,7 +214,7 @@ namespace ROMVault
                             {
                                 _ts.WriteLine("\t\t<description>fix_" + Etxt(description) + "</description>");
                             }
-                            
+
                             _ts.WriteLine("\t\t<category>FIXDATFILE</category>");
                             _ts.WriteLine("\t\t<version>" + DateTime.Now.ToString("MM/dd/yyyy HH:mm:ss") + "</version>");
                             _ts.WriteLine("\t\t<date>" + DateTime.Now.ToString("MM/dd/yyyy") + "</date>");
@@ -235,11 +237,11 @@ namespace ROMVault
                     RvFile tRom = b;
                     if (tRom.IsFile)
                     {
-                        if (tRom.DatStatus == DatStatus.InDatCollect && tRom.GotStatus != GotStatus.Got)
+                        if ((tRom.DatStatus == DatStatus.InDatCollect || tRom.DatStatus == DatStatus.InDatMIA) && tRom.GotStatus != GotStatus.Got)
                         {
                             _rpy++;
                         }
-                        if (tRom.DatStatus == DatStatus.InDatCollect && tRom.GotStatus != GotStatus.Got && !(tRom.RepStatus == RepStatus.CanBeFixed || tRom.RepStatus == RepStatus.CorruptCanBeFixed))
+                        if ((tRom.DatStatus == DatStatus.InDatCollect || tRom.DatStatus==DatStatus.InDatMIA) && tRom.GotStatus != GotStatus.Got && !(tRom.RepStatus == RepStatus.CanBeFixed || tRom.RepStatus == RepStatus.CanBeFixedMIA || tRom.RepStatus == RepStatus.CorruptCanBeFixed))
                         {
                             _ro++;
                             string strRom;
@@ -314,7 +316,7 @@ namespace ROMVault
                 if (b.Dat != null)
                 {
                     RvFile tDir = b;
-                    if (tDir.IsDir && tDir.Game != null && tDir.DirStatus.HasMissing())
+                    if (tDir.IsDir && tDir.Game != null && tDir.DirStatus.HasMissing(true))
                     {
                         _ts.WriteLine("\t</game>");
                     }

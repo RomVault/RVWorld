@@ -1,10 +1,9 @@
 ﻿using System;
 using System.Reflection;
 using System.ServiceModel;
-using System.Threading.Tasks;
 using System.Windows.Forms;
-using ROMVault.RVServices;
 using RomVaultCore;
+using RVServ1;
 
 namespace ROMVault
 {
@@ -13,6 +12,7 @@ namespace ROMVault
         private static readonly Version Version = Assembly.GetEntryAssembly().GetName().Version;
         private static readonly int VNow = Version.Build;
         public static readonly string StrVersion = Version.ToString(3);
+        public static int Permissions;
 
         [STAThread]
         private static void Main()
@@ -20,11 +20,14 @@ namespace ROMVault
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
 
-            BasicHttpBinding b = new BasicHttpBinding();
-            b.SendTimeout = new TimeSpan(0, 0, 10);
-            b.ReceiveTimeout = new TimeSpan(0, 0, 10);
-            EndpointAddress e = new EndpointAddress(@"http://services.romvault.com/RVService.svc");
-            RVServiceClient s = new RVServiceClient(b, e);
+            BasicHttpBinding basicHttpBinding = new BasicHttpBinding
+            {
+                SendTimeout = new TimeSpan(0, 1, 0),
+                ReceiveTimeout = new TimeSpan(0, 1, 0),
+                MaxReceivedMessageSize = 128 * 1024 * 1024
+            };
+            EndpointAddress endPointAddress = new EndpointAddress(@"http://services.romvault.com/RVService.svc");
+            RVServiceClient rvSeriveClient = new RVServiceClient(basicHttpBinding, endPointAddress);
 
             if (string.IsNullOrEmpty(UISettings.Username) || string.IsNullOrEmpty(UISettings.EMail))
             {
@@ -47,36 +50,45 @@ namespace ROMVault
             {
                 if (!UISettings.OptOut)
                 {
-                    s.SendUserAsync(UISettings.Username, UISettings.EMail, VNow).Wait();
-                    s.StartUpV2Async(Version.Major, Version.Minor, Version.Build).Wait();
-                }
-
-                ReportError.vMajor = Version.Major;
-                ReportError.vMinor = Version.Minor;
-                ReportError.vBuild = Version.Build;
-
-                var taskUpdateCheck = s.UpdateCheckAsync(Version.Major, Version.Minor, Version.Build);
-                taskUpdateCheck.Wait();
-                bool v = taskUpdateCheck.Result;
-
-                if (v)
-                {
-                    Task<string> taskGetUpdateLink = s.GetUpdateLinkAsync();
-                    taskGetUpdateLink.Wait();
-                    string url = taskGetUpdateLink.Result;
-                    MessageBox.Show("There is a new release download now from " + url);
-                    //System.Diagnostics.Process.Start(url);
-                    //s.Close();
-                    //return;
+                    rvSeriveClient.SendUser(UISettings.Username, UISettings.EMail, VNow);
+                    rvSeriveClient.StartUpV2(Version.Major, Version.Minor, Version.Build);
                 }
             }
             catch
             {
             }
 
+            try
+            {
+                ReportError.vMajor = Version.Major;
+                ReportError.vMinor = Version.Minor;
+                ReportError.vBuild = Version.Build;
+
+                string strVersion = rvSeriveClient.LastestVersionCheck();
+                string strThisVersion = $"{Version.Major}.{Version.Minor}.{Version.Build}";
+
+                string[] strv = strVersion.Split('.');
+                int vMajor = int.Parse(strv[0]);
+                int vMinor = int.Parse(strv[1]);
+                int vBuild = int.Parse(strv[2]);
+
+                if (Version.Major < vMajor || (Version.Major == vMajor && Version.Minor < vMinor) || (Version.Major == vMajor && Version.Minor == vMinor && Version.Build < vBuild))
+                {
+                    string url = rvSeriveClient.GetUpdateLink();
+                    DialogResult res = MessageBox.Show($"There is a new version v{strVersion}, do you want update now?\n{url} ", $"You are running v{strThisVersion}", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+
+                }
+            }
+            catch
+            {
+            }
+
+            rvSeriveClient.Close();
+
 #if !DEBUG
             Application.ThreadException += ReportError.UnhandledExceptionHandler;
 #endif
+
 
             FrmSplashScreen progress = new FrmSplashScreen();
             progress.ShowDialog();

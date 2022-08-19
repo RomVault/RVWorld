@@ -12,7 +12,7 @@ namespace RomVaultCore.FixFile
     {
 
 
-        public static ReturnCode OpenTempFizZip(RvFile fixZip,out ICompress tempFixZip,out string errorMessage)
+        public static ReturnCode OpenTempFixZip(RvFile fixZip,out ICompress tempFixZip,out string errorMessage)
         {
             string strPath = fixZip.Parent.FullName;
             string tempZipFilename = Path.Combine(strPath, "__RomVault.tmp");
@@ -43,7 +43,7 @@ namespace RomVaultCore.FixFile
 
         public static ReturnCode MoveToCorrupt(RvFile fixZip, RvFile fixZippedFile, ref RvFile toSortCorruptGame, ref ICompress toSortCorruptOut, int iRom)
         {
-            if (!((fixZippedFile.DatStatus == DatStatus.InDatCollect || fixZippedFile.DatStatus == DatStatus.NotInDat) && fixZippedFile.GotStatus == GotStatus.Corrupt))
+            if (!((fixZippedFile.DatStatus == DatStatus.InDatCollect || fixZippedFile.DatStatus == DatStatus.NotInDat || fixZippedFile.DatStatus==DatStatus.InDatMIA) && fixZippedFile.GotStatus == GotStatus.Corrupt))
             {
                 ReportError.SendAndShow("Error in Fix Rom Status " + fixZippedFile.RepStatus + " : " + fixZippedFile.DatStatus + " : " + fixZippedFile.GotStatus);
             }
@@ -181,7 +181,9 @@ namespace RomVaultCore.FixFile
                 switch (sevenZippedFile.RepStatus)
                 {
                     case RepStatus.Correct:
+                    case RepStatus.CorrectMIA:
                     case RepStatus.CanBeFixed:
+                    case RepStatus.CanBeFixedMIA:
                     case RepStatus.CorruptCanBeFixed:
                         uncompressedSize += sevenZippedFile.FileGroup.Size ?? 0;
                         break;

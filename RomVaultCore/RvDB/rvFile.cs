@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Text.RegularExpressions;
 using Compress;
@@ -27,7 +28,8 @@ namespace RomVaultCore.RvDB
         InDatMerged,
         InDatBad,
         NotInDat,
-        InToSort
+        InToSort,
+        InDatMIA
     }
 
     public enum GotStatus
@@ -52,7 +54,10 @@ namespace RomVaultCore.RvDB
 
         public bool SearchFound; // ????  used in DatUpdate & FileScanning
 
-        public HeaderFileType HeaderFileType;
+        private HeaderFileType _headerFileType;
+        public HeaderFileType HeaderFileType { get { return _headerFileType & HeaderFileType.HeaderMask; } }
+        public bool HeaderFileTypeRequired { get { return (_headerFileType & HeaderFileType.Required) != 0; } }
+        public HeaderFileType HeaderFileTypeSet { set { _headerFileType = value; } }
 
         public readonly FileType FileType;
         private DatStatus _datStatus = DatStatus.NotInDat;
@@ -119,6 +124,20 @@ namespace RomVaultCore.RvDB
                     return Name ?? "";
                 }
                 return Path.Combine(Parent.TreeFullName, Name);
+            }
+        }
+        public string TreeBarName
+        {
+            get
+            {
+                if (Parent == null)
+                {
+                    return Name ?? "";
+                }
+                string pName = Parent.TreeBarName;
+                if (string.IsNullOrEmpty(pName))
+                    return Name;
+                return Parent.TreeBarName + "|" + Name;
             }
         }
         public string TreeFullNameCase
@@ -189,7 +208,7 @@ namespace RomVaultCore.RvDB
 
 
         /// <summary>
-        /// Returns the Full recursive Three name for the Dat at this RvFile Level, This should Recurse back up to
+        /// Returns the Full recursive Tree name for the Dat at this RvFile Level, This should Recurse back up to
         /// RomVault (not ToSort as there should not be any DAT's in ToSort.)
         /// The Initial RomVault directory is replaced with DatRoot
         /// </summary>
@@ -201,16 +220,12 @@ namespace RomVaultCore.RvDB
             {
                 return "DatRoot";
             }
-            if (rootPath.Substring(0, 6) == "ToSort")
-            {
-                return "Error";
-            }
-            if (rootPath.Substring(0, 8) == "RomVault")
+            if (rootPath.StartsWith("RomVault"))
             {
                 return @"DatRoot" + rootPath.Substring(8);
             }
 
-            return Settings.rvSettings.DatRoot;
+            return "Error";
         }
 
 
@@ -266,6 +281,11 @@ namespace RomVaultCore.RvDB
             get => _gotStatus;
             set
             {
+                if(DatStatus ==DatStatus.InDatMIA && value==GotStatus.Got)
+                {
+                    Debug.WriteLine("GotMIA");
+                }
+
                 _gotStatus = value;
                 RepStatusReset();
             }
@@ -343,7 +363,7 @@ namespace RomVaultCore.RvDB
             if (SHA1 != null) fFlags |= FileFlags.SHA1;
             if (MD5 != null) fFlags |= FileFlags.MD5;
 
-            if (HeaderFileType != HeaderFileType.Nothing) fFlags |= FileFlags.HeaderFileType;
+            if (_headerFileType != HeaderFileType.Nothing) fFlags |= FileFlags.HeaderFileType;
             if (AltSize != null) fFlags |= FileFlags.AltSize;
             if (AltCRC != null) fFlags |= FileFlags.AltCRC;
             if (AltSHA1 != null) fFlags |= FileFlags.AltSHA1;
@@ -410,7 +430,7 @@ namespace RomVaultCore.RvDB
             if (SHA1 != null) bw.WriteByteArray(SHA1);
             if (MD5 != null) bw.WriteByteArray(MD5);
 
-            if (HeaderFileType != HeaderFileType.Nothing) bw.Write((byte)HeaderFileType);
+            if (_headerFileType != HeaderFileType.Nothing) bw.Write((byte)_headerFileType);
             if (AltSize != null) bw.Write((ulong)AltSize);
             if (AltCRC != null) bw.WriteByteArray(AltCRC);
             if (AltSHA1 != null) bw.WriteByteArray(AltSHA1);
@@ -526,7 +546,7 @@ namespace RomVaultCore.RvDB
             SHA1 = (fFlags & FileFlags.SHA1) > 0 ? br.ReadByteArray() : null;
             MD5 = (fFlags & FileFlags.MD5) > 0 ? br.ReadByteArray() : null;
 
-            HeaderFileType = (fFlags & FileFlags.HeaderFileType) > 0 ? (HeaderFileType)br.ReadByte() : HeaderFileType.Nothing;
+            _headerFileType = (fFlags & FileFlags.HeaderFileType) > 0 ? (HeaderFileType)br.ReadByte() : HeaderFileType.Nothing;
             AltSize = (fFlags & FileFlags.AltSize) > 0 ? (ulong?)br.ReadUInt64() : null;
             AltCRC = (fFlags & FileFlags.AltCRC) > 0 ? br.ReadByteArray() : null;
             AltSHA1 = (fFlags & FileFlags.AltSHA1) > 0 ? br.ReadByteArray() : null;
@@ -538,6 +558,11 @@ namespace RomVaultCore.RvDB
             CHDVersion = (fFlags & FileFlags.CHDVersion) > 0 ? (uint?)br.ReadInt32() : null;
 
             _fileStatus = (FileStatus)br.ReadUInt32();
+
+            // fixing missing flag
+            if (HeaderFileType != HeaderFileType.Nothing && (AltSize != null || AltCRC != null || AltSHA1 != null || AltMD5 != null))
+                FileStatusSet(FileStatus.HeaderFileTypeFromHeader);
+
         }
 
 
@@ -550,6 +575,8 @@ namespace RomVaultCore.RvDB
             _dirDats?.Clear();
 
             /************* RvFile ************/
+            HeaderFileTypeSet = HeaderFileType; // this removes the required flag. (as the DAT is being removed.)
+            if (!FileStatusIs(FileStatus.HeaderFileTypeFromHeader) && FileStatusIs(FileStatus.HeaderFileTypeFromDAT)) HeaderFileTypeSet = HeaderFileType.Nothing;
 
             if (!FileStatusIs(FileStatus.SizeFromHeader) && !FileStatusIs(FileStatus.SizeVerified)) Size = null;
             if (!FileStatusIs(FileStatus.CRCFromHeader) && !FileStatusIs(FileStatus.CRCVerified)) CRC = null;
@@ -558,7 +585,7 @@ namespace RomVaultCore.RvDB
             if (!FileStatusIs(FileStatus.AltSHA1FromHeader) && !FileStatusIs(FileStatus.AltSHA1Verified)) AltSHA1 = null;
             if (!FileStatusIs(FileStatus.AltMD5FromHeader) && !FileStatusIs(FileStatus.AltMD5Verified)) AltMD5 = null;
 
-            FileStatusClear(FileStatus.SizeFromDAT | FileStatus.CRCFromDAT | FileStatus.SHA1FromDAT | FileStatus.MD5FromDAT | FileStatus.AltSHA1FromDAT | FileStatus.AltMD5FromDAT);
+            FileStatusClear(FileStatus.HeaderFileTypeFromDAT | FileStatus.SizeFromDAT | FileStatus.CRCFromDAT | FileStatus.SHA1FromDAT | FileStatus.MD5FromDAT | FileStatus.AltSizeFromDAT | FileStatus.AltCRCFromDAT | FileStatus.AltSHA1FromDAT | FileStatus.AltMD5FromDAT);
 
             Merge = "";
             Status = "";
@@ -592,6 +619,9 @@ namespace RomVaultCore.RvDB
                     b.SetAsAltFile();
                 }
 
+                if (HeaderFileType == HeaderFileType.Nothing && b.HeaderFileType != HeaderFileType.Nothing) HeaderFileTypeSet = b.HeaderFileType;
+                if (b.HeaderFileTypeRequired) HeaderFileTypeSet = b._headerFileType;
+
                 if (Size == null && b.Size != null) Size = b.Size;
                 if (CRC == null && b.CRC != null) CRC = b.CRC;
                 if (SHA1 == null && b.SHA1 != null) SHA1 = b.SHA1;
@@ -601,7 +631,7 @@ namespace RomVaultCore.RvDB
                 if (AltSHA1 == null && b.AltSHA1 != null) AltSHA1 = b.AltSHA1;
                 if (AltMD5 == null && b.AltMD5 != null) AltMD5 = b.AltMD5;
 
-                FileStatusSet(
+                FileStatusSet(FileStatus.HeaderFileTypeFromDAT |
                     FileStatus.SizeFromDAT | FileStatus.CRCFromDAT | FileStatus.SHA1FromDAT | FileStatus.MD5FromDAT |
                         FileStatus.AltSizeFromDAT | FileStatus.AltCRCFromDAT | FileStatus.AltSHA1FromDAT | FileStatus.AltMD5FromDAT,
                     b);
@@ -660,6 +690,7 @@ namespace RomVaultCore.RvDB
                 case DatStatus.InDatCollect:
                 case DatStatus.InDatMerged:
                 case DatStatus.InDatBad:
+                case DatStatus.InDatMIA:
                     return EFile.Keep;
 
                 case DatStatus.NotInDat:
@@ -694,7 +725,7 @@ namespace RomVaultCore.RvDB
                     return EFile.Delete;
 
                 // if none of the primary meta data is from the DAT delete it.
-                if (!FileStatusIs(FileStatus.HeaderFileTypeFromDAT)) HeaderFileType = HeaderFileType.Nothing;
+                if (!FileStatusIs(FileStatus.HeaderFileTypeFromDAT)) HeaderFileTypeSet = HeaderFileType.Nothing;
                 if (!FileStatusIs(FileStatus.SizeFromDAT)) Size = null;
                 if (!FileStatusIs(FileStatus.CRCFromDAT)) CRC = null;
                 if (!FileStatusIs(FileStatus.SHA1FromDAT)) SHA1 = null;
@@ -886,9 +917,8 @@ namespace RomVaultCore.RvDB
                 if (AltCRC == null && file.AltCRC != null) AltCRC = file.AltCRC;
                 if (AltSHA1 == null && file.AltSHA1 != null) AltSHA1 = file.AltSHA1;
                 if (AltMD5 == null && file.AltMD5 != null) AltMD5 = file.AltMD5;
-                if (HeaderFileType == HeaderFileType.Nothing && file.HeaderFileType != HeaderFileType.Nothing) HeaderFileType = file.HeaderFileType;
-
-                CHDVersion = file.CHDVersion;
+                if (HeaderFileType == HeaderFileType.Nothing && file.HeaderFileType != HeaderFileType.Nothing) HeaderFileTypeSet = file.HeaderFileType;
+                if (CHDVersion == null && file.CHDVersion != null) CHDVersion = file.CHDVersion;
 
 
                 FileStatusSet(
@@ -942,6 +972,9 @@ namespace RomVaultCore.RvDB
 
             c.CHDVersion = CHDVersion;
 
+            // think this is good enough
+            if (c._headerFileType== HeaderFileType.Nothing)
+                c._headerFileType = _headerFileType;
 
             c.Name = Name;
             c.FileName = FileName;
@@ -955,6 +988,11 @@ namespace RomVaultCore.RvDB
             c._gotStatus = _gotStatus;
             c.RepStatus = RepStatus;
             c.FileGroup = FileGroup;
+            
+            if (c._datStatus == DatStatus.InDatMIA && c._gotStatus == GotStatus.Got)
+            {
+                Debug.WriteLine("Found MIA");
+            }
         }
 
         public string SuperDatFileName()
@@ -995,6 +1033,9 @@ namespace RomVaultCore.RvDB
         {
             _datStatus = dt;
             _gotStatus = flag;
+            if(_datStatus== DatStatus.InDatMIA && _gotStatus== GotStatus.Got)
+            {
+            }
             RepStatusReset();
         }
 
@@ -1118,7 +1159,7 @@ namespace RomVaultCore.RvDB
                 FileType == FileType.Zip && child.FileType != FileType.ZipFile
             )
             {
-                ReportError.SendAndShow("Typing to add a " + child.FileType + " to a " + FileType);
+                ReportError.SendAndShow("Trying to add a " + child.FileType + " to a " + FileType);
             }
 
             _children.Insert(index, child);

@@ -6,6 +6,7 @@
         sevenzip,
         archive,
         file,
+        dir,
         all
     }
 

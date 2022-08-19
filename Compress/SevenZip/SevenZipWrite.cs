@@ -81,14 +81,18 @@ namespace Compress.SevenZip
                 case SevenZipCompressType.lzma:
                     LzmaEncoderProperties ep = new(true, dictionarySize, numFastBytes);
                     LzmaStream lzs = new(ep, false, _zipFs);
-                    
+
                     newStream.Method = new byte[] { 3, 1, 1 };
                     newStream.Properties = lzs.Properties;
                     _compressStream = lzs;
                     break;
 
+
                 case SevenZipCompressType.zstd:
-                    ZstdSharp.CompressionStream zss = new(_zipFs, 19);
+
+
+                    Stream zss = new ZstdSharp.CompressionStream(_zipFs, 18);
+                    
                     newStream.Method = new byte[] { 4, 247, 17, 1 };
                     newStream.Properties = new byte[] { 1, 5, 19, 0, 0 };
                     _compressStream = zss;

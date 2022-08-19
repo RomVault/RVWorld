@@ -6,6 +6,7 @@ namespace DATReader.DatStore
     {
         public string Description;
 
+        public string Category;
         public string Manufacturer;
         public string History;
         public string CloneOf;

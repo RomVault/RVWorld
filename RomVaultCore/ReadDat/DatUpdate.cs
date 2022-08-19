@@ -79,7 +79,7 @@ namespace RomVaultCore.ReadDat
                 RemoveOldTree(DB.DirRoot.Child(0));
 
                 // setBackTreeValues
-                treeStore.SetBackTreeValues(DB.DirRoot.Child(0));
+                treeStore.SetBackTreeValues(DB.DirRoot.Child(0), true);
 
                 _thWrk.Report(new bgwText("Updating Cache"));
                 DB.Write();
@@ -331,8 +331,8 @@ namespace RomVaultCore.ReadDat
 
         private static void UpdateDatList(RvFile dbDir, RvFile tmpDir)
         {
-            AddNewDats(dbDir, tmpDir);
-            UpdateDirs(dbDir, tmpDir);
+            AddNewDats(dbDir, tmpDir); // this checks / adds any DAT found at this level in the tree.
+            UpdateDirs(dbDir, tmpDir); // then then scans down any dirs looking for more DAT's
         }
 
         /// <summary>
@@ -768,13 +768,6 @@ namespace RomVaultCore.ReadDat
 
         public static void CheckAllDats(RvFile dbFile, string romVaultPath)
         {
-            int idx = romVaultPath.LastIndexOf('\\');
-            if (idx == -1)
-                idx = romVaultPath.LastIndexOf('/');
-            if (idx == -1)
-                return;
-            romVaultPath = romVaultPath.Substring(0, idx+1);
-
             CheckAllDatsInternal(dbFile, "DatRoot" + romVaultPath.Substring(8));
         }
 
@@ -787,16 +780,30 @@ namespace RomVaultCore.ReadDat
             int dats = dbDir.DirDatCount;
             if (dats > 0)
             {
-                for (int i = 0; i < dats; i++)
+                string datFullPath = dbFile.DatTreeFullName;
+                if (datPath.Length <= datFullPath.Length)
                 {
-                    RvDat testDat = dbDir.DirDat(i);
-                    string datFullName = testDat.GetData(RvDat.DatData.DatRootFullName);
-                    if (datPath.Length > datFullName.Length)
-                        continue;
-                    if (datFullName.Substring(0, datPath.Length) != datPath)
-                        continue;
+                    if (datFullPath.Substring(0, datPath.Length) == datPath)
+                    {
+                        for (int i = 0; i < dats; i++)
+                        {
+                            RvDat testDat = dbDir.DirDat(i);
 
-                    testDat.TimeStamp = long.MaxValue;
+
+                            testDat.TimeStamp = long.MaxValue;
+                        }
+                    }
+                }
+            }
+            if (dbFile.Dat != null)
+            {
+                string datFullName = dbFile.Dat.GetData(RvDat.DatData.DatRootFullName);
+                if (datPath.Length <= datFullName.Length)
+                {
+                    if (datFullName.Substring(0, datPath.Length) == datPath)
+                    {
+                        dbFile.Dat.TimeStamp = long.MaxValue;
+                    }
                 }
             }
 

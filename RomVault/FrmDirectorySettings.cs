@@ -48,6 +48,11 @@ namespace ROMVault
             cboDirType.Items.Add("Add SubDirs if conflicts");
             cboDirType.Items.Add("Add SubDirs if multiple roms");
 
+            cboHeaderType.Items.Clear();
+            cboHeaderType.Items.Add("Optional");
+            cboHeaderType.Items.Add("Headered");
+            cboHeaderType.Items.Add("Headerless");
+
             tooltip = new ToolTip
             {
                 InitialDelay = 1000, ReshowDelay = 500
@@ -77,10 +82,10 @@ namespace ROMVault
         {
             _displayType = type;
             btnDelete.Visible = type;
-            Height = type ? 329 : 608;
+            Height = type ? 355 : 633;
             foreach (object c in Controls)
             {
-                if ((c is Control ct) && (ct.Top > 250))
+                if ((c is Control ct) && (ct.Top > 320))
                 {
                     ct.Visible = !type;
                 }
@@ -121,6 +126,8 @@ namespace ROMVault
 
             cboDirType.Enabled = chkSingleArchive.Checked;
             cboDirType.SelectedIndex = (int)_rule.SubDirType;
+
+            cboHeaderType.SelectedIndex = (int)_rule.HeaderType;
 
             textBox1.Text = "";
             foreach (string file in _rule.IgnoreFiles)
@@ -224,6 +231,7 @@ namespace ROMVault
             _rule.Merge = (MergeType)cboMergeType.SelectedIndex;
             _rule.MergeOverrideDAT = chkMergeTypeOverride.Checked;
             _rule.Filter = (FilterType)cboFilterType.SelectedIndex;
+            _rule.HeaderType = (HeaderType)cboHeaderType.SelectedIndex;
             _rule.SingleArchive = chkSingleArchive.Checked;
             _rule.SubDirType = (RemoveSubType)cboDirType.SelectedIndex;
             _rule.MultiDATDirOverride = chkMultiDatDirOverride.Checked;
@@ -368,6 +376,7 @@ namespace ROMVault
                 if (_rule.Compression != FileType.Zip ||
                     _rule.CompressionOverrideDAT ||
                     _rule.Merge != MergeType.Split ||
+                    _rule.HeaderType!=HeaderType.Optional ||
                     _rule.MergeOverrideDAT ||
                     _rule.SubDirType!=RemoveSubType.KeepAllSubDirs ||
                     _rule.SingleArchive ||

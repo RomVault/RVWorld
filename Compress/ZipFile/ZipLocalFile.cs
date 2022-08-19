@@ -124,12 +124,12 @@ namespace Compress.ZipFile
                 4.4.5 compression method: (2 bytes)
 
                 0 - (Supported) The file is stored (no compression)
-                1 - (Supported) The file is Shrunk
-                2 - (Supported) The file is Reduced with compression factor 1
-                3 - (Supported) The file is Reduced with compression factor 2
-                4 - (Supported) The file is Reduced with compression factor 3
-                5 - (Supported) The file is Reduced with compression factor 4
-                6 - (Supported) The file is Imploded
+                1 - The file is Shrunk
+                2 - The file is Reduced with compression factor 1
+                3 - The file is Reduced with compression factor 2
+                4 - The file is Reduced with compression factor 3
+                5 - The file is Reduced with compression factor 4
+                6 - The file is Imploded
                 7 - Reserved for Tokenizing compression algorithm
                 8 - (Supported) The file is Deflated
                 9 - (Supported) Enhanced Deflating using Deflate64(tm)
@@ -156,6 +156,7 @@ namespace Compress.ZipFile
                 switch (_compressionMethod)
                 {
                     case 0: // The file is stored (no compression)
+                
                     case 8: // The file is Deflated
                     case 9: // Enhanced Deflating using Deflate64(tm)
                     case 12: // The file is BZIP2 algorithm. 
@@ -581,6 +582,7 @@ namespace Compress.ZipFile
                     readStream = zipFs;
                     streamSize = _compressedSize; // same as UncompressedSize
                     break;
+
                 case 8:
                     if (raw)
                     {
@@ -665,9 +667,9 @@ namespace Compress.ZipFile
                 }
                 else if (compressionMethod == 93)
                 {
-                    writeStream = new ZstdSharp.CompressionStream(zipFs, 18);
+                    writeStream = new ZstdSharp.CompressionStream(zipFs, 19);
                 }
-                else if(compressionMethod == 8)
+                else if (compressionMethod == 8)
                 {
                     writeStream = new ZlibBaseStream(zipFs, CompressionMode.Compress, CompressionLevel.BestCompression, ZlibStreamFlavor.DEFLATE, true);
                 }

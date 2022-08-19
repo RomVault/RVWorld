@@ -4,10 +4,9 @@ using System.IO;
 using System.Text.RegularExpressions;
 using System.Xml.Serialization;
 using DATReader.DatClean;
-using Microsoft.Win32;
 using RomVaultCore.RvDB;
+using System.Collections.Generic;
 using File = RVIO.File;
-using Path = RVIO.Path;
 
 namespace RomVaultCore
 {
@@ -45,11 +44,24 @@ namespace RomVaultCore
         CHDsOnly
     }
 
+    public enum HeaderType
+    {
+        Optional,
+        Headered,
+        Headerless
+    }
+
+    public class FCSettings
+    {
+        public string path;
+        public List<string> ipPort;
+        public bool AutoStart;
+        public bool IncludeToSort;
+    }
 
     public class Settings
     {
         public static Settings rvSettings;
-        public static byte[] FCUsername;
 
         public bool FilesOnly = false;
         public bool zstd = false;
@@ -64,8 +76,12 @@ namespace RomVaultCore
 
         [XmlIgnore]
         public List<Regex> IgnoreFilesRegex;
+        [XmlIgnore]
+        public List<Regex> IgnoreFilesScanRegex;
 
         public List<EmulatorInfo> EInfo;
+
+        public DatVaultSettings DatVault;
 
         public bool DoubleCheckDelete = true;
         public bool DebugLogsEnabled;
@@ -116,7 +132,7 @@ namespace RomVaultCore
             // check this incase no ignorefiles list was read from the file
             if (ret.IgnoreFiles == null)
                 ret.IgnoreFiles = new List<string>();
-            
+
             // fix old DatRules by adding a dir seprator on the end of the dirpaths
             foreach (DatRule r in ret.DatRules)
             {
@@ -136,16 +152,28 @@ namespace RomVaultCore
         public void SetRegExRules()
         {
             IgnoreFilesRegex = new List<Regex>();
+            IgnoreFilesScanRegex = new List<Regex>();
             foreach (string str in IgnoreFiles)
             {
-                IgnoreFilesRegex.Add(WildcardToRegex(str));
+                bool mIgnore = str.ToLower().StartsWith("ignore:");
+                if (mIgnore)
+                    IgnoreFilesScanRegex.Add(WildcardToRegex(str.Substring(7)));
+                else
+                    IgnoreFilesRegex.Add(WildcardToRegex(str));
             }
 
             foreach (DatRule r in DatRules)
             {
                 r.IgnoreFilesRegex = new List<Regex>();
+                r.IgnoreFilesScanRegex= new List<Regex>();
                 foreach (string str in r.IgnoreFiles)
-                    r.IgnoreFilesRegex.Add(WildcardToRegex(str));
+                {
+                    bool mIgnore = str.ToLower().StartsWith("ignore:");
+                    if (mIgnore)
+                        r.IgnoreFilesScanRegex.Add(WildcardToRegex(str.Substring(7)));
+                    else
+                        r.IgnoreFilesRegex.Add(WildcardToRegex(str));
+                }
             }
         }
 
@@ -170,6 +198,7 @@ namespace RomVaultCore
                     Compression = FileType.Zip,
                     CompressionOverrideDAT = false,
                     Merge = MergeType.None,
+                    HeaderType=HeaderType.Optional,
                     MergeOverrideDAT = false,
                     SingleArchive = false,
                     MultiDATDirOverride = false,
@@ -180,7 +209,7 @@ namespace RomVaultCore
 
         public static void WriteConfig(Settings settings)
         {
-            string configPath = Path.Combine(Environment.CurrentDirectory, "RomVault3cfg.xml");
+            string configPath = "RomVault3cfg.xml";
             if (File.Exists(configPath))
             {
                 File.Delete(configPath);
@@ -196,13 +225,11 @@ namespace RomVaultCore
 
         private static Settings ReadConfig()
         {
-            string configPath = Path.Combine(Environment.CurrentDirectory, "RomVault3cfg.xml");
+            string configPath = "RomVault3cfg.xml";
             if (!File.Exists(configPath))
             {
-                Console.WriteLine($"{configPath} not Found");
                 return null;
             }
-            Console.WriteLine($"Reading {configPath}");
             string strXml = System.IO.File.ReadAllText(configPath);
 
             // converting old enum to new:
@@ -242,6 +269,7 @@ namespace RomVaultCore
         // split,merge,nonmerged
         public MergeType Merge;
         public FilterType Filter;
+        public HeaderType HeaderType;
 
         public bool MergeOverrideDAT;
 
@@ -254,6 +282,8 @@ namespace RomVaultCore
 
         [XmlIgnore]
         public List<Regex> IgnoreFilesRegex;
+        [XmlIgnore]
+        public List<Regex> IgnoreFilesScanRegex;
 
 
         public int CompareTo(DatRule obj)
@@ -263,4 +293,20 @@ namespace RomVaultCore
 
     }
 
+    public class EmulatorInfo
+    {
+        public string TreeDir;
+        public string ExeName;
+        public string CommandLine;
+        public string WorkingDirectory;
+        public string ExtraPath;
+    }
+
+    public class DatVaultSettings
+    {
+        public string sTree;
+        public bool bUseDefaultMasterDirectories;
+        public bool bUseDefaultSubDirectories;
+        public bool bImportNewDATsWithJsonSeeds;
+    }
 }

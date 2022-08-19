@@ -1,7 +1,7 @@
 ﻿/******************************************************
  *     ROMVault3 is written by Gordon J.              *
  *     Contact gordon@romvault.com                    *
- *     Copyright 2020                                 *
+ *     Copyright 2022                                 *
  ******************************************************/
 
 using System;
@@ -113,7 +113,7 @@ namespace CHDlib
             }
 
             string error = null;
-            if (hdi.version <4 && hdi.compression<3)
+            if (hdi.version < 5 && hdi.compression < 3)
             {
                 hdi.file = s;
                 CHDLocalCheck clc = new CHDLocalCheck();

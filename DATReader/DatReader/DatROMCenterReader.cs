@@ -11,7 +11,7 @@ namespace DATReader.DatReader
         {
             datHeader = new DatHeader
             {
-                BaseDir = new DatDir(DatFileType.UnSet),
+                BaseDir = new DatDir("", DatFileType.UnSet),
                 Filename = strFilename
             };
 
@@ -26,7 +26,7 @@ namespace DATReader.DatReader
                     {
                         case "[credits]":
                             //getcredits
-                            if (!LoadCredits(dfl, datHeader,errorReport))
+                            if (!LoadCredits(dfl, datHeader, errorReport))
                                 return false;
                             break;
                         case "[dat]":
@@ -241,10 +241,10 @@ namespace DATReader.DatReader
 
                 int index;
                 DatDir dDir;
-                DatDir searchDir = new DatDir(DatFileType.Dir) { Name = GameName };
+                DatDir searchDir = new DatDir(GameName, DatFileType.Dir);
                 if (parentDir.ChildNameSearch(searchDir, out index) != 0)
                 {
-                    dDir = new DatDir(DatFileType.UnSet) { Name = GameName, DGame = new DatGame() };
+                    dDir = new DatDir(GameName, DatFileType.UnSet) { DGame = new DatGame() };
                     DatGame dGame = dDir.DGame;
                     dGame.Description = GameDescription;
                     if (ParentName != GameName)
@@ -253,12 +253,11 @@ namespace DATReader.DatReader
                 }
                 else
                 {
-                    dDir = (DatDir)parentDir.Child(index);
+                    dDir = (DatDir)parentDir[index];
                     // need to check everything matches
                 }
 
-                DatFile dRom = new DatFile(DatFileType.UnSet);
-                dRom.Name = romName;
+                DatFile dRom = new DatFile(romName, DatFileType.UnSet);
                 dRom.CRC = VarFix.CleanMD5SHA1(romCRC, 8);
                 dRom.Size = VarFix.ULong(romSize);
                 dRom.Merge = merge;
@@ -308,10 +307,10 @@ namespace DATReader.DatReader
 
                 int index;
                 DatDir dDir;
-                DatDir searchDir = new DatDir(DatFileType.Dir) { Name = GameName };
+                DatDir searchDir = new DatDir(GameName, DatFileType.Dir);
                 if (parentDir.ChildNameSearch(searchDir, out index) != 0)
                 {
-                    dDir = new DatDir(DatFileType.UnSet) { Name = GameName, DGame = new DatGame() };
+                    dDir = new DatDir(GameName, DatFileType.UnSet) { DGame = new DatGame() };
                     DatGame dGame = dDir.DGame;
                     dGame.Description = GameDescription;
                     if (ParentName != GameName)
@@ -320,14 +319,13 @@ namespace DATReader.DatReader
                 }
                 else
                 {
-                    dDir = (DatDir)parentDir.Child(index);
+                    dDir = (DatDir)parentDir[index];
                     // need to check everything matches
                 }
 
-                DatFile dRom = new DatFile(DatFileType.UnSet)
+                DatFile dRom = new DatFile(VarFix.CleanCHD(romName), DatFileType.UnSet)
                 {
                     isDisk = true,
-                    Name = VarFix.CleanCHD(romName),
                     SHA1 = VarFix.CleanMD5SHA1(romCRC, 40),
                     Merge = merge
                 };

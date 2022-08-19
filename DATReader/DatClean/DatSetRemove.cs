@@ -8,9 +8,9 @@ namespace DATReader.DatClean
     {
         public static void RemoveDupes(DatDir tDat, bool testName = true, bool testWithMergeName = false)
         {
-            for (int g = 0; g < tDat.ChildCount; g++)
+            for (int g = 0; g < tDat.Count; g++)
             {
-                DatDir mGame = (DatDir)tDat.Child(g);
+                DatDir mGame = (DatDir)tDat[g];
 
                 if (mGame.DGame == null)
                 {
@@ -24,12 +24,12 @@ namespace DATReader.DatClean
                     {
                         found = false;
 
-                        for (int r = 0; r < mGame.ChildCount; r++)
+                        for (int r = 0; r < mGame.Count; r++)
                         {
-                            DatFile df0 = (DatFile)mGame.Child(r);
-                            for (int t = r + 1; t < mGame.ChildCount; t++)
+                            DatFile df0 = (DatFile)mGame[r];
+                            for (int t = r + 1; t < mGame.Count; t++)
                             {
-                                DatFile df1 = (DatFile)mGame.Child(t);
+                                DatFile df1 = (DatFile)mGame[t];
 
                                 if (testName && df0.Name != df1.Name)
                                     continue;
@@ -38,6 +38,9 @@ namespace DATReader.DatClean
                                     continue;
                                 bool hasSHA1 = df0.SHA1 != null && df1.SHA1 != null;
                                 if (hasSHA1 && !ArrByte.bCompare(df0.SHA1, df1.SHA1))
+                                    continue;
+                                bool hasSHA256 = df0.SHA256 != null && df1.SHA256 != null;
+                                if (hasSHA256 && !ArrByte.bCompare(df0.SHA256, df1.SHA256))
                                     continue;
                                 bool hasMD5 = df0.MD5 != null && df1.MD5 != null;
                                 if (hasMD5 && !ArrByte.bCompare(df0.MD5, df1.MD5))
@@ -82,8 +85,8 @@ namespace DATReader.DatClean
                                     found = false;
                                     continue;
                                 }
-                                r = mGame.ChildCount;
-                                t = mGame.ChildCount;
+                                r = mGame.Count;
+                                t = mGame.Count;
 
                             }
                         }
@@ -155,9 +158,9 @@ namespace DATReader.DatClean
 
         public static void RemoveNoDumps(DatDir tDat)
         {
-            for (int g = 0; g < tDat.ChildCount; g++)
+            for (int g = 0; g < tDat.Count; g++)
             {
-                if (!(tDat.Child(g) is DatDir mGame))
+                if (!(tDat[g] is DatDir mGame))
                     continue;
 
                 if (mGame.DGame == null)
@@ -182,9 +185,9 @@ namespace DATReader.DatClean
         public static void RemoveCHD(DatDir tDat)
         {
 
-            for (int g = 0; g < tDat.ChildCount; g++)
+            for (int g = 0; g < tDat.Count; g++)
             {
-                DatDir mGame = (DatDir)tDat.Child(g);
+                DatDir mGame = (DatDir)tDat[g];
 
                 if (mGame.DGame == null)
                 {
@@ -192,9 +195,9 @@ namespace DATReader.DatClean
                 }
                 else
                 {
-                    for (int r = 0; r < mGame.ChildCount; r++)
+                    for (int r = 0; r < mGame.Count; r++)
                     {
-                        DatFile df1 = (DatFile)mGame.Child(r);
+                        DatFile df1 = (DatFile)mGame[r];
                         if (!df1.isDisk)
                             continue;
                         mGame.ChildRemove(df1);
@@ -206,9 +209,9 @@ namespace DATReader.DatClean
 
         public static void RemoveNonCHD(DatDir tDat)
         {
-            for (int g = 0; g < tDat.ChildCount; g++)
+            for (int g = 0; g < tDat.Count; g++)
             {
-                DatDir mGame = (DatDir)tDat.Child(g);
+                DatDir mGame = (DatDir)tDat[g];
 
                 if (mGame.DGame == null)
                 {
@@ -216,9 +219,9 @@ namespace DATReader.DatClean
                 }
                 else
                 {
-                    for (int r = 0; r < mGame.ChildCount; r++)
+                    for (int r = 0; r < mGame.Count; r++)
                     {
-                        DatFile df1 = (DatFile)mGame.Child(r);
+                        DatFile df1 = (DatFile)mGame[r];
                         if (df1.isDisk)
                             continue;
                         mGame.ChildRemove(df1);
@@ -230,9 +233,9 @@ namespace DATReader.DatClean
 
         public static void RemoveUnNeededDirectories(DatDir tDat)
         {
-            for (int g = 0; g < tDat.ChildCount; g++)
+            for (int g = 0; g < tDat.Count; g++)
             {
-                if (!(tDat.Child(g) is DatDir mGame))
+                if (!(tDat[g] is DatDir mGame))
                     continue;
 
                 if (mGame.DGame == null)
@@ -249,17 +252,17 @@ namespace DATReader.DatClean
 
         public static void RemoveUnNeededDirectoriesFromZip(DatDir mGame)
         {
-            for (int r = 0; r < mGame.ChildCount; r++)
+            for (int r = 0; r < mGame.Count; r++)
             {
-                DatFile df1 = (DatFile)mGame.Child(r);
+                DatFile df1 = (DatFile)mGame[r];
                 if (df1.Size != 0 || df1.Name.Length == 0 || df1.Name.Substring(df1.Name.Length - 1) != "\\")
                     continue;
                 bool found = false;
-                for (int r1 = 0; r1 < mGame.ChildCount; r1++)
+                for (int r1 = 0; r1 < mGame.Count; r1++)
                 {
                     if (r == r1)
                         continue;
-                    string compName = mGame.Child(r1).Name;
+                    string compName = mGame[r1].Name;
                     if (compName.Length <= df1.Name.Length)
                         continue;
 
@@ -280,9 +283,9 @@ namespace DATReader.DatClean
 
         public static void RemoveEmptyDirectories(DatDir tDat)
         {
-            for (int g = 0; g < tDat.ChildCount; g++)
+            for (int g = 0; g < tDat.Count; g++)
             {
-                if (!(tDat.Child(g) is DatDir mGame))
+                if (!(tDat[g] is DatDir mGame))
                     continue;
 
                 if (mGame.DGame == null)
@@ -291,7 +294,7 @@ namespace DATReader.DatClean
                 }
                 else
                 {
-                    if (mGame.ChildCount == 0)
+                    if (mGame.Count == 0)
                     {
                         tDat.ChildRemove(mGame);
                         g--;

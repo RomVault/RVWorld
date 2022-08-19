@@ -1,7 +1,7 @@
 ﻿/******************************************************
  *     ROMVault3 is written by Gordon J.              *
  *     Contact gordon@romvault.com                    *
- *     Copyright 2020                                 *
+ *     Copyright 2022                                 *
  ******************************************************/
 
 using System;
@@ -77,7 +77,6 @@ namespace ROMVault
 
             Settings.rvSettings.ConvertToTrrntzip = chkTrrntZip.Checked;
             Settings.rvSettings.ConvertToRV7Z = chkrv7Zip.Checked;
-
 
             Settings.WriteConfig(Settings.rvSettings);
             Close();

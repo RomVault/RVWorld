@@ -2,14 +2,25 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <Configurations>Debug;Release;ReleaseFC</Configurations>
+    <AllowUnsafeBlocks>False</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <DefineConstants>TRACE;dt;ZipFile</DefineConstants>
+    <DefineConstants>TRACE;RomShare</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseFC|AnyCPU'">
+    <DefineConstants>$(DefineConstants)TRACE;RomShare</DefineConstants>
+    <Optimize>True</Optimize>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="System.Text.Json" Version="6.0.0" />
+    <PackageReference Include="System.ServiceModel.Duplex" Version="4.9.0" />
+    <PackageReference Include="System.ServiceModel.Http" Version="4.9.0" />
+    <PackageReference Include="System.ServiceModel.NetTcp" Version="4.9.0" />
+    <PackageReference Include="System.ServiceModel.Security" Version="4.9.0" />
+    <PackageReference Include="System.Text.Json" Version="6.0.5" />
   </ItemGroup>
 
   <ItemGroup>
@@ -17,16 +28,7 @@
     <ProjectReference Include="..\Compress\Compress.csproj" />
     <ProjectReference Include="..\DATReader\DATReader.csproj" />
     <ProjectReference Include="..\FileHeaderReader\FileHeaderReader.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Reference Include="System.ServiceModel">
-      <HintPath>C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\System.ServiceModel.dll</HintPath>
-    </Reference>
-  </ItemGroup>
-
-  <ItemGroup>
-    <WCFMetadata Include="Connected Services" />
+    <ProjectReference Include="..\RVServiceAccess\RVServiceAccess.csproj" />
   </ItemGroup>
 
 </Project>

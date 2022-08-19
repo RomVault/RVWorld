@@ -1,7 +1,7 @@
 ﻿/******************************************************
  *     ROMVault3 is written by Gordon J.              *
  *     Contact gordon@romvault.com                    *
- *     Copyright 2020                                 *
+ *     Copyright 2022                                 *
  ******************************************************/
 
 using System;
@@ -59,7 +59,7 @@ namespace RomVaultCore.ReadDat
             return use;
         }
 
-        public static RvFile ReadInDatFile(RvDat datFile, ThreadWorker thWrk,out string extraDirName)
+        public static RvFile ReadInDatFile(RvDat datFile, ThreadWorker thWrk, out string extraDirName)
         {
             try
             {
@@ -115,6 +115,9 @@ namespace RomVaultCore.ReadDat
 
                 SetMergeType(datRule, dh);
 
+                if (datRule.Merge!=MergeType.NonMerged)
+                    DatClean.CheckDeDuped(dh.BaseDir);
+
                 if (datRule.SingleArchive)
                     DatClean.MakeDatSingleLevel(dh, datRule.UseDescriptionAsDirName, datRule.SubDirType, isFile(datRule, dh));
 
@@ -129,14 +132,13 @@ namespace RomVaultCore.ReadDat
                 DatClean.CleanFilenamesFixDupes(dh.BaseDir); // you may get repeat filenames inside Zip's / 7Z's and they may not be sorted to find them by now.
 
 
-                RvFile newDir = ExternalDatConverter.ConvertFromExternalDat(dh, datFile);
+                RvFile newDir = ExternalDatConverter.ConvertFromExternalDat(dh, datFile, datRule.HeaderType);
                 return newDir;
             }
             catch (Exception e)
             {
                 string datRootFullName = datFile?.GetData(RvDat.DatData.DatRootFullName);
 
-                Console.WriteLine(e);
                 throw new Exception("Error is DAT " + datRootFullName + " " + e.Message);
             }
         }
@@ -170,10 +172,14 @@ namespace RomVaultCore.ReadDat
                         break;
                     case MergeType.NonMerged:
                         DatClean.DatSetMakeNonMergeSet(dh.BaseDir);
+                        DatSetStatus.SetStatus(dh.BaseDir);
                         break;
                     case MergeType.Split:
                         DatClean.DatSetMakeSplitSet(dh.BaseDir);
                         //DatClean.RemoveNotCollected(dh.BaseDir);
+                        break;
+                    default:
+                        DatSetStatus.SetStatus(dh.BaseDir);
                         break;
                 }
 
@@ -182,6 +188,8 @@ namespace RomVaultCore.ReadDat
                 DatClean.RemoveDupes(dh.BaseDir, !dh.MameXML, mt != MergeType.NonMerged);
                 DatClean.RemoveEmptySets(dh.BaseDir);
             }
+            else
+                DatSetStatus.SetStatus(dh.BaseDir);
 
         }
 

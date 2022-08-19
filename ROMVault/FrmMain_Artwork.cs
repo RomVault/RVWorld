@@ -200,8 +200,68 @@ namespace ROMVault
 
         }
 
+        // need to only load new image if the RvFile has changed
+        // to stop flickering on screen while system is processing
+        private void LoadPannelFromRom(RvFile tRom)
+        {
+            TabEmuArc.TabPages.Remove(tabArtWork);
+            TabEmuArc.TabPages.Remove(tabScreens);
+            TabEmuArc.TabPages.Remove(tabInfo);
 
-        private void LoadPannels(RvFile tGame)
+            string ext = Path.GetExtension(tRom.Name).ToLower();
+            if (ext != ".png" && ext != ".jpg")
+            {
+                splitListArt.Panel2Collapsed = true;
+                splitListArt.Panel2.Hide();
+                return;
+            }
+            bool loaded = picArtwork.LoadImage(tRom.Parent, tRom.Name);
+            if (loaded)
+            {
+                TabEmuArc.TabPages.Add(tabArtWork);
+                splitListArt.Panel2Collapsed = false;
+                splitListArt.Panel2.Show();
+            }
+            else
+            {
+                splitListArt.Panel2Collapsed = true;
+                splitListArt.Panel2.Hide();
+            }
+        }
+
+        private bool LoadC64Pannel(RvFile tGame)
+        {
+            TabEmuArc.TabPages.Remove(tabArtWork);
+            TabEmuArc.TabPages.Remove(tabScreens);
+            TabEmuArc.TabPages.Remove(tabInfo);
+
+            bool artLoaded = picArtwork.TryLoadImage(tGame, "Front");
+            bool logoLoaded = picLogo.TryLoadImage(tGame, "Extras/Cassette");
+
+
+            bool titleLoaded = picScreenTitle.TryLoadImage(tGame, "Extras/Inlay");
+            bool screenLoaded = picScreenShot.TryLoadImage(tGame, "Extras/Inlay_back");
+
+
+            if (artLoaded || logoLoaded) TabEmuArc.TabPages.Add(tabArtWork);
+            if (titleLoaded || screenLoaded) TabEmuArc.TabPages.Add(tabScreens);
+
+            if (artLoaded || logoLoaded || titleLoaded || screenLoaded)
+            {
+                splitListArt.Panel2Collapsed = false;
+                splitListArt.Panel2.Show();
+                return true;
+            }
+            else
+            {
+                splitListArt.Panel2Collapsed = true;
+                splitListArt.Panel2.Hide();
+                return false;
+            }
+
+        }
+
+        private void LoadTruRipPannel(RvFile tGame)
         {
             TabEmuArc.TabPages.Remove(tabArtWork);
             TabEmuArc.TabPages.Remove(tabScreens);

@@ -86,7 +86,7 @@
             // btnOK
             // 
             this.btnOK.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.btnOK.Location = new System.Drawing.Point(297, 367);
+            this.btnOK.Location = new System.Drawing.Point(297, 376);
             this.btnOK.Name = "btnOK";
             this.btnOK.Size = new System.Drawing.Size(89, 23);
             this.btnOK.TabIndex = 9;
@@ -97,7 +97,7 @@
             // btnCancel
             // 
             this.btnCancel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.btnCancel.Location = new System.Drawing.Point(392, 367);
+            this.btnCancel.Location = new System.Drawing.Point(392, 376);
             this.btnCancel.Name = "btnCancel";
             this.btnCancel.Size = new System.Drawing.Size(89, 23);
             this.btnCancel.TabIndex = 10;
@@ -122,8 +122,8 @@
             this.label4.Name = "label4";
             this.label4.Size = new System.Drawing.Size(380, 37);
             this.label4.TabIndex = 13;
-            this.label4.Text = "Filenames not to remove from ToSort Dir\'s :    One rule per line\r\nBasic rules sup" +
-    "port * and ? wildcards ,  Regex rules must start with \"regex:\"";
+            this.label4.Text = "Filenames not to remove from Dir\'s :    One rule per line\r\nBasic rules support * " +
+    "and ? wildcards ,  Regex rules must start with \"regex:\"";
             // 
             // cboFixLevel
             // 
@@ -245,7 +245,7 @@
             // FrmSettings
             // 
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
-            this.ClientSize = new System.Drawing.Size(493, 402);
+            this.ClientSize = new System.Drawing.Size(493, 411);
             this.Controls.Add(this.chkrv7Zip);
             this.Controls.Add(this.chkDetailedReporting);
             this.Controls.Add(this.chkTrrntZip);

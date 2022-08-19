@@ -1,7 +1,7 @@
 ﻿/******************************************************
  *     ROMVault3 is written by Gordon J.              *
  *     Contact gordon@romvault.com                    *
- *     Copyright 2020                                 *
+ *     Copyright 2022                                 *
  ******************************************************/
 
 using System;
@@ -11,7 +11,6 @@ using Compress;
 using Compress.SevenZip;
 using Compress.Support.Compression.Deflate;
 using Compress.Support.Compression.LZMA;
-using Compress.Support.Utils;
 using Compress.ThreadReaders;
 using Compress.ZipFile;
 using RomVaultCore.RvDB;
@@ -34,13 +33,14 @@ namespace RomVaultCore.FixFile.Util
         SourceCheckSumMismatch,
         DestinationCheckSumMismatch,
         ToSortNotFound,
+        CannotMove,
         Cancel
     }
 
 
     public static partial class FixFileUtils
     {
-        private const int BufferSize = 4096 * 1024;
+        private const int BufferSize = 32 * 1024 * 1024;
         private static byte[] _buffer;
 
         // This Function returns:
@@ -760,6 +760,15 @@ namespace RomVaultCore.FixFile.Util
 
             fileOut.FileStatusSet(FileStatus.SizeVerified);
 
+
+            if (fileOut.AltSize == null && fileIn.AltSize != null)
+            {
+                fileOut.AltSize = fileIn.AltSize;
+            }
+            if (fileOut.AltCRC == null && fileIn.AltCRC != null)
+            {
+                fileOut.AltCRC = fileIn.AltCRC;
+            }
             if (fileOut.AltSHA1 == null && fileIn.AltSHA1 != null)
             {
                 fileOut.AltSHA1 = fileIn.AltSHA1;
@@ -769,10 +778,18 @@ namespace RomVaultCore.FixFile.Util
                 fileOut.AltMD5 = fileIn.AltMD5;
             }
 
+            if (fileOut.HeaderFileType == FileHeaderReader.HeaderFileType.Nothing && fileIn.HeaderFileType != FileHeaderReader.HeaderFileType.Nothing)
+            {
+                fileOut.HeaderFileTypeSet = fileIn.HeaderFileType; // if the fileout was Nothing, then it did not have a required flag, so it is OK to just set it to the fileInValue
+            }
 
             fileOut.CHDVersion = fileIn.CHDVersion;
 
-            fileOut.FileStatusSet(FileStatus.AltSHA1FromHeader | FileStatus.AltMD5FromHeader | FileStatus.AltSHA1Verified | FileStatus.AltMD5Verified, fileIn);
+            fileOut.FileStatusSet(FileStatus.HeaderFileTypeFromHeader | 
+                FileStatus.AltSizeFromHeader | FileStatus.AltSizeVerified |
+                FileStatus.AltCRCFromHeader | FileStatus.AltCRCVerified |
+                FileStatus.AltSHA1FromHeader | FileStatus.AltSHA1Verified |
+                FileStatus.AltMD5FromHeader | FileStatus.AltMD5Verified, fileIn);
 
             error = "";
             return ReturnCode.Good;

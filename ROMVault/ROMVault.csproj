@@ -9,7 +9,7 @@
     <OutputType>WinExe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>ROMVault</RootNamespace>
-    <AssemblyName>ROMVault3</AssemblyName>
+    <AssemblyName>ROMVault35</AssemblyName>
     <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <TargetFrameworkProfile>
     </TargetFrameworkProfile>
@@ -32,31 +32,9 @@
     <NuGetPackageImportStamp>
     </NuGetPackageImportStamp>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
-    <PlatformTarget>x86</PlatformTarget>
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>..\..\stage\Private\Debug\RomVault\</OutputPath>
-    <DefineConstants>TRACE;DEBUG</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <Prefer32Bit>false</Prefer32Bit>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
-    <PlatformTarget>x86</PlatformTarget>
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>..\..\stage\Private\Release\RomVault\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <Prefer32Bit>false</Prefer32Bit>
-  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
     <DebugSymbols>true</DebugSymbols>
-    <OutputPath>E:\Bug_16\</OutputPath>
+    <OutputPath>E:\RomVault\</OutputPath>
     <DefineConstants>TRACE;DEBUG;RomShare</DefineConstants>
     <DebugType>full</DebugType>
     <PlatformTarget>x64</PlatformTarget>
@@ -72,10 +50,10 @@
     <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
-    <OutputPath>..\..\stage\Release\RomVault\</OutputPath>
+    <OutputPath>..\..\stage\Private\Release\RomVault\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <Optimize>true</Optimize>
-    <DebugType>pdbonly</DebugType>
+    <DebugType>full</DebugType>
     <PlatformTarget>AnyCPU</PlatformTarget>
     <CodeAnalysisLogFile>bin\Release\ROMVault2.exe.CodeAnalysisLog.xml</CodeAnalysisLogFile>
     <CodeAnalysisUseTypeNameInSuppression>true</CodeAnalysisUseTypeNameInSuppression>
@@ -86,30 +64,27 @@
     <CodeAnalysisRuleDirectories>;C:\Program Files (x86)\Microsoft Visual Studio 10.0\Team Tools\Static Analysis Tools\FxCop\\Rules</CodeAnalysisRuleDirectories>
     <Prefer32Bit>false</Prefer32Bit>
     <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
+    <DebugSymbols>true</DebugSymbols>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'ReleaseFC|AnyCPU'">
+    <OutputPath>..\..\stage\Private\Release\RomVaultFC\</OutputPath>
+    <DefineConstants>TRACE;RomShare</DefineConstants>
+    <Optimize>true</Optimize>
+    <DebugType>full</DebugType>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <CodeAnalysisLogFile>bin\Release\ROMVault2.exe.CodeAnalysisLog.xml</CodeAnalysisLogFile>
+    <CodeAnalysisUseTypeNameInSuppression>true</CodeAnalysisUseTypeNameInSuppression>
+    <CodeAnalysisModuleSuppressionsFile>GlobalSuppressions.cs</CodeAnalysisModuleSuppressionsFile>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRuleSetDirectories>;C:\Program Files (x86)\Microsoft Visual Studio 10.0\Team Tools\Static Analysis Tools\\Rule Sets</CodeAnalysisRuleSetDirectories>
+    <CodeAnalysisRuleDirectories>;C:\Program Files (x86)\Microsoft Visual Studio 10.0\Team Tools\Static Analysis Tools\FxCop\\Rules</CodeAnalysisRuleDirectories>
+    <Prefer32Bit>false</Prefer32Bit>
+    <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
+    <DebugSymbols>true</DebugSymbols>
   </PropertyGroup>
   <PropertyGroup>
     <ApplicationIcon>chip.ico</ApplicationIcon>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'DebugNewFindFix|x86' ">
-    <DebugSymbols>true</DebugSymbols>
-    <OutputPath>bin\x86\DebugNewDat\</OutputPath>
-    <DefineConstants>TRACE;DEBUG;UNMANAGED;COMPRESS;LZMA_STREAM;DOTNET20</DefineConstants>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <DebugType>full</DebugType>
-    <PlatformTarget>x86</PlatformTarget>
-    <ErrorReport>prompt</ErrorReport>
-    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'DebugNewFindFix|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
-    <OutputPath>..\..\..\stage\</OutputPath>
-    <DefineConstants>TRACE;DEBUG;NEWFINDFIX</DefineConstants>
-    <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
-    <DebugType>full</DebugType>
-    <PlatformTarget>x64</PlatformTarget>
-    <ErrorReport>prompt</ErrorReport>
-    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
-    <CodeAnalysisIgnoreBuiltInRuleSets>false</CodeAnalysisIgnoreBuiltInRuleSets>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Microsoft.Bcl.AsyncInterfaces, Version=6.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
@@ -123,8 +98,8 @@
     <Reference Include="System.DirectoryServices" />
     <Reference Include="System.Drawing" />
     <Reference Include="System.IdentityModel" />
-    <Reference Include="System.Memory, Version=4.0.1.1, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
-      <HintPath>..\packages\System.Memory.4.5.4\lib\net461\System.Memory.dll</HintPath>
+    <Reference Include="System.Memory, Version=4.0.1.2, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Memory.4.5.5\lib\net461\System.Memory.dll</HintPath>
     </Reference>
     <Reference Include="System.Numerics" />
     <Reference Include="System.Numerics.Vectors, Version=4.1.4.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
@@ -147,8 +122,8 @@
     <Reference Include="System.Text.Encodings.Web, Version=6.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
       <HintPath>..\packages\System.Text.Encodings.Web.6.0.0\lib\net461\System.Text.Encodings.Web.dll</HintPath>
     </Reference>
-    <Reference Include="System.Text.Json, Version=6.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
-      <HintPath>..\packages\System.Text.Json.6.0.0\lib\net461\System.Text.Json.dll</HintPath>
+    <Reference Include="System.Text.Json, Version=6.0.0.5, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Text.Json.6.0.5\lib\net461\System.Text.Json.dll</HintPath>
     </Reference>
     <Reference Include="System.ValueTuple, Version=4.0.3.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
       <HintPath>..\packages\System.ValueTuple.4.5.0\lib\net47\System.ValueTuple.dll</HintPath>
@@ -158,19 +133,14 @@
     </Reference>
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
-    <Reference Include="ZstdSharp, Version=0.5.2.0, Culture=neutral, PublicKeyToken=8d151af33a4ad5cf, processorArchitecture=MSIL">
-      <HintPath>..\packages\ZstdSharp.Port.0.5.2\lib\net461\ZstdSharp.dll</HintPath>
+    <Reference Include="ZstdNet, Version=1.4.5.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\ZstdNet.1.4.5\lib\net45\ZstdNet.dll</HintPath>
+    </Reference>
+    <Reference Include="ZstdSharp, Version=0.6.2.0, Culture=neutral, PublicKeyToken=8d151af33a4ad5cf, processorArchitecture=MSIL">
+      <HintPath>..\packages\ZstdSharp.Port.0.6.2\lib\net461\ZstdSharp.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Connected Services\RVServices\Reference.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>Reference.svcmap</DependentUpon>
-    </Compile>
-    <Compile Include="DVTreeView.cs">
-      <SubType>Component</SubType>
-    </Compile>
     <Compile Include="EmuArcHelper.cs" />
     <Compile Include="FrmMain_Artwork.cs">
       <SubType>Form</SubType>
@@ -322,22 +292,6 @@
       <DependentUpon>rvTree.cs</DependentUpon>
     </EmbeddedResource>
     <None Include="app.config" />
-    <None Include="Connected Services\RVServices\ROMVault.RVServices.groups.datasource">
-      <DependentUpon>Reference.svcmap</DependentUpon>
-    </None>
-    <None Include="Connected Services\RVServices\RVService.wsdl" />
-    <None Include="Connected Services\RVServices\RVService.xsd">
-      <SubType>Designer</SubType>
-    </None>
-    <None Include="Connected Services\RVServices\RVService1.xsd">
-      <SubType>Designer</SubType>
-    </None>
-    <None Include="Connected Services\RVServices\RVService2.xsd">
-      <SubType>Designer</SubType>
-    </None>
-    <None Include="Connected Services\RVServices\RVService3.xsd">
-      <SubType>Designer</SubType>
-    </None>
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
@@ -371,14 +325,110 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="chip.ico" />
-    <Content Include="ROMVault3.exe" />
-    <None Include="Connected Services\RVServices\RVService.disco" />
-    <None Include="Connected Services\RVServices\configuration91.svcinfo" />
-    <None Include="Connected Services\RVServices\configuration.svcinfo" />
-    <None Include="Connected Services\RVServices\Reference.svcmap">
-      <Generator>WCF Proxy Generator</Generator>
-      <LastGenOutput>Reference.cs</LastGenOutput>
-    </None>
+    <Content Include="Resources\default1.png" />
+    <Content Include="Resources\default2.png" />
+    <Content Include="Resources\default3.png" />
+    <Content Include="Resources\default4.png" />
+    <None Include="Resources\R_InDatMIA_CanBeFixedMIA.png" />
+    <None Include="Resources\R_InDatMIA_CorrectMIA.png" />
+    <None Include="Resources\R_InDatMIA_MissingMIA.png" />
+    <None Include="Resources\G_CanBeFixedMIA.png" />
+    <None Include="Resources\G_CorrectMIA.png" />
+    <None Include="Resources\SevenZipMissing.png" />
+    <None Include="Resources\SevenZipCorrupt.png" />
+    <None Include="Resources\SevenZip.png" />
+    <None Include="Resources\romvaultTZ.png" />
+    <None Include="Resources\Resume.png" />
+    <None Include="Resources\refresh.png" />
+    <None Include="Resources\R_NotInDat_UnScanned.png" />
+    <None Include="Resources\R_NotInDat_Unknown.png" />
+    <None Include="Resources\R_NotInDat_Rename.png" />
+    <None Include="Resources\R_NotInDat_NeededForFix.png" />
+    <None Include="Resources\R_NotInDat_MoveToSort.png" />
+    <None Include="Resources\R_NotInDat_MoveToCorrupt.png" />
+    <None Include="Resources\R_NotInDat_Ignore.png" />
+    <None Include="Resources\R_NotInDat_Deleted.png" />
+    <None Include="Resources\R_NotInDat_Delete.png" />
+    <None Include="Resources\R_NotInDat_Corrupt.png" />
+    <None Include="Resources\R_InToSort_UnScanned.png" />
+    <None Include="Resources\R_InToSort_NeededForFix.png" />
+    <None Include="Resources\R_InToSort_MoveToCorrupt.png" />
+    <None Include="Resources\R_InToSort_InToSort.png" />
+    <None Include="Resources\R_InToSort_Deleted.png" />
+    <None Include="Resources\R_InToSort_Delete.png" />
+    <None Include="Resources\R_InToSort_Corrupt.png" />
+    <None Include="Resources\R_InDatMerged_UnNeeded.png" />
+    <None Include="Resources\R_InDatMerged_NotCollected.png" />
+    <None Include="Resources\R_InDatMerged_NeededForFix.png" />
+    <None Include="Resources\R_InDatMerged_Deleted.png" />
+    <None Include="Resources\R_InDatCollect_UnScanned.png" />
+    <None Include="Resources\R_InDatCollect_MoveToCorrupt.png" />
+    <None Include="Resources\R_InDatCollect_Missing.png" />
+    <None Include="Resources\R_InDatCollect_CorruptCanBeFixed.png" />
+    <None Include="Resources\R_InDatCollect_Corrupt.png" />
+    <None Include="Resources\R_InDatCollect_Correct.png" />
+    <None Include="Resources\R_InDatCollect_CanBeFixed.png" />
+    <None Include="Resources\R_InDatBad_NotCollected.png" />
+    <None Include="Resources\R_InDatBad_Correct.png" />
+    <None Include="Resources\picPayPal.png" />
+    <None Include="Resources\picPatreon.png" />
+    <None Include="Resources\Pause.png" />
+    <None Include="Resources\logo.png" />
+    <None Include="Resources\link1.png" />
+    <None Include="Resources\link.png" />
+    <None Include="Resources\G_UnScanned.png" />
+    <None Include="Resources\G_UnNeeded.png" />
+    <None Include="Resources\G_Unknown.png" />
+    <None Include="Resources\G_Rename.png" />
+    <None Include="Resources\G_NotCollected.png" />
+    <None Include="Resources\G_NeededForFix.png" />
+    <None Include="Resources\G_MoveToSort.png" />
+    <None Include="Resources\G_MoveToCorrupt.png" />
+    <None Include="Resources\G_MissingMIA.png" />
+    <None Include="Resources\G_Missing.png" />
+    <None Include="Resources\G_InToSort.png" />
+    <None Include="Resources\G_Ignore.png" />
+    <None Include="Resources\G_DirCorrupt.png" />
+    <None Include="Resources\G_Delete.png" />
+    <None Include="Resources\G_CorruptCanBeFixed.png" />
+    <None Include="Resources\G_Corrupt.png" />
+    <None Include="Resources\G_Correct.png" />
+    <None Include="Resources\G_CanBeFixed.png" />
+    <None Include="Resources\eye.png" />
+    <None Include="Resources\ExpandBoxPlus.png" />
+    <None Include="Resources\ExpandBoxMinus.png" />
+    <None Include="Resources\DirMissing.png" />
+    <None Include="Resources\DirectoryTree5.png" />
+    <None Include="Resources\DirectoryTree4.png" />
+    <None Include="Resources\DirectoryTree3.png" />
+    <None Include="Resources\DirectoryTree2.png" />
+    <None Include="Resources\DirectoryTree1.png" />
+    <None Include="Resources\Dir.png" />
+    <None Include="Resources\btnUpdateDats_Enabled.png" />
+    <None Include="Resources\btnUpdateDats_Disabled.png" />
+    <None Include="Resources\btnScanRoms_Enabled.png" />
+    <None Include="Resources\btnScanRoms_Disabled.png" />
+    <None Include="Resources\btnReport_Enabled.png" />
+    <None Include="Resources\btnReport_Disabled.png" />
+    <None Include="Resources\btnFixFiles_Enabled.png" />
+    <None Include="Resources\btnFixFiles_Disabled.png" />
+    <None Include="Resources\btnFindFixes_Enabled.png" />
+    <None Include="Resources\btnFindFixes_Disabled.png" />
+    <None Include="Resources\ZipTZCorrupt.png" />
+    <None Include="Resources\ZipTZ.png" />
+    <None Include="Resources\ZipMissing.png" />
+    <None Include="Resources\ZipCorrupt.png" />
+    <None Include="Resources\Zip.png" />
+    <None Include="Resources\Tree5.png" />
+    <None Include="Resources\Tree4.png" />
+    <None Include="Resources\Tree3.png" />
+    <None Include="Resources\Tree2.png" />
+    <None Include="Resources\Tree1.png" />
+    <None Include="Resources\TickBoxUnTicked.png" />
+    <None Include="Resources\TickBoxTicked.png" />
+    <None Include="Resources\TickBoxLocked.png" />
+    <None Include="Resources\SevenZipTZ.png" />
+    <None Include="Resources\SevenZipT7Z.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Compress\Compress.csproj">
@@ -401,12 +451,13 @@
       <Project>{ff8a7a0a-6319-49e0-a6e6-df3754bffdd1}</Project>
       <Name>RVIO</Name>
     </ProjectReference>
+    <ProjectReference Include="..\RVServiceAccess\RVServiceAccess.csproj">
+      <Project>{0ea83fef-430f-4804-8cdb-cc771b461102}</Project>
+      <Name>RVServiceAccess</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <WCFMetadata Include="Connected Services\" />
-  </ItemGroup>
-  <ItemGroup>
-    <WCFMetadataStorage Include="Connected Services\RVServices\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
@@ -414,7 +465,7 @@
   <Target Name="BeforeBuild">
   </Target>
     -->
-  <Target Name="AfterBuild" Condition=" '$(Configuration)' == 'Release' ">
+  <Target Name="AfterBuild" Condition=" '$(Configuration)' == 'Release' or '$(Configuration)' == 'ReleaseFC'">
     <CreateItem Include="@(ReferenceCopyLocalPaths)" Condition="'%(Extension)'=='.dll'">
       <Output ItemName="AssembliesToMerge" TaskParameter="Include" />
     </CreateItem>
@@ -425,11 +476,13 @@
     <Exec Command="&quot;C:\Program Files (x86)\ILRepack\ILRepack.exe&quot; /out:@(MainAssembly) /targetplatform:v4,&quot;$(ReferenceAssemblies)&quot; &quot;@(IntermediateAssembly)&quot; @(AssembliesToMerge->'&quot;%(FullPath)&quot;', ' ')" />
     <Delete Files="@(ReferenceCopyLocalPaths->'$(OutDir)%(DestinationSubDirectory)%(Filename)%(Extension)')" />
   </Target>
-  <Import Project="..\packages\System.Text.Json.6.0.0\build\System.Text.Json.targets" Condition="Exists('..\packages\System.Text.Json.6.0.0\build\System.Text.Json.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('..\packages\System.Text.Json.6.0.0\build\System.Text.Json.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\System.Text.Json.6.0.0\build\System.Text.Json.targets'))" />
+    <Error Condition="!Exists('..\packages\ZstdNet.1.4.5\build\ZstdNet.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\ZstdNet.1.4.5\build\ZstdNet.targets'))" />
+    <Error Condition="!Exists('..\packages\System.Text.Json.6.0.5\build\System.Text.Json.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\System.Text.Json.6.0.5\build\System.Text.Json.targets'))" />
   </Target>
+  <Import Project="..\packages\ZstdNet.1.4.5\build\ZstdNet.targets" Condition="Exists('..\packages\ZstdNet.1.4.5\build\ZstdNet.targets')" />
+  <Import Project="..\packages\System.Text.Json.6.0.5\build\System.Text.Json.targets" Condition="Exists('..\packages\System.Text.Json.6.0.5\build\System.Text.Json.targets')" />
 </Project>

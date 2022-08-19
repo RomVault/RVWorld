@@ -10,7 +10,7 @@ namespace DATReader.DatReader
         {
             using (DatFileLoader dfl = new DatFileLoader())
             {
-                datHeader = new DatHeader { BaseDir = new DatDir(DatFileType.UnSet) };
+                datHeader = new DatHeader { BaseDir = new DatDir("", DatFileType.UnSet) };
                 int errorCode = dfl.LoadDat(strFilename, System.Text.Encoding.UTF8);
                 if (errorCode != 0)
                 {
@@ -152,7 +152,7 @@ namespace DATReader.DatReader
 
             dfl.Gn();
 
-            DatDir dDir = new DatDir(DatFileType.UnSet) { Name = name, DGame = new DatGame() };
+            DatDir dDir = new DatDir(name, DatFileType.UnSet) { DGame = new DatGame() };
 
             while (dfl.Next != ")")
             {
@@ -199,10 +199,7 @@ namespace DATReader.DatReader
                 return false;
             }
 
-            DatFile dRom = new DatFile(DatFileType.UnSet)
-            {
-                Name = dfl.GnNameToSize()
-            };
+            DatFile dRom = new DatFile(dfl.GnNameToSize(), DatFileType.UnSet);
             dfl.Gn();
 
 

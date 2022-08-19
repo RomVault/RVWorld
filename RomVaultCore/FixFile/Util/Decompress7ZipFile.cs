@@ -29,12 +29,12 @@ namespace RomVaultCore.FixFile.Util
             byte[] buffer = new byte[BufferSize];
 
             RvFile cacheDir = DB.RvFileCache();
-            
+
             SevenZ sevenZipFileCaching = new SevenZ();
             ZipReturn zr1 = sevenZipFileCaching.ZipFileOpen(db7zFile.FullNameCase, db7zFile.FileModTimeStamp, true);
             if (zr1 != ZipReturn.ZipGood)
             {
-                error = "Error opening 7zip file for caching";
+                error = $"Error opening 7zip file ({db7zFile.FullNameCase}) for caching {zr1}";
                 return ReturnCode.RescanNeeded;
             }
 
@@ -92,14 +92,19 @@ namespace RomVaultCore.FixFile.Util
                 if (includeGood)
                 {
                     // if this is the file we are fixing then pull out the correct files.
-                    if (thisFile.RepStatus == RepStatus.Correct || thisFile.RepStatus==RepStatus.InToSort || thisFile.RepStatus==RepStatus.MoveToSort)
+                    if (thisFile.RepStatus == RepStatus.Correct ||
+                        thisFile.RepStatus == RepStatus.CorrectMIA ||
+                        thisFile.RepStatus == RepStatus.InToSort ||
+                        thisFile.RepStatus == RepStatus.MoveToSort)
                         extract = true;
                 }
 
                 // next check to see if we need this extracted to fix another file
                 foreach (RvFile f in thisFile.FileGroup.Files)
                 {
-                    if (f.RepStatus == RepStatus.CanBeFixed)
+                    if (f.RepStatus == RepStatus.CanBeFixed ||
+                        f.RepStatus==RepStatus.CanBeFixedMIA
+                        )
                     {
                         extract = true;
                         break;
@@ -112,14 +117,14 @@ namespace RomVaultCore.FixFile.Util
                 string cleanedName = thisFile.Name;
                 cleanedName = cleanedName.Replace("/", "-");
                 cleanedName = cleanedName.Replace("\\", "-");
-
+                cleanedName = cleanedName.Replace("?", "-");
 
                 if (cleanedName.Length >= 248)
                 {
                     string mainName = Path.GetFileNameWithoutExtension(cleanedName);
                     string extName = Path.GetExtension(cleanedName);
 
-                    mainName = mainName.Substring(0,248 - extName.Length);
+                    mainName = mainName.Substring(0, 248 - extName.Length);
                     cleanedName = mainName + extName;
                 }
 
@@ -130,8 +135,8 @@ namespace RomVaultCore.FixFile.Util
                     CRC = thisFile.CRC,
                     SHA1 = thisFile.SHA1,
                     MD5 = thisFile.MD5,
-                    GotStatus=GotStatus.Got,
-                    HeaderFileType = thisFile.HeaderFileType,
+                    GotStatus = GotStatus.Got,
+                    HeaderFileTypeSet = thisFile.HeaderFileType,  // this is a temp ToSort so Required is not needed
                     AltSize = thisFile.AltSize,
                     AltCRC = thisFile.AltCRC,
                     AltSHA1 = thisFile.AltSHA1,
@@ -140,7 +145,7 @@ namespace RomVaultCore.FixFile.Util
                 };
 
                 int tryname = 0;
-                while (outDir.ChildNameSearch(outFile, out int index)==0)
+                while (outDir.ChildNameSearch(outFile, out int index) == 0)
                 {
                     tryname += 1;
                     string mainName = Path.GetFileNameWithoutExtension(cleanedName);

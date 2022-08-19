@@ -8,9 +8,9 @@ namespace DATReader.DatClean
     {
         public static void DatSetMakeNonMergeSet(DatDir tDat)
         {
-            for (int g = 0; g < tDat.ChildCount; g++)
+            for (int g = 0; g < tDat.Count; g++)
             {
-                DatDir mGame = (DatDir)tDat.Child(g);
+                DatDir mGame = (DatDir)tDat[g];
 
                 if (mGame.DGame == null)
                 {
@@ -24,7 +24,7 @@ namespace DATReader.DatClean
                     if (dGame?.device_ref == null)
                         continue;
 
-                    List<DatDir> devices = new List<DatDir> {mGame};
+                    List<DatDir> devices = new List<DatDir> { mGame };
 
                     foreach (string device in dGame.device_ref)
                     {
@@ -35,14 +35,14 @@ namespace DATReader.DatClean
 
                     foreach (DatDir device in devices)
                     {
-                        for (int i = 0; i < device.ChildCount; i++)
+                        for (int i = 0; i < device.Count; i++)
                         {
-                            DatFile df0 = (DatFile)device.Child(i);
+                            DatFile df0 = (DatFile)device[i];
                             bool crcFound = false;
-                            for (int j = 0; j < mGame.ChildCount; j++)
+                            for (int j = 0; j < mGame.Count; j++)
                             {
-                                DatFile df1 = (DatFile)mGame.Child(j);
-                                if (ArrByte.bCompare(df0.SHA1, df1.SHA1) && df0.Name==df1.Name)
+                                DatFile df1 = (DatFile)mGame[j];
+                                if (ArrByte.bCompare(df0.SHA1, df1.SHA1) && df0.Name == df1.Name)
                                 {
                                     crcFound = true;
                                     break;
@@ -50,7 +50,7 @@ namespace DATReader.DatClean
 
                             }
                             if (!crcFound)
-                                mGame.ChildAdd(device.Child(i));
+                                mGame.ChildAdd(device[i]);
                         }
                     }
                 }
@@ -59,9 +59,9 @@ namespace DATReader.DatClean
 
         private static void AddDevice(string device, List<DatDir> devices, DatDir tDat)
         {
-            if (tDat.ChildNameSearch(new DatDir(tDat.DatFileType) { Name = device }, out int index) != 0)
+            if (tDat.ChildNameSearch(new DatDir(device, tDat.DatFileType), out int index) != 0)
                 return;
-            DatDir devChild = (DatDir)tDat.Child(index);
+            DatDir devChild = (DatDir)tDat[index];
             if (devChild == null)
                 return;
 

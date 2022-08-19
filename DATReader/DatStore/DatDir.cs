@@ -14,20 +14,15 @@ namespace DATReader.DatStore
         private readonly List<DatBase> _children = new List<DatBase>();
         private readonly List<int> _childrenNameIndex = new List<int>();
 
-        public DatDir(DatFileType type) : base(type)
-        {
-        }
+        public DatDir(string name, DatFileType type) : base(name, type) { }
 
-        public int ChildCount => _children.Count;
+        public int Count => _children.Count;
 
-        public DatBase Child(int index)
-        {
-            return _children[index];
-        }
+        public DatBase this[int index] => _children[index];
 
         public DatBase ChildSorted(int index)
         {
-            return DatFileType==DatFileType.UnSet ?
+            return DatFileType == DatFileType.UnSet ?
                 _children[_childrenNameIndex[index]] :
                 _children[index];
         }

@@ -8,7 +8,7 @@ namespace DATReader.DatReader
     {
         public static bool ReadDat(XmlDocument doc, string strFilename, out DatHeader datHeader)
         {
-            datHeader = new DatHeader { BaseDir = new DatDir(DatFileType.UnSet) };
+            datHeader = new DatHeader { BaseDir = new DatDir("", DatFileType.UnSet) };
             if (!LoadHeaderFromDat(doc, strFilename, datHeader))
             {
                 return false;
@@ -20,10 +20,9 @@ namespace DATReader.DatReader
             {
                 return false;
             }
+
             for (int i = 0; i < gameNodeList.Count; i++)
-            {
                 LoadGameFromDat(datHeader.BaseDir, gameNodeList[i]);
-            }
 
             return true;
         }
@@ -60,9 +59,8 @@ namespace DATReader.DatReader
                 return;
             }
 
-            DatDir dDir = new DatDir(DatFileType.UnSet)
+            DatDir dDir = new DatDir(VarFix.String(gameNode.Attributes.GetNamedItem("name")), DatFileType.UnSet)
             {
-                Name = VarFix.String(gameNode.Attributes.GetNamedItem("name")),
                 DGame = new DatGame()
             };
 
@@ -122,7 +120,7 @@ namespace DATReader.DatReader
                 }
             }
 
-            if (dDir.ChildCount > 0)
+            if (dDir.Count > 0)
             {
                 parentDir.ChildAdd(dDir);
             }
@@ -139,9 +137,8 @@ namespace DATReader.DatReader
             string loadflag = VarFix.String(romNode.Attributes.GetNamedItem("loadflag"));
             if (name != null)
             {
-                DatFile dRom = new DatFile(DatFileType.UnSet)
+                DatFile dRom = new DatFile(VarFix.String(name), DatFileType.UnSet)
                 {
-                    Name = VarFix.String(name),
                     Size = VarFix.ULong(romNode.Attributes.GetNamedItem("size")),
                     CRC = VarFix.CleanMD5SHA1(romNode.Attributes.GetNamedItem("crc"), 8),
                     SHA1 = VarFix.CleanMD5SHA1(romNode.Attributes.GetNamedItem("sha1"), 40),
@@ -152,12 +149,12 @@ namespace DATReader.DatReader
             }
             else if (loadflag.ToLower() == "continue")
             {
-                DatFile tRom = (DatFile)parentDir.Child(indexContinue);
+                DatFile tRom = (DatFile)parentDir[indexContinue];
                 tRom.Size += VarFix.ULong(romNode.Attributes.GetNamedItem("size"));
             }
             else if (loadflag.ToLower() == "ignore")
             {
-                DatFile tRom = (DatFile)parentDir.Child(indexContinue);
+                DatFile tRom = (DatFile)parentDir[indexContinue];
                 tRom.Size += VarFix.ULong(romNode.Attributes.GetNamedItem("size"));
             }
         }
@@ -169,9 +166,8 @@ namespace DATReader.DatReader
                 return;
             }
 
-            DatFile dRom = new DatFile(DatFileType.UnSet)
+            DatFile dRom = new DatFile(VarFix.CleanCHD(romNode.Attributes.GetNamedItem("name")), DatFileType.UnSet)
             {
-                Name = VarFix.CleanCHD(romNode.Attributes.GetNamedItem("name")),
                 SHA1 = VarFix.CleanMD5SHA1(romNode.Attributes.GetNamedItem("sha1"), 40),
                 Status = VarFix.ToLower(romNode.Attributes.GetNamedItem("status")),
                 isDisk = true

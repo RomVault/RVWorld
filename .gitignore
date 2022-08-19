@@ -16,12 +16,8 @@
 /packages
 /RomVault/bin
 /RomVault/obj
-/RomVaultNet/bin
-/RomVaultNet/obj
 /RomVaultX/bin
 /RomVaultX/obj
-/RomVaultXNet/bin
-/RomVaultXNet/obj
 /RomVaultXCore/bin
 /RomVaultXCore/obj
 /RomVaultCmd/bin
@@ -30,8 +26,8 @@
 /RomVaultCore/obj
 /RVIO/bin
 /RVIO/obj
-/RVXServer/bin
-/RVXServer/obj
+/RVServiceAccess/bin
+/RVServiceAccess/obj
 /Trrntzip/bin
 /Trrntzip/obj
 /TrrntZipCMD/bin

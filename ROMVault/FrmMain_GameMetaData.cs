@@ -26,8 +26,8 @@ namespace ROMVault
         private Label _labelGameYear;
         private TextBox _textGameYear;
 
-        private Label _labelGameTotalRoms;
-        private TextBox _textGameTotalRoms;
+        private Label _labelGameCategory;
+        private TextBox _textGameCategory;
 
         //Trurip Extra Data
         private Label _labelTruripPublisher;
@@ -118,7 +118,7 @@ namespace ROMVault
             AddTextBox(3, "Year", 206, 284, out _labelGameYear, out _textGameYear);
 
             AddTextBox(4, "Rom of", 6, 84, out _labelGameRomOf, out _textGameRomOf);
-            AddTextBox(4, "Total ROMs", 206, 284, out _labelGameTotalRoms, out _textGameTotalRoms);
+            AddTextBox(4, "Category", 206, 284, out _labelGameCategory, out _textGameCategory);
 
             //Trurip
 
@@ -208,8 +208,8 @@ namespace ROMVault
                 _labelGameYear.Visible = false;
                 _textGameYear.Visible = false;
 
-                _labelGameTotalRoms.Visible = false;
-                _textGameTotalRoms.Visible = false;
+                _labelGameCategory.Visible = false;
+                _textGameCategory.Visible = false;
             }
 
 
@@ -270,7 +270,7 @@ namespace ROMVault
                     _textTruripScore.Visible = true;
                     _textTruripScore.Text = tGame.Game.GetData(RvGame.GameData.Score);
 
-                    LoadPannels(tGame);
+                    LoadTruRipPannel(tGame);
                 }
                 else
                 {
@@ -300,6 +300,9 @@ namespace ROMVault
                     }
 
                     if (!found)
+                        found = LoadC64Pannel(tGame);
+
+                    if (!found)
                         HidePannel();
 
                     _labelGameDescription.Visible = true;
@@ -322,8 +325,9 @@ namespace ROMVault
                     _textGameYear.Visible = true;
                     _textGameYear.Text = tGame.Game.GetData(RvGame.GameData.Year);
 
-                    _labelGameTotalRoms.Visible = true;
-                    _textGameTotalRoms.Visible = true;
+                    _labelGameCategory.Visible = true;
+                    _textGameCategory.Visible = true;
+                    _textGameCategory.Text = tGame.Game.GetData(RvGame.GameData.Category);
                 }
             }
             else
@@ -367,9 +371,9 @@ namespace ROMVault
 
             _textGameRomOf.Width = textWidth;
 
-            _labelGameTotalRoms.Left = label2Left;
-            _textGameTotalRoms.Left = text2Left;
-            _textGameTotalRoms.Width = textWidth;
+            _labelGameCategory.Left = label2Left;
+            _textGameCategory.Left = text2Left;
+            _textGameCategory.Width = textWidth;
 
 
             // TruRip Meta Data

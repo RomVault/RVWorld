@@ -22,11 +22,13 @@ namespace RomVaultCore.FixFile
                     return ReturnCode.Good;
 
                 case RepStatus.Missing:
+                case RepStatus.MissingMIA:
                     // nothing can be done so moving right along
                     return ReturnCode.Good;
 
 
                 case RepStatus.Correct:
+                case RepStatus.CorrectMIA:
                     // this is correct nothing to be done here
                     FixFileCheckName(fixFile);
                     return ReturnCode.Good;
@@ -59,6 +61,7 @@ namespace RomVaultCore.FixFile
                     return FixFileMoveToCorrupt(fixFile, out errorMessage);
 
                 case RepStatus.CanBeFixed:
+                case RepStatus.CanBeFixedMIA:
                 case RepStatus.CorruptCanBeFixed:
                     return FixFileCanBeFixed(fixFile, fileProcessQueue, ref totalFixed, out errorMessage);
 
@@ -391,7 +394,7 @@ namespace RomVaultCore.FixFile
 
             if (DBHelper.IsZeroLengthFile(fixFile))
             {
-                RvFile fileIn = new RvFile(FileType.File);
+                RvFile fileIn = new RvFile(FileType.File) { Size = 0 };
                 returnCode = FixFileUtils.CopyFile(fileIn, null, fixFile.FullName, fixFile, false, out errorMessage);
                 if (returnCode != ReturnCode.Good)
                 {

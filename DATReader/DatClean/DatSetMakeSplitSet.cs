@@ -10,9 +10,9 @@ namespace DATReader.DatClean
         {
             // look for merged roms, check if a rom exists in a parent set where the Name,Size and CRC all match.
 
-            for (int g = 0; g < tDat.ChildCount; g++)
+            for (int g = 0; g < tDat.Count; g++)
             {
-                DatDir mGame = (DatDir)tDat.Child(g);
+                DatDir mGame = (DatDir)tDat[g];
 
                 if (mGame.DGame == null)
                 {
@@ -27,31 +27,31 @@ namespace DATReader.DatClean
                     // if no parents are found then just set all children as kept
                     if (lstParentGames.Count == 0)
                     {
-                        for (int r = 0; r < mGame.ChildCount; r++)
+                        for (int r = 0; r < mGame.Count; r++)
                         {
-                            if (mGame.Child(r) is DatFile dfGame)
-                                RomCheckCollect(dfGame, false);
+                            if (mGame[r] is DatFile dfGame)
+                                DatSetStatus.RomCheckCollect(dfGame, false);
                         }
                     }
                     else
                     {
-                        for (int r0 = 0; r0 < mGame.ChildCount; r0++)
+                        for (int r0 = 0; r0 < mGame.Count; r0++)
                         {
-                            DatFile dr0 = (DatFile)mGame.Child(r0);
+                            DatFile dr0 = (DatFile)mGame[r0];
                             if (dr0.Status == "nodump")
                             {
-                                RomCheckCollect(dr0, false);
+                                DatSetStatus.RomCheckCollect(dr0, false);
                                 continue;
                             }
 
                             bool found = false;
                             foreach (DatDir romofGame in lstParentGames)
                             {
-                                for (int r1 = 0; r1 < romofGame.ChildCount; r1++)
+                                for (int r1 = 0; r1 < romofGame.Count; r1++)
                                 {
-                                    DatFile dr1 = (DatFile)romofGame.Child(r1);
+                                    DatFile dr1 = (DatFile)romofGame[r1];
                                     // size/checksum compare, so name does not need to match
-                                    // if (!string.Equals(mGame.Child(r).Name, romofGame.Child(r1).Name, StringComparison.OrdinalIgnoreCase))
+                                    // if (!string.Equals(mGame[r].Name, romofGame[r1].Name, StringComparison.OrdinalIgnoreCase))
                                     // {
                                     //     continue;
                                     // }
@@ -73,6 +73,13 @@ namespace DATReader.DatClean
                                     byte[] sha0 = dr0.SHA1;
                                     byte[] sha1 = dr1.SHA1;
                                     if ((sha0 != null) && (sha1 != null) && !ArrByte.bCompare(sha0, sha1))
+                                    {
+                                        continue;
+                                    }
+
+                                    byte[] sha256_0 = dr0.SHA256;
+                                    byte[] sha256_1 = dr1.SHA256;
+                                    if ((sha256_0 != null) && (sha256_1 != null) && !ArrByte.bCompare(sha256_0, sha256_1))
                                     {
                                         continue;
                                     }
@@ -105,53 +112,12 @@ namespace DATReader.DatClean
                                 }
                             }
 
-                            RomCheckCollect((DatFile)mGame.Child(r0), found);
+                            DatSetStatus.RomCheckCollect((DatFile)mGame[r0], found);
                         }
                     }
                 }
             }
         }
-
-
-        /*
-         * In the mame Dat:
-         * status="nodump" has a size but no CRC
-         * status="baddump" has a size and crc
-         */
-
-
-        private static void RomCheckCollect(DatFile tRom, bool merge)
-        {
-            if (merge)
-            {
-                if (string.IsNullOrEmpty(tRom.Merge))
-                {
-                    tRom.Merge = "(Auto Merged)";
-                }
-                tRom.DatStatus = DatFileStatus.InDatMerged;
-                return;
-            }
-
-            if (!string.IsNullOrEmpty(tRom.Merge))
-            {
-                tRom.Merge = "(No-Merge) " + tRom.Merge;
-            }
-
-            if (tRom.Status == "nodump")
-            {
-                tRom.DatStatus = DatFileStatus.InDatBad;
-                return;
-            }
-
-            if (ArrByte.bCompare(tRom.CRC, new byte[] { 0, 0, 0, 0 }) && (tRom.Size == 0))
-            {
-                tRom.DatStatus = DatFileStatus.InDatCollect;
-                return;
-            }
-
-            tRom.DatStatus = DatFileStatus.InDatCollect;
-        }
-
 
     }
 }

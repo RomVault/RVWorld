@@ -32,7 +32,7 @@ namespace DATReader.DatClean
             //retName = retName.TrimEnd(new[] { '.', ' ' });
             retName = retName.Replace("/", "\\");
             //retName = retName.Replace("\\ ", "\\");
-            //retName = retName.Replace(".\\", "\\");
+            retName = retName.Replace(".\\", "\\");
 
             char[] charName = retName.ToCharArray();
             for (int i = 0; i < charName.Length; i++)

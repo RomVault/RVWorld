@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using CHDlib;
 using Compress;
 using Compress.SevenZip;
@@ -68,7 +69,7 @@ namespace RomVaultCore.Scanner
                     }
                     else
                     {
-                        tFile.HeaderFileType = fr[i].HeaderFileType;
+                        tFile.HeaderFileTypeSet = fr[i].HeaderFileType;
                         tFile.SHA1 = fr[i].SHA1;
                         tFile.MD5 = fr[i].MD5;
                         tFile.AltSize = fr[i].AltSize;
@@ -104,9 +105,15 @@ namespace RomVaultCore.Scanner
                 dbDir.FileModTimeStamp = 0;
                 dbDir.GotStatus = GotStatus.FileLocked;
             }
-            else if (zr==ZipReturn.ZipErrorOpeningFile)
+            else if (zr == ZipReturn.ZipErrorOpeningFile)
             {
                 thWrk.Report(new bgwShowError(filename, "Zip Error Opening File"));
+                dbDir.FileModTimeStamp = 0;
+                dbDir.GotStatus = GotStatus.FileLocked;
+            }
+            else if (zr == ZipReturn.ZipErrorTimeStamp)
+            {
+                thWrk.Report(new bgwShowError(filename, "Zip Error File Modified"));
                 dbDir.FileModTimeStamp = 0;
                 dbDir.GotStatus = GotStatus.FileLocked;
             }
@@ -144,6 +151,9 @@ namespace RomVaultCore.Scanner
                 fileDir.ChildAdd(tDir);
             }
 
+            DatRule datRule = ReadDat.DatReader.FindDatRule(dbDir.FullName);
+            List<Regex> regexList = datRule != null ? datRule.IgnoreFilesScanRegex : Settings.rvSettings.IgnoreFilesScanRegex;
+
             // add all the files into scanDir
             foreach (FileInfo oFile in oFiles)
             {
@@ -153,6 +163,19 @@ namespace RomVaultCore.Scanner
                     File.Delete(oFile.FullName);
                     continue;
                 }
+
+                bool found = false;
+                foreach (Regex file in regexList)
+                {
+                    if (file.IsMatch(fName))
+                    {
+                        found = true;
+                        continue;
+                    }
+                }
+                if (found)
+                    continue;
+
                 string fExt = Path.GetExtension(oFile.Name);
 
                 FileType ft = DBTypeGet.fromExtention(fExt);
@@ -189,6 +212,7 @@ namespace RomVaultCore.Scanner
 
             if (zr == ZipReturn.ZipFileLocked)
             {
+                bgw.Report(new bgwShowError(filename, "File Locked"));
                 file.GotStatus = GotStatus.FileLocked;
                 return;
             }
@@ -206,9 +230,11 @@ namespace RomVaultCore.Scanner
             }
 
             if (_fs == null) _fs = new FileScan();
-            List<FileScan.FileResults> fr = _fs.Scan(fileToScan, true, eScanLevel == EScanLevel.Level2 || eScanLevel == EScanLevel.Level3);
+            //List<FileScan.FileResults> fr = _fs.Scan(fileToScan, true, eScanLevel == EScanLevel.Level2 || eScanLevel == EScanLevel.Level3);
 
-            file.HeaderFileType = fr[0].HeaderFileType;
+            List<FileScan.FileResults> fr = _fs.Scan(fileToScan, true, true);
+
+            file.HeaderFileTypeSet = fr[0].HeaderFileType;
             file.Size = fr[0].Size;
             file.CRC = fr[0].CRC;
             file.SHA1 = fr[0].SHA1;

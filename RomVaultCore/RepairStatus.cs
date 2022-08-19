@@ -43,6 +43,11 @@ namespace RomVaultCore
 
         Deleted, // this is a temporary value used while fixing sets, this value should never been seen.
 
+
+        MissingMIA,
+        CorrectMIA,
+        CanBeFixedMIA,
+
         EndValue
     }
 
@@ -105,8 +110,10 @@ namespace RomVaultCore
             StatusCheck[(int)FileType.File, (int)DatStatus.InDatCollect, (int)GotStatus.NotGot] = new List<RepStatus> { RepStatus.Missing, RepStatus.CanBeFixed };
             StatusCheck[(int)FileType.File, (int)DatStatus.InDatMerged, (int)GotStatus.Corrupt] = new List<RepStatus> { RepStatus.Corrupt, RepStatus.MoveToCorrupt, RepStatus.Delete };
             StatusCheck[(int)FileType.File, (int)DatStatus.InDatMerged, (int)GotStatus.FileLocked] = new List<RepStatus> { RepStatus.UnScanned };
-            StatusCheck[(int)FileType.File, (int)DatStatus.InDatMerged, (int)GotStatus.Got] = new List<RepStatus> { RepStatus.UnNeeded, RepStatus.Delete, RepStatus.NeededForFix };
+            StatusCheck[(int)FileType.File, (int)DatStatus.InDatMerged, (int)GotStatus.Got] = new List<RepStatus> { RepStatus.UnNeeded, RepStatus.Delete, RepStatus.MoveToSort, RepStatus.NeededForFix };
             StatusCheck[(int)FileType.File, (int)DatStatus.InDatMerged, (int)GotStatus.NotGot] = new List<RepStatus> { RepStatus.NotCollected };
+            StatusCheck[(int)FileType.File, (int)DatStatus.InDatMIA, (int)GotStatus.NotGot] = new List<RepStatus> { RepStatus.MissingMIA, RepStatus.CanBeFixedMIA };
+            StatusCheck[(int)FileType.File, (int)DatStatus.InDatMIA, (int)GotStatus.Got] = new List<RepStatus> { RepStatus.CorrectMIA };
             StatusCheck[(int)FileType.File, (int)DatStatus.InToSort, (int)GotStatus.Corrupt] = new List<RepStatus> { RepStatus.Corrupt, RepStatus.Delete };
             StatusCheck[(int)FileType.File, (int)DatStatus.InToSort, (int)GotStatus.FileLocked] = new List<RepStatus> { RepStatus.UnScanned };
             StatusCheck[(int)FileType.File, (int)DatStatus.InToSort, (int)GotStatus.Got] = new List<RepStatus> { RepStatus.InToSort, RepStatus.Ignore, RepStatus.NeededForFix, RepStatus.Delete };
@@ -122,8 +129,10 @@ namespace RomVaultCore
             StatusCheck[(int)FileType.ZipFile, (int)DatStatus.InDatCollect, (int)GotStatus.Got] = new List<RepStatus> { RepStatus.Correct };
             StatusCheck[(int)FileType.ZipFile, (int)DatStatus.InDatCollect, (int)GotStatus.FileLocked] = new List<RepStatus> { RepStatus.UnScanned };
             StatusCheck[(int)FileType.ZipFile, (int)DatStatus.InDatCollect, (int)GotStatus.NotGot] = new List<RepStatus> { RepStatus.Missing, RepStatus.CanBeFixed };
-            StatusCheck[(int)FileType.ZipFile, (int)DatStatus.InDatMerged, (int)GotStatus.Got] = new List<RepStatus> { RepStatus.UnNeeded, RepStatus.Delete, RepStatus.NeededForFix, RepStatus.Rename };
+            StatusCheck[(int)FileType.ZipFile, (int)DatStatus.InDatMerged, (int)GotStatus.Got] = new List<RepStatus> { RepStatus.UnNeeded, RepStatus.Delete, RepStatus.MoveToSort, RepStatus.NeededForFix, RepStatus.Rename };
             StatusCheck[(int)FileType.ZipFile, (int)DatStatus.InDatMerged, (int)GotStatus.NotGot] = new List<RepStatus> { RepStatus.NotCollected };
+            StatusCheck[(int)FileType.ZipFile, (int)DatStatus.InDatMIA, (int)GotStatus.NotGot] = new List<RepStatus> { RepStatus.MissingMIA, RepStatus.CanBeFixedMIA };
+            StatusCheck[(int)FileType.ZipFile, (int)DatStatus.InDatMIA, (int)GotStatus.Got] = new List<RepStatus> { RepStatus.CorrectMIA };
             StatusCheck[(int)FileType.ZipFile, (int)DatStatus.InToSort, (int)GotStatus.Corrupt] = new List<RepStatus> { RepStatus.Corrupt, RepStatus.Delete };
             StatusCheck[(int)FileType.ZipFile, (int)DatStatus.InToSort, (int)GotStatus.Got] = new List<RepStatus> { RepStatus.InToSort, RepStatus.NeededForFix, RepStatus.Delete };
             StatusCheck[(int)FileType.ZipFile, (int)DatStatus.InToSort, (int)GotStatus.NotGot] = new List<RepStatus> { RepStatus.Deleted };
@@ -137,8 +146,10 @@ namespace RomVaultCore
             StatusCheck[(int)FileType.SevenZipFile, (int)DatStatus.InDatCollect, (int)GotStatus.Got] = new List<RepStatus> { RepStatus.Correct };
             StatusCheck[(int)FileType.SevenZipFile, (int)DatStatus.InDatCollect, (int)GotStatus.FileLocked] = new List<RepStatus> { RepStatus.UnScanned };
             StatusCheck[(int)FileType.SevenZipFile, (int)DatStatus.InDatCollect, (int)GotStatus.NotGot] = new List<RepStatus> { RepStatus.Missing, RepStatus.CanBeFixed };
-            StatusCheck[(int)FileType.SevenZipFile, (int)DatStatus.InDatMerged, (int)GotStatus.Got] = new List<RepStatus> { RepStatus.UnNeeded, RepStatus.Delete, RepStatus.NeededForFix, RepStatus.Rename };
+            StatusCheck[(int)FileType.SevenZipFile, (int)DatStatus.InDatMerged, (int)GotStatus.Got] = new List<RepStatus> { RepStatus.UnNeeded, RepStatus.Delete, RepStatus.MoveToSort, RepStatus.NeededForFix, RepStatus.Rename };
             StatusCheck[(int)FileType.SevenZipFile, (int)DatStatus.InDatMerged, (int)GotStatus.NotGot] = new List<RepStatus> { RepStatus.NotCollected };
+            StatusCheck[(int)FileType.SevenZipFile, (int)DatStatus.InDatMIA, (int)GotStatus.NotGot] = new List<RepStatus> { RepStatus.MissingMIA, RepStatus.CanBeFixedMIA };
+            StatusCheck[(int)FileType.SevenZipFile, (int)DatStatus.InDatMIA, (int)GotStatus.Got] = new List<RepStatus> { RepStatus.CorrectMIA };
             StatusCheck[(int)FileType.SevenZipFile, (int)DatStatus.InToSort, (int)GotStatus.Corrupt] = new List<RepStatus> { RepStatus.Corrupt, RepStatus.Delete };
             StatusCheck[(int)FileType.SevenZipFile, (int)DatStatus.InToSort, (int)GotStatus.Got] = new List<RepStatus> { RepStatus.InToSort, RepStatus.NeededForFix, RepStatus.Delete };
             StatusCheck[(int)FileType.SevenZipFile, (int)DatStatus.InToSort, (int)GotStatus.NotGot] = new List<RepStatus> { RepStatus.Deleted };
@@ -160,6 +171,7 @@ namespace RomVaultCore
                 RepStatus.DirCorrupt,
                 RepStatus.MoveToCorrupt,
                 RepStatus.CorruptCanBeFixed,
+                RepStatus.CanBeFixedMIA,
                 RepStatus.CanBeFixed,
                 RepStatus.MoveToSort,
                 RepStatus.Delete,
@@ -169,6 +181,8 @@ namespace RomVaultCore
                 RepStatus.Unknown,
                 RepStatus.UnNeeded,
                 RepStatus.Missing,
+                RepStatus.MissingMIA,
+                RepStatus.CorrectMIA,
                 RepStatus.Correct,
                 RepStatus.InToSort,
                 RepStatus.NotCollected,
@@ -222,7 +236,16 @@ namespace RomVaultCore
 
         public int CountCorrect()
         {
-            return _arrRepStatus[(int)RepStatus.Correct];
+            return _arrRepStatus[(int)RepStatus.Correct] + _arrRepStatus[(int)RepStatus.CorrectMIA];
+        }
+
+        public int CountMIA()
+        {
+            return _arrRepStatus[(int)RepStatus.MissingMIA];
+        }
+        public int CountFoundMIA()
+        {
+            return _arrRepStatus[(int)RepStatus.CorrectMIA];
         }
 
         public bool HasCorrect()
@@ -230,26 +253,32 @@ namespace RomVaultCore
             return CountCorrect() > 0;
         }
 
-        public int CountMissing()
+        public int CountMissing(bool includeMIA=false)
         {
-            return _arrRepStatus[(int)RepStatus.UnScanned] +
-                   _arrRepStatus[(int)RepStatus.Missing] +
+            return _arrRepStatus[(int)RepStatus.Missing] +
+                   (includeMIA?_arrRepStatus[(int)RepStatus.MissingMIA]:0) +
                    _arrRepStatus[(int)RepStatus.DirCorrupt] +
                    _arrRepStatus[(int)RepStatus.Corrupt] +
                    _arrRepStatus[(int)RepStatus.CanBeFixed] +
+                   _arrRepStatus[(int)RepStatus.CanBeFixedMIA] +
                    _arrRepStatus[(int)RepStatus.CorruptCanBeFixed] +
                    _arrRepStatus[(int)RepStatus.MoveToCorrupt];
         }
 
-        public bool HasMissing()
+        public bool HasMissing(bool includeMIA=false)
         {
-            return CountMissing() > 0;
+            return CountMissing(includeMIA) > 0;
+        }
+        public bool HasMIA()
+        {
+            return CountMIA() > 0;
         }
 
 
         public int CountFixesNeeded()
         {
             return _arrRepStatus[(int)RepStatus.CanBeFixed] +
+                   _arrRepStatus[(int)RepStatus.CanBeFixedMIA] +
                    _arrRepStatus[(int)RepStatus.MoveToSort] +
                    _arrRepStatus[(int)RepStatus.Delete] +
                    _arrRepStatus[(int)RepStatus.NeededForFix] +
@@ -264,18 +293,20 @@ namespace RomVaultCore
         }
         public bool HasAllMerged()
         {
-            return _arrRepStatus[(int)RepStatus.NotCollected]>0 && CountAnyFiles()==0;
+            return _arrRepStatus[(int)RepStatus.NotCollected] > 0 && CountAnyFiles() == 0;
         }
 
         public int CountCanBeFixed()
         {
             return _arrRepStatus[(int)RepStatus.CanBeFixed] +
+                   _arrRepStatus[(int)RepStatus.CanBeFixedMIA] +
                    _arrRepStatus[(int)RepStatus.CorruptCanBeFixed];
         }
 
         private int CountFixable()
         {
             return _arrRepStatus[(int)RepStatus.CanBeFixed] +
+                   _arrRepStatus[(int)RepStatus.CanBeFixedMIA] +
                    _arrRepStatus[(int)RepStatus.MoveToSort] +
                    _arrRepStatus[(int)RepStatus.Delete] +
                    _arrRepStatus[(int)RepStatus.CorruptCanBeFixed] +
@@ -291,6 +322,7 @@ namespace RomVaultCore
         {
             // this list include probably more status's than are needed, but all are here to double check I don't delete something I should not.
             return _arrRepStatus[(int)RepStatus.Correct] +
+                   _arrRepStatus[(int)RepStatus.CorrectMIA] +
                    _arrRepStatus[(int)RepStatus.UnNeeded] +
                    _arrRepStatus[(int)RepStatus.Unknown] +
                    _arrRepStatus[(int)RepStatus.InToSort] +

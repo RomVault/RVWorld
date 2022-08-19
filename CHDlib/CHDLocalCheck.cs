@@ -21,7 +21,6 @@ namespace CHDlib
 
             try
             {
-
                 _progress = progress;
                 _result = "";
                 _resultType = hard_disk_verify(hdi, progress);
@@ -49,7 +48,7 @@ namespace CHDlib
                 {
                     for (int i = 0; i < info.totalblocks; i++)
                     {
-                        UInt64 tmpu = br.ReadUInt64BE();
+                        ulong tmpu = br.ReadUInt64BE();
 
                         mapentry me = new mapentry()
                         {
@@ -161,7 +160,7 @@ namespace CHDlib
 
             if (hardDisk.md5 != null)
             {
-                if (!ByteArrCompare(hardDisk.md5, md5.Hash))
+                if (!ByteArrEquals(hardDisk.md5, md5.Hash))
                 {
                     return hdErr.HDERR_DECOMPRESSION_ERROR;
                 }
@@ -171,17 +170,74 @@ namespace CHDlib
             {
                 if (hardDisk.version == 4)
                 {
-                    if (!ByteArrCompare(hardDisk.rawsha1, sha1.Hash))
+                    if (!ByteArrEquals(hardDisk.rawsha1, sha1.Hash))
                     {
                         return hdErr.HDERR_DECOMPRESSION_ERROR;
                     }
                 }
                 else
                 {
-                    if (!ByteArrCompare(hardDisk.sha1, sha1.Hash))
+                    if (!ByteArrEquals(hardDisk.sha1, sha1.Hash))
                     {
                         return hdErr.HDERR_DECOMPRESSION_ERROR;
                     }
+                }
+            }
+
+            if (hardDisk.version == 4)
+            {
+                // List<byte[]>metaHashes contains the byte data that is hashed below to validate the meta data
+                // each metaHash is 24 bytes:
+                // 0-3  : is the byte data for the metaTag
+                // 4-23 : is the SHA1 of the metaData
+
+                List<byte[]> metaHashes = new List<byte[]>();
+
+                ulong metaoffset = hardDisk.metaoffset;
+                using (BinaryReader br = new BinaryReader(hardDisk.file, Encoding.UTF8, true))
+                {
+                    // loop over the metadata, until metaoffset=0
+                    while (metaoffset != 0)
+                    {
+                        hardDisk.file.Seek((long)metaoffset, SeekOrigin.Begin);
+                        uint metaTag = br.ReadUInt32BE();
+                        uint metaLength = br.ReadUInt32BE();
+                        ulong metaNext = br.ReadUInt64BE();
+                        uint metaFlags = metaLength >> 24;
+                        metaLength &= 0x00ffffff;
+
+                        byte[] metaData = new byte[metaLength];
+                        hardDisk.file.Read(metaData, 0, metaData.Length);
+
+                        // take the 4 byte metaTag, and the metaData
+                        // SHA1 the metaData to 20 byte SHA1
+                        // metadata_hash return these 24 bytes in a byte[24]
+                        if ((metaFlags & CHD_MDFLAGS_CHECKSUM) != 0)
+                            metaHashes.Add(metadata_hash(metaTag, metaData));
+
+                        // set location of next meta data entry in the CHD (set to 0 if finished.)
+                        metaoffset = metaNext;
+                    }
+                }
+
+                // binary sort the metaHashes
+                metaHashes.Sort(ByteArrCompare);
+
+                // build the final SHA1
+                // starting with the 20 byte rawsha1 from the main CHD data
+                // then add the 24 byte for each meta data entry
+                using (SHA1 sha1Total = SHA1.Create())
+                {
+                    sha1Total.TransformBlock(hardDisk.rawsha1, 0, hardDisk.rawsha1.Length, null, 0);
+
+                    for (int i = 0; i < metaHashes.Count; i++)
+                        sha1Total.TransformBlock(metaHashes[i], 0, metaHashes[i].Length, null, 0);
+
+                    sha1Total.TransformFinalBlock(tmp, 0, 0);
+
+                    // compare the calculated metaData + rawData SHA1 with sha1 from the CHD header
+                    if (!ByteArrEquals(hardDisk.sha1, sha1Total.Hash))
+                        return hdErr.HDERR_INVALID_DATA;
                 }
             }
 
@@ -189,8 +245,35 @@ namespace CHDlib
 
         }
 
+
+        private static byte[] metadata_hash(uint metaTag, byte[] metaData)
+        {
+            // make 24 byte metadata hash
+            // 0-3  :  metaTag
+            // 4-23 :  sha1 of the metaData
+
+            byte[] metaHash = new byte[24];
+            metaHash[0] = (byte)((metaTag >> 24) & 0xff);
+            metaHash[1] = (byte)((metaTag >> 16) & 0xff);
+            metaHash[2] = (byte)((metaTag >> 8) & 0xff);
+            metaHash[3] = (byte)((metaTag >> 0) & 0xff);
+
+            byte[] metaDataHash;
+            using (SHA1 sha1 = SHA1.Create())
+            {
+                metaDataHash = sha1.ComputeHash(metaData);
+            }
+            for (int i = 0; i < 20; i++)
+                metaHash[4 + i] = metaDataHash[i];
+
+            return metaHash;
+        }
+
+
         private const int HDFLAGS_HAS_PARENT = 0x00000001;
         private const int HDFLAGS_IS_WRITEABLE = 0x00000002;
+        private const uint CHD_MDFLAGS_CHECKSUM = 0x01;
+
         private const int HDCOMPRESSION_ZLIB = 1;
         private const int HDCOMPRESSION_ZLIB_PLUS = 2;
         private const int HDCOMPRESSION_MAX = 3;
@@ -292,23 +375,31 @@ namespace CHDlib
             return hdErr.HDERR_NONE;
         }
 
-        public static bool ByteArrCompare(byte[] b0, byte[] b1)
+
+
+        internal static int ByteArrCompare(byte[] b0, byte[] b1)
+        {
+            int v;
+            for (int i = 0; i < b0.Length; i++)
+            {
+                if ((v = b0[i].CompareTo(b1[i])) != 0)
+                    return v;
+            }
+            return 0;
+        }
+
+        internal static bool ByteArrEquals(byte[] b0, byte[] b1)
         {
             if ((b0 == null) || (b1 == null))
-            {
                 return false;
-            }
+
             if (b0.Length != b1.Length)
-            {
                 return false;
-            }
 
             for (int i = 0; i < b0.Length; i++)
             {
                 if (b0[i] != b1[i])
-                {
                     return false;
-                }
             }
             return true;
         }

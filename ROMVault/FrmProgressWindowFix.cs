@@ -1,7 +1,7 @@
 ﻿/******************************************************
  *     ROMVault3 is written by Gordon J.              *
  *     Contact gordon@romvault.com                    *
- *     Copyright 2020                                 *
+ *     Copyright 2022                                 *
  ******************************************************/
 
 using System;
@@ -43,6 +43,8 @@ namespace ROMVault
             _parentForm = parentForm;
             _funcFinished = funcFinished;
             InitializeComponent();
+            dataGridView1.Columns["FileSize"].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleRight;
+           
 
             Type dgvType = dataGridView1.GetType();
             PropertyInfo pi = dgvType.GetProperty("DoubleBuffered", BindingFlags.Instance | BindingFlags.NonPublic);
@@ -110,6 +112,7 @@ namespace ROMVault
 
         private void FrmProgressWindowFixShown(object sender, EventArgs e)
         {
+            SetDataGridSize();
             ThWrk = new ThreadWorker(Fix.PerformFixes) { wReport = BgwProgressChanged, wFinal = BgwRunWorkerCompleted };
             ThWrk.StartAsync();
         }
@@ -253,5 +256,16 @@ namespace ROMVault
             }
         }
 
+        private void splitContainer1_Panel2_Resize(object sender, EventArgs e)
+        {
+            SetDataGridSize();
+        }
+        private void SetDataGridSize()
+        {
+            dataGridView1.Top = 0;
+            dataGridView1.Left = 0;
+            dataGridView1.Width = Math.Max(splitContainer1.Panel2.Width, 80);
+            dataGridView1.Height = Math.Max(splitContainer1.Panel2.Height, 80);
+        }
     }
 }

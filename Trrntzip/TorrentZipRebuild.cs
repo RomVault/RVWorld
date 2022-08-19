@@ -34,11 +34,17 @@ namespace TrrntZip
 
             int bufferSize = buffer.Length;
 
+
             string filename = originalZipFile.ZipFilename;
-            string tmpFilename = Path.Combine(Path.GetDirectoryName(filename), Path.GetFileNameWithoutExtension(filename) + ".tmp");
+
+            // if the source file is a file (not an archive) use the full source name, if the source is an archive remove the original extention
+            string fileNameOutputPart = inputType == zipType.file ? Path.GetFileName(filename) : Path.GetFileNameWithoutExtension(filename);
+            string fileNameOutputDir = Path.GetDirectoryName(filename);
+
+            string tmpFilename = Path.Combine(fileNameOutputDir, "__" + Path.GetFileName(filename) + ".tztmp");
 
             string outExt = outputType == zipType.zip ? ".zip" : ".7z";
-            string outfilename = Path.Combine(Path.GetDirectoryName(filename), Path.GetFileNameWithoutExtension(filename) + outExt);
+            string outfilename = Path.Combine(fileNameOutputDir, fileNameOutputPart + outExt);
 
             if (inputType != outputType)
             {
@@ -58,12 +64,17 @@ namespace TrrntZip
 
             try
             {
+                ZipReturn zr;
                 if (outputType == zipType.zip)
-                    ((Zip)zipFileOut).ZipFileCreate(tmpFilename, OutputZipType.TrrntZip);
+                {
+                    zr = ((Zip)zipFileOut).ZipFileCreate(tmpFilename, OutputZipType.TrrntZip);
+                }
                 else
                 {
-                    zipFileOut.ZipFileCreate(tmpFilename);
+                    zr = zipFileOut.ZipFileCreate(tmpFilename);
                 }
+                if (zr != ZipReturn.ZipGood)
+                    return TrrntZipStatus.ErrorOutputFile;
 
                 ulong fileSizeTotal = 0;
                 ulong fileSizeProgress = 0;

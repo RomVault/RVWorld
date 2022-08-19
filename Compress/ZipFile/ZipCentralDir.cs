@@ -207,7 +207,7 @@ namespace Compress.ZipFile
             _endOfCentralDir64 = zipBr.ReadUInt64(); // relative offset of the zip64 end of central directory record
 
             tUInt = zipBr.ReadUInt32(); // total number of disks
-            if (tUInt != 1)
+            if (tUInt > 1)
             {
                 return ZipReturn.Zip64EndOfCentralDirectoryLocatorError;
             }

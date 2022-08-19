@@ -31,7 +31,7 @@ namespace DATReader.DatWriter
             if (newStyle)
                 sw.WriteLine("<RVDatFile>", 1);
             else
-                sw.WriteLine("<DatFile>", 1);
+                sw.WriteLine("<datafile>", 1);
 
             WriteHeader(sw, datHeader);
 
@@ -40,7 +40,7 @@ namespace DATReader.DatWriter
             if (newStyle)
                 sw.WriteLine("</RVDatFile>", -1);
             else
-                sw.WriteLine("</DatFile>", -1);
+                sw.WriteLine("</datafile>", -1);
         }
 
         private static void WriteHeader(DatStreamWriter sw, DatHeader datHeader)
@@ -48,7 +48,6 @@ namespace DATReader.DatWriter
             sw.WriteLine("<header>", 1);
             sw.WriteNode("name", datHeader.Name);
             sw.WriteNode("rootdir", datHeader.RootDir);
-            sw.WriteNode("header", datHeader.Header);
             sw.WriteNode("type", datHeader.Type);
             sw.WriteNode("description", datHeader.Description);
             sw.WriteNode("category", datHeader.Category);
@@ -60,6 +59,7 @@ namespace DATReader.DatWriter
             sw.WriteNode("url", datHeader.URL);
             sw.WriteNode("comment", datHeader.Comment);
             sw.Write(@"<romvault");
+            sw.WriteItem("header", datHeader.Header);
             sw.WriteItem("forcepacking", datHeader.Compression);
             sw.WriteEnd(@"/>");
             sw.WriteLine("</header>", -1);
@@ -117,7 +117,7 @@ namespace DATReader.DatWriter
                         //    sw.WriteNode("comments", g.Comments);
                         if (g.IsEmuArc)
                         {
-                            sw.WriteLine("<tea>", 1);
+                            sw.WriteLine("<trurip>", 1);
                             sw.WriteNode("titleid", g.TitleId);
                             sw.WriteNode("source", g.Source);
                             sw.WriteNode("publisher", g.Publisher);
@@ -185,11 +185,15 @@ namespace DATReader.DatWriter
                         sw.WriteItem("size", baseRom.Size);
                         sw.WriteItem("crc", baseRom.CRC);
                         sw.WriteItem("sha1", baseRom.SHA1);
+                        sw.WriteItem("sha256", baseRom.SHA256);
                         sw.WriteItem("md5", baseRom.MD5);
                         if (baseRom.DateModified != "1996/12/24 23:32:00")
                             sw.WriteItem("date", baseRom.DateModified);
                         if (baseRom.Status != null && baseRom.Status.ToLower() != "good")
                             sw.WriteItem("status", baseRom.Status);
+                        if (baseRom.MIA == "yes")
+                            sw.WriteItem("mia", "yes");
+
                         sw.WriteEnd("/>");
                     }
                 }

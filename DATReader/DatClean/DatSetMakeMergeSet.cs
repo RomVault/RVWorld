@@ -10,7 +10,7 @@ namespace DATReader.DatClean
         {
             // look for merged roms, check if a rom exists in a parent set where the Name,Size and CRC all match.
 
-            for (int g = 0; g < tDat.ChildCount; g++)
+            for (int g = 0; g < tDat.Count; g++)
             {
                 DatDir mGame = (DatDir)tDat.ChildSorted(g);
 
@@ -27,10 +27,10 @@ namespace DATReader.DatClean
                 // if no parents are found then just set all children as kept
                 if (lstParentGames.Count == 0)
                 {
-                    for (int r = 0; r < mGame.ChildCount; r++)
+                    for (int r = 0; r < mGame.Count; r++)
                     {
-                        if (mGame.Child(r) is DatFile dfGame)
-                            RomCheckCollect(dfGame, false);
+                        if (mGame[r] is DatFile dfGame)
+                            DatSetStatus.RomCheckCollect(dfGame, false);
                     }
 
                     continue;
@@ -61,50 +61,57 @@ namespace DATReader.DatClean
                     bool found = false;
                     foreach (DatDir romofGame in pBios)
                     {
-                        for (int r1 = 0; r1 < romofGame.ChildCount; r1++)
+                        for (int r1 = 0; r1 < romofGame.Count; r1++)
                         {
                             // size/checksum compare, so name does not need to match
-                            // if (!string.Equals(mGame[r].Name, romofGame.Child(r1).Name, StringComparison.OrdinalIgnoreCase))
+                            // if (!string.Equals(mGame[r].Name, romofGame[r1].Name, StringComparison.OrdinalIgnoreCase))
                             // {
                             //     continue;
                             // }
 
                             ulong? size0 = ((DatFile)tGame).Size;
-                            ulong? size1 = ((DatFile)romofGame.Child(r1)).Size;
+                            ulong? size1 = ((DatFile)romofGame[r1]).Size;
                             if ((size0 != null) && (size1 != null) && (size0 != size1))
                             {
                                 continue;
                             }
 
                             byte[] crc0 = ((DatFile)tGame).CRC;
-                            byte[] crc1 = ((DatFile)romofGame.Child(r1)).CRC;
+                            byte[] crc1 = ((DatFile)romofGame[r1]).CRC;
                             if ((crc0 != null) && (crc1 != null) && !ArrByte.bCompare(crc0, crc1))
                             {
                                 continue;
                             }
 
                             byte[] sha0 = ((DatFile)tGame).SHA1;
-                            byte[] sha1 = ((DatFile)romofGame.Child(r1)).SHA1;
+                            byte[] sha1 = ((DatFile)romofGame[r1]).SHA1;
                             if ((sha0 != null) && (sha1 != null) && !ArrByte.bCompare(sha0, sha1))
                             {
                                 continue;
                             }
 
+                            byte[] sha256_0 = ((DatFile)tGame).SHA256;
+                            byte[] sha256_1 = ((DatFile)romofGame[r1]).SHA256;
+                            if ((sha256_0 != null) && (sha256_1 != null) && !ArrByte.bCompare(sha256_0, sha256_1))
+                            {
+                                continue;
+                            }
+
                             byte[] md50 = ((DatFile)tGame).MD5;
-                            byte[] md51 = ((DatFile)romofGame.Child(r1)).MD5;
+                            byte[] md51 = ((DatFile)romofGame[r1]).MD5;
                             if ((md50 != null) && (md51 != null) && !ArrByte.bCompare(md50, md51))
                             {
                                 continue;
                             }
 
-                            if (((DatFile)tGame).isDisk != ((DatFile)romofGame.Child(r1)).isDisk)
+                            if (((DatFile)tGame).isDisk != ((DatFile)romofGame[r1]).isDisk)
                             {
                                 continue;
                             }
 
                             // not needed as we are now checking for nodumps at the top of this code
                             // don't merge if only one of the ROM is nodump
-                            //if (((DatFile)romofGame.Child(r1)).Status == "nodump" != (((DatFile)mGame[r]).Status == "nodump"))
+                            //if (((DatFile)romofGame[r1]).Status == "nodump" != (((DatFile)mGame[r]).Status == "nodump"))
                             //{
                             //    continue;
                             //}

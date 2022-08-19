@@ -9,9 +9,9 @@ namespace RomVaultCore.FixFile
 {
     internal static class FixAZipMoveToSort
     {
-        public static ReturnCode MovetoSort(RvFile fixZip, RvFile fixZippedFile, ref RvFile toSortGame, ref ICompress toSortZipOut, int iRom, Dictionary<string, RvFile> filesUserForFix)
+        public static ReturnCode MovetoSort(RvFile fixZip, RvFile fixZippedFile, ref RvFile toSortGame, ref ICompress toSortZipOut, int iRom, Dictionary<string, RvFile> filesUserForFix,out string errorMessage)
         {
-            if (!(fixZippedFile.DatStatus == DatStatus.NotInDat && fixZippedFile.GotStatus == GotStatus.Got))
+            if (!((fixZippedFile.DatStatus == DatStatus.NotInDat || fixZippedFile.DatStatus==DatStatus.InDatMerged) && fixZippedFile.GotStatus == GotStatus.Got))
             {
                 ReportError.SendAndShow("Error in Fix Rom Status " + fixZippedFile.RepStatus + " : " + fixZippedFile.DatStatus + " : " + fixZippedFile.GotStatus);
             }
@@ -25,8 +25,10 @@ namespace RomVaultCore.FixFile
             {
                 ReturnCode retCode = FixFileUtils.CreateToSortDirs(fixZip, out RvFile outDir, out string toSortFileName);
                 if (retCode != ReturnCode.Good)
+                {
+                    errorMessage = "Error Creating ToSortDirs";
                     return retCode;
-
+                }
                 toSortGame = new RvFile(fixZip.FileType)
                 {
                     Parent = outDir,
@@ -39,7 +41,6 @@ namespace RomVaultCore.FixFile
             else
                 toSortFullName = toSortZipOut.ZipFilename;
 
-            // this needs header / alt info added.
             RvFile toSortRom = new RvFile(fixZippedFile.FileType)
             {
                 Name = fixZippedFile.Name,
@@ -47,7 +48,7 @@ namespace RomVaultCore.FixFile
                 CRC = fixZippedFile.CRC,
                 SHA1 = fixZippedFile.SHA1,
                 MD5 = fixZippedFile.MD5,
-                HeaderFileType = fixZippedFile.HeaderFileType,
+                HeaderFileTypeSet = fixZippedFile.HeaderFileType, // ToSort does not have a DAT so required flag not needed
                 AltSize = fixZippedFile.AltSize,
                 AltCRC = fixZippedFile.AltCRC,
                 AltSHA1 = fixZippedFile.AltSHA1,
@@ -69,7 +70,6 @@ namespace RomVaultCore.FixFile
 
 
             ReturnCode returnCode;
-            string errorMessage;
 
             if (toSortZipOut == null)
             {

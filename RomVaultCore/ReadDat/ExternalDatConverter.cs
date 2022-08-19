@@ -10,7 +10,7 @@ namespace RomVaultCore.ReadDat
     public static class ExternalDatConverter
     {
         private static CultureInfo enUS = new CultureInfo("en-US");
-        public static RvFile ConvertFromExternalDat(DatHeader datHeaderExternal, RvDat datFile)
+        public static RvFile ConvertFromExternalDat(DatHeader datHeaderExternal, RvDat datFile, HeaderType headerType)
         {
             RvFile newDirFromExternal = new RvFile(FileType.Dir);
             RvDat newDatFromExternal = new RvDat();
@@ -35,9 +35,23 @@ namespace RomVaultCore.ReadDat
             newDirFromExternal.Dat = newDatFromExternal;
 
 
-
             HeaderFileType headerFileType = FileHeaderReader.FileHeaderReader.GetFileTypeFromHeader(datHeaderExternal.Header);
-
+            if (headerFileType != HeaderFileType.Nothing)
+            {
+                switch (headerType)
+                {
+                    case HeaderType.Optional:
+                        // Do Nothing
+                        break;
+                    case HeaderType.Headerless:
+                        // remove header
+                        headerFileType = HeaderFileType.Nothing;
+                        break;
+                    case HeaderType.Headered:
+                        headerFileType |= HeaderFileType.Required;
+                        break;
+                }
+            }
             CopyDir(datHeaderExternal.BaseDir, newDirFromExternal, newDatFromExternal, headerFileType, false);
 
             return newDirFromExternal;
@@ -76,6 +90,7 @@ namespace RomVaultCore.ReadDat
                             DatGame dGame = nDir.DGame;
                             RvGame cGame = new RvGame();
                             CheckAttribute(cGame, dGame.Description, RvGame.GameData.Description);
+                            CheckAttribute(cGame, dGame.Category, RvGame.GameData.Category);
                             CheckAttribute(cGame, dGame.RomOf, RvGame.GameData.RomOf);
                             CheckAttribute(cGame, dGame.IsBios, RvGame.GameData.IsBios);
                             CheckAttribute(cGame, dGame.SourceFile, RvGame.GameData.Sourcefile);
@@ -119,7 +134,7 @@ namespace RomVaultCore.ReadDat
                             Status = nFile.Status,
                             Dat = rvDat,
                             DatStatus = ConvE(nFile.DatStatus),
-                            HeaderFileType = headerFileType
+                            HeaderFileTypeSet = headerFileType // this could have the Required flag set on it
                         };
 #if dt
                         DateTime dt;
@@ -127,7 +142,7 @@ namespace RomVaultCore.ReadDat
                             nf.DatModTimeStamp = dt.Ticks;
 #endif
                         if (nFile.isDisk)
-                            nf.HeaderFileType = HeaderFileType.CHD;
+                            nf.HeaderFileTypeSet = HeaderFileType.CHD;
 
                         if (nf.HeaderFileType != HeaderFileType.Nothing) nf.FileStatusSet(FileStatus.HeaderFileTypeFromDAT);
                         if (nf.Size != null) nf.FileStatusSet(FileStatus.SizeFromDAT);
@@ -163,7 +178,8 @@ namespace RomVaultCore.ReadDat
         {
             DatStatus.InDatCollect,
             DatStatus.InDatMerged,
-            DatStatus.InDatBad
+            DatStatus.InDatBad,
+            DatStatus.InDatMIA
         };
 
         private static DatStatus ConvE(DatFileStatus infs)

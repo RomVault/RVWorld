@@ -4,7 +4,8 @@
     {
         InDatCollect,
         InDatMerged,
-        InDatBad
+        InDatBad,
+        InDatMIA
     }
 
     public enum DatFileType
@@ -25,12 +26,12 @@
     public abstract class DatBase
     {
         public string Name;
-        
         public DatFileStatus DatStatus = DatFileStatus.InDatCollect;
         
 
-        protected DatBase(DatFileType type)
+        protected DatBase(string name,DatFileType type)
         {
+            Name = name;
             DatFileType = type;
         }
 

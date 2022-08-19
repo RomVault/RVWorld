@@ -76,12 +76,20 @@ namespace RomVaultCore.Scanner
                 return true;
             }
 
+            // check headerTypes
+            if (dbFile.HeaderFileTypeRequired)
+            {
+                if (dbFile.HeaderFileType != testFile.HeaderFileType)
+                    return false;
+            }
+
             // we can now fully test anything that had a CRC in the testFile
             // this is anything that came from an archive, or a file that was level 3 scanned
             if (testFile.CRC != null)
             {
                 return CompareWithAlt(dbFile, testFile, out MatchedAlt);
             }
+
 
             // we are now just dealing with Files that were not scanned at all already.
             // Phase 1 we will try and just do a timestamp / file size match for this.
@@ -132,7 +140,7 @@ namespace RomVaultCore.Scanner
                 return false;
 
             if (testFile.GotStatus == GotStatus.FileLocked)
-                return false;
+                return true;
 
             return CompareWithAlt(dbFile, testFile, out MatchedAlt);
         }
@@ -162,6 +170,13 @@ namespace RomVaultCore.Scanner
             if (dbFileType == FileType.Dir || dbFileType == FileType.Zip || dbFileType == FileType.SevenZip)
             {
                 return true;
+            }
+
+            // check headerTypes
+            if (testFile.HeaderFileTypeRequired)
+            {
+                if (dbFile.HeaderFileType != testFile.HeaderFileType)
+                    return false;
             }
 
             return CompareWithAlt(testFile, dbFile, out altMatch);

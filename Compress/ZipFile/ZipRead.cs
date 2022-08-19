@@ -35,7 +35,7 @@ namespace Compress.ZipFile
                 if (errorCode != 0)
                 {
                     ZipFileClose();
-                    if (errorCode == 32)
+                    if (errorCode == 32 || errorCode==5)
                     {
                         return ZipReturn.ZipFileLocked;
                     }

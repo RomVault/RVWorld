@@ -23,7 +23,7 @@ namespace TrrntZip
             _buffer = new byte[1024 * 1024];
         }
 
-        public TrrntZipStatus Process(FileInfo fi,PauseCancel pc=null)
+        public TrrntZipStatus Process(FileInfo fi, PauseCancel pc = null)
         {
             if (Program.VerboseLogging)
             {
@@ -55,7 +55,7 @@ namespace TrrntZip
             List<ZippedFile> zippedFiles = ReadZipContent(zipFile);
 
             zipType localOutputType = Program.OutZip;
-            
+
             // check if the compression type has changed
             zipType inputType;
             switch (zipFile)
@@ -90,7 +90,7 @@ namespace TrrntZip
                 return tzs;
             }
 
-            // if compressionChanged then the required file order will also have changed to need to re-sort the files.
+            // if compressionChanged then the required file order will also have changed so need to re-sort the files.
             if (compressionChanged)
             {
                 switch (outputType)
@@ -160,6 +160,53 @@ namespace TrrntZip
                 );
             }
             return zippedFiles;
+        }
+
+        private static void ReadDirContent(DirectoryInfo diMaster, ref List<ZippedFile> files,int stripLength)
+        {
+            DirectoryInfo[] arrDi = diMaster.GetDirectories();
+            FileInfo[] arrFi = diMaster.GetFiles();
+
+            if (arrDi.Length == 0 && arrFi.Length == 0)
+            {
+                string name = (diMaster.FullName + "/").Substring(stripLength);
+                if (name == "")
+                    return;
+                files.Add(new ZippedFile() { Name = name, Size = 0 });
+                return;
+            }
+
+            foreach (DirectoryInfo di in arrDi)
+                ReadDirContent(di, ref files,stripLength);
+
+            foreach (FileInfo fi in arrFi)
+                files.Add(new ZippedFile() { Name = fi.FullName.Substring(stripLength), Size = (ulong)fi.Length });
+
+        }
+
+        public TrrntZipStatus Process(DirectoryInfo di, PauseCancel pc = null)
+        {
+            // read in all the files & dirs
+            List<ZippedFile> zippedFiles = new List<ZippedFile>();
+            ReadDirContent(di, ref zippedFiles, di.FullName.Length+1);
+
+            // sort them
+            zipType outputType = Program.OutZip == zipType.archive ? zipType.zip : Program.OutZip;
+            switch (outputType)
+            {
+                case zipType.zip:
+                    TorrentZipCheck.CheckZipFiles(ref zippedFiles, ThreadId, StatusLogCallBack);
+                    break;
+                case zipType.sevenzip:
+                    TorrentZipCheck.CheckSevenZipFiles(ref zippedFiles, ThreadId, StatusLogCallBack);
+                    break;
+            }
+
+
+            StatusLogCallBack?.Invoke(ThreadId, "TorrentZipping");
+            TrrntZipStatus fixedTzs = TorrentZipMake.ZipFiles(zippedFiles, di.FullName, _buffer, StatusCallBack, StatusLogCallBack, ThreadId, pc);
+            return fixedTzs;
+
         }
     }
 }

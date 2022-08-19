@@ -5,7 +5,7 @@ namespace DATReader.Utils
 {
     public static class DatFindParentSets
     {
-        public static void FindParentSet(DatDir searchGame, DatDir parentDir,bool includeBios, ref List<DatDir> lstParentGames)
+        public static void FindParentSet(DatDir searchGame, DatDir parentDir, bool includeBios, ref List<DatDir> lstParentGames)
         {
             if (searchGame.DGame == null)
             {
@@ -22,15 +22,15 @@ namespace DATReader.Utils
                 return;
             }
 
-            if (parentDir.ChildNameSearch(new DatDir(searchGame.DatFileType) { Name = parentName }, out int intIndex) != 0)
+            if (parentDir.ChildNameSearch(new DatDir(parentName, searchGame.DatFileType), out int intIndex) != 0)
                 return;
 
-            DatDir parentGame = (DatDir)parentDir.Child(intIndex);
+            DatDir parentGame = (DatDir)parentDir[intIndex];
             if (!includeBios && parentGame.DGame?.IsBios == "yes")
                 return;
 
             lstParentGames.Add(parentGame);
-            FindParentSet(parentGame, parentDir,includeBios, ref lstParentGames);
+            FindParentSet(parentGame, parentDir, includeBios, ref lstParentGames);
         }
     }
 }

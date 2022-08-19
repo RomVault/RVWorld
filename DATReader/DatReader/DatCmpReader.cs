@@ -12,7 +12,7 @@ namespace DATReader.DatReader
         {
             using (DatFileLoader dfl = new DatFileLoader())
             {
-                datHeader = new DatHeader { BaseDir = new DatDir(DatFileType.UnSet) };
+                datHeader = new DatHeader { BaseDir = new DatDir("", DatFileType.UnSet) };
                 int errorCode = dfl.LoadDat(strFilename, DatRead.Enc);
                 if (errorCode != 0)
                 {
@@ -232,10 +232,7 @@ namespace DATReader.DatReader
                 errorReport?.Invoke(dfl.Filename, "Name not found as first object in ( ), on line " + dfl.LineNumber);
                 return false;
             }
-            DatDir dir = new DatDir(DatFileType.UnSet)
-            {
-                Name = dfl.GnRest()
-            };
+            DatDir dir = new DatDir(dfl.GnRest(), DatFileType.UnSet);
 
             dfl.Gn();
             parentDir.ChildAdd(dir);
@@ -280,7 +277,7 @@ namespace DATReader.DatReader
             name = Path.Combine(pathextra, name);
 
             dfl.Gn();
-            DatDir dDir = new DatDir(DatFileType.UnSet) { Name = name, DGame = new DatGame() };
+            DatDir dDir = new DatDir(name, DatFileType.UnSet) { DGame = new DatGame() };
             DatGame dGame = dDir.DGame;
             while (dfl.Next != ")" && !dfl.EndOfStream())
             {
@@ -409,10 +406,7 @@ namespace DATReader.DatReader
             }
 
 
-            DatFile dRom = new DatFile(DatFileType.UnSet)
-            {
-                Name = dfl.Gn()
-            };
+            DatFile dRom = new DatFile(dfl.Gn(), DatFileType.UnSet);
             dfl.Gn();
 
 
@@ -498,9 +492,8 @@ namespace DATReader.DatReader
                 return false;
             }
 
-            DatFile dRom = new DatFile(DatFileType.UnSet)
+            DatFile dRom = new DatFile(VarFix.CleanCHD(dfl.Gn()),  DatFileType.UnSet)
             {
-                Name = VarFix.CleanCHD(dfl.Gn()),
                 isDisk = true
             };
 

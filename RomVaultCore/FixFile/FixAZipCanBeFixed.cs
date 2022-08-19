@@ -22,7 +22,8 @@ namespace RomVaultCore.FixFile
         public static ReturnCode CanBeFixed(RvFile fixZip, RvFile fixZippedFile, ref ICompress tempFixZip, Dictionary<string, RvFile> filesUserForFix, ref int totalFixed, out string errorMessage)
         {
             if (!(
-                fixZippedFile.DatStatus == DatStatus.InDatCollect && (fixZippedFile.GotStatus == GotStatus.NotGot || fixZippedFile.GotStatus == GotStatus.Corrupt)))
+                (fixZippedFile.DatStatus == DatStatus.InDatCollect || fixZippedFile.DatStatus==DatStatus.InDatMIA) && 
+                (fixZippedFile.GotStatus == GotStatus.NotGot || fixZippedFile.GotStatus == GotStatus.Corrupt)))
             { ReportError.SendAndShow("Error in Fix Rom Status " + fixZippedFile.RepStatus + " : " + fixZippedFile.DatStatus + " : " + fixZippedFile.GotStatus); }
 
             ReportError.LogOut("CanBeFixed:");
@@ -30,7 +31,7 @@ namespace RomVaultCore.FixFile
 
             if (tempFixZip == null)
             {
-                ReturnCode ret1 = FixAZipFunctions.OpenTempFizZip(fixZip, out tempFixZip, out errorMessage);
+                ReturnCode ret1 = FixAZipFunctions.OpenTempFixZip(fixZip, out tempFixZip, out errorMessage);
                 if (ret1 != ReturnCode.Good)
                     return ret1;
             }

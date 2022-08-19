@@ -11,7 +11,7 @@ namespace DATReader.DatReader
 
         public static bool ReadDat(XmlDocument doc, string strFilename, out DatHeader datHeader)
         {
-            datHeader = new DatHeader { BaseDir = new DatDir(DatFileType.UnSet) };
+            datHeader = new DatHeader { BaseDir = new DatDir("", DatFileType.UnSet) };
 
             if (!LoadHeaderFromDat(doc, strFilename, datHeader))
             {
@@ -50,12 +50,33 @@ namespace DATReader.DatReader
                 }
             }
 
+
+
+
+            XmlNodeList romNodeList = doc.DocumentElement.SelectNodes("rom");
+            if (romNodeList != null)
+            {
+                for (int i = 0; i < romNodeList.Count; i++)
+                {
+                    LoadRomFromDat(datHeader.BaseDir, romNodeList[i]);
+                }
+            }
+
+            XmlNodeList diskNodeList = doc.DocumentElement.SelectNodes("disk");
+            if (diskNodeList != null)
+            {
+                for (int i = 0; i < diskNodeList.Count; i++)
+                {
+                    LoadDiskFromDat(datHeader.BaseDir, diskNodeList[i]);
+                }
+            }
+
             return true;
         }
 
         public static bool ReadMameDat(XmlDocument doc, string strFilename, out DatHeader datHeader)
         {
-            datHeader = new DatHeader { BaseDir = new DatDir(DatFileType.UnSet) };
+            datHeader = new DatHeader { BaseDir = new DatDir("", DatFileType.UnSet) };
             datHeader.MameXML = true;
 
             if (!LoadMameHeaderFromDat(doc, strFilename, datHeader))
@@ -95,6 +116,8 @@ namespace DATReader.DatReader
                     LoadGameFromDat(datHeader.BaseDir, machineNodeList[i]);
                 }
             }
+
+
 
             return true;
         }
@@ -183,10 +206,7 @@ namespace DATReader.DatReader
 
             string name = VarFix.String(dirNode.Attributes.GetNamedItem("name"));
 
-            DatDir dir = new DatDir(DatFileType.UnSet)
-            {
-                Name = name
-            };
+            DatDir dir = new DatDir(name, DatFileType.UnSet);
 
             parentDir.ChildAdd(dir);
 
@@ -207,6 +227,14 @@ namespace DATReader.DatReader
                     LoadGameFromDat(dir, gameNodeList[i]);
                 }
             }
+            XmlNodeList machineNodeList = dirNode.SelectNodes("machine");
+            if (machineNodeList != null)
+            {
+                for (int i = 0; i < machineNodeList.Count; i++)
+                {
+                    LoadGameFromDat(dir, machineNodeList[i]);
+                }
+            }
         }
 
         private static void LoadGameFromDat(DatDir parentDir, XmlNode gameNode)
@@ -217,9 +245,8 @@ namespace DATReader.DatReader
             }
 
             DatGame dGame = new DatGame();
-            DatDir dDir = new DatDir(DatFileType.UnSet)
+            DatDir dDir = new DatDir(VarFix.String(gameNode.Attributes.GetNamedItem("name")), DatFileType.UnSet)
             {
-                Name = VarFix.String(gameNode.Attributes.GetNamedItem("name")),
                 DGame = dGame
             };
 
@@ -227,6 +254,7 @@ namespace DATReader.DatReader
             dGame.CloneOf = VarFix.String(gameNode.Attributes.GetNamedItem("cloneof"));
             dGame.SampleOf = VarFix.String(gameNode.Attributes.GetNamedItem("sampleof"));
             dGame.Description = VarFix.String(gameNode.SelectSingleNode("description"));
+            dGame.Category = VarFix.String(gameNode.SelectSingleNode("category"));
             dGame.SourceFile = VarFix.String(gameNode.Attributes?.GetNamedItem("sourcefile"));
             dGame.IsBios = VarFix.String(gameNode.Attributes?.GetNamedItem("isbios"));
             dGame.IsDevice = VarFix.String(gameNode.Attributes?.GetNamedItem("isdevice"));
@@ -242,7 +270,7 @@ namespace DATReader.DatReader
                 dGame.TitleId = VarFix.String(emuArc.SelectSingleNode("titleid"));
                 dGame.Publisher = VarFix.String(emuArc.SelectSingleNode("publisher"));
                 dGame.Developer = VarFix.String(emuArc.SelectSingleNode("developer"));
-                dGame.Year = VarFix.String(gameNode.SelectSingleNode("year"));
+                dGame.Year = VarFix.String(emuArc.SelectSingleNode("year"));
                 dGame.Genre = VarFix.String(emuArc.SelectSingleNode("genre"));
                 dGame.SubGenre = VarFix.String(emuArc.SelectSingleNode("subgenre"));
                 dGame.Ratings = VarFix.String(emuArc.SelectSingleNode("ratings"));
@@ -292,12 +320,12 @@ namespace DATReader.DatReader
                 return;
             }
 
-            DatFile rvRom = new DatFile(DatFileType.UnSet)
+            DatFile rvRom = new DatFile(VarFix.String(romNode.Attributes.GetNamedItem("name")), DatFileType.UnSet)
             {
-                Name = VarFix.String(romNode.Attributes.GetNamedItem("name")),
                 Size = VarFix.ULong(romNode.Attributes.GetNamedItem("size")),
                 CRC = VarFix.CleanMD5SHA1(romNode.Attributes.GetNamedItem("crc"), 8),
                 SHA1 = VarFix.CleanMD5SHA1(romNode.Attributes.GetNamedItem("sha1"), 40),
+                SHA256 = VarFix.CleanMD5SHA1(romNode.Attributes.GetNamedItem("sha256"), 64),
                 MD5 = VarFix.CleanMD5SHA1(romNode.Attributes.GetNamedItem("md5"), 32),
                 Merge = VarFix.String(romNode.Attributes.GetNamedItem("merge")),
                 Status = VarFix.ToLower(romNode.Attributes.GetNamedItem("status")),
@@ -305,6 +333,7 @@ namespace DATReader.DatReader
                 DateModified = VarFix.String(romNode.Attributes.GetNamedItem("date")),
                 //DateCreated = VarFix.String(romNode.Attributes.GetNamedItem("CreationDate")),
                 //DateAccessed = VarFix.String(romNode.Attributes.GetNamedItem("LastAccessDate")),
+                MIA = VarFix.String(romNode.Attributes.GetNamedItem("mia"))
             };
 
             parentDir.ChildAdd(rvRom);
@@ -317,13 +346,14 @@ namespace DATReader.DatReader
                 return;
             }
 
-            DatFile rvRom = new DatFile(DatFileType.UnSet)
+            DatFile rvRom = new DatFile(VarFix.CleanCHD(romNode.Attributes.GetNamedItem("name")), DatFileType.UnSet)
             {
-                Name = VarFix.CleanCHD(romNode.Attributes.GetNamedItem("name")),
                 SHA1 = VarFix.CleanMD5SHA1(romNode.Attributes.GetNamedItem("sha1"), 40),
+                SHA256 = VarFix.CleanMD5SHA1(romNode.Attributes.GetNamedItem("sha256"), 64),
                 MD5 = VarFix.CleanMD5SHA1(romNode.Attributes.GetNamedItem("md5"), 32),
                 Merge = VarFix.String(romNode.Attributes.GetNamedItem("merge")),
                 Status = VarFix.ToLower(romNode.Attributes.GetNamedItem("status")),
+                MIA = VarFix.String(romNode.Attributes.GetNamedItem("mia")),
                 isDisk = true
             };
             if (!string.IsNullOrWhiteSpace(rvRom.Merge))

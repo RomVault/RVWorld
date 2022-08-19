@@ -122,10 +122,10 @@ namespace RomVaultCore.FindFix
                     switch (rvFile.GotStatus)
                     {
                         case GotStatus.Got:
-                        case GotStatus.Corrupt:
                             gotFiles.Add(rvFile);
                             break;
                         case GotStatus.NotGot:
+                        case GotStatus.Corrupt:
                             missingFiles.Add(rvFile);
                             break;
                     }
@@ -220,7 +220,7 @@ namespace RomVaultCore.FindFix
 
 
 
-        private static void MergeInMissingFiles(FileGroup[] mergedCRCFamily, FileGroup[] mergedSHA1Family, FileGroup[] mergedMD5Family,
+        public static void MergeInMissingFiles(FileGroup[] mergedCRCFamily, FileGroup[] mergedSHA1Family, FileGroup[] mergedMD5Family,
                                                 FileGroup[] mergedAltCRCFamily, FileGroup[] mergedAltSHA1Family, FileGroup[] mergedAltMD5Family, List<RvFile> missingFiles)
         {
             foreach (RvFile f in missingFiles)
@@ -453,45 +453,45 @@ namespace RomVaultCore.FindFix
         }
 
 
-        private static bool FindSHA1(FileGroup fileGroup)
+        public static bool FindSHA1(FileGroup fileGroup)
         {
             return fileGroup.SHA1 != null;
         }
-        private static bool FindMD5(FileGroup fileGroup)
+        public static bool FindMD5(FileGroup fileGroup)
         {
             return fileGroup.MD5 != null;
         }
-        private static bool FindAltCRC(FileGroup fileGroup)
+        public static bool FindAltCRC(FileGroup fileGroup)
         {
             return fileGroup.AltCRC != null;
         }
-        private static bool FindAltSHA1(FileGroup fileGroup)
+        public static bool FindAltSHA1(FileGroup fileGroup)
         {
             return fileGroup.AltSHA1 != null;
         }
-        private static bool FindAltMD5(FileGroup fileGroup)
+        public static bool FindAltMD5(FileGroup fileGroup)
         {
             return fileGroup.AltMD5 != null;
         }
 
 
-        private static int FamilySortSHA1(FileGroup fileGroup1, FileGroup fileGroup2)
+        public static int FamilySortSHA1(FileGroup fileGroup1, FileGroup fileGroup2)
         {
             return ArrByte.ICompare(fileGroup1.SHA1, fileGroup2.SHA1);
         }
-        private static int FamilySortMD5(FileGroup fileGroup1, FileGroup fileGroup2)
+        public static int FamilySortMD5(FileGroup fileGroup1, FileGroup fileGroup2)
         {
             return ArrByte.ICompare(fileGroup1.MD5, fileGroup2.MD5);
         }
-        private static int FamilySortAltCRC(FileGroup fileGroup1, FileGroup fileGroup2)
+        public static int FamilySortAltCRC(FileGroup fileGroup1, FileGroup fileGroup2)
         {
             return ArrByte.ICompare(fileGroup1.AltCRC, fileGroup2.AltCRC);
         }
-        private static int FamilySortAltSHA1(FileGroup fileGroup1, FileGroup fileGroup2)
+        public static int FamilySortAltSHA1(FileGroup fileGroup1, FileGroup fileGroup2)
         {
             return ArrByte.ICompare(fileGroup1.AltSHA1, fileGroup2.AltSHA1);
         }
-        private static int FamilySortAltMD5(FileGroup fileGroup1, FileGroup fileGroup2)
+        public static int FamilySortAltMD5(FileGroup fileGroup1, FileGroup fileGroup2)
         {
             return ArrByte.ICompare(fileGroup1.AltMD5, fileGroup2.AltMD5);
         }

@@ -1,7 +1,7 @@
 ﻿/******************************************************
  *     ROMVault3 is written by Gordon J.              *
  *     Contact gordon@romvault.com                    *
- *     Copyright 2020                                 *
+ *     Copyright 2022                                 *
  ******************************************************/
 
 using System.Collections.Generic;
@@ -47,9 +47,10 @@ namespace ROMVault
 
         private int _yPos;
 
-        public void Setup(ref RvFile dirTree)
+        public void Setup(ref RvFile dirTree, bool KeepSelected = false)
         {
-            Selected = null;
+            if (!KeepSelected)
+                Selected = null;
             _lTree = dirTree;
             SetupInt();
         }
@@ -224,7 +225,7 @@ namespace ROMVault
             {
                 if (uTree.RExpand.IntersectsWith(t))
                 {
-                    g.DrawImage(pTree.Tree.TreeExpanded ? rvImages.ExpandBoxMinus : rvImages.ExpandBoxPlus, RSub(uTree.RExpand, _hScroll, _vScroll));
+                    g.DrawImage(pTree.Tree.TreeExpanded ? rvImages.GetBitmap("ExpandBoxMinus", false) : rvImages.GetBitmap("ExpandBoxPlus", false), RSub(uTree.RExpand, _hScroll, _vScroll));
                 }
             }
 
@@ -234,13 +235,13 @@ namespace ROMVault
                 switch (pTree.Tree.Checked)
                 {
                     case RvTreeRow.TreeSelect.Locked:
-                        g.DrawImage(rvImages.TickBoxLocked, RSub(uTree.RChecked, _hScroll, _vScroll));
+                        g.DrawImage(rvImages.GetBitmap("TickBoxLocked", false), RSub(uTree.RChecked, _hScroll, _vScroll));
                         break;
                     case RvTreeRow.TreeSelect.UnSelected:
-                        g.DrawImage(rvImages.TickBoxUnTicked, RSub(uTree.RChecked, _hScroll, _vScroll));
+                        g.DrawImage(rvImages.GetBitmap("TickBoxUnTicked", false), RSub(uTree.RChecked, _hScroll, _vScroll));
                         break;
                     case RvTreeRow.TreeSelect.Selected:
-                        g.DrawImage(rvImages.TickBoxTicked, RSub(uTree.RChecked, _hScroll, _vScroll));
+                        g.DrawImage(rvImages.GetBitmap("TickBoxTicked", false), RSub(uTree.RChecked, _hScroll, _vScroll));
                         break;
                 }
             }
@@ -256,6 +257,10 @@ namespace ROMVault
                 {
                     icon = 1;
                 }
+                else if (!pTree.DirStatus.HasMissing() && pTree.DirStatus.HasMIA())
+                {
+                    icon = 5;
+                }
                 else if (!pTree.DirStatus.HasMissing())
                 {
                     icon = 3;
@@ -265,15 +270,15 @@ namespace ROMVault
                 Bitmap bm;
                 if (pTree.Dat == null && pTree.DirDatCount == 0) // Directory above DAT's in Tree
                 {
-                    bm = rvImages.GetBitmap("DirectoryTree" + icon);
+                    bm = rvImages.GetBitmap("DirectoryTree" + icon, false);
                 }
                 else if (pTree.Dat == null && pTree.DirDatCount >= 1) // Directory that contains DAT's
                 {
-                    bm = rvImages.GetBitmap("Tree" + icon);
+                    bm = rvImages.GetBitmap("Tree" + icon, false);
                 }
                 else if (pTree.Dat != null && pTree.DirDatCount == 0) // Directories made by a DAT
                 {
-                    bm = rvImages.GetBitmap("Tree" + icon);
+                    bm = rvImages.GetBitmap("Tree" + icon, false);
                 }
                 else
                 {
@@ -294,7 +299,13 @@ namespace ROMVault
             {
                 string thistxt;
                 List<string> datList = null;
-                string subtxt = "( Have:" + pTree.DirStatus.CountCorrect() + " \\ Missing: " + pTree.DirStatus.CountMissing() + " )";
+
+                int intMIA = pTree.DirStatus.CountMIA();
+                int intFoundMIA = pTree.DirStatus.CountFoundMIA();
+
+                string strMIA = intMIA > 0 ? $" \\ MIA: {intMIA}" : "";
+                string strFoundMIA = intFoundMIA > 0 ? $" \\ Found MIA: {intFoundMIA}" : "";
+                string subtxt = $"( Have: {pTree.DirStatus.CountCorrect()}{strFoundMIA} \\ Missing: {pTree.DirStatus.CountMissing()}{strMIA} )";
 
                 if (pTree.Dat == null && pTree.DirDatCount == 0) // Directory above DAT's in Tree
                 {
@@ -470,7 +481,7 @@ namespace ROMVault
                     if (pTree.FileStatusIs(FileStatus.PrimaryToSort) || pTree.FileStatusIs(FileStatus.CacheToSort))
                         return true;
 
-                    SetChecked(pTree, RvTreeRow.TreeSelect.Locked,Working,shiftPressed);
+                    SetChecked(pTree, RvTreeRow.TreeSelect.Locked, Working, shiftPressed);
                     return true;
                 }
 
@@ -514,14 +525,14 @@ namespace ROMVault
             return false;
         }
 
-        private static void SetChecked(RvFile pTree, RvTreeRow.TreeSelect nSelection, bool isWorking,bool shiftPressed)
+        private static void SetChecked(RvFile pTree, RvTreeRow.TreeSelect nSelection, bool isWorking, bool shiftPressed)
         {
             if (!isWorking) RvTreeRow.OpenStream();
-            SetCheckedRecurse(pTree, nSelection, isWorking,shiftPressed);
+            SetCheckedRecurse(pTree, nSelection, isWorking, shiftPressed);
             if (!isWorking) RvTreeRow.CloseStream();
         }
 
-        private static void SetCheckedRecurse(RvFile pTree, RvTreeRow.TreeSelect nSelection, bool isworking,bool shiftPressed)
+        private static void SetCheckedRecurse(RvFile pTree, RvTreeRow.TreeSelect nSelection, bool isworking, bool shiftPressed)
         {
             pTree.Tree.SetChecked(nSelection, isworking);
             if (shiftPressed)
@@ -531,7 +542,7 @@ namespace ROMVault
                 RvFile d = pTree.Child(i);
                 if (d.IsDir && d.Tree != null)
                 {
-                    SetCheckedRecurse(d, nSelection, isworking,false);
+                    SetCheckedRecurse(d, nSelection, isworking, false);
                 }
             }
         }

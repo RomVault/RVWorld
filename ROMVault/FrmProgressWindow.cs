@@ -1,7 +1,7 @@
 ﻿/******************************************************
  *     ROMVault3 is written by Gordon J.              *
  *     Contact gordon@romvault.com                    *
- *     Copyright 2020                                 *
+ *     Copyright 2022                                 *
  ******************************************************/
 
 using System;
@@ -32,7 +32,6 @@ namespace ROMVault
             _titleRoot = titleRoot;
             _funcFinished = funcFinished;
             InitializeComponent();
-
             Type dgvType = ErrorGrid.GetType();
             PropertyInfo pi = dgvType.GetProperty("DoubleBuffered", BindingFlags.Instance | BindingFlags.NonPublic);
             pi.SetValue(ErrorGrid, true, null);
@@ -64,6 +63,7 @@ namespace ROMVault
 
         private void FrmProgressWindowNewShown(object sender, EventArgs e)
         {
+            SetDataGridSize();
             _thWrk.wReport = BgwProgressChanged;
             _thWrk.wFinal = BgwRunWorkerCompleted;
             _thWrk.StartAsync();
@@ -277,6 +277,18 @@ namespace ROMVault
                     }
                     return;
             }
+        }
+
+        private void splitContainer1_Panel2_Resize(object sender, EventArgs e)
+        {
+            SetDataGridSize();
+        }
+        private void SetDataGridSize()
+        {
+            ErrorGrid.Top = 0;
+            ErrorGrid.Left = 0;
+            ErrorGrid.Width = Math.Max(splitContainer1.Panel2.Width, 80);
+            ErrorGrid.Height = Math.Max(splitContainer1.Panel2.Height, 80);
         }
     }
 }

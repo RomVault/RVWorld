@@ -28,18 +28,13 @@ namespace TrrntZipUI
         {
             fileCount = 0;
 
-            List<string> lstFile = new List<string>();
             foreach (string t in _file)
             {
-                if (File.Exists(t))
+                if (File.Exists(t) && AddFile(t))
                 {
-                    AddFile(t, ref lstFile);
+                    cFile cf = new cFile() { fileId = fileCount++, filename = t };
+                    _fileCollection.Add(cf);
                 }
-            }
-            foreach (string file in lstFile)
-            {
-                cFile cf = new cFile() { fileId = fileCount++, filename = file };
-                _fileCollection.Add(cf);
             }
             _updateFileCount?.Invoke(fileCount);
 
@@ -47,41 +42,51 @@ namespace TrrntZipUI
             {
                 if (Directory.Exists(t))
                 {
-                    AddDirectory(t);
+                    if (TrrntZip.Program.InZip == zipType.dir)
+                    {
+
+                        cFile cf = new cFile() { fileId = fileCount++, filename = t, isDir = true };
+                        _fileCollection.Add(cf);
+                    }
+                    else
+                        AddDirectory(t);
                 }
             }
             _processFileEndCallBack?.Invoke(-1, 0, TrrntZipStatus.Unknown);
         }
 
-        private void AddFile(string filename, ref List<string> cf)
+        private bool AddFile(string filename)
         {
             string extn = Path.GetExtension(filename);
             extn = extn.ToLower();
 
+            if (extn == ".tztmp" && Path.GetFileName(filename).StartsWith("__"))
+            {
+                File.Delete(filename);
+                return false;
+            }
+
             if (extn == ".zip")
             {
-                if (TrrntZip.Program.InZip == zipType.zip || TrrntZip.Program.InZip == zipType.archive || TrrntZip.Program.InZip==zipType.all)
+                if (TrrntZip.Program.InZip == zipType.zip || TrrntZip.Program.InZip == zipType.archive || TrrntZip.Program.InZip == zipType.all)
                 {
-                    cf.Add(filename);
-                    return;
+                    return true;
                 }
             }
-            
+
             if (extn == ".7z")
             {
                 if (TrrntZip.Program.InZip == zipType.sevenzip || TrrntZip.Program.InZip == zipType.archive || TrrntZip.Program.InZip == zipType.all)
                 {
-                    cf.Add(filename);
-                    return;
+                    return true;
                 }
             }
 
             if (TrrntZip.Program.InZip == zipType.file || TrrntZip.Program.InZip == zipType.all)
             {
-                cf.Add(filename);
-                return;
+                return true;
             }
-            return;
+            return false;
         }
 
         private void AddDirectory(string directory)
@@ -90,14 +95,14 @@ namespace TrrntZipUI
 
             List<string> lstFile = new List<string>();
             FileInfo[] fi = di.GetFiles();
+
             foreach (FileInfo t in fi)
             {
-                AddFile(t.FullName, ref lstFile);
-            }
-            foreach (string file in lstFile)
-            {
-                cFile cf = new cFile() { fileId = fileCount++, filename = file };
-                _fileCollection.Add(cf);
+                if (AddFile(t.FullName))
+                {
+                    cFile cf = new cFile() { fileId = fileCount++, filename = t.FullName };
+                    _fileCollection.Add(cf);
+                }
             }
             _updateFileCount?.Invoke(fileCount);
 

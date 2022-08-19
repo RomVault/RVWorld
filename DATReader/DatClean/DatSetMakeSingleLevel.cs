@@ -11,7 +11,7 @@ namespace DATReader.DatClean
             // RemoveAllSubDirs, just does what it says
             // RemoveAllIfNoConflicts, does the conflict precheck and if a conflict is found switches to KeepAllSubDirs
             // RemoveSubsIfSingleFile, remove the subdir if there is only one file in the subdir
-   
+
             DatBase[] db = tDatHeader.BaseDir.ToArray();
             tDatHeader.Dir = "noautodir";
 
@@ -26,10 +26,7 @@ namespace DATReader.DatClean
             if (subDirType == RemoveSubType.RemoveAllIfNoConflicts)
             {
                 bool foundRepeatFilename = false;
-                DatDir rootTest = new DatDir(DatFileType.UnSet)
-                {
-                    Name = rootDirName,
-                };
+                DatDir rootTest = new DatDir(rootDirName, DatFileType.UnSet);
                 foreach (DatBase set in db)
                 {
                     if (!(set is DatDir romSet))
@@ -63,9 +60,8 @@ namespace DATReader.DatClean
             }
             else
             {
-                root = new DatDir(DatFileType.UnSet)
+                root = new DatDir(rootDirName, DatFileType.UnSet)
                 {
-                    Name = rootDirName,
                     DGame = new DatGame { Description = tDatHeader.Description }
                 };
                 tDatHeader.BaseDir.ChildAdd(root);

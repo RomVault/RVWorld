@@ -14,6 +14,7 @@ namespace TrrntZip
         Unsorted = 32,
         ExtraDirectoryEnteries = 64,
         RepeatFilesFound = 128,
-        Cancel=256
+        Cancel=256,
+        ErrorOutputFile=512,
     }
 }
