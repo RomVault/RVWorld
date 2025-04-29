@@ -16,7 +16,7 @@ namespace Compress.SevenZip
             zstd
         }
 
-        private class SevenZipLocalFile : LocalFile
+        private class SevenZipLocalFile : FileHeader
         {
             public int StreamIndex;
             public ulong StreamOffset;
@@ -39,15 +39,14 @@ namespace Compress.SevenZip
 
         public long TimeStamp => _zipFileInfo?.LastWriteTime ?? 0;
 
-        public ZipOpenType ZipOpen { get; private set; }
-        public ZipStatus ZipStatus { get; private set; }
+        public string FileComment => null;
 
-        public int LocalFilesCount()
-        {
-            return _localFiles.Count;
-        }
+        public ZipOpenType ZipOpen { get; private set; }
+        public ZipStructure ZipStruct { get; private set; }
+
+        public int LocalFilesCount => _localFiles.Count;
         
-        public LocalFile GetLocalFile(int i)
+        public FileHeader GetFileHeader(int i)
         {
             return _localFiles[i];
         }
@@ -122,5 +121,6 @@ namespace Compress.SevenZip
 
             return sb;
         }
+
     }
 }

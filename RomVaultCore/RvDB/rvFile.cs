@@ -4,53 +4,39 @@ using System.Diagnostics;
 using System.IO;
 using System.Text.RegularExpressions;
 using Compress;
-using FileHeaderReader;
 using RomVaultCore.FindFix;
 using RomVaultCore.Utils;
 using Path = RVIO.Path;
 
 namespace RomVaultCore.RvDB
 {
-    public enum FileType
-    {
-        Unknown,
-        Dir,
-        Zip,
-        SevenZip,
-        File,
-        ZipFile,
-        SevenZipFile
-    }
 
-    public enum DatStatus
+    /* 
+    public enum ZipStructure
     {
-        InDatCollect,
-        InDatMerged,
-        InDatBad,
-        NotInDat,
-        InToSort,
-        InDatMIA
+        None = 0,    // No structure
+        ZipTrrnt = 1,
+        ZipTDC = 2, 
+        ZipEXO = 3, 
+        SevenZipTrrnt = 4, // this is the original t7z format
+        ZipZSTD = 5,
+        SevenZipSLZMA = 8, // Solid-LZMA this is rv7zip today
+        SevenZipNLZMA = 9, // NonSolid-LZMA
+        SevenZipSZSTD = 10, // Solid-zSTD
+        SevenZipNZSTD = 11, // NonSolid-zSTD
     }
+    */
 
-    public enum GotStatus
-    {
-        NotGot,
-        Got,
-        Corrupt,
-        FileLocked
-    }
 
-    public class RvFile
+
+    public partial class RvFile
     {
         public string Name; // The Name of the File or Directory
         public string FileName; // Found filename if different from Name (Should only be differences in Case)
         public RvFile Parent; // A link to the Parent Directory
         public RvDat Dat; // the Dat that this item belongs to
-        public long FileModTimeStamp; // TimeStamp to match the filesystem TimeStamp, used to know if the file has been changed.
+        public long FileModTimeStamp = long.MinValue; // TimeStamp to match the filesystem TimeStamp, used to know if the file has been changed.
 
-#if dt
-        public long? DatModTimeStamp; // TimeStamp from the DAT if there is one
-#endif  
 
         public bool SearchFound; // ????  used in DatUpdate & FileScanning
 
@@ -63,17 +49,41 @@ namespace RomVaultCore.RvDB
         private DatStatus _datStatus = DatStatus.NotInDat;
         private GotStatus _gotStatus = GotStatus.NotGot;
         private RepStatus _repStatus = RepStatus.UnSet;
-        public ZipStatus ZipStatus; // if Dir is a ZIP, some fix/status of the ZIP = trrntzip,rv7z or t7z
 
         /******************* RvDir ***********************/
-        private readonly List<RvDat> _dirDats; // DAT's stored in this dir in DatRoot
         private readonly List<RvFile> _children; // children items of this dir
         public readonly ReportStatus DirStatus; // Counts the status of all children for reporting in the UI
+
+        private byte _ZipDatStruct;
+        public ZipStructure ZipDatStruct { get { return (ZipStructure)(_ZipDatStruct & 0x7f); } } // Structure of Zip Found in Dat
+        public bool ZipDatStructFix { get { return (_ZipDatStruct & 0x80) == 0x80; } }
+
+        public void SetZipDatStruct(ZipStructure zipStruncture, bool fix)
+        {
+            _ZipDatStruct = (byte)zipStruncture;
+            if (fix)
+                _ZipDatStruct |= 0x80;
+        }
+
+        public ZipStructure ZipStruct; // Structure of Zip Found as a file
+
+        public ZipStructure newZipStruct => (DatStatus == DatStatus.NotInDat || DatStatus == DatStatus.InToSort)
+                                                ? ZipStruct : ZipDatStruct;
 
         public RvTreeRow Tree; // TreeRow for UI
         public RvGame Game; // Game info from DAT
         public string UiDisplayName;
 
+        private ToSortDirType _toSortType = ToSortDirType.None;
+
+        [Flags]
+        public enum ToSortDirType
+        {
+            None = 0x00,
+            ToSortPrimary = 0x01,
+            ToSortCache = 0x02,
+            ToSortFileOnly = 0x04
+        }
 
         /******************* RvFile **********************/
         public FileGroup FileGroup;
@@ -87,7 +97,7 @@ namespace RomVaultCore.RvDB
         public byte[] AltSHA1;
         public byte[] AltMD5;
 
-        public string Merge = "";
+        public string Merge;
         public string Status;
         private FileStatus _fileStatus;
 
@@ -99,10 +109,12 @@ namespace RomVaultCore.RvDB
         /*************************************************/
 
 
+
+
         public RvFile(FileType type)
         {
             FileType = type;
-            if (!IsDir)
+            if (!IsDirectory)
                 return;
 
             _dirDats = new List<RvDat>(); // DAT's stored in this dir in DatRoot
@@ -146,12 +158,14 @@ namespace RomVaultCore.RvDB
             {
                 if (Parent == null)
                 {
-                    return string.IsNullOrWhiteSpace(FileName) ? (string.IsNullOrWhiteSpace(Name) ? "" : Name) : FileName;
+                    return NameCase ?? "";
                 }
 
-                return Path.Combine(Parent.TreeFullNameCase, string.IsNullOrWhiteSpace(FileName) ? Name : FileName);
+                return Path.Combine(Parent.TreeFullNameCase, NameCase);
             }
         }
+
+        public string NameCase => string.IsNullOrWhiteSpace(FileName) ? Name : FileName;
 
         /// <summary>
         /// Returns te PhysicalPath of this RvFile, it first calls the above TreeFullName
@@ -169,7 +183,7 @@ namespace RomVaultCore.RvDB
 
             string strFullPath = "";
             int lenFound = 0;
-            foreach (DatRule dirPathMap in Settings.rvSettings.DatRules)
+            foreach (DirMapping dirPathMap in Settings.rvSettings.DirMappings)
             {
                 if (string.IsNullOrWhiteSpace(dirPathMap.DirPath))
                     continue;
@@ -253,16 +267,18 @@ namespace RomVaultCore.RvDB
             return Settings.rvSettings.DatRoot;
         }
 
-        public bool IsInToSort
-        {
-            get
-            {
-                RvFile upTree = this;
-                while (upTree != null && upTree.Parent != DB.DirRoot)
-                    upTree = upTree.Parent;
+        public bool IsInToSort => DatStatus == DatStatus.InToSort;
 
-                return upTree != DB.DirRoot.Child(0);
+        public static RvTreeRow.TreeSelect treeType(RvFile tfile)
+        {
+            if (tfile == null)
+                return RvTreeRow.TreeSelect.Locked;
+            if (tfile.Tree != null)
+            {
+                return tfile.Tree.Checked;
             }
+
+            return treeType(tfile.Parent);
         }
 
         public DatStatus DatStatus
@@ -281,7 +297,7 @@ namespace RomVaultCore.RvDB
             get => _gotStatus;
             set
             {
-                if(DatStatus ==DatStatus.InDatMIA && value==GotStatus.Got)
+                if (DatStatus == DatStatus.InDatMIA && value == GotStatus.Got)
                 {
                     Debug.WriteLine("GotMIA");
                 }
@@ -297,7 +313,7 @@ namespace RomVaultCore.RvDB
             get => _repStatus;
             set
             {
-                Parent?.UpdateRepStatusUpTree(_repStatus, -1);
+                RepStatus OldRepStatus = _repStatus;
 
                 List<RepStatus> rs = RepairStatus.StatusCheck[(int)FileType, (int)_datStatus, (int)_gotStatus];
                 if (rs == null || !rs.Contains(value))
@@ -310,39 +326,41 @@ namespace RomVaultCore.RvDB
                     _repStatus = value;
                 }
 
-                Parent?.UpdateRepStatusUpTree(_repStatus, 1);
+                if (OldRepStatus == _repStatus)
+                    return;
+
+                Parent?.RepStatusUpTreeUpdate(OldRepStatus, _repStatus);
             }
         }
 
         [Flags]
         private enum FileFlags
         {
-            Size = 0x01,
-            CRC = 0x02,
-            SHA1 = 0x04,
-            MD5 = 0x08,
-            HeaderFileType = 0x10,
-            AltSize = 0x20,
-            AltCRC = 0x40,
-            AltSHA1 = 0x80,
-            AltMD5 = 0x100,
-            Merge = 0x200,
-            Status = 0x400,
-            ZipFileIndex = 0x800,
-            ZipFileHeader = 0x1000,
-            CHDVersion = 0x2000,
-            HasTree = 0x4000,
-            HasGame = 0x8000,
-            HasDat = 0x10000,
-            HasDirDat = 0x20000,
-            HasChildren = 0x40000,
+            Size = 1 << 0, // 0x01,
+            CRC = 1 << 1, // 0x02,
+            SHA1 = 1 << 2, // 0x04,
+            MD5 = 1 << 3, // 0x08,
+            HeaderFileType = 1 << 4, // 0x10,
+            AltSize = 1 << 5, //0x20,
+            AltCRC = 1 << 6, //0x40,
+            AltSHA1 = 1 << 7, //0x80,
+            AltMD5 = 1 << 8, //0x100,
+            Merge = 1 << 9, //0x200,
+            Status = 1 << 10, //0x400,
+            ZipFileIndex = 1 << 11, //0x800,
+            ZipFileHeader = 1 << 12, //0x1000,
+            CHDVersion = 1 << 13, //0x2000,
+            HasTree = 1 << 14, //0x4000,
+            HasGame = 1 << 15, //0x8000,
+            HasDat = 1 << 16, //0x10000,
+            HasDirDat = 1 << 17, //0x20000,
+            HasChildren = 1 << 18, //0x40000,
+            ToSortStatus = 1 << 19, //0x80000,
 
-            FileModTimeStamp = 0x100000, // not used always stored
-            DatModTimeStamp = 0x200000,
-            FileCreatedTimeStamp = 0x400000,
-            DatCreatedTimeStamp = 0x800000,
-            FileLastAccessTimeStamp = 0x400000,
-            DatLastAccessTimeStamp = 0x800000,
+            //    FileModTimeStamp = 1 << 20, //0x100000, // not used always stored
+            //    DatModTimeStamp = 1 << 21, //0x200000,
+            //    FileCreatedTimeStamp = 1 << 22, //0x400000,
+            //    DatCreatedTimeStamp = 1 << 23, //0x800000,
         }
 
 
@@ -352,11 +370,14 @@ namespace RomVaultCore.RvDB
             int countChild = _children?.Count ?? 0;
 
             FileFlags fFlags = 0;
+
+            if (Dat != null) fFlags |= FileFlags.HasDat;
             if (Tree != null) fFlags |= FileFlags.HasTree;
             if (Game != null) fFlags |= FileFlags.HasGame;
-            if (Dat != null) fFlags |= FileFlags.HasDat;
             if (countDirDats > 0) fFlags |= FileFlags.HasDirDat;
             if (countChild > 0) fFlags |= FileFlags.HasChildren;
+
+            /************* RvFile ************/
 
             if (Size != null) fFlags |= FileFlags.Size;
             if (CRC != null) fFlags |= FileFlags.CRC;
@@ -375,30 +396,27 @@ namespace RomVaultCore.RvDB
             if (ZipFileHeaderPosition != null) fFlags |= FileFlags.ZipFileHeader;
             if (CHDVersion != null) fFlags |= FileFlags.CHDVersion;
 
-#if dt
-            // FileModTimeStamp  always
-            if (DatModTimeStamp != null) fFlags |= FileFlags.DatModTimeStamp;
-#endif
+            if (_toSortType != ToSortDirType.None) fFlags |= FileFlags.ToSortStatus;
 
             bw.Write((uint)fFlags);
 
 
             /************* RvFile ************/
 
-            bw.Write(DB.Fn(Name));
-            bw.Write(DB.Fn(FileName));
+            bw.Write(DB.FixNull(Name));
+            bw.Write(DB.FixNull(FileName));
 
             bw.Write(FileModTimeStamp);
-#if dt
-            if (DatModTimeStamp != null) bw.Write((ulong)DatModTimeStamp);
-#endif
 
             if (Dat != null) bw.Write(Dat.DatIndex);
             bw.Write((byte)_datStatus);
             bw.Write((byte)_gotStatus);
 
-            if (DBTypeGet.isCompressedDir(FileType)) bw.Write((byte)ZipStatus);
-
+            if (DBTypeGet.isCompressedDir(FileType))
+            {
+                bw.Write(_ZipDatStruct);
+                bw.Write((byte)ZipStruct);
+            }
             /************* RvDir ************/
 
             Tree?.Write(bw);
@@ -409,6 +427,7 @@ namespace RomVaultCore.RvDB
                 bw.Write(countDirDats);
                 for (int i = 0; i < countDirDats; i++)
                 {
+                    _dirDats[i].DatIndex = i;
                     _dirDats[i].Write(bw);
                 }
             }
@@ -435,17 +454,35 @@ namespace RomVaultCore.RvDB
             if (AltCRC != null) bw.WriteByteArray(AltCRC);
             if (AltSHA1 != null) bw.WriteByteArray(AltSHA1);
             if (AltMD5 != null) bw.WriteByteArray(AltMD5);
+
             if (!string.IsNullOrEmpty(Merge)) bw.Write(Merge);
             if (!string.IsNullOrEmpty(Status)) bw.Write(Status);
             if (ZipFileIndex >= 0) bw.Write(ZipFileIndex);
             if (ZipFileHeaderPosition != null) bw.Write((long)ZipFileHeaderPosition);
             if (CHDVersion != null) bw.Write((uint)CHDVersion);
 
+            if (_toSortType != ToSortDirType.None) bw.Write((byte)_toSortType);
+
             bw.Write((uint)_fileStatus);
         }
 
-        public void Read(BinaryReader br, List<RvDat> parentDirDats)
+        public RvFile(BinaryReader br) : this(br, null, null, true) { }
+
+        private RvFile(BinaryReader br, List<RvDat> parentDirDats, RvFile parent, bool baseDir = false)
         {
+            if (parent == null) // this is the top of the tree so set to FileType.Dir
+                FileType = FileType.Dir;
+            else
+                FileType = (FileType)br.ReadByte();
+
+            if (IsDirectory)
+            {
+                _dirDats = new List<RvDat>(); // DAT's stored in this dir in DatRoot
+                _children = new List<RvFile>(); // children items of this dir
+                DirStatus = new ReportStatus(); // Counts the status of all children for reporting in the UI
+            }
+            Parent = parent;
+
             FileFlags fFlags = (FileFlags)br.ReadUInt32();
 
             /************* RvFile ************/
@@ -453,15 +490,6 @@ namespace RomVaultCore.RvDB
             Name = br.ReadString();
             FileName = br.ReadString();
             FileModTimeStamp = br.ReadInt64();
-            if (FileModTimeStamp != 0 && FileModTimeStamp < RVIO.FileParamConvert.FileTimeOffset)
-                FileModTimeStamp += RVIO.FileParamConvert.FileTimeOffset;
-#if dt
-            DatModTimeStamp = (fFlags & FileFlags.DatModTimeStamp) > 0 ? br.ReadInt64() : (long?)null;
-            //FileCreatedTimeStamp = (fFlags & FileFlags.FileCreatedTimeStamp) > 0 ? br.ReadInt64() : (long?)null;
-            //DatCreatedTimeStamp = (fFlags & FileFlags.DatCreatedTimeStamp) > 0 ? br.ReadInt64() : (long?)null;
-            //FileLastAccessTimeStamp = (fFlags & FileFlags.FileLastAccessTimeStamp) > 0 ? br.ReadInt64() : (long?)null;
-            //DatLastAccessTimeStamp = (fFlags & FileFlags.DatLastAccessTimeStamp) > 0 ? br.ReadInt64() : (long?)null;
-#endif
 
             Dat = null;
             if ((fFlags & FileFlags.HasDat) > 0)
@@ -473,31 +501,66 @@ namespace RomVaultCore.RvDB
                 }
                 else
                 {
+                    //if(parentDirDats!=null && index<parentDirDats.Count)
                     Dat = parentDirDats[index];
                 }
             }
 
-
+            // 2024/08/03 - any item in ToSort should have a datStatus of InToSort
             _datStatus = (DatStatus)br.ReadByte();
+            if (parent != null && parent._datStatus == DatStatus.InToSort)
+                _datStatus = DatStatus.InToSort;
+
             _gotStatus = (GotStatus)br.ReadByte();
             RepStatusReset();
 
-            if (DBTypeGet.isCompressedDir(FileType)) ZipStatus = (ZipStatus)br.ReadByte();
+            if (DBTypeGet.isCompressedDir(FileType))
+            {
+                if (DBVersion.VersionNow < 3)
+                {
+                    if (DatStatus == DatStatus.InDatCollect)
+                    {
+                        switch (FileType)
+                        {
+                            case FileType.Zip:
+                                SetZipDatStruct(ZipStructure.ZipTrrnt, true);
+                                break;
+                            case FileType.SevenZip:
+                                SetZipDatStruct(ZipStructure.SevenZipSLZMA, true);
+                                break;
+                            default:
+                                SetZipDatStruct(ZipStructure.ZipTrrnt, true);
+                                break;
+                        }
+                    }
+                }
+                else
+                {
+                    _ZipDatStruct = br.ReadByte();
+                }
+
+                ZipStruct = (ZipStructure)br.ReadByte();
+
+                // 2024-01-08 : Added to fix change in ZipStructure enum
+                if (FileType == FileType.SevenZip && ZipStruct == ZipStructure.ZipTrrnt)
+                    ZipStruct = ZipStructure.SevenZipSLZMA;
+
+                // 2023-02-06 : Added to fix unknown bug in cache format coming from old versions
+                if (FileType == FileType.SevenZip && DatStatus == DatStatus.InDatCollect && ZipDatStruct == ZipStructure.ZipTrrnt)
+                    SetZipDatStruct(ZipStructure.SevenZipSLZMA, true);
+            }
 
             /************* RvDir ************/
 
             Tree = null;
             if ((fFlags & FileFlags.HasTree) > 0)
             {
-                Tree = new RvTreeRow();
-                Tree.Read(br);
+                Tree = new RvTreeRow(br);
             }
-
             Game = null;
             if ((fFlags & FileFlags.HasGame) > 0)
             {
-                Game = new RvGame();
-                Game.Read(br);
+                Game = new RvGame(br);
             }
 
             int count = (fFlags & FileFlags.HasDirDat) > 0 ? br.ReadInt32() : 0;
@@ -505,8 +568,7 @@ namespace RomVaultCore.RvDB
             int progress = -1;
             for (int i = 0; i < count; i++)
             {
-                RvDat dat = new RvDat { DatIndex = i };
-                dat.Read(br);
+                RvDat dat = new RvDat(br) { DatIndex = i };
                 _dirDats?.Add(dat);
 
                 string datname = TreeFullName + @"\" + dat.GetData(RvDat.DatData.DatName);
@@ -531,13 +593,21 @@ namespace RomVaultCore.RvDB
 
             count = (fFlags & FileFlags.HasChildren) > 0 ? br.ReadInt32() : 0;
             _children?.Clear();
+
+            // 2024/08/03 - any item in ToSort should have a datStatus of InToSort
+            // So force all root ToSort items to be InToSort, and then all there child items will now 
+            // also be set to InToSort with the above code change.
+
             for (int i = 0; i < count; i++)
             {
-                RvFile tChild = new RvFile((FileType)br.ReadByte()) { Parent = this };
+                if (baseDir && i > 0)
+                    _datStatus = DatStatus.InToSort;
 
-                tChild.Read(br, parentDirDats);
+                RvFile tChild = new RvFile(br, parentDirDats, this);
                 _children?.Add(tChild);
             }
+            if (baseDir)
+                _datStatus = DatStatus.InDatCollect;
 
             /************* RvFile ************/
 
@@ -557,402 +627,21 @@ namespace RomVaultCore.RvDB
             ZipFileHeaderPosition = (fFlags & FileFlags.ZipFileHeader) > 0 ? (ulong?)br.ReadUInt64() : null;
             CHDVersion = (fFlags & FileFlags.CHDVersion) > 0 ? (uint?)br.ReadInt32() : null;
 
+            _toSortType = (fFlags & FileFlags.ToSortStatus) > 0 ? (ToSortDirType)br.ReadByte() : ToSortDirType.None;
+
             _fileStatus = (FileStatus)br.ReadUInt32();
 
             // fixing missing flag
             if (HeaderFileType != HeaderFileType.Nothing && (AltSize != null || AltCRC != null || AltSHA1 != null || AltMD5 != null))
                 FileStatusSet(FileStatus.HeaderFileTypeFromHeader);
-
-        }
-
-
-        public EFile DatRemove()
-        {
-            /************* RvDir ************/
-
-            Tree = null;
-            Game = null;
-            _dirDats?.Clear();
-
-            /************* RvFile ************/
-            HeaderFileTypeSet = HeaderFileType; // this removes the required flag. (as the DAT is being removed.)
-            if (!FileStatusIs(FileStatus.HeaderFileTypeFromHeader) && FileStatusIs(FileStatus.HeaderFileTypeFromDAT)) HeaderFileTypeSet = HeaderFileType.Nothing;
-
-            if (!FileStatusIs(FileStatus.SizeFromHeader) && !FileStatusIs(FileStatus.SizeVerified)) Size = null;
-            if (!FileStatusIs(FileStatus.CRCFromHeader) && !FileStatusIs(FileStatus.CRCVerified)) CRC = null;
-            if (!FileStatusIs(FileStatus.SHA1FromHeader) && !FileStatusIs(FileStatus.SHA1Verified)) SHA1 = null;
-            if (!FileStatusIs(FileStatus.MD5FromHeader) && !FileStatusIs(FileStatus.MD5Verified)) MD5 = null;
-            if (!FileStatusIs(FileStatus.AltSHA1FromHeader) && !FileStatusIs(FileStatus.AltSHA1Verified)) AltSHA1 = null;
-            if (!FileStatusIs(FileStatus.AltMD5FromHeader) && !FileStatusIs(FileStatus.AltMD5Verified)) AltMD5 = null;
-
-            FileStatusClear(FileStatus.HeaderFileTypeFromDAT | FileStatus.SizeFromDAT | FileStatus.CRCFromDAT | FileStatus.SHA1FromDAT | FileStatus.MD5FromDAT | FileStatus.AltSizeFromDAT | FileStatus.AltCRCFromDAT | FileStatus.AltSHA1FromDAT | FileStatus.AltMD5FromDAT);
-
-            Merge = "";
-            Status = "";
-
-            /************* RvFile ************/
-
-            Dat = null;
-            if (GotStatus == GotStatus.NotGot)
-            {
-                return EFile.Delete;
-            }
-
-            if (!string.IsNullOrEmpty(FileName))
-            {
-                Name = FileName;
-                FileName = null;
-            }
-            DatStatus = DatStatus.NotInDat;
-#if dt
-            DatModTimeStamp = null;
-#endif
-            return EFile.Keep;
-        }
-
-        public void DatAdd(RvFile b, bool altFile)
-        {
-            if (b.IsFile)
-            {
-                if (altFile)
-                {
-                    b.SetAsAltFile();
-                }
-
-                if (HeaderFileType == HeaderFileType.Nothing && b.HeaderFileType != HeaderFileType.Nothing) HeaderFileTypeSet = b.HeaderFileType;
-                if (b.HeaderFileTypeRequired) HeaderFileTypeSet = b._headerFileType;
-
-                if (Size == null && b.Size != null) Size = b.Size;
-                if (CRC == null && b.CRC != null) CRC = b.CRC;
-                if (SHA1 == null && b.SHA1 != null) SHA1 = b.SHA1;
-                if (MD5 == null && b.MD5 != null) MD5 = b.MD5;
-                if (AltSize == null && b.AltSize != null) AltSize = b.AltSize;
-                if (AltCRC == null && b.AltCRC != null) AltCRC = b.AltCRC;
-                if (AltSHA1 == null && b.AltSHA1 != null) AltSHA1 = b.AltSHA1;
-                if (AltMD5 == null && b.AltMD5 != null) AltMD5 = b.AltMD5;
-
-                FileStatusSet(FileStatus.HeaderFileTypeFromDAT |
-                    FileStatus.SizeFromDAT | FileStatus.CRCFromDAT | FileStatus.SHA1FromDAT | FileStatus.MD5FromDAT |
-                        FileStatus.AltSizeFromDAT | FileStatus.AltCRCFromDAT | FileStatus.AltSHA1FromDAT | FileStatus.AltMD5FromDAT,
-                    b);
-
-                Merge = b.Merge;
-                Status = b.Status;
-            }
-
-            if (b.IsDir)
-            {
-                Tree = b.Tree;
-                Game = b.Game;
-                if (_dirDats.Count > 0)
-                {
-                    ReportError.SendAndShow("Setting Dir with a dat list");
-                }
-            }
-
-
-            // Parent , TimeStamp Should already be correct.
-
-            if (GotStatus == GotStatus.NotGot)
-            {
-                ReportError.SendAndShow("Error Adding DAT to NotGot File " + b.GotStatus);
-            }
-
-            SetStatus(b.DatStatus, GotStatus.Got);
-
-#if dt
-            DatModTimeStamp = b.DatModTimeStamp;
-#endif
-
-            if (Name == b.Name) // case match so all is good
-            {
-                FileName = null;
-            }
-            else
-            {
-                FileName = Name;
-                Name = b.Name;
-            }
-
-            Dat = b.Dat;
         }
 
 
 
-        private EFile TestRemove()
-        {
-            FileModTimeStamp = 0;
-            FileName = null;
 
-            GotStatus = Parent.GotStatus == GotStatus.FileLocked ? GotStatus.FileLocked : GotStatus.NotGot;
-            switch (DatStatus)
-            {
-                case DatStatus.InDatCollect:
-                case DatStatus.InDatMerged:
-                case DatStatus.InDatBad:
-                case DatStatus.InDatMIA:
-                    return EFile.Keep;
-
-                case DatStatus.NotInDat:
-                case DatStatus.InToSort:
-                    return EFile.Delete; // this item should be removed from the db.
-                default:
-                    ReportError.SendAndShow("Unknown Set Got Status " + DatStatus);
-                    return EFile.Keep;
-            }
-        }
-
-        /// <summary>
-        /// FileRemove
-        /// If a file is deleted this will remove all the data about the file from this rvFile.
-        /// If the file is also added from a dat then the rvFile should remain with just the original data from the DAT,
-        /// all other non-DAT meta data will be removed, if this rvFile had AltData from a DAT this will be moved back to be
-        /// the mail hash data from this rvFile.
-        /// </summary>
-        /// <returns>
-        /// EFile.Delete:  this file should be deleted from the DB
-        /// Efile.Keep:    this file should be kept in the DB as it is from a dat.
-        /// </returns>
-        public EFile FileRemove()
-        {
-            if (IsFile) // File,ZippedFile or 7zippedFile
-            {
-                ZipFileIndex = -1;
-                ZipFileHeaderPosition = null;
-
-                // TestRemove will also set GotStatus to NotGot. (unless the file is locked.)
-                if (TestRemove() == EFile.Delete)
-                    return EFile.Delete;
-
-                // if none of the primary meta data is from the DAT delete it.
-                if (!FileStatusIs(FileStatus.HeaderFileTypeFromDAT)) HeaderFileTypeSet = HeaderFileType.Nothing;
-                if (!FileStatusIs(FileStatus.SizeFromDAT)) Size = null;
-                if (!FileStatusIs(FileStatus.CRCFromDAT)) CRC = null;
-                if (!FileStatusIs(FileStatus.SHA1FromDAT)) SHA1 = null;
-                if (!FileStatusIs(FileStatus.MD5FromDAT)) MD5 = null;
-
-                // if the Alt meta data is from the dat move it up to be the primary data.
-                if (FileStatusIs(FileStatus.AltSizeFromDAT))
-                {
-                    Size = AltSize;
-                    FileStatusSet(FileStatus.SizeFromDAT);
-                }
-                if (FileStatusIs(FileStatus.AltCRCFromDAT))
-                {
-                    CRC = AltCRC;
-                    FileStatusSet(FileStatus.CRCFromDAT);
-                }
-                if (FileStatusIs(FileStatus.AltSHA1FromDAT))
-                {
-                    SHA1 = AltSHA1;
-                    FileStatusSet(FileStatus.SHA1FromDAT);
-                }
-                if (FileStatusIs(FileStatus.AltMD5FromDAT))
-                {
-                    MD5 = AltMD5;
-                    FileStatusSet(FileStatus.MD5FromDAT);
-                }
-
-                // remove all Alt Data.
-                AltSize = null;
-                AltCRC = null;
-                AltSHA1 = null;
-                AltMD5 = null;
-
-                CHDVersion = null;
-
-                FileStatusClear(
-                    FileStatus.HeaderFileTypeFromHeader |
-                    FileStatus.SizeFromHeader | FileStatus.CRCFromHeader | FileStatus.SHA1FromHeader | FileStatus.MD5FromHeader |
-                    FileStatus.SizeVerified | FileStatus.CRCVerified | FileStatus.SHA1Verified | FileStatus.MD5Verified |
-                    FileStatus.AltSizeFromHeader | FileStatus.AltCRCFromHeader | FileStatus.AltSHA1FromHeader | FileStatus.AltMD5FromHeader |
-                    FileStatus.AltSizeVerified | FileStatus.AltCRCVerified | FileStatus.AltSHA1Verified | FileStatus.AltMD5Verified |
-                    FileStatus.AltSizeFromDAT | FileStatus.AltCRCFromDAT | FileStatus.AltSHA1FromDAT | FileStatus.AltMD5FromDAT   // AltDat data has been moved up to primary data so also remove these flags.
-                    );
-
-                return EFile.Keep;
-            }
-
-            if (IsDir)
-            {
-                ZipStatus = ZipStatus.None;
-                return TestRemove();
-            }
-
-            FileModTimeStamp = 0;
-            // This should never happen, as either IsFile or IsDir should be set.
-            GotStatus = GotStatus.NotGot;
-            ReportError.SendAndShow("Unknown File Remove Type");
-            return EFile.Keep;
-        }
-
-
-        private bool TestMatch(RvFile file)
-        {
-            bool foundATest = false;
-            if (Size != null && file.Size != null)
-            {
-                foundATest = true;
-                if (Size != file.Size)
-                    return false;
-            }
-
-            if (CRC != null && file.CRC != null)
-            {
-                foundATest = true;
-                if (!ArrByte.BCompare(CRC, file.CRC))
-                    return false;
-            }
-
-            if (SHA1 != null && file.SHA1 != null)
-            {
-                foundATest = true;
-                if (!ArrByte.BCompare(SHA1, file.SHA1))
-                    return false;
-            }
-
-            if (MD5 != null && file.MD5 != null)
-            {
-                foundATest = true;
-                if (!ArrByte.BCompare(MD5, file.MD5))
-                    return false;
-            }
-
-            return foundATest;
-        }
-        private bool TestMatchAlt(RvFile file)
-        {
-            bool foundATest = false;
-            if (Size != null && file.AltSize != null)
-            {
-                foundATest = true;
-                if (Size != file.AltSize)
-                    return false;
-            }
-
-            if (CRC != null && file.AltCRC != null)
-            {
-                foundATest = true;
-                if (!ArrByte.BCompare(CRC, file.AltCRC))
-                    return false;
-            }
-
-            if (SHA1 != null && file.AltSHA1 != null)
-            {
-                foundATest = true;
-                if (!ArrByte.BCompare(SHA1, file.AltSHA1))
-                    return false;
-
-            }
-            if (MD5 != null && file.AltMD5 != null)
-            {
-                foundATest = true;
-                if (!ArrByte.BCompare(MD5, file.AltMD5))
-                    return false;
-            }
-
-            return foundATest;
-        }
-
-        public void FileTestFix(RvFile file)
-        {
-            if (TestMatch(file))
-                return;
-            if (!TestMatchAlt(file))
-                return;
-
-            if (AltSize != null || AltCRC != null || AltSHA1 != null || AltMD5 != null)
-            {
-                //error
-            }
-            SetAsAltFile();
-
-        }
-
-        private void SetAsAltFile()
-        {
-            if (FileStatusIs(FileStatus.SizeFromDAT))
-            {
-                AltSize = Size;
-                FileStatusSet(FileStatus.AltSizeFromDAT);
-            }
-            if (FileStatusIs(FileStatus.CRCFromDAT))
-            {
-                AltCRC = CRC;
-                FileStatusSet(FileStatus.AltCRCFromDAT);
-            }
-            if (FileStatusIs(FileStatus.SHA1FromDAT))
-            {
-                AltSHA1 = SHA1;
-                FileStatusSet(FileStatus.AltSHA1FromDAT);
-            }
-            if (FileStatusIs(FileStatus.MD5FromDAT))
-            {
-                AltMD5 = MD5;
-                FileStatusSet(FileStatus.AltMD5FromDAT);
-            }
-
-            Size = null;
-            CRC = null;
-            SHA1 = null;
-            MD5 = null;
-            FileStatusClear(FileStatus.SizeFromDAT | FileStatus.CRCFromDAT | FileStatus.SHA1FromDAT | FileStatus.MD5FromDAT);
-
-        }
-
-        public void FileAdd(RvFile file, bool altFile)
-        {
-            if (file.IsFile)
-            {
-                if (altFile)
-                {
-                    SetAsAltFile();
-                }
-
-                if (Size == null && file.Size != null) Size = file.Size;
-                if (CRC == null && file.CRC != null) CRC = file.CRC;
-                if (SHA1 == null && file.SHA1 != null) SHA1 = file.SHA1;
-                if (MD5 == null && file.MD5 != null) MD5 = file.MD5;
-                if (AltSize == null && file.AltSize != null) AltSize = file.AltSize;
-                if (AltCRC == null && file.AltCRC != null) AltCRC = file.AltCRC;
-                if (AltSHA1 == null && file.AltSHA1 != null) AltSHA1 = file.AltSHA1;
-                if (AltMD5 == null && file.AltMD5 != null) AltMD5 = file.AltMD5;
-                if (HeaderFileType == HeaderFileType.Nothing && file.HeaderFileType != HeaderFileType.Nothing) HeaderFileTypeSet = file.HeaderFileType;
-                if (CHDVersion == null && file.CHDVersion != null) CHDVersion = file.CHDVersion;
-
-
-                FileStatusSet(
-                    FileStatus.HeaderFileTypeFromHeader |
-                    FileStatus.SizeFromHeader | FileStatus.CRCFromHeader | FileStatus.SHA1FromHeader | FileStatus.MD5FromHeader | FileStatus.AltSizeFromHeader | FileStatus.AltCRCFromHeader | FileStatus.AltSHA1FromHeader | FileStatus.AltMD5FromHeader |
-                    FileStatus.SizeVerified | FileStatus.CRCVerified | FileStatus.SHA1Verified | FileStatus.MD5Verified | FileStatus.AltSizeVerified | FileStatus.AltCRCVerified | FileStatus.AltSHA1Verified | FileStatus.AltMD5Verified,
-                    file);
-
-                ZipFileIndex = file.ZipFileIndex;
-                ZipFileHeaderPosition = file.ZipFileHeaderPosition;
-            }
-
-
-            FileModTimeStamp = file.FileModTimeStamp;
-            FileCheckName(file);
-            if (file.GotStatus == GotStatus.NotGot)
-            {
-                ReportError.SendAndShow("Error setting got to a NotGot File");
-            }
-            GotStatus = file.GotStatus;
-        }
-
-        public void FileCheckName(RvFile file)
-        {
-            // Don't care about bad case if the file is not in a dat.
-            if (DatStatus == DatStatus.NotInDat || DatStatus == DatStatus.InToSort)
-            {
-                Name = file.Name;
-            }
-
-            FileName = Name == file.Name ? null : file.Name;
-        }
 
         // this is only used to copy a file.
+        [Obsolete("deprecated")]
         public void CopyTo(RvFile c)
         {
             c.Size = Size;
@@ -973,7 +662,7 @@ namespace RomVaultCore.RvDB
             c.CHDVersion = CHDVersion;
 
             // think this is good enough
-            if (c._headerFileType== HeaderFileType.Nothing)
+            if (c._headerFileType == HeaderFileType.Nothing)
                 c._headerFileType = _headerFileType;
 
             c.Name = Name;
@@ -981,43 +670,18 @@ namespace RomVaultCore.RvDB
             //c.Parent = Parent;
             c.Dat = Dat;
             c.FileModTimeStamp = FileModTimeStamp;
-#if dt
-            c.DatModTimeStamp = DatModTimeStamp;
-#endif
+
             c._datStatus = _datStatus;
             c._gotStatus = _gotStatus;
             c.RepStatus = RepStatus;
             c.FileGroup = FileGroup;
-            
+
             if (c._datStatus == DatStatus.InDatMIA && c._gotStatus == GotStatus.Got)
             {
                 Debug.WriteLine("Found MIA");
             }
         }
 
-        public string SuperDatFileName()
-        {
-            return SuperDatFileName(Dat);
-        }
-
-        private string SuperDatFileName(RvDat dat)
-        {
-            if (dat.AutoAddedDirectory)
-            {
-                if (Parent?.Parent == null || Parent.Parent.Dat != dat)
-                {
-                    return Name;
-                }
-            }
-            else
-            {
-                if (Parent == null || Parent.Dat != dat)
-                {
-                    return Name;
-                }
-            }
-            return Path.Combine(Parent.SuperDatFileName(dat), Name);
-        }
 
         public string FileNameInsideGame()
         {
@@ -1029,11 +693,11 @@ namespace RomVaultCore.RvDB
             return Path.Combine(Parent.FileNameInsideGame(), Name);
         }
 
-        public void SetStatus(DatStatus dt, GotStatus flag)
+        public void SetDatGotStatus(DatStatus dt, GotStatus flag)
         {
             _datStatus = dt;
             _gotStatus = flag;
-            if(_datStatus== DatStatus.InDatMIA && _gotStatus== GotStatus.Got)
+            if (_datStatus == DatStatus.InDatMIA && _gotStatus == GotStatus.Got)
             {
             }
             RepStatusReset();
@@ -1066,79 +730,11 @@ namespace RomVaultCore.RvDB
 
 
         /****************** RvDir ***********************/
-        public bool IsDir => FileType == FileType.Dir || FileType == FileType.Zip || FileType == FileType.SevenZip;
+        public bool IsDirectory => FileType == FileType.Dir || FileType == FileType.Zip || FileType == FileType.SevenZip;
 
         public int DirDatCount => _dirDats.Count;
         public int ChildCount => _children?.Count ?? 0;
 
-
-        public RvDat DirDat(int index)
-        {
-            return _dirDats[index];
-        }
-
-        public void DirDatAdd(RvDat dat)
-        {
-            DirDatSearch(dat, out int index);
-            _dirDats.Insert(index, dat);
-            for (int i = 0; i < _dirDats.Count; i++)
-            {
-                _dirDats[i].DatIndex = i;
-            }
-        }
-
-        public void DirDatRemove(int index)
-        {
-            _dirDats.RemoveAt(index);
-            for (int i = 0; i < _dirDats.Count; i++)
-            {
-                _dirDats[i].DatIndex = i;
-            }
-        }
-
-        private void DirDatSearch(RvDat dat, out int index)
-        {
-            int intBottom = 0;
-            int intTop = _dirDats.Count;
-            int intMid = 0;
-            int intRes = -1;
-
-            //Binary chop to find the closest match
-            while (intBottom < intTop && intRes != 0)
-            {
-                intMid = (intBottom + intTop) / 2;
-
-                intRes = DBHelper.DatCompare(dat, _dirDats[intMid]);
-                if (intRes < 0)
-                {
-                    intTop = intMid;
-                }
-                else if (intRes > 0)
-                {
-                    intBottom = intMid + 1;
-                }
-            }
-            index = intMid;
-
-            // if match was found check up the list for the first match
-            if (intRes == 0)
-            {
-                int intRes1 = 0;
-                while (index > 0 && intRes1 == 0)
-                {
-                    intRes1 = DBHelper.DatCompare(dat, _dirDats[index - 1]);
-                    if (intRes1 == 0)
-                    {
-                        index--;
-                    }
-                }
-            }
-            // if the search is greater than the closest match move one up the list
-            else if (intRes > 0)
-            {
-                index++;
-            }
-        }
 
         public RvFile Child(int index)
         {
@@ -1152,11 +748,13 @@ namespace RomVaultCore.RvDB
             return index;
         }
 
+        // This in time should become private
         public void ChildAdd(RvFile child, int index)
         {
             if (
-                FileType == FileType.Dir && child.FileType == FileType.ZipFile ||
-                FileType == FileType.Zip && child.FileType != FileType.ZipFile
+                FileType == FileType.Dir && child.FileType == FileType.FileZip ||
+                FileType == FileType.Zip && child.FileType != FileType.FileZip ||
+                FileType == FileType.SevenZip && child.FileType != FileType.FileSevenZip
             )
             {
                 ReportError.SendAndShow("Trying to add a " + child.FileType + " to a " + FileType);
@@ -1164,12 +762,13 @@ namespace RomVaultCore.RvDB
 
             _children.Insert(index, child);
             child.Parent = this;
-            UpdateRepStatusArrUpTree(child, 1);
+            RepStatusUpTreeAddRemove(child, 1);
         }
 
+        // This in time should become private
         public void ChildRemove(int index)
         {
-            UpdateRepStatusArrUpTree(_children[index], -1);
+            RepStatusUpTreeAddRemove(_children[index], -1);
             if (_children[index].Parent == this)
             {
                 _children[index].Parent = null;
@@ -1177,50 +776,15 @@ namespace RomVaultCore.RvDB
             _children.RemoveAt(index);
         }
 
+
+        public int ChildNameSearch(FileType type, string name, out int index)
+        {
+            return BinarySearch.ListSearch(_children, new RvFile(type) { Name = name }, RVSorters.CompareName, out index);
+        }
+
         public int ChildNameSearch(RvFile lName, out int index)
         {
-            int intBottom = 0;
-            int intTop = _children.Count;
-            int intMid = 0;
-            int intRes = -1;
-
-            //Binary chop to find the closest match
-            while (intBottom < intTop && intRes != 0)
-            {
-                intMid = (intBottom + intTop) / 2;
-
-                intRes = DBHelper.CompareName(lName, _children[intMid]);
-                if (intRes < 0)
-                {
-                    intTop = intMid;
-                }
-                else if (intRes > 0)
-                {
-                    intBottom = intMid + 1;
-                }
-            }
-            index = intMid;
-
-            // if match was found check up the list for the first match
-            if (intRes == 0)
-            {
-                int intRes1 = 0;
-                while (index > 0 && intRes1 == 0)
-                {
-                    intRes1 = DBHelper.CompareName(lName, _children[index - 1]);
-                    if (intRes1 == 0)
-                    {
-                        index--;
-                    }
-                }
-            }
-            // if the search is greater than the closest match move one up the list
-            else if (intRes > 0)
-            {
-                index++;
-            }
-
-            return intRes;
+            return BinarySearch.ListSearch(_children, lName, RVSorters.CompareName, out index);
         }
 
 
@@ -1239,33 +803,52 @@ namespace RomVaultCore.RvDB
                     return true;
                 }
                 index++;
-            } while (index < _children.Count && DBHelper.CompareName(lName, _children[index]) == 0);
+            } while (index < _children.Count && RVSorters.CompareName(lName, _children[index]) == 0);
 
             return false;
         }
 
 
-        private void UpdateRepStatusUpTree(RepStatus rStat, int dir)
+        private void RepStatusUpTreeUpdate(RepStatus rStatOld, RepStatus rStatNew)
         {
-            DirStatus.UpdateRepStatus(rStat, dir);
-            Parent?.UpdateRepStatusUpTree(rStat, dir);
+            DirStatus.RepStatusUpdate(rStatOld, rStatNew);
+            Parent?.RepStatusUpTreeUpdate(rStatOld, rStatNew);
         }
 
 
-        private void UpdateRepStatusArrUpTree(RvFile child, int dir)
+        // this is called when adding/removing a child item to/from a directory
+        private void RepStatusUpTreeAddRemove(RvFile addRemoveItem, int addRemove)
         {
-            DirStatus.UpdateRepStatus(child.RepStatus, dir);
-            if (child.IsDir)
+            // add the status of this child item.
+            DirStatus.RepStatusAddRemove(addRemoveItem.RepStatus, addRemove);
+            if (addRemoveItem.IsDirectory)
             {
-                DirStatus.UpdateRepStatus(child.DirStatus, dir);
+                // if this is a directory then also add in (or subtract out) the array of status's of the new child item
+                DirStatus.RepStatusArrayAddRemove(addRemoveItem.DirStatus, addRemove);
             }
 
-            Parent?.UpdateRepStatusArrUpTree(child, dir);
+            Parent?.RepStatusUpTreeAddRemove(addRemoveItem, addRemove);
         }
 
+        public void ToSortStatusSet(ToSortDirType flag)
+        {
+            _toSortType |= flag;
+        }
+        public void ToSortStatusClear(ToSortDirType flag)
+        {
+            _toSortType &= ~flag;
+        }
+        public bool ToSortStatusIs(ToSortDirType flag)
+        {
+            RvFile TestDir = this;
+            while (TestDir.Parent != DB.DirRoot)
+                TestDir = TestDir.Parent;
+
+            return (TestDir._toSortType & flag) == flag;
+        }
 
         /****************** RvFile ********************/
-        public bool IsFile => FileType == FileType.File || FileType == FileType.ZipFile || FileType == FileType.SevenZipFile;
+        public bool IsFile => FileType == FileType.File || FileType == FileType.FileZip || FileType == FileType.FileSevenZip;
 
         public void FileStatusSet(FileStatus flag)
         {
@@ -1286,6 +869,21 @@ namespace RomVaultCore.RvDB
         public bool FileStatusIs(FileStatus flag)
         {
             return (_fileStatus & flag) == flag;
+        }
+
+        public static RvFile MakeFileZero()
+        {
+            RvFile fileZero = new RvFile(FileType.File);
+            fileZero.Name = "ZeroFile";
+            fileZero.Size = 0;
+
+            fileZero.CRC = VarFix.CleanMD5SHA1("00000000", 8);
+            fileZero.MD5 = VarFix.CleanMD5SHA1("d41d8cd98f00b204e9800998ecf8427e", 32);
+            fileZero.SHA1 = VarFix.CleanMD5SHA1("da39a3ee5e6b4b0d3255bfef95601890afd80709", 40);
+
+            fileZero.GotStatus = GotStatus.Got;
+            fileZero.DatStatus = DatStatus.InToSort;
+            return fileZero;
         }
 
 

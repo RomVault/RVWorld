@@ -6,32 +6,31 @@ namespace Compress
 {
     public interface ICompress
     {
-        int LocalFilesCount();
+        int LocalFilesCount { get; }
 
-        LocalFile GetLocalFile(int i);
-       
+        FileHeader GetFileHeader(int i);
+
         ZipOpenType ZipOpen { get; }
 
-        ZipReturn ZipFileOpen(string newFilename, long timestamp = -1, bool readHeaders = true);
+        ZipReturn ZipFileOpen(string newFilename, long timestamp = -1, bool readHeaders = true, int bufferSize = 4096);
 
         ZipReturn ZipFileOpen(Stream inStream);
         void ZipFileClose();
 
         ZipReturn ZipFileOpenReadStream(int index, out Stream stream, out ulong streamSize);
-        ZipReturn ZipFileOpenWriteStream(bool raw, bool trrntzip, string filename, ulong uncompressedSize, ushort compressionMethod, out Stream stream, TimeStamps dateTime = null);
         ZipReturn ZipFileCloseReadStream();
 
 
-        ZipStatus ZipStatus { get; }
+        ZipStructure ZipStruct { get; }
 
         string ZipFilename { get; }
         long TimeStamp { get; }
 
-        void ZipFileAddZeroLengthFile();
+        string FileComment { get; }
 
         ZipReturn ZipFileCreate(string newFilename);
+        ZipReturn ZipFileOpenWriteStream(bool raw, string filename, ulong uncompressedSize, ushort compressionMethod, out Stream stream, long? modTime = null, int? threadCount = null);
         ZipReturn ZipFileCloseWriteStream(byte[] crc32);
         void ZipFileCloseFailed();
-
     }
 }

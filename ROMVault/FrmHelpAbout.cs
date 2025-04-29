@@ -1,7 +1,7 @@
 ﻿/******************************************************
  *     ROMVault3 is written by Gordon J.              *
  *     Contact gordon@romvault.com                    *
- *     Copyright 2022                                 *
+ *     Copyright 2025                                 *
  ******************************************************/
 
 using System;
@@ -15,19 +15,18 @@ namespace ROMVault
         public FrmHelpAbout()
         {
             InitializeComponent();
-            Text = "Version " + Program.StrVersion + " : " + Application.StartupPath;
-            lblVersion.Text = "Version " + Program.StrVersion;
+            Text = "Version " + Program.strVersion + " : " + Application.StartupPath;
+            lblVersion.Text = "Version " + Program.strVersion;
         }
 
         private void label1_Click(object sender, EventArgs e)
         {
-            string url = "http://www.romvault.com/";
-            Process.Start(url);
+            try { Process.Start("http://www.romvault.com/"); } catch { }
         }
-        
+
         private void pictureBox2_Click(object sender, EventArgs e)
         {
-            Process.Start("http://paypal.me/romvault");
+            try { Process.Start("http://paypal.me/romvault"); } catch { }
         }
 
     }

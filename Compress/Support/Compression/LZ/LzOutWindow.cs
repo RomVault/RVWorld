@@ -15,8 +15,14 @@ namespace Compress.Support.Compression.LZ
         public long Total;
         public long Limit;
 
-        public void Create(int windowSize)
+        public void Create(int windowSize, byte[] buffer = null)
         {
+            if (buffer != null)
+            {
+                _windowSize = buffer.Length;
+                _buffer = buffer;
+            }
+
             if (_windowSize != windowSize)
                 _buffer = new byte[windowSize];
             else

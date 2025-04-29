@@ -34,7 +34,6 @@
             this.timer1 = new System.Windows.Forms.Timer(this.components);
             this.progressBar = new System.Windows.Forms.ProgressBar();
             this.lblVersion = new System.Windows.Forms.Label();
-            this.label1 = new System.Windows.Forms.Label();
             this.SuspendLayout();
             // 
             // lblStatus
@@ -69,35 +68,25 @@
             this.lblVersion.Text = "label1";
             this.lblVersion.TextAlign = System.Drawing.ContentAlignment.TopCenter;
             // 
-            // label1
-            // 
-            this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(10, 185);
-            this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(35, 13);
-            this.label1.TabIndex = 7;
-            this.label1.Text = "label1";
-            // 
             // FrmSplashScreen
             // 
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
             this.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("$this.BackgroundImage")));
             this.BackgroundImageLayout = System.Windows.Forms.ImageLayout.None;
-            this.ClientSize = new System.Drawing.Size(465, 207);
+            this.ClientSize = new System.Drawing.Size(465, 185);
             this.ControlBox = false;
-            this.Controls.Add(this.label1);
             this.Controls.Add(this.lblVersion);
             this.Controls.Add(this.progressBar);
             this.Controls.Add(this.lblStatus);
             this.DoubleBuffered = true;
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.None;
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "FrmSplashScreen";
             this.ShowInTaskbar = false;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "FrmSplashScreen";
             this.Shown += new System.EventHandler(this.FrmSplashScreenShown);
             this.ResumeLayout(false);
-            this.PerformLayout();
 
         }
 
@@ -107,6 +96,5 @@
         private System.Windows.Forms.Timer timer1;
         private System.Windows.Forms.ProgressBar progressBar;
         private System.Windows.Forms.Label lblVersion;
-        private System.Windows.Forms.Label label1;
     }
 }

@@ -56,9 +56,14 @@ namespace DATReader.Utils
         public static string CleanCHD(string n)
         {
             string diskName = n ?? "";
-            if (diskName.Length < 4 || diskName.Substring(diskName.Length - 4).ToLower() != ".chd")
-                diskName += ".chd";
+            if (diskName.ToLower().EndsWith(".chd"))
+                diskName = diskName.Substring(0, diskName.Length - 4);
             return diskName;
+
+
+            //if (diskName.Length < 4 || diskName.Substring(diskName.Length - 4).ToLower() != ".chd")
+            //    diskName += ".chd";
+            //return diskName;
         }
 
         public static string String(XmlNode n)
@@ -165,46 +170,6 @@ namespace DATReader.Utils
             }
         }
 
-        /*
-        public static string CleanFullFileName(XmlNode n)
-        {
-            return CleanFullFileName(n?.InnerText ?? "");
-        }
-
-        public static string CleanFullFileName(string name)
-        {
-            if (string.IsNullOrEmpty(name))
-            {
-                return "";
-            }
-
-            string retName = name;
-            retName = retName.TrimStart();
-            retName = retName.TrimEnd('.', ' ');
-
-            char[] charName = retName.ToCharArray();
-            for (int i = 0; i < charName.Length; i++)
-            {
-                int c = charName[i];
-                if ((c == ':') || (c == '*') || (c == '?') || (c == '<') || (c == '>') || (c == '|') || (c == '"') || (c < 32))
-                {
-                    charName[i] = '-';
-                }
-                else if (c == '\\')
-                {
-                    charName[i] = '/';
-                }
-            }
-            return new string(charName);
-        }
-        */
-
-        /*
-        public static string CleanFileName(XmlNode n)
-        {
-            return CleanFileName(n?.InnerText ?? "");
-        }
-        */
 
         public static string CleanFileName(string name, char crep = '-')
         {
@@ -239,100 +204,11 @@ namespace DATReader.Utils
         }
 
 
-        public static string PCombine(string path1, string path2)
-        {
-            if (string.IsNullOrEmpty(path1))
-            {
-                return path2;
-            }
-            if (string.IsNullOrEmpty(path2))
-            {
-                return path1;
-            }
-
-            return path1 + "/" + path2;
-        }
-
         public static string ToString(byte[] b)
         {
             return b == null ? "" : BitConverter.ToString(b).ToLower().Replace("-", "");
         }
 
-        public static string ToString(byte b)
-        {
-            return ToString(new[] { b });
-        }
 
-        public static object ToDBString(byte[] b)
-        {
-            return b == null ? DBNull.Value : (object)BitConverter.ToString(b).ToLower().Replace("-", "");
-        }
-
-        public static ulong? FixLong(object v)
-        {
-            return v == DBNull.Value ? null : (ulong?)Convert.ToInt64(v);
-        }
-
-        public static int CompareName(DatBase var1, DatBase var2)
-        {
-            int retv = Math.Abs(System.String.Compare(var1.Name, var2.Name, StringComparison.Ordinal));
-            return retv;
-        }
-
-        /*
-        public static DatFileType GetChild(DatFileType dft)
-        {
-            switch (dft)
-            {
-                case DatFileType.Dir: return DatFileType.File;
-                case DatFileType.DirRVZip: return DatFileType.FileRVZip;
-                case DatFileType.DirTorrentZip: return DatFileType.FileTorrentZip;
-                case DatFileType.Dir7Zip: return DatFileType.File7Zip;
-                default: return DatFileType.UnSet;
-            }
-        }
-        */
-
-        private static int TrrntZipStringCompare(string string1, string string2)
-        {
-            char[] bytes1 = string1.ToCharArray();
-            char[] bytes2 = string2.ToCharArray();
-
-            int pos1 = 0;
-            int pos2 = 0;
-
-            for (; ; )
-            {
-                if (pos1 == bytes1.Length)
-                {
-                    return pos2 == bytes2.Length ? 0 : -1;
-                }
-                if (pos2 == bytes2.Length)
-                {
-                    return 1;
-                }
-
-                int byte1 = bytes1[pos1++];
-                int byte2 = bytes2[pos2++];
-
-                if ((byte1 >= 65) && (byte1 <= 90))
-                {
-                    byte1 += 0x20;
-                }
-                if ((byte2 >= 65) && (byte2 <= 90))
-                {
-                    byte2 += 0x20;
-                }
-
-                if (byte1 < byte2)
-                {
-                    return -1;
-                }
-                if (byte1 > byte2)
-                {
-                    return 1;
-                }
-            }
-        }
     }
 }

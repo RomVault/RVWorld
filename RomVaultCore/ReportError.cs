@@ -6,7 +6,6 @@ using System.ServiceModel;
 using System.Threading;
 using RomVaultCore.RvDB;
 using RomVaultCore.Utils;
-using RVServ1;
 
 namespace RomVaultCore
 {
@@ -14,18 +13,14 @@ namespace RomVaultCore
     {
         public delegate void ShowError(string message);
         public delegate void MessageDialog(string text, string caption);
-        
+
         public static ShowError ErrorForm;
         public static MessageDialog Dialog;
 
         public static int vMajor;
         public static int vMinor;
         public static int vBuild;
-
-
-        public static string EMail;
-        public static string Username;
-        public static bool OptOut = true;
+        public static int vRevision;
 
         public static void UnhandledExceptionHandler(object sender, ThreadExceptionEventArgs e)
         {
@@ -72,12 +67,26 @@ namespace RomVaultCore
             }
         }
 
+        private static string[] procPath = new string[20];
+        private static int procPathPos = 0;
+
+        public static void procLog(string s)
+        {
+            procPathPos = (procPathPos + 1) % 20;
+            procPath[procPathPos] = s;
+        }
+
         public static void UnhandledExceptionHandler(string e1)
         {
             try
             {
                 // Create Error Message
-                string message = "An Application Error has occurred.\r\n\r\nEXCEPTION:\r\nMessage:";
+                string message = "An Application Error has occurred.\r\n";
+
+                for (int i = 1; i <= 20; i++)
+                    message += (procPath[(procPathPos + i) % 20]??"") + "\r\n";
+
+                message += "\r\nEXCEPTION:\r\nMessage:";
                 message += e1 + "\r\n";
 
                 message += $"\r\nSTACK TRACE:\r\n{Environment.StackTrace}";
@@ -93,8 +102,6 @@ namespace RomVaultCore
             }
         }
 
-
-
         public static void SendAndShow(string message)
         {
             SendErrorMessage(message);
@@ -106,17 +113,11 @@ namespace RomVaultCore
             Dialog?.Invoke(text, caption);
         }
 
-
         private static void SendErrorMessage(string message)
         {
-            if (OptOut)
+            if (Settings.rvSettings.DoNotReportFeedback)
                 return;
 
-            BasicHttpBinding b = new BasicHttpBinding();
-            EndpointAddress e = new EndpointAddress(@"http://services.romvault.com/RVService.svc");
-            RVServiceClient s = new RVServiceClient(b, e);
-
-            s.SendErrorMessageV2(Username + " : " + EMail + " : " + Settings.isLinux, vMajor,vMinor,vBuild, message);
         }
 
         private static string GetLogFilname()
@@ -136,7 +137,7 @@ namespace RomVaultCore
         }
         private static void OpenLog()
         {
-            if ((_lastLogEntry.Day == DateTime.Now.Day) && _logStreamWriter != null) 
+            if ((_lastLogEntry.Day == DateTime.Now.Day) && _logStreamWriter != null)
                 return;
 
             if (_logStreamWriter != null)

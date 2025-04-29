@@ -33,7 +33,7 @@ namespace Compress.ThreadReaders
         {
             _waitEvent.Close();
             _outEvent.Close();
-            // _md5.Dispose();
+            _md5.Dispose();
         }
 
         private void MainLoop()

@@ -1,54 +1,5 @@
 ﻿namespace Compress.Support.Compression.SimpleInflate
 {
-
-    public class Tree
-    {
-        public int[] Codes = new int[288];
-        public int[] num = new int[288];
-        public int[] bitLen = new int[288];
-        public int max;
-
-        public void Build(byte[] lens, int lensOffset, int symcount)
-        {
-            unchecked
-            {
-                int[] codes = new int[16];
-                int[] first = new int[16];
-                int[] counts = new int[16];
-
-                int endcount = lensOffset + symcount;
-                // Frequency count.
-                for (int n = lensOffset; n < endcount; n++)
-                    counts[lens[n]]++;
-
-                // Distribute codes.
-                counts[0] = codes[0] = first[0] = 0;
-                for (int n = 1; n <= 15; n++)
-                {
-                    codes[n] = (codes[n - 1] + counts[n - 1]) << 1;
-                    first[n] = first[n - 1] + counts[n - 1];
-                }
-
-                // Insert keys into the tree for each symbol.
-                int lensOffsetLocal = lensOffset;
-                for (int n = 0; n < symcount; n++)
-                {
-                    int len = lens[lensOffsetLocal++];
-                    if (len == 0) continue;
-
-                    int code = codes[len]++;
-                    int slot = first[len]++;
-                    Codes[slot] = code << (16 - len);
-                    num[slot] = n;
-                    bitLen[slot] = len;
-                }
-
-                max = first[15];
-            }
-        }
-
-    }
-
     public class Inflate
     {
         private int _bits, _count;
@@ -58,25 +9,18 @@
         private byte[] _bOut;
         private int _indexOut; //public int endOut;
 
-        private readonly Tree _dLitCodes = new Tree();
-        private readonly Tree _dDistCodes = new Tree();
+        private readonly Tree _dynamicLitCodes = new Tree();
+        private readonly Tree _dynamicDistCodes = new Tree();
         private readonly Tree _lenCodes = new Tree();
 
 
         private Tree _litCodes;
         private Tree _distCodes;
-        private static readonly byte[] Order = { 16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15 };
-        private static readonly byte[] LenBits = { 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 0, 0, 0 };
-        private static readonly int[] LenBase = { 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 15, 17, 19, 23, 27, 31, 35, 43, 51, 59, 67, 83, 99, 115, 131, 163, 195, 227, 258, 0, 0 };
-        private static readonly byte[] DistBits = { 0, 0, 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11, 12, 12, 13, 13, 0, 0 };
-        private static readonly int[] DistBase = { 1, 2, 3, 4, 5, 7, 9, 13, 17, 25, 33, 49, 65, 97, 129, 193, 257, 385, 513, 769, 1025, 1537, 2049, 3073, 4097, 6145, 8193, 12289, 16385, 24577, 0, 0 };
-
+        
         // Table to bit-reverse a byte.
         private static readonly byte[] ReverseTable = new byte[256];
 
-        // Static tables
-        private static readonly Tree SLitCodes = new Tree();
-        private static readonly Tree SDistCodes = new Tree();
+
         static Inflate()
         {
             for (int i = 0; i < 256; i++)
@@ -86,18 +30,6 @@
                     ((i & 0x08) << 1) | ((i & 0x04) << 3) | ((i & 0x02) << 5) | ((i & 0x01) << 7)
                 );
             }
-
-            // Fixed set of Huffman codes.
-            byte[] lens = new byte[288 + 32];
-            int n;
-            for (n = 0; n <= 143; n++) lens[n] = 8;
-            for (n = 144; n <= 255; n++) lens[n] = 9;
-            for (n = 256; n <= 279; n++) lens[n] = 7;
-            for (n = 280; n <= 287; n++) lens[n] = 8;
-            for (n = 0; n < 32; n++) lens[288 + n] = 5;
-
-            SLitCodes.Build(lens, 0, 288);
-            SDistCodes.Build(lens, 288, 32);
         }
 
         public static int Rev16(int n)
@@ -131,7 +63,6 @@
         {
             unchecked
             {
-
                 // Find the next prefix code.
                 int lo = 0;
                 int hi = tree.max;
@@ -150,6 +81,10 @@
 
         }
 
+        private static readonly byte[] LenBits = { 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 0, 0, 0 };
+        private static readonly int[] LenBase = { 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 15, 17, 19, 23, 27, 31, 35, 43, 51, 59, 67, 83, 99, 115, 131, 163, 195, 227, 258, 0, 0 };
+        private static readonly byte[] DistBits = { 0, 0, 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11, 12, 12, 13, 13, 0, 0 };
+        private static readonly int[] DistBase = { 1, 2, 3, 4, 5, 7, 9, 13, 17, 25, 33, 49, 65, 97, 129, 193, 257, 385, 513, 769, 1025, 1537, 2049, 3073, 4097, 6145, 8193, 12289, 16385, 24577, 0, 0 };
         private void Run(int sym)
         {
             int length = Bits(LenBits[sym]) + LenBase[sym];
@@ -186,6 +121,8 @@
 
             // read the numbers of bytes to directly copy
             int len = Bits(16);
+            // inverted length bits
+            int invLen = Bits(16);
 
             // copy the input stream to the output stream for len bytes
             Copy(_bIn, _indexIn, len);
@@ -195,13 +132,15 @@
             Bits(16);
         }
 
-        private void Fixed()
+        private void TreeFixed()
         {
-            _litCodes = SLitCodes;
-            _distCodes = SDistCodes;
+            _litCodes = Tree.StaticLitCodes;
+            _distCodes = Tree.StaticDistCodes;
         }
 
-        private void Dynamic()
+
+        private static readonly byte[] Order = { 16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15 };
+        private void TreeDynamic()
         {
             unchecked
             {
@@ -241,11 +180,11 @@
                 }
 
                 // Build lit/dist trees.
-                _dLitCodes.Build(lens, 0, nlit);
-                _dDistCodes.Build(lens, nlit, ndist);
+                _dynamicLitCodes.Build(lens, 0, nlit);
+                _dynamicDistCodes.Build(lens, nlit, ndist);
 
-                _litCodes = _dLitCodes;
-                _distCodes = _dDistCodes;
+                _litCodes = _dynamicLitCodes;
+                _distCodes = _dynamicDistCodes;
             }
         }
 
@@ -266,9 +205,9 @@
                 switch (Bits(2))
                 {
                     case 0: Stored(); break;
-                    case 1: Fixed(); Block(); break;
-                    case 2: Dynamic(); Block(); break; // 87% block()
-                    //case 3:
+                    case 1: TreeFixed(); Block(); break;
+                    case 2: TreeDynamic(); Block(); break; // 87% block()
+                                                       //case 3:
                     default: throw new System.InvalidOperationException("Invalid Initial bits");
                 }
             } while (last == 0);

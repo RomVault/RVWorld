@@ -1,6 +1,7 @@
-﻿using System;
+﻿using CodePage;
 using System.Collections.Generic;
 using System.IO;
+using System.Text;
 using FileInfo = RVIO.FileInfo;
 
 // UInt16 = ushort
@@ -10,17 +11,28 @@ using FileInfo = RVIO.FileInfo;
 namespace Compress.ZipFile
 {
     public partial class Zip : ICompress
-    { 
-        private readonly List<ZipLocalFile> _localFiles = new();
-
+    {
         private FileInfo _zipFileInfo;
 
         private Stream _zipFs;
 
+
+        private readonly List<ZipFileData> _HeadersLocalFile = new();
+        private readonly List<ZipFileData> _HeadersCentralDir = new();
+
+        public int LocalFilesCount => _HeadersCentralDir.Count;
+
+        public FileHeader GetFileHeader(int i) => _HeadersCentralDir[i];
+
+        public FileHeader GetLocalFileData(int i) => _HeadersLocalFile[i];
+
+
+
+
         private uint _localFilesCount;
 
-        private ulong _centralDirStart;
-        private ulong _centralDirSize;
+        internal ulong _centralDirStart;
+        internal ulong _centralDirSize;
         private ulong _endOfCentralDir64;
 
         private bool _zip64;
@@ -29,34 +41,24 @@ namespace Compress.ZipFile
 
         public long TimeStamp => _zipFileInfo?.LastWriteTime ?? 0;
 
-        public byte[] FileComment { get; private set; }
+        private byte[] _fileComment;
+
+        public string FileComment { 
+            get { return CodePage437.GetString(_fileComment); }
+            set { _fileComment = CodePage437.GetBytes(value); }
+        }
 
         public Zip()
         {
-           CompressUtils.EncodeSetup();
         }
 
         public ZipOpenType ZipOpen { get; private set; }
 
+        public ZipStructure ZipStruct => ZipStructure.None;
 
-        public ZipStatus ZipStatus { get; private set; }
+        internal ulong offset = 0;
+        internal bool ExtraDataFoundOnEndOfFile = false;
 
-        // If writeZipType == trrntzip then it will force a trrntzip file and error out if not.
-        // If writeZipType == None it will still try and make a trrntzip if everything is supplied matching trrntzip parameters.
-        private OutputZipType writeZipType = OutputZipType.None;
-
-        private ulong offset = 0;
-
-        public int LocalFilesCount()
-        {
-            return _localFiles.Count;
-        }
-
-        public LocalFile GetLocalFile(int i)
-        {
-            return _localFiles[i];
-        }
-        
         public void ZipFileClose()
         {
             switch (ZipOpen)
@@ -69,31 +71,48 @@ namespace Compress.ZipFile
                     return;
 
                 default:
+                    CentralDirectoryWrite();
+                    EndOfCentralDirectoryWrite();
                     zipFileCloseWrite();
                     break;
             }
         }
 
 
-        /*
+
+
         public void BreakTrrntZip(string filename)
         {
             _zipFs = new FileStream(filename, FileMode.Open, FileAccess.ReadWrite);
-            using (BinaryReader zipBr = new BinaryReader(_zipFs,Encoding.UTF8,true))
+            using (BinaryReader zipBr = new BinaryReader(_zipFs, Encoding.UTF8, true))
             {
-            _zipFs.Position = _zipFs.Length - 22;
-            byte[] fileComment = zipBr.ReadBytes(22);
-            if (GetString(fileComment).Substring(0, 14) == "TORRENTZIPPED-")
-            {
-                _zipFs.Position = _zipFs.Length - 8;
-                _zipFs.WriteByte(48); _zipFs.WriteByte(48); _zipFs.WriteByte(48); _zipFs.WriteByte(48);
-                _zipFs.WriteByte(48); _zipFs.WriteByte(48); _zipFs.WriteByte(48); _zipFs.WriteByte(48);
-            }
+                _zipFs.Position = _zipFs.Length - 22;
+                byte[] fileComment = zipBr.ReadBytes(22);
+                string testComment = Encoding.UTF8.GetString(fileComment);
+                if (testComment.Substring(0, 14) == "TORRENTZIPPED-")
+                {
+                    _zipFs.Position = _zipFs.Length - 8;
+                    _zipFs.WriteByte(48); _zipFs.WriteByte(48); _zipFs.WriteByte(48); _zipFs.WriteByte(48);
+                    _zipFs.WriteByte(48); _zipFs.WriteByte(48); _zipFs.WriteByte(48); _zipFs.WriteByte(48);
+                }
+                else
+                {
+                    _zipFs.Position = _zipFs.Length - 15;
+                    fileComment = zipBr.ReadBytes(15);
+                    testComment = Encoding.UTF8.GetString(fileComment);
+                    if (testComment.Substring(0, 7) == "RVZSTD-")
+                    {
+                        _zipFs.Position = _zipFs.Length - 8;
+                        _zipFs.WriteByte(48); _zipFs.WriteByte(48); _zipFs.WriteByte(48); _zipFs.WriteByte(48);
+                        _zipFs.WriteByte(48); _zipFs.WriteByte(48); _zipFs.WriteByte(48); _zipFs.WriteByte(48);
+                    }
+                }
             }
             _zipFs.Flush();
             _zipFs.Close();
+
         }
-        */
+
 
         ~Zip()
         {

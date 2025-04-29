@@ -1,40 +1,26 @@
 ﻿namespace DATReader.DatStore
 {
-    public enum DatFileStatus
-    {
-        InDatCollect,
-        InDatMerged,
-        InDatBad,
-        InDatMIA
-    }
 
-    public enum DatFileType
-    {
-        UnSet, 
 
-        Dir,
-        DirRVZip,
-        DirTorrentZip,
-        Dir7Zip,
-
-        File,
-        //FileRvZip,
-        FileTorrentZip,
-        File7Zip
-    }
-    
     public abstract class DatBase
     {
         public string Name;
-        public DatFileStatus DatStatus = DatFileStatus.InDatCollect;
-        
+        public DatStatus DatStatus = DatStatus.InDatCollect;
+        public FileType FileType;
+        public long? DateModified = null;
 
-        protected DatBase(string name,DatFileType type)
+        protected DatBase(string name, FileType type)
         {
             Name = name;
-            DatFileType = type;
+            FileType = type;
         }
 
-        public DatFileType DatFileType;
+        protected DatBase(DatBase cp)
+        {
+            Name = cp.Name;
+            DatStatus = cp.DatStatus;
+            FileType = cp.FileType;
+            DateModified = cp.DateModified;
+        }
     }
 }

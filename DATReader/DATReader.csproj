@@ -6,7 +6,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\ByteSortedList\StorageList.csproj" />
+    <ProjectReference Include="..\Compress\Compress.csproj" />
     <ProjectReference Include="..\RVIO\RVIO.csproj" />
+    <ProjectReference Include="..\SharedEnum\SharedEnum.csproj" />
+    <ProjectReference Include="..\SortMethods\SortMethods.csproj" />
   </ItemGroup>
 
 </Project>

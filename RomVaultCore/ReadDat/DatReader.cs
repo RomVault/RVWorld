@@ -1,16 +1,18 @@
 ﻿/******************************************************
  *     ROMVault3 is written by Gordon J.              *
  *     Contact gordon@romvault.com                    *
- *     Copyright 2022                                 *
+ *     Copyright 2025                                 *
  ******************************************************/
 
 using System;
 using System.Diagnostics;
+using Compress;
 using DATReader;
 using DATReader.DatClean;
 using DATReader.DatStore;
 using DATReader.Utils;
 using RomVaultCore.RvDB;
+using RomVaultCore.Storage.Dat;
 using RVIO;
 
 namespace RomVaultCore.ReadDat
@@ -59,36 +61,39 @@ namespace RomVaultCore.ReadDat
             return use;
         }
 
-        public static RvFile ReadInDatFile(RvDat datFile, ThreadWorker thWrk, out string extraDirName)
+        public static bool ReadInDatFile(DatImportDat datFile, ThreadWorker thWrk)
         {
             try
             {
                 _thWrk = thWrk;
-                extraDirName = null;
+                string extraDirName = null;
 
-                string datRootFullName = datFile.GetData(RvDat.DatData.DatRootFullName);
+                string datRootFullName = datFile.DatFullName;
                 string fullPath = RvFile.GetDatPhysicalPath(datRootFullName);
                 Debug.WriteLine("Reading Dat " + fullPath);
 
-                DatRead.ReadDat(fullPath, ReadError, out DatHeader dh);
-                if (dh == null)
-                    return null;
+                DatRead.ReadDat(fullPath, ReadError, out DatHeader datHeader);
+                if (datHeader == null)
+                {
+                    datFile.datHeader = null;
+                    return false;
+                }
 
                 string dirNameRule = Path.GetDirectoryName(datRootFullName) + Path.DirSeparatorChar;
 
                 if (
-                       !datFile.MultiDatOverride && dh.Dir != "noautodir" &&
-                       (datFile.MultiDatsInDirectory || !string.IsNullOrEmpty(dh.RootDir))
+                       !datFile.Flag(DatFlags.MultiDatOverride) && datHeader.Dir != "noautodir" &&
+                       (datFile.Flag(DatFlags.MultiDatsInDirectory) || !string.IsNullOrEmpty(datHeader.RootDir))
                     )
                 {
                     // if we are auto adding extra directories then create a new directory.
                     extraDirName = "";
-                    if (string.IsNullOrEmpty(extraDirName) && datFile.UseDescriptionAsDirName && !string.IsNullOrWhiteSpace(dh.Description))
-                        extraDirName = dh.Description;
+                    if (string.IsNullOrEmpty(extraDirName) && datFile.Flag(DatFlags.UseDescriptionAsDirName) && !string.IsNullOrWhiteSpace(datHeader.Description))
+                        extraDirName = datHeader.Description;
                     if (string.IsNullOrEmpty(extraDirName))
-                        extraDirName = dh.RootDir;
+                        extraDirName = datHeader.RootDir;
                     if (string.IsNullOrEmpty(extraDirName))
-                        extraDirName = dh.Name;
+                        extraDirName = datHeader.Name;
                     if (string.IsNullOrEmpty(extraDirName))
                         extraDirName = Path.GetFileNameWithoutExtension(fullPath);
 
@@ -99,46 +104,120 @@ namespace RomVaultCore.ReadDat
 
                 DatRule datRule = FindDatRule(dirNameRule);
 
-                DatClean.CleanFilenames(dh.BaseDir);
+                // 1
+                DatClean.CleanFilenames(datHeader.BaseDir);
 
+                // 2
                 switch (datRule.Filter)
                 {
                     case FilterType.CHDsOnly:
-                        DatClean.RemoveNonCHD(dh.BaseDir);
+                        DatClean.RemoveNonCHD(datHeader.BaseDir);
                         break;
                     case FilterType.RomsOnly:
-                        DatClean.RemoveCHD(dh.BaseDir);
+                        DatClean.RemoveCHD(datHeader.BaseDir);
                         break;
                 }
 
-                DatClean.RemoveNoDumps(dh.BaseDir);
+                // 3
+                DatClean.RemoveNoDumps(datHeader.BaseDir);
 
-                SetMergeType(datRule, dh);
+                // 4
+                if (datRule.UseIdForName)
+                    DatClean.DatSetAddIdNumbers(datHeader.BaseDir, "");
 
-                if (datRule.Merge!=MergeType.NonMerged)
-                    DatClean.CheckDeDuped(dh.BaseDir);
+                // 5
+                if (datRule.AddCategorySubDirs)
+                    DatClean.AddCategory(datHeader.BaseDir, datRule.CategoryOrder);
 
+                // 6
+                SetMergeType(datRule, datHeader);
+
+                // 7
+                if (datRule.Merge != MergeType.NonMerged)
+                    DatClean.CheckDeDuped(datHeader.BaseDir);
+
+
+                GetCompressionMethod(datRule, datHeader, out FileType ft, out ZipStructure zs);
+
+                // Set the compression methods.
+                if (datRule.Compression == FileType.FileOnly)
+                {
+                    ft = FileType.Dir;
+                    zs = ZipStructure.None;
+                }
+
+                // 8
                 if (datRule.SingleArchive)
-                    DatClean.MakeDatSingleLevel(dh, datRule.UseDescriptionAsDirName, datRule.SubDirType, isFile(datRule, dh));
+                    DatClean.MakeDatSingleLevel(datHeader, datRule.UseDescriptionAsDirName, datRule.SubDirType, ft == FileType.Dir, datRule.AddCategorySubDirs, datRule.CategoryOrder);
 
-                DatClean.RemoveUnNeededDirectories(dh.BaseDir);
+                // 9: SetFileTypes / This also sorts the dirs into there type sort orders
+                DatSetCompressionType.SetType(datHeader.BaseDir, ft, zs, datRule.ConvertWhileFixing);
 
-                SetCompressionMethod(datRule, dh); // This sorts the files into the required dir order for the set compression type. (And also sets '\' characters to '/' in zip files.)
+                // 10: Remove unneeded directories from Zip's / 7Z's 
+                DatClean.RemoveUnNeededDirectories(datHeader.BaseDir);
 
-                DatClean.DirectoryExpand(dh.BaseDir); // this works because we only expand files, so the order inside the zip / 7z does not matter.
+                // 11: Remove DateTime from anything not TDC or EXO
+                DatClean.RemoveAllDateTime(datHeader.BaseDir);
 
-                DatClean.RemoveEmptyDirectories(dh.BaseDir);
+                // 12: Remove CHD's from Zip's / 7Z's
+                DatSetMoveCHDs.MoveUpCHDs(datHeader.BaseDir);
 
-                DatClean.CleanFilenamesFixDupes(dh.BaseDir); // you may get repeat filenames inside Zip's / 7Z's and they may not be sorted to find them by now.
+                // 13: Directory expand the items not in Zip's / 7Z's
+                DatClean.DirectoryExpand(datHeader.BaseDir);
+
+                // 14: Clean Filenames
+                DatClean.CleanFileNamesFull(datHeader.BaseDir);
+
+                // 15: FixDupes
+                DatClean.FixDupes(datHeader.BaseDir);
+
+                // 16: Remove empty directories
+                DatClean.RemoveEmptyDirectories(datHeader.BaseDir);
 
 
-                RvFile newDir = ExternalDatConverter.ConvertFromExternalDat(dh, datFile, datRule.HeaderType);
-                return newDir;
+
+                if (!string.IsNullOrWhiteSpace(extraDirName))
+                {
+                    datHeader.BaseDir.Name = VarFix.CleanFileName(extraDirName);
+                    DatDir newDirectory = new DatDir("", FileType.Dir);
+                    newDirectory.ChildAdd(datHeader.BaseDir);
+                    datHeader.BaseDir = newDirectory;
+                    datFile.SetFlag(DatFlags.AutoAddedDirectory, true);
+                }
+                else
+                {
+                    datFile.SetFlag(DatFlags.AutoAddedDirectory, false);
+                }
+
+                datFile.headerType = datRule.HeaderType;
+                datFile.datHeader = datHeader;
+
+                HeaderFileType headerFileType = FileScanner.FileHeaderReader.GetFileTypeFromHeader(datHeader.Header);
+                if (headerFileType != HeaderFileType.Nothing)
+                {
+                    switch (datFile.headerType)
+                    {
+                        case HeaderType.Optional:
+                            // Do Nothing
+                            break;
+                        case HeaderType.Headerless:
+                            // remove header
+                            headerFileType = HeaderFileType.Nothing;
+                            break;
+                        case HeaderType.Headered:
+                            headerFileType |= HeaderFileType.Required;
+                            break;
+                    }
+                }
+
+                DatClean.SetExt(datHeader.BaseDir, headerFileType);
+
+                DatClean.ClearDescription(datHeader.BaseDir);
+                return true;
             }
             catch (Exception e)
             {
-                string datRootFullName = datFile?.GetData(RvDat.DatData.DatRootFullName);
-
+                string datRootFullName = datFile?.DatFullName;
                 throw new Exception("Error is DAT " + datRootFullName + " " + e.Message);
             }
         }
@@ -165,6 +244,8 @@ namespace RomVaultCore.ReadDat
                     }
                 }
 
+                DatClean.DatSetMatchIDs(dh.BaseDir);
+
                 switch (mt)
                 {
                     case MergeType.Merge:
@@ -172,14 +253,11 @@ namespace RomVaultCore.ReadDat
                         break;
                     case MergeType.NonMerged:
                         DatClean.DatSetMakeNonMergeSet(dh.BaseDir);
-                        DatSetStatus.SetStatus(dh.BaseDir);
                         break;
                     case MergeType.Split:
                         DatClean.DatSetMakeSplitSet(dh.BaseDir);
-                        //DatClean.RemoveNotCollected(dh.BaseDir);
                         break;
                     default:
-                        DatSetStatus.SetStatus(dh.BaseDir);
                         break;
                 }
 
@@ -188,75 +266,42 @@ namespace RomVaultCore.ReadDat
                 DatClean.RemoveDupes(dh.BaseDir, !dh.MameXML, mt != MergeType.NonMerged);
                 DatClean.RemoveEmptySets(dh.BaseDir);
             }
-            else
-                DatSetStatus.SetStatus(dh.BaseDir);
 
+            DatSetStatus.SetStatus(dh.BaseDir);
         }
 
-        private static bool isFile(DatRule datRule, DatHeader dh)
+
+        private static void GetCompressionMethod(DatRule datRule, DatHeader dh, out FileType ft, out ZipStructure zs)
         {
-            FileType ft = datRule.Compression;
-            if (!datRule.CompressionOverrideDAT)
+            ft = datRule.Compression == FileType.FileOnly ? FileType.File : datRule.Compression;
+
+            zs = datRule.CompressionSub;
+            if (!datRule.CompressionOverrideDAT && datRule.Compression!=FileType.FileOnly)
             {
                 switch (dh.Compression?.ToLower())
                 {
+                    case "tdc":
+                        ft = FileType.Zip;
+                        zs = ZipStructure.ZipTDC;
+                        break;
+
                     case "unzip":
                     case "file":
+                    case "fileonly":
                         ft = FileType.Dir;
+                        zs = ZipStructure.None;
                         break;
                     case "7zip":
                     case "7z":
                         ft = FileType.SevenZip;
+                        zs = ZipStructure.SevenZipSLZMA;
                         break;
                     case "zip":
                         ft = FileType.Zip;
+                        zs = ZipStructure.ZipTrrnt;
                         break;
 
                 }
-            }
-
-            if (Settings.rvSettings.FilesOnly)
-                ft = FileType.Dir;
-
-            return ft == FileType.Dir;
-        }
-
-        private static void SetCompressionMethod(DatRule datRule, DatHeader dh)
-        {
-            FileType ft = datRule.Compression;
-            if (!datRule.CompressionOverrideDAT)
-            {
-                switch (dh.Compression?.ToLower())
-                {
-                    case "unzip":
-                    case "file":
-                        ft = FileType.Dir;
-                        break;
-                    case "7zip":
-                    case "7z":
-                        ft = FileType.SevenZip;
-                        break;
-                    case "zip":
-                        ft = FileType.Zip;
-                        break;
-
-                }
-            }
-
-            if (Settings.rvSettings.FilesOnly)
-                ft = FileType.Dir;
-
-            switch (ft)
-            {
-                case FileType.Dir:
-                    DatSetCompressionType.SetFile(dh.BaseDir);
-                    return;
-                case FileType.SevenZip:
-                    DatSetCompressionType.SetZip(dh.BaseDir, true);
-                    return;
-                default:
-                    DatSetCompressionType.SetZip(dh.BaseDir);
-                    return;
             }
         }
     }

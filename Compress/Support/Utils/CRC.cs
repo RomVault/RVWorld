@@ -116,6 +116,13 @@ namespace Compress.Support.Utils
             crc.SlurpBlock(data, (int)offset, (int)size);
             return crc.Crc32ResultU;
         }
+        public static byte[] CalculateDigestB(byte[] data, uint offset, uint size)
+        {
+            CRC crc = new CRC();
+            // crc.Init();
+            crc.SlurpBlock(data, (int)offset, (int)size);
+            return crc.Crc32ResultB;
+        }
 
         public static bool VerifyDigest(uint digest, byte[] data, uint offset, uint size)
         {

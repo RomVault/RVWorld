@@ -1,4 +1,6 @@
-﻿namespace TrrntZip
+﻿using Compress;
+
+namespace TrrntZip
 {
     public enum zipType
     {
@@ -16,6 +18,7 @@
         public static bool ForceReZip = false;
         public static bool CheckOnly = false;
         public static zipType InZip = zipType.zip;
-        public static zipType OutZip = zipType.archive;
+        public static ZipStructure OutZip = ZipStructure.ZipTrrnt;
+        public static object lockObj = new object();
     }
 }

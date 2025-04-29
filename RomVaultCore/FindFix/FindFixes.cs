@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using FileHeaderReader;
+using System.Threading;
+using System.Threading.Tasks;
+using ByteSortedList;
 using RomVaultCore.RvDB;
 using RomVaultCore.Utils;
+using StorageList;
 
 namespace RomVaultCore.FindFix
 {
@@ -11,6 +13,21 @@ namespace RomVaultCore.FindFix
     {
         private static ThreadWorker _thWrk;
         private static int _progressCounter;
+
+        private static bool checkCancel()
+        {
+            if (_thWrk != null && _thWrk.CancellationPending)
+            {
+                _thWrk.Report(new bgwText("Cancelling"));
+                RepairStatus.ReportStatusReset(DB.DirRoot);
+                _thWrk.Report(new bgwText("Cancelled"));
+                _thWrk.Finished = true;
+                _thWrk = null;
+                return true;
+            }
+
+            return false;
+        }
 
         public static void ScanFiles(ThreadWorker thWrk)
         {
@@ -20,74 +37,104 @@ namespace RomVaultCore.FindFix
                 if (_thWrk == null) return;
                 _progressCounter = 0;
 
-
-                Stopwatch sw = new Stopwatch();
-                sw.Reset();
-                sw.Start();
-
-                _thWrk.Report(new bgwSetRange(12));
+                _thWrk.Report(new bgwSetRange(5));
 
                 _thWrk.Report(new bgwText("Clearing DB Status"));
                 _thWrk.Report(_progressCounter++);
                 RepairStatus.ReportStatusReset(DB.DirRoot);
-                ResetFileGroups(DB.DirRoot);
+
+                if (checkCancel()) return;
 
                 _thWrk.Report(new bgwText("Getting Selected Files"));
                 _thWrk.Report(_progressCounter++);
 
 
-                Debug.WriteLine("Start " + sw.ElapsedMilliseconds);
                 List<RvFile> filesGot = new List<RvFile>();
                 List<RvFile> filesMissing = new List<RvFile>();
                 GetSelectedFiles(DB.DirRoot, true, filesGot, filesMissing);
-                Debug.WriteLine("GetSelected " + sw.ElapsedMilliseconds);
+                if (checkCancel()) return;
 
 
-                _thWrk.Report(new bgwText("Sorting on CRC"));
+                _thWrk.Report(new bgwText("Group all files by CRC (Sorted)"));
                 _thWrk.Report(_progressCounter++);
-                RvFile[] filesGotSortedCRC = FindFixesSort.SortCRC(filesGot);
-                Debug.WriteLine("SortCRC " + sw.ElapsedMilliseconds);
+                MergeGotFiles(filesGot, out FileGroup[] fileGroupsCRCSorted);
+                if (checkCancel()) return;
 
-                // take the fileGot list and fileGroups list
-                // this groups all the got files using there CRC
-
-                _thWrk.Report(new bgwText("Index creation on got CRC"));
+                _thWrk.Report(new bgwText("Creating Secondary Indexes"));
                 _thWrk.Report(_progressCounter++);
-                MergeGotFiles(filesGotSortedCRC, out FileGroup[] fileGroupsCRCSorted);
 
-                Debug.WriteLine("Merge " + sw.ElapsedMilliseconds);
 
+                FileGroup[] fileGroupsSHA1Sorted = null;
+                FileGroup[] fileGroupsMD5Sorted = null;
+                FileGroup[] fileGroupsAltCRCSorted = null;
+                FileGroup[] fileGroupsAltSHA1Sorted = null;
+                FileGroup[] fileGroupsAltMD5Sorted = null;
+
+                Thread t1 = new Thread(() => FastArraySort.SortWithFilter(fileGroupsCRCSorted, FindSHA1, FamilySortSHA1, out fileGroupsSHA1Sorted));
+                Thread t2 = new Thread(() => FastArraySort.SortWithFilter(fileGroupsCRCSorted, FindMD5, FamilySortMD5, out fileGroupsMD5Sorted));
+                Thread t3 = new Thread(() => FastArraySort.SortWithFilter(fileGroupsCRCSorted, FindAltCRC, FamilySortAltCRC, out fileGroupsAltCRCSorted));
+                Thread t4 = new Thread(() => FastArraySort.SortWithFilter(fileGroupsCRCSorted, FindAltSHA1, FamilySortAltSHA1, out fileGroupsAltSHA1Sorted));
+                Thread t5 = new Thread(() => FastArraySort.SortWithFilter(fileGroupsCRCSorted, FindAltMD5, FamilySortAltMD5, out fileGroupsAltMD5Sorted));
+
+                t1.Start();
+                t2.Start();
+                t3.Start();
+                t4.Start();
+                t5.Start();
+
+                t1.Join();
+                t2.Join();
+                t3.Join();
+                t4.Join();
+                t5.Join();
+
+                /*
                 _thWrk.Report(new bgwText("Index creation on got SHA1"));
                 _thWrk.Report(_progressCounter++);
-                FindFixesSort.SortFamily(fileGroupsCRCSorted, FindSHA1, FamilySortSHA1, out FileGroup[] fileGroupsSHA1Sorted);
+                FastArraySort.SortWithFilter(fileGroupsCRCSorted, FindSHA1, FamilySortSHA1, out FileGroup[] fileGroupsSHA1Sorted);
+                if (checkCancel()) return;
+
                 _thWrk.Report(new bgwText("Index creation on got MD5"));
                 _thWrk.Report(_progressCounter++);
-                FindFixesSort.SortFamily(fileGroupsCRCSorted, FindMD5, FamilySortMD5, out FileGroup[] fileGroupsMD5Sorted);
+                FastArraySort.SortWithFilter(fileGroupsCRCSorted, FindMD5, FamilySortMD5, out FileGroup[] fileGroupsMD5Sorted);
+                if (checkCancel()) return;
 
                 // next make another sorted list of got files on the AltCRC
                 // these are the same FileGroup classes as in the fileGroupsCRCSorted List, just sorted by AltCRC
                 // if the files does not have an altCRC then it is not added to this list.
                 _thWrk.Report(new bgwText("Index creation on got AltCRC"));
                 _thWrk.Report(_progressCounter++);
-                FindFixesSort.SortFamily(fileGroupsCRCSorted, FindAltCRC, FamilySortAltCRC, out FileGroup[] fileGroupsAltCRCSorted);
+                FastArraySort.SortWithFilter(fileGroupsCRCSorted, FindAltCRC, FamilySortAltCRC, out FileGroup[] fileGroupsAltCRCSorted);
+                if (checkCancel()) return;
+
                 _thWrk.Report(new bgwText("Index creation on got AltSHA1"));
                 _thWrk.Report(_progressCounter++);
-                FindFixesSort.SortFamily(fileGroupsCRCSorted, FindAltSHA1, FamilySortAltSHA1, out FileGroup[] fileGroupsAltSHA1Sorted);
+                FastArraySort.SortWithFilter(fileGroupsCRCSorted, FindAltSHA1, FamilySortAltSHA1, out FileGroup[] fileGroupsAltSHA1Sorted);
+                if (checkCancel()) return;
+
                 _thWrk.Report(new bgwText("Index creation on got AltMD5"));
                 _thWrk.Report(_progressCounter++);
-                FindFixesSort.SortFamily(fileGroupsCRCSorted, FindAltMD5, FamilySortAltMD5, out FileGroup[] fileGroupsAltMD5Sorted);
+                FastArraySort.SortWithFilter(fileGroupsCRCSorted, FindAltMD5, FamilySortAltMD5, out FileGroup[] fileGroupsAltMD5Sorted);
+                
+                */
+                if (checkCancel()) return;
 
                 _thWrk.Report(new bgwText("Merging in missing file list"));
                 _thWrk.Report(_progressCounter++);
                 // try and merge the missing File list into the FileGroup classes
                 // using the altCRC sorted list and then the CRCSorted list
                 MergeInMissingFiles(fileGroupsCRCSorted, fileGroupsSHA1Sorted, fileGroupsMD5Sorted, fileGroupsAltCRCSorted, fileGroupsAltSHA1Sorted, fileGroupsAltMD5Sorted, filesMissing);
+                if (checkCancel()) return;
 
                 int totalAfterMerge = fileGroupsCRCSorted.Length;
 
                 _thWrk.Report(new bgwText("Finding Fixes"));
                 _thWrk.Report(_progressCounter++);
                 FindFixesListCheck.GroupListCheck(fileGroupsCRCSorted);
+
+                ClearPartial.checkGroups.Clear();
+                ClearPartial.CheckRemovePartial(DB.DirRoot.Child(0));
+                ClearPartial.checkAllGroups();
 
                 _thWrk.Report(new bgwText("Complete (Unique Files " + totalAfterMerge + ")"));
                 _thWrk.Finished = true;
@@ -105,13 +152,6 @@ namespace RomVaultCore.FindFix
             }
         }
 
-        private static void ResetFileGroups(RvFile tBase)
-        {
-            tBase.FileGroup = null;
-            for (int i = 0; i < tBase.ChildCount; i++)
-                ResetFileGroups(tBase.Child(i));
-        }
-
         internal static void GetSelectedFiles(RvFile val, bool selected, List<RvFile> gotFiles, List<RvFile> missingFiles)
         {
             if (selected)
@@ -122,10 +162,10 @@ namespace RomVaultCore.FindFix
                     switch (rvFile.GotStatus)
                     {
                         case GotStatus.Got:
+                        case GotStatus.Corrupt:
                             gotFiles.Add(rvFile);
                             break;
                         case GotStatus.NotGot:
-                        case GotStatus.Corrupt:
                             missingFiles.Add(rvFile);
                             break;
                     }
@@ -133,7 +173,7 @@ namespace RomVaultCore.FindFix
             }
 
             RvFile rvVal = val;
-            if (!rvVal.IsDir) return;
+            if (!rvVal.IsDirectory) return;
 
             for (int i = 0; i < rvVal.ChildCount; i++)
             {
@@ -157,64 +197,53 @@ namespace RomVaultCore.FindFix
         //  add the rom to an existing set or make a new set.
 
 
-       internal static void MergeGotFiles(RvFile[] gotFilesSortedByCRC, out FileGroup[] fileGroups)
+        internal static void MergeGotFiles(IEnumerable<RvFile> gotFilesSortedByCRC, out FileGroup[] fileGroups)
         {
-            List<FileGroup> listFileGroupsOut = new List<FileGroup>();
-
+            ByteSortedList<FileGroup, RvFile> listFileGroupsOut = new ByteSortedList<FileGroup, RvFile>(getByteFunc, CompareCRC, newFunc, mergeFunc);
 
             // insert a zero byte file.
-            RvFile fileZero = MakeFileZero();
-            FileGroup newFileGroup = new FileGroup(fileZero);
+            RvFile fileZero = RvFile.MakeFileZero();
+            listFileGroupsOut.AddFind(fileZero);
 
-            List<FileGroup> lstFileWithSameCRC = new List<FileGroup>();
-            byte[] crc = fileZero.CRC;
+            int pCount = Environment.ProcessorCount - 1;
+            if (pCount == 0)
+                pCount = 1;
 
+            ParallelOptions po = new ParallelOptions { MaxDegreeOfParallelism = pCount };
 
-            lstFileWithSameCRC.Add(newFileGroup);
-            listFileGroupsOut.Add(newFileGroup);
-
-            foreach (RvFile file in gotFilesSortedByCRC)
+            Parallel.ForEach(gotFilesSortedByCRC, po, (file, state) =>
             {
                 if (file.CRC == null)
-                    continue;
-
-                if (crc != null && ArrByte.ICompare(crc, file.CRC) == 0)
+                    return;
+                listFileGroupsOut.AddFindWithExact(file, exactFunc);
+                if (_thWrk != null && _thWrk.CancellationPending)
                 {
-                    bool found = false;
-                    foreach (FileGroup fileGroup in lstFileWithSameCRC)
-                    {
-                        if (!fileGroup.FindExactMatch(file))
-                            continue;
-
-                        fileGroup.MergeFileIntoGroup(file);
-                        found = true;
-                        break;
-                    }
-
-                    if (found)
-                        continue;
-
-                    // new File with the same CRC but different sha1/md5/size
-                    newFileGroup = new FileGroup(file);
-                    lstFileWithSameCRC.Add(newFileGroup);
-                    listFileGroupsOut.Add(newFileGroup);
-                    continue;
+                    state.Break();
                 }
-
-                crc = file.CRC;
-                lstFileWithSameCRC.Clear();
-                newFileGroup = new FileGroup(file);
-                lstFileWithSameCRC.Add(newFileGroup);
-                listFileGroupsOut.Add(newFileGroup);
+            });
+            if (_thWrk != null && _thWrk.CancellationPending)
+            {
+                fileGroups = null;
+                return;
             }
-
             fileGroups = listFileGroupsOut.ToArray();
         }
-
-
-
-
-
+        private static byte getByteFunc(RvFile v1)
+        {
+            return v1.CRC[0];
+        }
+        private static FileGroup newFunc(RvFile file)
+        {
+            return new FileGroup(file);
+        }
+        private static void mergeFunc(RvFile file, FileGroup group)
+        {
+            group.MergeFileIntoGroup(file);
+        }
+        private static bool exactFunc(RvFile file, FileGroup group)
+        {
+            return group.FindExactMatch(file);
+        }
 
 
 
@@ -225,6 +254,9 @@ namespace RomVaultCore.FindFix
         {
             foreach (RvFile f in missingFiles)
             {
+                if (_thWrk.CancellationPending)
+                    return;
+
                 //first try and match on CRC
                 //if (f.CRC != null)
                 //{
@@ -401,27 +433,81 @@ namespace RomVaultCore.FindFix
             return intRes == 0;
         }
 
-
-
-
-
-
-
-
-        private static RvFile MakeFileZero()
+        internal static bool FindMatch(List<FileGroup> fileGroups, RvFile file, Compare comp, ExactMatch match, out List<int> listIndex)
         {
-            RvFile fileZero = new RvFile(FileType.File);
-            fileZero.Name = "ZeroFile";
-            fileZero.Size = 0;
-            fileZero.CRC = new byte[] { 0, 0, 0, 0 };
+            int gCount = fileGroups.Count;
 
-            fileZero.CRC = VarFix.CleanMD5SHA1("00000000", 8);
-            fileZero.MD5 = VarFix.CleanMD5SHA1("d41d8cd98f00b204e9800998ecf8427e", 32);
-            fileZero.SHA1 = VarFix.CleanMD5SHA1("da39a3ee5e6b4b0d3255bfef95601890afd80709", 40);
+            int intBottom = 0;
+            int intTop = gCount;
+            int intMid = 0;
+            int intRes = -1;
 
-            fileZero.GotStatus = GotStatus.Got;
-            fileZero.DatStatus = DatStatus.InToSort;
-            return fileZero;
+            //Binary chop to find the closest match
+            while ((intBottom < intTop) && (intRes != 0))
+            {
+                intMid = (intBottom + intTop) / 2;
+
+                FileGroup ff = fileGroups[intMid];
+                intRes = comp(file, ff);
+                if (intRes < 0)
+                {
+                    intTop = intMid;
+                }
+                else if (intRes > 0)
+                {
+                    intBottom = intMid + 1;
+                }
+            }
+            int index = intMid;
+
+            listIndex = new List<int>();
+
+            // if match was found check up the list for the first match
+            if (intRes == 0)
+            {
+                int intRes1 = 0;
+                while (index > 0 && intRes1 == 0)
+                {
+                    FileGroup ff = fileGroups[index - 1];
+                    intRes1 = comp(file, ff);
+
+                    if (intRes1 != 0) continue;
+                    index--;
+                }
+
+                int indexFirst = index;
+
+                intTop = gCount;
+                intRes1 = 0;
+                while (index < intTop && intRes1 == 0)
+                {
+                    FileGroup ff = fileGroups[index];
+                    intRes1 = comp(file, ff);
+                    if (intRes1 != 0) continue;
+                    if (match(ff, file))
+                    {
+                        listIndex.Add(index);
+                    }
+                    index++;
+                }
+
+                if (listIndex.Count == 0)
+                {
+                    listIndex.Add(indexFirst);
+                    intRes = -1;
+                }
+            }
+            // if the search is greater than the closest match move one up the list
+            else
+            {
+                if (intRes > 0)
+                {
+                    index++;
+                }
+                listIndex.Add(index);
+            }
+
+            return intRes == 0;
         }
 
 

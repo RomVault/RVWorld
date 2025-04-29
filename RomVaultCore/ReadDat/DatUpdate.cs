@@ -1,20 +1,20 @@
 ﻿/******************************************************
  *     ROMVault3 is written by Gordon J.              *
  *     Contact gordon@romvault.com                    *
- *     Copyright 2013                                 *
+ *     Copyright 2025                                 *
  ******************************************************/
 
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using DATReader.Utils;
+using DATReader.DatStore;
 using RomVaultCore.RvDB;
-using RomVaultCore.Scanner;
+using RomVaultCore.Storage.Dat;
 using RVIO;
 
 namespace RomVaultCore.ReadDat
 {
-    public static class DatUpdate
+    public static partial class DatUpdate
     {
         private static int _datCount;
         private static int _datsProcessed;
@@ -50,10 +50,9 @@ namespace RomVaultCore.ReadDat
                 treeStore.PreStoreTreeValue(DB.DirRoot.Child(0));
 
                 _thWrk.Report(new bgwText("Finding Dats"));
-                RvFile datRoot = new RvFile(FileType.Dir) { Name = "RomVault", DatStatus = DatStatus.InDatCollect };
 
                 // build a datRoot tree of the DAT's in DatRoot, and count how many dats are found
-                if (!RecursiveDatTree(datRoot, out _datCount))
+                if (!DatImportDir.RecursiveDatTree(out DatImportDir datRoot, out _datCount))
                 {
                     _thWrk.Report(new bgwText("Dat Update Complete"));
                     _thWrk.Finished = true;
@@ -73,7 +72,7 @@ namespace RomVaultCore.ReadDat
                 _thWrk.Report(new bgwSetRange(_datCount - 1));
 
                 // next add in new DAT and update the files
-                UpdateDatList(DB.DirRoot.Child(0), datRoot);
+                UpdateDirs(DB.DirRoot.Child(0), datRoot);
 
                 // finally remove any unneeded directories from the TreeView
                 RemoveOldTree(DB.DirRoot.Child(0));
@@ -83,6 +82,9 @@ namespace RomVaultCore.ReadDat
 
                 _thWrk.Report(new bgwText("Updating Cache"));
                 DB.Write();
+
+                _thWrk.Report(new bgwText("Garbage Collecting"));
+                GC.Collect();
 
                 _thWrk.Report(new bgwText("Dat Update Complete"));
                 _thWrk.Finished = true;
@@ -101,182 +103,135 @@ namespace RomVaultCore.ReadDat
             }
         }
 
-        private static bool RecursiveDatTree(RvFile tDir, out int datCount)
+
+
+
+        private static void RemoveOldDats(RvFile dbDir, DatImportDir datDir)
         {
-            datCount = 0;
-            string strPath = RvFile.GetDatPhysicalPath(tDir.DatTreeFullName);
-
-            if (!Directory.Exists(strPath))
-            {
-                ReportError.Show($"Path: {strPath} Not Found.");
-                return false;
-            }
-
-            DirectoryInfo oDir = new DirectoryInfo(strPath);
-
-            List<FileInfo> lFilesIn = new List<FileInfo>();
-
-            FileInfo[] oFilesIn = oDir.GetFiles("*.dat");
-            lFilesIn.AddRange(oFilesIn);
-            oFilesIn = oDir.GetFiles("*.xml");
-            lFilesIn.AddRange(oFilesIn);
-
-            datCount += lFilesIn.Count;
-            foreach (FileInfo file in lFilesIn)
-            {
-                RvDat tDat = new RvDat();
-                tDat.SetData(RvDat.DatData.DatRootFullName, Path.Combine(tDir.DatTreeFullName, file.Name));
-                tDat.TimeStamp = file.LastWriteTime;
-
-                // this works passing in the full DirectoryName of the Dat, because the rules
-                // has a directory separator character added to the end of them,
-                // so they match up to the directory name in this full Directory Name.
-                string datRootFullName = tDat.GetData(RvDat.DatData.DatRootFullName);
-                DatRule datRule = DatReader.FindDatRule(datRootFullName);
-                tDat.MultiDatOverride = datRule.MultiDATDirOverride;
-                tDat.UseDescriptionAsDirName = datRule.UseDescriptionAsDirName;
-                tDat.SingleArchive = datRule.SingleArchive;
-                tDat.SubDirType = datRule.SubDirType;
-
-                tDir.DirDatAdd(tDat);
-            }
-
-            if (tDir.DirDatCount > 1)
-            {
-                for (int i = 0; i < tDir.DirDatCount; i++)
-                {
-                    tDir.DirDat(i).MultiDatsInDirectory = true;
-                }
-            }
-
-            DirectoryInfo[] oSubDir = oDir.GetDirectories();
-
-            foreach (DirectoryInfo t in oSubDir)
-            {
-                RvFile cDir = new RvFile(FileType.Dir) { Name = t.Name, DatStatus = DatStatus.InDatCollect };
-                int index = tDir.ChildAdd(cDir);
-
-                RecursiveDatTree(cDir, out int retDatCount);
-                datCount += retDatCount;
-
-                if (retDatCount == 0)
-                {
-                    tDir.ChildRemove(index);
-                }
-            }
-
-            return true;
-        }
-
-
-        private static void RemoveOldDats(RvFile dbDir, RvFile tmpDir)
-        {
-            // now compare the old and new dats removing any old dats
-            // in the current directory
-
             RvFile lDir = dbDir;
-            if (!lDir.IsDir)
+            if (!lDir.IsDirectory)
             {
                 return;
             }
 
-            int dbIndex = 0;
-            int scanIndex = 0;
+            // now compare the old and new dats removing any old dats
+            // in the current directory
+            #region check and remove DATs
 
-            while (dbIndex < lDir.DirDatCount || scanIndex < tmpDir.DirDatCount)
+            int dbDirDatCount = lDir.DirDatCount;
+            int datDirDatCount = datDir?.DatFilesCount ?? 0;
+            int dbDirIndex = 0;
+            int datDirIndex = 0;
+
+            while (true)
             {
                 RvDat dbDat = null;
-                int res = 0;
+                int res;
 
-                if (dbIndex < lDir.DirDatCount && scanIndex < tmpDir.DirDatCount)
+                if (dbDirIndex < dbDirDatCount && datDirIndex < datDirDatCount)
                 {
-                    dbDat = lDir.DirDat(dbIndex);
-                    RvDat fileDat = tmpDir.DirDat(scanIndex);
+                    dbDat = lDir.DirDat(dbDirIndex);
+                    DatImportDat fileDat = datDir.DirDat(datDirIndex);
+                    //TODO check this
                     res = DBHelper.DatCompare(dbDat, fileDat);
                 }
-                else if (scanIndex < tmpDir.DirDatCount)
+                else if (datDirIndex < datDirDatCount)
                 {
                     //this is a new dat that we have now found at the end of the list
                     //fileDat = tmpDir.DirDat(scanIndex);
                     res = 1;
                 }
-                else if (dbIndex < lDir.DirDatCount)
+                else if (dbDirIndex < dbDirDatCount)
                 {
-                    dbDat = lDir.DirDat(dbIndex);
+                    dbDat = lDir.DirDat(dbDirIndex);
                     res = -1;
                 }
+                else
+                    break;
 
                 switch (res)
                 {
                     case 0:
                         if (dbDat != null)
                             dbDat.Status = DatUpdateStatus.Correct;
-                        dbIndex++;
-                        scanIndex++;
+                        dbDirIndex++;
+                        datDirIndex++;
                         break;
 
                     case 1:
                         // this is a new dat that we will add next time around
-                        scanIndex++;
+                        datDirIndex++;
                         break;
                     case -1:
                         if (dbDat != null)
                             dbDat.Status = DatUpdateStatus.Delete;
-                        lDir.DirDatRemove(dbIndex);
+                        dbDirDatCount = lDir.DirDatRemove(dbDirIndex);
                         break;
                 }
             }
 
-            // now scan the child directory structure of this directory
-            dbIndex = 0;
-            scanIndex = 0;
+            #endregion
 
-            while (dbIndex < lDir.ChildCount || scanIndex < tmpDir.ChildCount)
+            // now scan the child directory structure of this directory
+            #region compare all directories
+            int dbDirChildCount = lDir.ChildCount;
+            int datDirChildount = datDir?.ChildDirsCount ?? 0;
+            dbDirIndex = 0;
+            datDirIndex = 0;
+
+            while (true)
             {
                 RvFile dbChild = null;
-                RvFile fileChild = null;
-                int res = 0;
+                DatImportDir fileChild = null;
+                int res;
 
-                if (dbIndex < lDir.ChildCount && scanIndex < tmpDir.ChildCount)
+                if (dbDirIndex < dbDirChildCount && datDirIndex < datDirChildount)
                 {
-                    dbChild = lDir.Child(dbIndex);
-                    fileChild = tmpDir.Child(scanIndex);
-                    res = DBHelper.CompareName(dbChild, fileChild);
+                    dbChild = lDir.Child(dbDirIndex);
+                    fileChild = datDir.ChildDir(datDirIndex);
+                    //TODO check this
+                    res = RVSorters.CompareDirName(dbChild, fileChild);
                 }
-                else if (scanIndex < tmpDir.ChildCount)
+                else if (datDirIndex < datDirChildount)
                 {
                     //found a new directory on the end of the list
                     //fileChild = tmpDir.Child(scanIndex);
                     res = 1;
                 }
-                else if (dbIndex < lDir.ChildCount)
+                else if (dbDirIndex < dbDirChildCount)
                 {
-                    dbChild = lDir.Child(dbIndex);
+                    dbChild = lDir.Child(dbDirIndex);
                     res = -1;
                 }
+                else
+                    break;
+
                 switch (res)
                 {
                     case 0:
                         // found a matching directory in DatRoot So recurse back into it
                         RemoveOldDats(dbChild, fileChild);
-                        dbIndex++;
-                        scanIndex++;
+                        dbDirIndex++;
+                        datDirIndex++;
                         break;
 
                     case 1:
                         // found a new directory will be added later
-                        scanIndex++;
+                        datDirIndex++;
                         break;
                     case -1:
                         if (dbChild?.FileType == FileType.Dir && dbChild.Dat == null)
                         {
-                            RemoveOldDats(dbChild, new RvFile(FileType.Dir));
+                            RemoveOldDats(dbChild, null);
                         }
-                        dbIndex++;
+                        dbDirIndex++;
                         break;
                 }
             }
+            #endregion
         }
+
+
 
         private static EFile RemoveOldDatsCleanUpFiles(RvFile dbDir)
         {
@@ -304,7 +259,7 @@ namespace RomVaultCore.ReadDat
             }
 
             RvFile tDir = dbDir;
-            if (!tDir.IsDir)
+            if (!tDir.IsDirectory)
                 return EFile.Delete;
 
             // remove all DATStatus's here they will get set back correctly when adding dats back in below.
@@ -329,79 +284,191 @@ namespace RomVaultCore.ReadDat
         }
 
 
-        private static void UpdateDatList(RvFile dbDir, RvFile tmpDir)
+
+
+        private static void UpdateDirs(RvFile dbDir, DatImportDir datDir)
         {
-            AddNewDats(dbDir, tmpDir); // this checks / adds any DAT found at this level in the tree.
-            UpdateDirs(dbDir, tmpDir); // then then scans down any dirs looking for more DAT's
+            AddTheDatsInThisDir(dbDir, datDir); // this checks / adds any DAT found at this level in the tree.
+
+            int dbDirChildCount = dbDir.ChildCount;
+            int datDirChildCount = datDir.ChildDirsCount;
+
+            int dbDirIndex = 0;
+            int datDirIndex = 0;
+
+            dbDir.DatStatus = DatStatus.InDatCollect;
+
+            // if everything else is correct, I don't think this check is needed.
+            if (dbDir.Tree == null)
+            {
+                Debug.WriteLine("Adding Tree View to " + dbDir.Name);
+                dbDir.Tree = new RvTreeRow();
+            }
+
+            while (true)
+            {
+                RvFile dbChild = null;
+                DatImportDir fileChild = null;
+                int res;
+
+                if (dbDirIndex < dbDirChildCount && datDirIndex < datDirChildCount)
+                {
+                    dbChild = dbDir.Child(dbDirIndex);
+                    fileChild = datDir.ChildDir(datDirIndex);
+                    //TODO check this
+                    res = RVSorters.CompareDirName(dbChild, fileChild);
+                    Debug.WriteLine("Checking " + dbChild.Name + " : and " + fileChild.Name + " : " + res);
+                }
+                else if (datDirIndex < datDirChildCount)
+                {
+                    fileChild = datDir.ChildDir(datDirIndex);
+                    res = 1;
+                    Debug.WriteLine("Checking : and " + fileChild.Name + " : " + res);
+                }
+                else if (dbDirIndex < dbDirChildCount)
+                {
+                    dbChild = dbDir.Child(dbDirIndex);
+                    res = -1;
+                }
+                else
+                    break;
+
+                switch (res)
+                {
+                    case 0:
+                        // found a matching directory in DatRoot So recurse back into it
+                        if (dbChild.DatStatus == DatStatus.InDatCollect)
+                        {
+                            ReportError.Show($"DAT directory conflict: An auto-created virtual directory is using the same name as a real directory. Resolve the conflict and refresh DATs:\n\n{dbChild.DatTreeFullName}");
+                        }
+                        else
+                        {
+                            if (dbChild.GotStatus == GotStatus.Got)
+                            {
+                                if (dbChild.Name != fileChild.Name) // check if the case of the Item in the DB is different from the Dat Root Actual filename
+                                {
+                                    if (!string.IsNullOrEmpty(dbChild.FileName)) // if we do not already have a different case name stored
+                                    {
+                                        dbChild.FileName = dbChild.Name; // copy the DB filename to the FileName
+                                    }
+                                    else // We already have a different case filename found in RomRoot
+                                    {
+                                        if (dbChild.FileName == fileChild.Name) // check if the DatRoot name does now match the name in the DB Filename
+                                        {
+                                            dbChild.FileName = null; // if it does undo the BadCase Flag
+                                        }
+                                    }
+                                    dbChild.Name = fileChild.Name; // Set the db Name to match the DatRoot Name.
+                                }
+                            }
+                            else
+                            {
+                                dbChild.Name = fileChild.Name;
+                            }
+
+                            if (dbDir.Tree == null)
+                                dbDir.Tree = new RvTreeRow();
+
+                            UpdateDirs(dbChild, fileChild);
+                        }
+
+                        dbDirIndex++;
+                        datDirIndex++;
+                        break;
+
+                    case 1:
+                        // found a new directory in Dat
+                        RvFile tDir = dbDir.DatAddDirectory(fileChild.Name, dbDirIndex);
+                        Debug.WriteLine("Adding new Dir and Calling back in to check this DIR " + tDir.Name);
+                        UpdateDirs(tDir, fileChild);
+                        dbDirChildCount++;
+                        dbDirIndex++;
+                        datDirIndex++;
+                        break;
+                    case -1:
+                        // all files 
+                        dbDirIndex++;
+                        break;
+                }
+            }
         }
+
+
 
         /// <summary>
         ///     Add the new DAT's into the DAT list
         ///     And merge in the new DAT data into the database
         /// </summary>
         /// <param name="dbDir">The Current database dir</param>
-        /// <param name="tmpDir">A temp directory containing the DAT found in this directory in DatRoot</param>
-        private static void AddNewDats(RvFile dbDir, RvFile tmpDir)
+        /// <param name="datDir">A temp directory containing the DAT found in this directory in DatRoot</param>
+        private static void AddTheDatsInThisDir(RvFile dbDir, DatImportDir datDir)
         {
-            int dbIndex = 0;
-            int scanIndex = 0;
+            int dbDirDatCount = dbDir.DirDatCount;
+            int datDirDatCount = datDir.DatFilesCount;
+            int dbDirDatIndex = 0;
+            int datDirDatIndex = 0;
 
             Debug.WriteLine("");
             Debug.WriteLine("Scanning for Adding new DATS");
-            while (dbIndex < dbDir.DirDatCount || scanIndex < tmpDir.DirDatCount)
+            while (true)
             {
                 RvDat dbDat = null;
-                RvDat fileDat = null;
-                int res = 0;
+                DatImportDat fileDat = null;
+                int res;
 
-                if (dbIndex < dbDir.DirDatCount && scanIndex < tmpDir.DirDatCount)
+                if (dbDirDatIndex < dbDirDatCount && datDirDatIndex < datDirDatCount)
                 {
-                    dbDat = dbDir.DirDat(dbIndex);
-                    fileDat = tmpDir.DirDat(scanIndex);
+                    dbDat = dbDir.DirDat(dbDirDatIndex);
+                    fileDat = datDir.DirDat(datDirDatIndex);
+                    //TODO check this
                     res = DBHelper.DatCompare(dbDat, fileDat);
-                    Debug.WriteLine("Checking " + dbDat.GetData(RvDat.DatData.DatRootFullName) + " : and " + fileDat.GetData(RvDat.DatData.DatRootFullName) + " : " + res);
+                    Debug.WriteLine("Checking " + dbDat.GetData(RvDat.DatData.DatRootFullName) + " : and " + fileDat.DatFullName + " : " + res);
                 }
-                else if (scanIndex < tmpDir.DirDatCount)
+                else if (datDirDatIndex < datDirDatCount)
                 {
-                    fileDat = tmpDir.DirDat(scanIndex);
+                    fileDat = datDir.DirDat(datDirDatIndex);
                     res = 1;
-                    Debug.WriteLine("Checking : and " + fileDat.GetData(RvDat.DatData.DatRootFullName) + " : " + res);
+                    Debug.WriteLine("Checking : and " + fileDat.DatFullName + " : " + res);
                 }
-                else if (dbIndex < dbDir.DirDatCount)
+                else if (dbDirDatIndex < dbDirDatCount)
                 {
-                    dbDat = dbDir.DirDat(dbIndex);
+                    dbDat = dbDir.DirDat(dbDirDatIndex);
                     res = -1;
                     Debug.WriteLine("Checking " + dbDat.GetData(RvDat.DatData.DatRootFullName) + " : and : " + res);
                 }
+                else
+                    break;
+
 
                 switch (res)
                 {
                     case 0:
                         _datsProcessed++;
                         _thWrk.Report(_datsProcessed);
-                        _thWrk.Report(new bgwText("Dat : " + Path.GetFileNameWithoutExtension(fileDat?.GetData(RvDat.DatData.DatRootFullName))));
+                        _thWrk.Report(new bgwText("Dat : " + Path.GetFileNameWithoutExtension(fileDat?.DatFullName)));
 
 
                         Debug.WriteLine("Correct");
                         // Should already be set as correct above
                         if (dbDat != null)
                             dbDat.Status = DatUpdateStatus.Correct;
-                        dbIndex++;
-                        scanIndex++;
+                        dbDirDatIndex++;
+                        datDirDatIndex++;
                         break;
 
                     case 1:
                         _datsProcessed++;
                         _thWrk.Report(_datsProcessed);
-                        _thWrk.Report(new bgwText("Scanning New Dat : " + Path.GetFileNameWithoutExtension(fileDat?.GetData(RvDat.DatData.DatRootFullName))));
+                        _thWrk.Report(new bgwText("Scanning New Dat : " + Path.GetFileNameWithoutExtension(fileDat?.DatFullName)));
 
 
                         Debug.WriteLine("Adding new DAT");
-                        if (LoadNewDat(fileDat, dbDir))
+                        if (LoadNewDat(dbDir, fileDat))
                         {
-                            dbIndex++;
+                            dbDirDatIndex++;
+                            dbDirDatCount++;
                         }
-                        scanIndex++;
+                        datDirDatIndex++;
                         break;
 
                     case -1:
@@ -413,124 +480,100 @@ namespace RomVaultCore.ReadDat
             }
         }
 
-
-        private static bool LoadNewDat(RvDat fileDat, RvFile thisDirectory)
+        private static bool LoadNewDat(RvFile dbDir, DatImportDat fileDat)
         {
             // Read the new Dat File into newDatFile
-            RvFile newDatFile = DatReader.ReadInDatFile(fileDat, _thWrk, out string extraDirName);
-
-            // If we got a valid Dat File back
-            if (newDatFile?.Dat == null)
+            if (!DatReader.ReadInDatFile(fileDat, _thWrk))
             {
-                ReportError.Show("Error reading Dat " + fileDat.GetData(RvDat.DatData.DatRootFullName));
-                return false;
-            }
-            if (newDatFile.ChildCount == 0)
-            {
+                ReportError.Show("Error reading Dat " + fileDat.DatFullName);
                 return false;
             }
 
-            if (!string.IsNullOrWhiteSpace(extraDirName))
+
+            if (fileDat.datHeader.BaseDir.Count == 0)
             {
-                newDatFile.Name = VarFix.CleanFileName(extraDirName);
-
-                newDatFile.DatStatus = DatStatus.InDatCollect;
-                newDatFile.Tree = new RvTreeRow();
-
-                RvFile newDirectory = new RvFile(FileType.Dir) { Dat = newDatFile.Dat };
-
-                // add the DAT into this directory
-                newDirectory.ChildAdd(newDatFile);
-                newDatFile = newDirectory;
-
-                newDatFile.Dat.AutoAddedDirectory = true;
-            }
-            else
-            {
-                newDatFile.Dat.AutoAddedDirectory = false;
+                return false;
             }
 
-            if (thisDirectory.Tree == null)
+            if (dbDir.Tree == null)
             {
-                thisDirectory.Tree = new RvTreeRow();
+                dbDir.Tree = new RvTreeRow();
             }
 
-            if (MergeInDat(thisDirectory, newDatFile, out RvDat conflictDat, true))
+            RvDat thisDat = new RvDat(fileDat);
+
+            string errorMessage;
+            if (MergeInDat(dbDir, fileDat.datHeader.BaseDir, thisDat, out RvDat conflictDat, true, out errorMessage))
             {
-                ReportError.Show("Dat Merge conflict occured Cache contains " + conflictDat.GetData(RvDat.DatData.DatRootFullName) + " new dat " + newDatFile.Dat.GetData(RvDat.DatData.DatRootFullName) + " is trying to use the same directory and so will be ignored.");
+                ReportError.Show($"Dat Merge conflict occured Cache contains {conflictDat.GetData(RvDat.DatData.DatRootFullName)} new dat {fileDat.DatFullName} is trying to use the same directory and so will be ignored.\nPlease report this to RomVault Discord:\n{errorMessage}");
                 return false;
             }
 
             //SetInDat(thisDirectory);
 
             // Add the new Dat 
-            thisDirectory.DirDatAdd(newDatFile.Dat);
+            dbDir.DirDatAdd(thisDat);
 
             // Merge the files/directories in the Dat
-            MergeInDat(thisDirectory, newDatFile, out conflictDat, false);
+            MergeInDat(dbDir, fileDat.datHeader.BaseDir, thisDat, out _, false, out _);
             return true;
         }
 
-        private static bool MergeInDat(RvFile dbDat, RvFile newDat, out RvDat conflict, bool checkOnly)
+        private static bool MergeInDat(RvFile dbDir, DatDir fileDir, RvDat thisRvDat, out RvDat conflict, bool checkOnly, out string errorMessage)
         {
+            errorMessage = "";
+
             conflict = null;
-            int dbIndex = 0;
-            int newIndex = 0;
-            while (dbIndex < dbDat.ChildCount || newIndex < newDat.ChildCount)
+            int dbDirChildCount = dbDir.ChildCount;
+            int fileDirCount = fileDir.Count;
+            int dbDirChildIndex = 0;
+            int fileDirIndex = 0;
+            while (true)
             {
                 RvFile dbChild = null;
-                RvFile newDatChild = null;
-                int res = 0;
+                DatBase newDatChild = null;
+                int res;
 
-                if (dbIndex < dbDat.ChildCount && newIndex < newDat.ChildCount)
+                if (dbDirChildIndex < dbDirChildCount && fileDirIndex < fileDirCount)
                 {
-                    dbChild = dbDat.Child(dbIndex); // are files
-                    newDatChild = newDat.Child(newIndex); // is from a dat item
-                    res = DBHelper.CompareName(dbChild, newDatChild);
+                    dbChild = dbDir.Child(dbDirChildIndex); // are files
+                    newDatChild = fileDir[fileDirIndex]; // is from a dat item
+                    //TODO check this
+                    res = RVSorters.CompareName(dbChild, newDatChild);
                 }
-                else if (newIndex < newDat.ChildCount)
+                else if (fileDirIndex < fileDirCount)
                 {
-                    newDatChild = newDat.Child(newIndex);
+                    newDatChild = fileDir[fileDirIndex];
                     res = 1;
                 }
-                else if (dbIndex < dbDat.ChildCount)
+                else if (dbDirChildIndex < dbDirChildCount)
                 {
-                    dbChild = dbDat.Child(dbIndex);
+                    dbChild = dbDir.Child(dbDirChildIndex);
                     res = -1;
                 }
+                else
+                    break;
 
                 if (res == 0)
                 {
                     if (dbChild == null || newDatChild == null)
                     {
-                        ShowDat("Error in Logic", dbDat.FullName);
+                        ShowDat("Error in Logic", dbDir.FullName);
                         break;
                     }
 
 
                     List<RvFile> dbDats = new List<RvFile>();
-                    List<RvFile> newDats = new List<RvFile>();
                     int dbDatsCount = 1;
-                    int newDatsCount = 1;
 
 
                     dbDats.Add(dbChild);
-                    newDats.Add(newDatChild);
 
-                    while (dbIndex + dbDatsCount < dbDat.ChildCount && DBHelper.CompareName(dbChild, dbDat.Child(dbIndex + dbDatsCount)) == 0)
+                    //TODO check this
+                    while (dbDirChildIndex + dbDatsCount < dbDirChildCount && RVSorters.CompareName(dbChild, dbDir.Child(dbDirChildIndex + dbDatsCount)) == 0)
                     {
-                        dbDats.Add(dbDat.Child(dbIndex + dbDatsCount));
-                        dbDatsCount += 1;
-                    }
-                    while (newIndex + newDatsCount < newDat.ChildCount && DBHelper.CompareName(newDatChild, newDat.Child(newIndex + newDatsCount)) == 0)
-                    {
-                        newDats.Add(newDat.Child(newIndex + newDatsCount));
-                        newDatsCount += 1;
-                    }
-
-                    if (dbDatsCount > 1 || newDatsCount > 1)
-                    {
-                        ReportError.SendAndShow("Double Name Found");
+                        dbDats.Add(dbDir.Child(dbDirChildIndex + dbDatsCount));
+                        dbDatsCount++;
                     }
 
                     for (int indexdb = 0; indexdb < dbDatsCount; indexdb++)
@@ -543,22 +586,20 @@ namespace RomVaultCore.ReadDat
                         if (checkOnly)
                         {
                             conflict = dbChild.Dat;
+                            errorMessage = $"Found Status: {dbDats[indexdb].DatStatus}\n datName: {dbDats[indexdb].TreeFullName}\n";
                             return true;
                         }
 
-                        ShowDat("Unknown Update Dat Status " + dbChild.DatStatus, dbDat.FullName);
+                        ShowDat("Unknown Update Dat Status " + dbChild.DatStatus, dbDir.FullName);
                         break;
                     }
 
                     if (!checkOnly)
                     {
-                        for (int indexNewDats = 0; indexNewDats < newDatsCount; indexNewDats++)
+                        bool caseTest = dbDats.Count > 1;
+                        bool found = false;
+                        for (int indexCase = (caseTest ? 0 : 1); indexCase < 2; indexCase += 1)
                         {
-                            if (newDats[indexNewDats].SearchFound)
-                            {
-                                continue;
-                            }
-
                             for (int indexDbDats = 0; indexDbDats < dbDatsCount; indexDbDats++)
                             {
                                 if (dbDats[indexDbDats].SearchFound)
@@ -566,68 +607,61 @@ namespace RomVaultCore.ReadDat
                                     continue;
                                 }
 
-                                bool matched = Compare.DatMergeCompare(dbDats[indexDbDats], newDats[indexNewDats], out bool altMatch);
+                                bool matched = DatCompare.DatMergeCompare(dbDats[indexDbDats], newDatChild, indexCase, out bool altMatch);
                                 if (!matched)
                                 {
                                     continue;
                                 }
 
-                                dbDats[indexDbDats].DatAdd(newDats[indexNewDats], altMatch);
+                                dbDats[indexDbDats].DatMergeIn(newDatChild, thisRvDat, altMatch);
 
-                                FileType ft = dbChild.FileType;
+                                FileType ft = dbDats[indexDbDats].FileType;
 
                                 if (ft == FileType.Zip || ft == FileType.SevenZip || ft == FileType.Dir)
                                 {
-                                    RvFile dChild = dbChild;
-                                    RvFile dNewChild = newDatChild;
-                                    MergeInDat(dChild, dNewChild, out conflict, false);
+                                    MergeInDat(dbDats[indexDbDats], (DatDir)newDatChild, thisRvDat, out conflict, false, out _);
                                 }
 
                                 dbDats[indexDbDats].SearchFound = true;
-                                newDats[indexNewDats].SearchFound = true;
+                                found = true;
+                                break;
                             }
+                            if (found)
+                                break;
                         }
 
-                        for (int indexNewDats = 0; indexNewDats < newDatsCount; indexNewDats++)
+                        if (!found)
                         {
-                            if (newDats[indexNewDats].SearchFound)
-                            {
-                                continue;
-                            }
-
-                            dbDat.ChildAdd(newDats[indexNewDats], dbIndex);
-                            dbChild = dbDat.Child(dbIndex);
+                            dbChild = dbDir.DatAdd(newDatChild, thisRvDat, dbDirChildIndex);
                             SetMissingStatus(dbChild);
-
-                            dbIndex++;
+                            dbDirChildCount++;
+                            dbDirChildIndex++;
                         }
                     }
 
-                    dbIndex += dbDatsCount;
-                    newIndex += newDatsCount;
+                    dbDirChildIndex += dbDatsCount;
+                    fileDirIndex++;
                 }
 
                 if (res == 1)
                 {
                     if (!checkOnly)
                     {
-                        dbDat.ChildAdd(newDatChild, dbIndex);
-                        dbChild = dbDat.Child(dbIndex);
+                        dbChild = dbDir.DatAdd(newDatChild, thisRvDat, dbDirChildIndex);
                         SetMissingStatus(dbChild);
-
-                        dbIndex++;
+                        dbDirChildCount++;
+                        dbDirChildIndex++;
                     }
-                    newIndex++;
+                    fileDirIndex++;
                 }
 
                 if (res == -1)
                 {
-                    dbIndex++;
+                    dbDirChildIndex++;
                 }
             }
             return false;
         }
-
 
         private static void SetMissingStatus(RvFile dbChild)
         {
@@ -649,107 +683,10 @@ namespace RomVaultCore.ReadDat
             }
         }
 
-
-        private static void UpdateDirs(RvFile dbDir, RvFile fileDir)
-        {
-            int dbIndex = 0;
-            int scanIndex = 0;
-
-            dbDir.DatStatus = DatStatus.InDatCollect;
-            if (dbDir.Tree == null)
-            {
-                Debug.WriteLine("Adding Tree View to " + dbDir.Name);
-                dbDir.Tree = new RvTreeRow();
-            }
-
-
-            Debug.WriteLine("");
-            Debug.WriteLine("Now scanning dirs");
-
-            while (dbIndex < dbDir.ChildCount || scanIndex < fileDir.ChildCount)
-            {
-                RvFile dbChild = null;
-                RvFile fileChild = null;
-                int res = 0;
-
-                if (dbIndex < dbDir.ChildCount && scanIndex < fileDir.ChildCount)
-                {
-                    dbChild = dbDir.Child(dbIndex);
-                    fileChild = fileDir.Child(scanIndex);
-                    res = DBHelper.CompareName(dbChild, fileChild);
-                    Debug.WriteLine("Checking " + dbChild.Name + " : and " + fileChild.Name + " : " + res);
-                }
-                else if (scanIndex < fileDir.ChildCount)
-                {
-                    fileChild = fileDir.Child(scanIndex);
-                    res = 1;
-                    Debug.WriteLine("Checking : and " + fileChild.Name + " : " + res);
-                }
-                else if (dbIndex < dbDir.ChildCount)
-                {
-                    dbChild = dbDir.Child(dbIndex);
-                    res = -1;
-                }
-                switch (res)
-                {
-                    case 0:
-                        // found a matching directory in DatRoot So recurse back into it
-
-                        if (dbChild.GotStatus == GotStatus.Got)
-                        {
-                            if (dbChild.Name != fileChild.Name) // check if the case of the Item in the DB is different from the Dat Root Actual filename
-                            {
-                                if (!string.IsNullOrEmpty(dbChild.FileName)) // if we do not already have a different case name stored
-                                {
-                                    dbChild.FileName = dbChild.Name; // copy the DB filename to the FileName
-                                }
-                                else // We already have a different case filename found in RomRoot
-                                {
-                                    if (dbChild.FileName == fileChild.Name) // check if the DatRoot name does now match the name in the DB Filename
-                                    {
-                                        dbChild.FileName = null; // if it does undo the BadCase Flag
-                                    }
-                                }
-                                dbChild.Name = fileChild.Name; // Set the db Name to match the DatRoot Name.
-                            }
-                        }
-                        else
-                        {
-                            dbChild.Name = fileChild.Name;
-                        }
-
-                        UpdateDatList(dbChild, fileChild);
-                        dbIndex++;
-                        scanIndex++;
-                        break;
-
-                    case 1:
-                        // found a new directory in Dat
-                        RvFile tDir = new RvFile(FileType.Dir)
-                        {
-                            Name = fileChild.Name,
-                            Tree = new RvTreeRow(),
-                            DatStatus = DatStatus.InDatCollect
-                        };
-                        dbDir.ChildAdd(tDir, dbIndex);
-                        Debug.WriteLine("Adding new Dir and Calling back in to check this DIR " + tDir.Name);
-                        UpdateDatList(tDir, fileChild);
-
-                        dbIndex++;
-                        scanIndex++;
-                        break;
-                    case -1:
-                        // all files 
-                        dbIndex++;
-                        break;
-                }
-            }
-        }
-
         private static void RemoveOldTree(RvFile dbFile)
         {
             RvFile dbDir = dbFile;
-            if (!dbDir.IsDir)
+            if (!dbDir.IsDirectory)
             {
                 return;
             }
@@ -774,7 +711,7 @@ namespace RomVaultCore.ReadDat
         private static void CheckAllDatsInternal(RvFile dbFile, string datPath)
         {
             RvFile dbDir = dbFile;
-            if (!dbDir.IsDir)
+            if (!dbDir.IsDirectory)
                 return;
 
             int dats = dbDir.DirDatCount;
@@ -786,12 +723,7 @@ namespace RomVaultCore.ReadDat
                     if (datFullPath.Substring(0, datPath.Length) == datPath)
                     {
                         for (int i = 0; i < dats; i++)
-                        {
-                            RvDat testDat = dbDir.DirDat(i);
-
-
-                            testDat.TimeStamp = long.MaxValue;
-                        }
+                            dbDir.DirDat(i).InvalidateDatTimeStamp();
                     }
                 }
             }
@@ -801,9 +733,7 @@ namespace RomVaultCore.ReadDat
                 if (datPath.Length <= datFullName.Length)
                 {
                     if (datFullName.Substring(0, datPath.Length) == datPath)
-                    {
-                        dbFile.Dat.TimeStamp = long.MaxValue;
-                    }
+                        dbFile.Dat.InvalidateDatTimeStamp();
                 }
             }
 

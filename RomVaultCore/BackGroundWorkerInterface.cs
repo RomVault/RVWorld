@@ -1,7 +1,7 @@
 ﻿/******************************************************
  *     ROMVault3 is written by Gordon J.              *
  *     Contact gordon@romvault.com                    *
- *     Copyright 2022                                 *
+ *     Copyright 2025                                 *
  ******************************************************/
 
 using Compress;
@@ -90,18 +90,6 @@ namespace RomVaultCore
         }
 
         public bool Visible { get; }
-    }
-
-    public class bgwShowCorrupt
-    {
-        public bgwShowCorrupt(ZipReturn zr, string filename)
-        {
-            this.zr = zr;
-            this.filename = filename;
-        }
-
-        public ZipReturn zr { get; }
-        public string filename { get; }
     }
 
     public class bgwShowError

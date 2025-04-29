@@ -28,10 +28,8 @@ namespace RVIO
     }
     public static class Error
     {
-        public static int GetLastError()
-        {
-            return Marshal.GetLastWin32Error();
-        }
+        public static int ErrorCode { get; internal set; }
+        public static string ErrorMessage { get; internal set; }
     }
 
     public static class Unix
@@ -54,11 +52,13 @@ namespace RVIO
         public long LastAccessTime;
         public long CreationTime;
         public long Length;
+        public bool Exists { get; private set; }
 
         public FileInfo(string name, string fullName)
         {
             Name = name;
             FullName = fullName;
+            Exists = true;
         }
 
         public FileInfo(string path)
@@ -68,7 +68,7 @@ namespace RVIO
 
             System.IO.FileInfo fi = new System.IO.FileInfo(NameFix.AddLongPathPrefix(path));
 
-            if (!fi.Exists) return;
+            if (!(Exists = fi.Exists)) return;
 
             Length = fi.Length;
             try { LastWriteTime = fi.LastWriteTimeUtc.Ticks; } catch { LastWriteTime = 0; }
@@ -211,13 +211,11 @@ namespace RVIO
         public static void Move(string sourceFileName, string destFileName)
         {
             System.IO.File.Move(NameFix.AddLongPathPrefix(sourceFileName), NameFix.AddLongPathPrefix(destFileName));
-
         }
 
         public static void Delete(string path)
         {
             System.IO.File.Delete(NameFix.AddLongPathPrefix(path));
-
         }
 
         public static void WriteAllBytes(string path, byte[] data)
@@ -235,17 +233,21 @@ namespace RVIO
             try
             {
                 System.IO.File.SetAttributes(NameFix.AddLongPathPrefix(path), (System.IO.FileAttributes)fileAttributes);
+                Error.ErrorMessage = "";
+                Error.ErrorCode = 0; 
                 return true;
             }
-            catch (Exception)
+            catch (Exception e)
             {
+                Error.ErrorMessage = e.Message;
+                Error.ErrorCode = e.HResult;
                 return false;
             }
         }
 
         public static StreamWriter CreateText(string filename)
         {
-            int errorCode = FileStream.OpenFileWrite(filename, out Stream fStream);
+            int errorCode = FileStream.OpenFileWrite(filename, 4096, out Stream fStream);
             return errorCode != 0 ? null : new StreamWriter(fStream);
         }
         public static StreamReader OpenText(string filename, Encoding Enc)
@@ -282,7 +284,7 @@ namespace RVIO
 
         public static string GetExtension(string path)
         {
-            return System.IO.Path.GetExtension(path);
+            return System.IO.Path.GetExtension(NameFix.AddLongPathPrefix(path));
         }
         public static string Combine(string path1, string path2)
         {
@@ -325,23 +327,35 @@ namespace RVIO
 
         public static string GetFileNameWithoutExtension(string path)
         {
-            return System.IO.Path.GetFileNameWithoutExtension(path);
+            return System.IO.Path.GetFileNameWithoutExtension(NameFix.AddLongPathPrefix(path));
         }
 
         public static string GetFileName(string path)
         {
-            return System.IO.Path.GetFileName(path);
+            return System.IO.Path.GetFileName(NameFix.AddLongPathPrefix(path));
         }
         public static string GetDirectoryName(string path)
         {
-            return System.IO.Path.GetDirectoryName(path);
+            if (Unix.IsUnix)
+                return System.IO.Path.GetDirectoryName(path);
 
+            int lastPos = path.LastIndexOf(DirectorySeparatorChar);
+            int lastPos1 = path.LastIndexOf(AltDirectorySeparatorChar);
+
+            int use = -1;
+            if (lastPos != -1) use = lastPos;
+            if (lastPos1 != -1 && lastPos1 > use) use = lastPos;
+
+            if (use == -1) return "";
+
+            return path.Substring(0, use);
         }
     }
 
 
     public static class FileStream
     {
+
         public static Stream OpenFileRead(string path, out int result)
         {
             result = OpenFileRead(path, out Stream stream);
@@ -352,25 +366,51 @@ namespace RVIO
         {
             try
             {
+                Error.ErrorMessage = "";
+                Error.ErrorCode = 0;
                 stream = new System.IO.FileStream(NameFix.AddLongPathPrefix(path), FileMode.Open, FileAccess.Read);
                 return 0;
             }
             catch (Exception e)
             {
+                Error.ErrorMessage = e.Message;
+                stream = null;
+                return e.HResult;
+            }
+        }
+        public static int OpenFileRead(string path, int bufferSize, out Stream stream)
+        {
+            try
+            {
+                Error.ErrorMessage = "";
+                Error.ErrorCode = 0;
+                stream = new System.IO.FileStream(NameFix.AddLongPathPrefix(path), FileMode.Open, FileAccess.Read, FileShare.Read, bufferSize);
+                return 0;
+            }
+            catch (Exception e)
+            {
+                Error.ErrorMessage = e.Message;
+                Error.ErrorCode = e.HResult;
                 stream = null;
                 return e.HResult;
             }
         }
 
-        public static int OpenFileWrite(string path, out Stream stream)
+        public static int BufSizeMax = 128 * 4096;
+
+        public static int OpenFileWrite(string path, int bufferSize, out Stream stream)
         {
             try
             {
-                stream = new System.IO.FileStream(NameFix.AddLongPathPrefix(path), FileMode.Create, FileAccess.ReadWrite);
+                stream = new System.IO.FileStream(NameFix.AddLongPathPrefix(path), FileMode.Create, FileAccess.ReadWrite, FileShare.None, bufferSize);
+                Error.ErrorMessage = "";
+                Error.ErrorCode = 0;
                 return 0;
             }
             catch (Exception e)
             {
+                Error.ErrorMessage = e.Message;
+                Error.ErrorCode = e.HResult;
                 stream = null;
                 return e.HResult;
             }
@@ -391,12 +431,24 @@ namespace RVIO
                 return @"\\?\UNC\" + path.Substring(2);
 
             string retPath = path;
-            if (path.Substring(1, 1) != ":")
+            if (path.Length > 2 && path.Substring(1, 1) != ":")
                 retPath = Path.Combine(System.IO.Directory.GetCurrentDirectory(), retPath);
 
             retPath = CleanDots(retPath);
 
             return @"\\?\" + retPath;
+        }
+
+        public static string RemoveLongPathPrefix(string path)
+        {
+            if (Unix.IsUnix)
+                return path;
+            if (path.StartsWith(@"\\?\"))
+                return path.Substring(4);
+            if (path.StartsWith(@"\\?\UNC\"))
+                return @"\\" + path.Substring(8);
+
+            return path;
         }
 
         private static string CleanDots(string path)
@@ -413,7 +465,6 @@ namespace RVIO
                 retPath = path1.Substring(0, path1Back + 1) + path2;
             }
             return retPath;
-
         }
     }
 }

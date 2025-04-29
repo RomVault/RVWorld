@@ -1,12 +1,36 @@
 ﻿using System;
-using System.Text;
-using RVIO;
+using Directory = RVIO.Directory;
+using Path = RVIO.Path;
 
 namespace Compress
 {
     public static class CompressUtils
     {
-     
+        /*
+        private static int _zstdCompCount;
+        public static int zstdCompCount
+        {
+            get
+            {
+                return _zstdCompCount == 0 ? Math.Max(Environment.ProcessorCount - 2, 1) : _zstdCompCount;
+            }
+            set
+            {
+                _zstdCompCount = Math.Max(value, 0);
+            }
+        }
+        */
+        internal static int SetThreadCount(int? threadCount)
+        {
+            if (threadCount == null)
+                return Environment.ProcessorCount - 2;
+            if (threadCount <= 0) 
+                return Environment.ProcessorCount - 2;
+
+            return (int)threadCount;
+        }
+
+
         public static void CreateDirForFile(string sFilename)
         {
             string strTemp = Path.GetDirectoryName(sFilename);
@@ -22,39 +46,6 @@ namespace Compress
             }
 
             Directory.CreateDirectory(strTemp);
-        }
-
-        // according to the zip documents, zip filenames are stored as MS-DOS Code Page 437.
-        // (Unless the unicode flag is set, in which case they are stored as UTF-8.
-        private static Encoding enc = null;
-
-        public static void EncodeSetup()
-        {
-            if (enc != null)
-                return;
-            Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
-            enc = Encoding.GetEncoding(437);
-        }
-
-        public static string GetString(byte[] byteArr)
-        {
-            return enc.GetString(byteArr);
-        }
-
-        // to test if a filename can be stored as codepage 437 we take the filename string
-        // convert it to bytes using the 437 code page, and then convert it back to a string
-        // and we see if we lost characters as a result of the conversion there and back.
-        internal static bool IsCodePage437(string s)
-        {
-            byte[] bOut = enc.GetBytes(s);
-            string sOut = enc.GetString(bOut);
-
-            return CompareString(s, sOut);
-        }
-
-        internal static byte[] GetBytes(string s)
-        {
-            return enc.GetBytes(s);
         }
 
         internal static bool CompareString(string s1, string s2)
@@ -100,7 +91,7 @@ namespace Compress
         }
 
 
-        internal static bool ByteArrCompare(byte[] b0, byte[] b1)
+        public static bool ByteArrCompare(byte[] b0, byte[] b1)
         {
             if ((b0 == null) || (b1 == null))
             {
@@ -121,53 +112,27 @@ namespace Compress
             return true;
         }
 
-
-        internal static int TrrntZipStringCompare(string string1, string string2)
+        public static ZipReturn GetFile(this ICompress zip, int index, out byte[] data)
         {
-            char[] bytes1 = string1.ToCharArray();
-            char[] bytes2 = string2.ToCharArray();
-
-            int pos1 = 0;
-            int pos2 = 0;
-
-            for (; ; )
+            ZipReturn res = zip.ZipFileOpenReadStream(index, out System.IO.Stream stream, out ulong streamSize);
+            if (res != ZipReturn.ZipGood)
             {
-                if (pos1 == bytes1.Length)
-                {
-                    return pos2 == bytes2.Length ? 0 : -1;
-                }
-                if (pos2 == bytes2.Length)
-                {
-                    return 1;
-                }
-
-                int byte1 = bytes1[pos1++];
-                int byte2 = bytes2[pos2++];
-
-                if (byte1 >= 65 && byte1 <= 90)
-                {
-                    byte1 += 0x20;
-                }
-                if (byte2 >= 65 && byte2 <= 90)
-                {
-                    byte2 += 0x20;
-                }
-
-                if (byte1 < byte2)
-                {
-                    return -1;
-                }
-                if (byte1 > byte2)
-                {
-                    return 1;
-                }
+                zip.ZipFileCloseReadStream();
+                data = null;
+                return res;
             }
+            data = new byte[streamSize];
+            stream.Read(data, 0, (int)streamSize);
+            if (zip is not SevenZip.SevenZ)
+                res = zip.ZipFileCloseReadStream();
+            return res;
         }
 
-        public static string ZipErrorMessageText(ZipReturn zS)
+
+        public static string ZipErrorMessageText(ZipReturn zipReturn)
         {
-            string ret = "Unknown";
-            switch (zS)
+            string ret = zipReturn.ToString();
+            switch (zipReturn)
             {
                 case ZipReturn.ZipGood:
                     ret = "";
@@ -213,22 +178,44 @@ namespace Compress
 
         private const long FileTimeToUtcTime = 504911232000000000;
         private const long EpochTimeToUtcTime = 621355968000000000;
-        public const long TrrntzipDateTime = 629870671200000000;
 
         private const long TicksPerMillisecond = 10000;
         private const long TicksPerSecond = TicksPerMillisecond * 1000;
 
+
+
         public static void UtcTicksToDosDateTime(long ticks, out ushort dosFileDate, out ushort dosFileTime)
         {
+            if (ticks <= 0xffffffff)
+            {
+                dosFileDate = (ushort)((ticks >> 16) & 0xffff);
+                dosFileTime = (ushort)(ticks & 0xffff);
+                return;
+            }
+
             DateTime dateTime = new(ticks, DateTimeKind.Unspecified);
             dosFileDate = (ushort)((dateTime.Day & 0x1f) | ((dateTime.Month & 0x0f) << 5) | (((dateTime.Year - 1980) & 0x7f) << 9));
             dosFileTime = (ushort)(((dateTime.Second >> 1) & 0x1f) | ((dateTime.Minute & 0x3f) << 5) | ((dateTime.Hour & 0x1f) << 11));
         }
 
-        public static long UtcTicksFromDosDateTime(ushort dosFileDate, ushort dosFileTime)
+
+        public static string zipDateTimeToString(long? zipFileDateTime)
         {
-            if (dosFileDate == 0)
-                return 0;
+            if (zipFileDateTime == null || zipFileDateTime == 0 || zipFileDateTime == long.MinValue)
+                return "";
+
+            if (zipFileDateTime > 0xffffffff)
+            {
+                if (zipFileDateTime < DateTime.MinValue.Ticks || zipFileDateTime > DateTime.MaxValue.Ticks)
+                    return "";
+
+                var t = new DateTime((long)zipFileDateTime);
+
+                return $"{t.Year:D4}/{t.Month:D2}/{t.Day:D2} {t.Hour:D2}:{t.Minute:D2}:{t.Second:D2}";
+            }
+
+            ushort dosFileDate = (ushort)((zipFileDateTime >> 16) & 0xffff);
+            ushort dosFileTime = (ushort)(zipFileDateTime & 0xffff);
 
             int second = (dosFileTime & 0x1f) << 1;
             int minute = (dosFileTime >> 5) & 0x3f;
@@ -238,24 +225,15 @@ namespace Compress
             int month = (dosFileDate >> 5) & 0x0f;
             int year = ((dosFileDate >> 9) & 0x7f) + 1980;
 
-            // valid hours 0 to 23
-            // valid minutes 0 to 59
-            // valid seconds 0 to 59
-            // valid month 1 to 12
-            // valid day 1 to 31
-
-            if (hour > 23 || minute > 59 || second > 59 || month < 1 || month > 12 || day < 1 || day > 31)
-                return 0;
-
-            try
-            {
-                return new DateTime(year, month, day, hour, minute, second, DateTimeKind.Unspecified).Ticks;
-            }
-            catch
-            {
-                return 0;
-            }
+            return $"{year:D4}/{month:D2}/{day:D2} {hour:D2}:{minute:D2}:{second:D2}";
         }
+
+
+        internal static long CombineDosDateTime(ushort dosFileDate, ushort dosFileTime)
+        {
+            return (dosFileDate << 16) | dosFileTime;
+        }
+
         public static long UtcTicksToNtfsDateTime(long ticks)
         {
             return ticks - FileTimeToUtcTime;

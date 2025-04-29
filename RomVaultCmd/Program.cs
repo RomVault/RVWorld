@@ -93,7 +93,7 @@ namespace RomVaultCmd
         {
             Console.WriteLine($"RomVault v{Assembly.GetEntryAssembly().GetName().Version.ToString(3)} Commandline");
             Console.WriteLine("");
-            Console.WriteLine("Copyright (C) 2021 GordonJ");
+            Console.WriteLine("Copyright (C) 2023 GordonJ");
             Console.WriteLine("Homepage : https://www.romvault.com/");
             Console.WriteLine("");
             Console.WriteLine("Options:");
@@ -150,15 +150,14 @@ namespace RomVaultCmd
                 Console.WriteLine("");
                 Console.WriteLine("");
             }
-
         }
 
 
-        private static void StartUpCode(ThreadWorker e)
+        private static void StartUpCode(ThreadWorker thWrk)
         {
             RepairStatus.InitStatusCheck();
-            Settings.rvSettings = Settings.SetDefaults();
-            DB.Read(e);
+            Settings.rvSettings = Settings.SetDefaults(out _);
+            DB.Read(thWrk);
         }
 
 
@@ -179,6 +178,10 @@ namespace RomVaultCmd
             if (e is bgwText2 bgwT2)
             {
                 Console.WriteLine($"{bgwT2.Text}");
+                return;
+            }
+            if (e is bgwText3 bgwt3)
+            {
                 return;
             }
 
@@ -206,12 +209,6 @@ namespace RomVaultCmd
             }
             if (e is bgwValue2 bgwv2)
             {
-                return;
-            }
-
-            if (e is bgwShowCorrupt bgSC)
-            {
-                Console.WriteLine($"Corrupted file {bgSC.filename} {bgSC.zr}");
                 return;
             }
             if (e is string message)

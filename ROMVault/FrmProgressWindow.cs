@@ -1,7 +1,7 @@
 ﻿/******************************************************
  *     ROMVault3 is written by Gordon J.              *
  *     Contact gordon@romvault.com                    *
- *     Copyright 2022                                 *
+ *     Copyright 2025                                 *
  ******************************************************/
 
 using System;
@@ -21,9 +21,15 @@ namespace ROMVault
         private bool _errorOpen;
         private bool _bDone;
         public bool Cancelled;
+        public bool ShowTimeLog = false;
 
         private readonly ThreadWorker _thWrk;
         private readonly Finished _funcFinished;
+
+        private DateTime _dateTime;
+        private DateTime _dateTimeLast;
+        private string _lastMessage;
+
 
         public FrmProgressWindow(Form parentForm, string titleRoot, WorkerStart function, Finished funcFinished)
         {
@@ -37,8 +43,15 @@ namespace ROMVault
             pi.SetValue(ErrorGrid, true, null);
 
             ClientSize = new Size(511, 131);
+            _dateTime = DateTime.Now;
+            _dateTimeLast = _dateTime;
 
             _titleRoot = titleRoot;
+            _lastMessage = "Initializing";
+
+            if (Settings.rvSettings.Darkness)
+                Dark.dark.SetColors(this);
+
 
             _thWrk = new ThreadWorker(function);
         }
@@ -69,6 +82,35 @@ namespace ROMVault
             _thWrk.StartAsync();
         }
 
+        private void TimeLogShow(string message)
+        {
+            if (!_errorOpen)
+            {
+                _errorOpen = true;
+                ClientSize = new Size(511, 292);
+                MinimumSize = new Size(511, 292);
+                ErrorGrid.Columns[0].HeaderText = "Time";
+                ErrorGrid.Columns[1].HeaderText = "Log";
+            }
+
+            ErrorGrid.Rows.Add();
+            int row = ErrorGrid.Rows.Count - 1;
+
+            DateTime dtNow = DateTime.Now;
+            string total = Math.Round((dtNow - _dateTime).TotalSeconds, 3).ToString();
+            string part = Math.Round((dtNow - _dateTimeLast).TotalSeconds, 3).ToString();
+            _dateTimeLast = dtNow;
+            ErrorGrid.Rows[row].Cells["CError"].Value = $"{total} s  ,  ({part} s)";
+
+            ErrorGrid.Rows[row].Cells["CErrorFile"].Value = $"Completed: {_lastMessage}";
+            _lastMessage = message;
+
+            if (row >= 0)
+            {
+                ErrorGrid.FirstDisplayedScrollingRowIndex = row;
+            }
+        }
+
         private void BgwProgressChanged(object obj)
         {
             if (InvokeRequired)
@@ -90,6 +132,8 @@ namespace ROMVault
             if (obj is bgwText bgwT)
             {
                 label.Text = bgwT.Text;
+                if (ShowTimeLog)
+                    TimeLogShow(bgwT.Text);
                 return;
             }
             if (obj is bgwSetRange bgwSr)
@@ -141,30 +185,6 @@ namespace ROMVault
                 return;
             }
 
-            if (obj is bgwShowCorrupt bgwSC)
-            {
-                if (!_errorOpen)
-                {
-                    _errorOpen = true;
-                    ClientSize = new Size(511, 292);
-                    MinimumSize = new Size(511, 292);
-                }
-
-                ErrorGrid.Rows.Add();
-                int row = ErrorGrid.Rows.Count - 1;
-
-                ErrorGrid.Rows[row].Cells["CError"].Value = bgwSC.zr;
-                ErrorGrid.Rows[row].Cells["CError"].Style.ForeColor = Color.FromArgb(255, 0, 0);
-
-                ErrorGrid.Rows[row].Cells["CErrorFile"].Value = bgwSC.filename;
-                ErrorGrid.Rows[row].Cells["CErrorFile"].Style.ForeColor = Color.FromArgb(255, 0, 0);
-
-                if (row >= 0)
-                {
-                    ErrorGrid.FirstDisplayedScrollingRowIndex = row;
-                }
-            }
-
 
             if (obj is bgwShowError bgwSE)
             {
@@ -184,12 +204,15 @@ namespace ROMVault
                 ErrorGrid.Rows[row].Cells["CErrorFile"].Value = bgwSE.filename;
                 ErrorGrid.Rows[row].Cells["CErrorFile"].Style.ForeColor = Color.FromArgb(255, 0, 0);
 
+                RVPlayer.PlaySound("audio\\error.wav");
+
                 if (row >= 0)
                 {
                     ErrorGrid.FirstDisplayedScrollingRowIndex = row;
                 }
             }
         }
+
 
         private void UpdateStatusText()
         {
@@ -211,7 +234,7 @@ namespace ROMVault
                 BeginInvoke(new MethodInvoker(BgwRunWorkerCompleted));
                 return;
             }
-
+            RVPlayer.PlaySound("audio\\complete.wav");
 
             if (_errorOpen)
             {

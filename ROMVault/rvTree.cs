@@ -1,7 +1,7 @@
 ﻿/******************************************************
  *     ROMVault3 is written by Gordon J.              *
  *     Contact gordon@romvault.com                    *
- *     Copyright 2022                                 *
+ *     Copyright 2025                                 *
  ******************************************************/
 
 using System.Collections.Generic;
@@ -83,7 +83,7 @@ namespace ROMVault
             {
                 for (int i = 0; i < pTree.DirDatCount; i++)
                 {
-                    if (!pTree.DirDat(i).AutoAddedDirectory)
+                    if (!pTree.DirDat(i).Flag(DatFlags.AutoAddedDirectory))
                         nodeHeight += 12;
                 }
             }
@@ -97,7 +97,7 @@ namespace ROMVault
             uTree.RExpand = new Rectangle(5 + nodeDepth * 18, _yPos + 4, 9, 9);
             uTree.RChecked = new Rectangle(20 + nodeDepth * 18, _yPos + 2, 13, 13);
             uTree.RIcon = new Rectangle(35 + nodeDepth * 18, _yPos, 16, 16);
-            uTree.RText = new Rectangle(51 + nodeDepth * 18, _yPos, 500, nodeHeight);
+            uTree.RText = new Rectangle(51 + nodeDepth * 18, _yPos, 10000, nodeHeight);
 
             pTreeBranches = pTreeBranches.Replace("├", "│");
             pTreeBranches = pTreeBranches.Replace("└", " ");
@@ -109,7 +109,7 @@ namespace ROMVault
             for (int i = 0; i < pTree.ChildCount; i++)
             {
                 RvFile dir = pTree.Child(i);
-                if (!dir.IsDir)
+                if (!dir.IsDirectory)
                     continue;
 
                 if (dir.Tree == null)
@@ -135,7 +135,7 @@ namespace ROMVault
             for (int i = 0; i < pTree.ChildCount; i++)
             {
                 RvFile dir = pTree.Child(i);
-                if (!dir.IsDir)
+                if (!dir.IsDirectory)
                     continue;
 
                 if (dir.Tree == null)
@@ -167,7 +167,7 @@ namespace ROMVault
 
             Rectangle t = new Rectangle(e.ClipRectangle.Left + _hScroll, e.ClipRectangle.Top + _vScroll, e.ClipRectangle.Width, e.ClipRectangle.Height);
 
-            g.FillRectangle(Brushes.White, e.ClipRectangle);
+            g.FillRectangle(Dark.dark.bgBrush1(Brushes.White), e.ClipRectangle);
 
             if (_lTree == null)
                 return;
@@ -175,7 +175,7 @@ namespace ROMVault
             for (int i = 0; i < _lTree.ChildCount; i++)
             {
                 RvFile tDir = _lTree.Child(i);
-                if (!tDir.IsDir)
+                if (!tDir.IsDirectory)
                     continue;
 
                 if (tDir.Tree?.UiObject != null)
@@ -280,6 +280,10 @@ namespace ROMVault
                 {
                     bm = rvImages.GetBitmap("Tree" + icon, false);
                 }
+                else if (pTree.Dat != null && pTree.DirDatCount >= 1) // Directories made by a DAT
+                {
+                    bm = rvImages.GetBitmap("Tree" + icon, false);
+                }
                 else
                 {
                     ReportError.SendAndShow("Unknown Tree settings in DisplayTree.");
@@ -323,7 +327,7 @@ namespace ROMVault
                         datList = new List<string>();
                         for (int i = 0; i < pTree.DirDatCount; i++)
                         {
-                            if (!pTree.DirDat(i).AutoAddedDirectory)
+                            if (!pTree.DirDat(i).Flag(DatFlags.AutoAddedDirectory))
                             {
                                 string title = pTree.DirDat(i).GetData(RvDat.DatData.Description);
                                 if (string.IsNullOrWhiteSpace(title))
@@ -335,7 +339,7 @@ namespace ROMVault
                 }
 
                 // pTree.Parent.DirDatCount>1: This should probably be a test like parent contains Dat 
-                else if (pTree.Dat != null && pTree.Dat.AutoAddedDirectory && pTree.Parent.DirDatCount > 1)
+                else if (pTree.Dat != null && pTree.Dat.Flag(DatFlags.AutoAddedDirectory) && pTree.Parent.DirDatCount > 1)
                 {
                     thistxt = pTree.Name + ": ";
                 }
@@ -353,17 +357,21 @@ namespace ROMVault
                 {
                     subtxt = "";
                 }
-                if (pTree.FileStatusIs(FileStatus.PrimaryToSort | FileStatus.CacheToSort))
+                if (pTree.ToSortStatusIs(RvFile.ToSortDirType.ToSortPrimary | RvFile.ToSortDirType.ToSortCache))
                 {
                     thistxt += " (Primary)";
                 }
-                else if (pTree.FileStatusIs(FileStatus.PrimaryToSort))
+                else if (pTree.ToSortStatusIs(RvFile.ToSortDirType.ToSortPrimary))
                 {
                     thistxt += " (Primary)";
                 }
-                else if (pTree.FileStatusIs(FileStatus.CacheToSort))
+                else if (pTree.ToSortStatusIs(RvFile.ToSortDirType.ToSortCache))
                 {
                     thistxt += " (Cache)";
+                }
+                else if (pTree.ToSortStatusIs(RvFile.ToSortDirType.ToSortFileOnly))
+                {
+                    thistxt += " (File Only)";
                 }
 
                 Brush textBrush;
@@ -374,7 +382,7 @@ namespace ROMVault
                 }
                 else
                 {
-                    textBrush = Brushes.Black;
+                    textBrush = Dark.dark.fgBrush(Brushes.Black);
                 }
 
                 thistxt += " " + subtxt;
@@ -397,7 +405,7 @@ namespace ROMVault
             for (int i = 0; i < pTree.ChildCount; i++)
             {
                 RvFile tDir = pTree.Child(i);
-                if (tDir.IsDir && tDir.Tree?.UiObject != null)
+                if (tDir.IsDirectory && tDir.Tree?.UiObject != null)
                 {
                     PaintTree(tDir, g, t);
                 }
@@ -478,7 +486,7 @@ namespace ROMVault
                 if (mevent.Button == MouseButtons.Right)
                 {
                     _mousehit = true;
-                    if (pTree.FileStatusIs(FileStatus.PrimaryToSort) || pTree.FileStatusIs(FileStatus.CacheToSort))
+                    if (pTree.ToSortStatusIs(RvFile.ToSortDirType.ToSortPrimary) || pTree.ToSortStatusIs(RvFile.ToSortDirType.ToSortCache))
                         return true;
 
                     SetChecked(pTree, RvTreeRow.TreeSelect.Locked, Working, shiftPressed);
@@ -513,7 +521,7 @@ namespace ROMVault
             for (int i = 0; i < pTree.ChildCount; i++)
             {
                 RvFile rDir = pTree.Child(i);
-                if (!rDir.IsDir || rDir.Tree == null)
+                if (!rDir.IsDirectory || rDir.Tree == null)
                     continue;
 
                 if (CheckMouseUp(rDir, x, y, mevent))
@@ -540,7 +548,7 @@ namespace ROMVault
             for (int i = 0; i < pTree.ChildCount; i++)
             {
                 RvFile d = pTree.Child(i);
-                if (d.IsDir && d.Tree != null)
+                if (d.IsDirectory && d.Tree != null)
                 {
                     SetCheckedRecurse(d, nSelection, isworking, false);
                 }
@@ -559,7 +567,7 @@ namespace ROMVault
             for (int i = 0; i < pTree.ChildCount; i++)
             {
                 RvFile d = pTree.Child(i);
-                if (!d.IsDir || d.Tree == null)
+                if (!d.IsDirectory || d.Tree == null)
                     continue;
 
                 //Recusivly Set All Child Nodes to this value
@@ -574,7 +582,7 @@ namespace ROMVault
             for (int i = 0; i < pTree.ChildCount; i++)
             {
                 RvFile d = pTree.Child(i);
-                if (!d.IsDir || d.Tree == null)
+                if (!d.IsDirectory || d.Tree == null)
                     continue;
 
                 d.Tree.SetTreeExpanded(expanded, isWorking);

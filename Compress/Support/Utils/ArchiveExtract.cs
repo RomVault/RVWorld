@@ -56,9 +56,9 @@ namespace Compress.Support.Utils
             ulong buflen = 409600;
             byte[] buffer = new byte[buflen];
 
-            for (int i = 0; i < z.LocalFilesCount(); i++)
+            for (int i = 0; i < z.LocalFilesCount; i++)
             {
-                LocalFile lf = z.GetLocalFile(i);
+                FileHeader lf = z.GetFileHeader(i);
                 byte[] cread = null;
                 string filenameOut = lf.Filename;
                 if (lf.IsDirectory)
@@ -75,7 +75,7 @@ namespace Compress.Support.Utils
                     if (!string.IsNullOrWhiteSpace(dOut) && !Directory.Exists(dOut))
                         Directory.CreateDirectory(dOut);
 
-                    int errorCode = FileStream.OpenFileWrite(fOut, out Stream sWrite);
+                    int errorCode = FileStream.OpenFileWrite(fOut, FileStream.BufSizeMax, out Stream sWrite);
                     if (errorCode != 0)
                     {
                         MessageCallBack?.Invoke($"Error opening outputfile {fOut}");

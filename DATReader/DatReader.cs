@@ -1,12 +1,10 @@
 ﻿using System;
-using System.ComponentModel;
 using System.IO;
 using System.Text;
 using System.Xml;
 using DATReader.DatReader;
 using DATReader.DatStore;
 using File = RVIO.File;
-using FileStream = RVIO.FileStream;
 
 namespace DATReader
 {
@@ -14,80 +12,114 @@ namespace DATReader
 
     public static class DatRead
     {
-        public static readonly Encoding Enc = Encoding.GetEncoding(28591);
         public static bool ReadDat(string fullname, ReportError ErrorReport, out DatHeader rvDat)
         {
             rvDat = null;
 
             System.Diagnostics.Debug.WriteLine("Reading : " + fullname);
 
-            string strLine = null;
-            using (StreamReader myfile = File.OpenText(fullname, Enc))
+            byte[] buffer = null;
+            try
             {
-                if (myfile == null)
-                    return false;
-
-                while (string.IsNullOrWhiteSpace(strLine) && !myfile.EndOfStream)
+                if (Path.GetExtension(fullname.ToLower()) == ".datz")
                 {
-                    strLine = myfile.ReadLine();
+                    Compress.gZip.gZip gz = new Compress.gZip.gZip();
+                    gz.ZipFileOpen(fullname);
+                    buffer = new byte[gz.GetFileHeader(0).UncompressedSize];
+                    gz.ZipFileOpenReadStream(0, out Stream stream, out ulong streamSize);
+                    stream.Read(buffer, 0, (int)streamSize);
+                    gz.ZipFileCloseReadStream();
+                    gz.ZipFileClose();
                 }
-                myfile.Close();
+                else
+                    buffer = File.ReadAllBytes(fullname);
+
+                return ReadDat(buffer, fullname, ErrorReport, out rvDat);
             }
-
-
-            if (strLine == null)
+            catch (Exception e)
             {
+                ErrorReport?.Invoke(fullname, $"Error Occured Opening Dat:\r\n{e.Message}\r\n");
                 return false;
             }
+        }
 
+        public static bool ReadDat(byte[] buffer, string fullname, ReportError ErrorReport, out DatHeader rvDat)
+        {
+            rvDat = null;
 
-            if (strLine.ToLower().IndexOf("xml", StringComparison.Ordinal) >= 0)
+            using (MemoryStream mStream = new MemoryStream(buffer, false))
             {
-                if (!ReadXMLDat(fullname, ErrorReport, out rvDat))
+                string strLine = null;
+                using (StreamReader myfile = new StreamReader(mStream, Encoding.UTF8, true, 1024, true))
+                {
+                    if (myfile == null)
+                        return false;
+
+                    while (string.IsNullOrWhiteSpace(strLine) && !myfile.EndOfStream)
+                    {
+                        strLine = myfile.ReadLine();
+                    }
+                }
+                mStream.Position = 0;
+
+                if (strLine == null)
                 {
                     return false;
                 }
-            }
-            else if ((strLine.ToLower().IndexOf("clrmamepro", StringComparison.Ordinal) >= 0) || (strLine.ToLower().IndexOf("clrmame", StringComparison.Ordinal) >= 0) || (strLine.ToLower().IndexOf("romvault", StringComparison.Ordinal) >= 0) || (strLine.ToLower().IndexOf("game", StringComparison.Ordinal) >= 0) || (strLine.ToLower().IndexOf("machine", StringComparison.Ordinal) >= 0))
-            {
-                if (!DatCmpReader.ReadDat(fullname, ErrorReport, out rvDat))
-                {
-                    return false;
-                }
-            }
-            else if (strLine.ToLower().IndexOf("doscenter", StringComparison.Ordinal) >= 0)
-            {
-                if (!DatDOSReader.ReadDat(fullname, ErrorReport, out rvDat))
-                    return false;
-            }
-            else if (strLine.ToLower().IndexOf("[credits]", StringComparison.Ordinal) >= 0)
-            {
-                if (!DatROMCenterReader.ReadDat(fullname, ErrorReport, out rvDat))
-                    return false;
-            }
-            else if (strLine.ToLower().IndexOf("raine (680x0 arcade emulation)",StringComparison.Ordinal)>=0)
-            {
-                if (!DatCmpReader.ReadDat(fullname, ErrorReport, out rvDat))
-                {
-                    return false;
-                }
-            }
-            else
-            {
-                ErrorReport?.Invoke(fullname, "Invalid DAT File");
-                return false;
-            }
 
-            return true;
+
+                if (strLine.ToLower().IndexOf("xml", StringComparison.Ordinal) >= 0)
+                {
+                    if (!ReadXMLDatFromStream(mStream, fullname, ErrorReport, out rvDat))
+                    {
+                        return false;
+                    }
+                }
+                else if ((strLine.ToLower().IndexOf("clrmamepro", StringComparison.Ordinal) >= 0) || (strLine.ToLower().IndexOf("clrmame", StringComparison.Ordinal) >= 0) || (strLine.ToLower().IndexOf("romvault", StringComparison.Ordinal) >= 0) || (strLine.ToLower().IndexOf("game", StringComparison.Ordinal) >= 0) || (strLine.ToLower().IndexOf("machine", StringComparison.Ordinal) >= 0))
+                {
+                    if (!DatCmpReader.ReadDat(mStream, fullname, ErrorReport, out rvDat))
+                    {
+                        return false;
+                    }
+                }
+                else if (strLine.ToLower().IndexOf("doscenter", StringComparison.Ordinal) >= 0)
+                {
+                    if (!DatDOSReader.ReadDat(mStream, fullname, ErrorReport, out rvDat))
+                        return false;
+                }
+                else if (strLine.ToLower().IndexOf("[credits]", StringComparison.Ordinal) >= 0)
+                {
+                    if (!DatROMCenterReader.ReadDat(mStream, fullname, ErrorReport, out rvDat))
+                        return false;
+                }
+                else if (strLine.ToLower().IndexOf("raine (680x0 arcade emulation)", StringComparison.Ordinal) >= 0)
+                {
+                    if (!DatCmpReader.ReadDat(mStream, fullname, ErrorReport, out rvDat))
+                    {
+                        return false;
+                    }
+                }
+                else
+                {
+                    ErrorReport?.Invoke(fullname, "Invalid DAT File");
+                    return false;
+                }
+
+                return true;
+            }
         }
 
         public static bool ReadXMLDatFromStream(Stream fs, string fullname, ReportError ErrorReport, out DatHeader rvDat)
         {
             rvDat = null;
-            XmlDocument doc = new XmlDocument { XmlResolver = null };
+            XmlDocument doc = new XmlDocument() { XmlResolver = null };
             try
             {
-                doc.Load(fs);
+                XmlReaderSettings xmlReaderSettings = new XmlReaderSettings() { CheckCharacters = false, DtdProcessing = DtdProcessing.Ignore };
+                using (XmlReader reader = XmlReader.Create(fs, xmlReaderSettings))
+                {
+                    doc.Load(reader);
+                }
             }
             catch (Exception e)
             {
@@ -121,32 +153,5 @@ namespace DATReader
             return false;
         }
 
-        private static bool ReadXMLDat(string fullname, ReportError ErrorReport, out DatHeader rvDat)
-        {
-            rvDat = null;
-            int errorCode = FileStream.OpenFileRead(fullname, out Stream fs);
-            if (errorCode != 0)
-            {
-                ErrorReport?.Invoke(fullname, errorCode + ": " + new Win32Exception(errorCode).Message);
-                return false;
-            }
-
-            bool retVal = false;
-            try
-            {
-                retVal = ReadXMLDatFromStream(fs, fullname, ErrorReport, out rvDat);
-            }
-            catch (Exception e)
-            {
-                fs.Close();
-                fs.Dispose();
-                ErrorReport?.Invoke(fullname, $"Error Occured Reading Dat:\r\n{e.Message}\r\n");
-                return false;
-            }
-            fs.Close();
-            fs.Dispose();
-
-            return retVal;
-        }
     }
 }

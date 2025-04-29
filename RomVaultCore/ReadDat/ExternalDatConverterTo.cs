@@ -1,11 +1,35 @@
-﻿using DATReader.DatStore;
+﻿/******************************************************
+ *     ROMVault3 is written by Gordon J.              *
+ *     Contact gordon@romvault.com                    *
+ *     Copyright 2025                                 *
+ ******************************************************/
+
+using DATReader.DatStore;
+using DATReader.Utils;
 using RomVaultCore.RvDB;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
+using System.Linq;
 
 namespace RomVaultCore.ReadDat
 {
-    public static class ExternalDatConverterTo
+    public class ExternalDatConverterTo
     {
-        public static DatHeader ConvertToExternalDat(RvFile rvFile)
+        public bool useHeader = true;
+
+        public bool filterGot = true;
+        public bool filterMissing = true;
+        public bool filterFixable = true;
+        public bool filterMIA = true;
+        public bool filterMerged = true;
+
+        public bool filterFiles = true;
+        public bool filterZIPs = true;
+
+
+
+        public DatHeader ConvertToExternalDat(RvFile rvFile)
         {
             if (rvFile.IsFile)
                 return null;
@@ -18,7 +42,7 @@ namespace RomVaultCore.ReadDat
                 dat = rvFile.Dat;
 
             DatHeader datHeader = new DatHeader();
-            if (dat != null)
+            if (dat != null && useHeader)
             {
                 datHeader.Name = dat.GetData(RvDat.DatData.DatName);
                 datHeader.RootDir = dat.GetData(RvDat.DatData.RootDir);
@@ -32,6 +56,7 @@ namespace RomVaultCore.ReadDat
                 datHeader.URL = dat.GetData(RvDat.DatData.URL);
                 datHeader.Dir = dat.GetData(RvDat.DatData.DirSetup);
                 datHeader.Header = dat.GetData(RvDat.DatData.Header);
+                datHeader.Compression = dat.GetData(RvDat.DatData.Compression);
             }
             else
             {
@@ -39,7 +64,7 @@ namespace RomVaultCore.ReadDat
             }
 
 
-            datHeader.BaseDir = new DatDir("",DatFileType.Dir);
+            datHeader.BaseDir = new DatDir("", FileType.Dir);
 
             for (int i = 0; i < rvFile.ChildCount; i++)
             {
@@ -49,11 +74,38 @@ namespace RomVaultCore.ReadDat
             return datHeader;
         }
 
-        private static void ChildAdd(DatDir extDir, RvFile rvfile)
+        private void ChildAdd(DatDir extDir, RvFile rvfile)
         {
             if (rvfile.IsFile)
             {
-                DatFile extFile = new DatFile(rvfile.Name, DatFileType.UnSet)
+                switch (rvfile.RepStatus)
+                {
+                    case RepStatus.Correct:
+                    case RepStatus.CorrectMIA:
+                    case RepStatus.UnNeeded:
+                    case RepStatus.Unknown:
+                    case RepStatus.MoveToSort:
+                    case RepStatus.Delete:
+                    case RepStatus.NeededForFix:
+                    case RepStatus.Rename:
+                        if (!filterGot) return; break;
+                    case RepStatus.Missing:
+                    case RepStatus.Incomplete:
+                        if (!filterMissing) return; break;
+                    case RepStatus.MissingMIA:
+                        if (!filterMIA) return; break;
+                    case RepStatus.NotCollected:
+                        if (!filterMerged) return; break;
+                    case RepStatus.CanBeFixed:
+                        if (!filterFixable) return; break;
+
+                    case RepStatus.InToSort: break;
+                    default:
+                        Debug.WriteLine("FilterType unknown");
+                        break;
+                }
+
+                DatFile extFile = new DatFile(rvfile.Name, FileType.UnSet)
                 {
                     Size = rvfile.Size,
                     CRC = rvfile.CRC,
@@ -63,11 +115,18 @@ namespace RomVaultCore.ReadDat
                     Status = rvfile.Status
                 };
 
-                bool isDisk = (rvfile.HeaderFileType == FileHeaderReader.HeaderFileType.CHD);
+                if (rvfile.DatStatus == DatStatus.InDatMIA)
+                {
+                    extFile.MIA = "yes";
+                }
+
+                bool isDisk = (rvfile.HeaderFileType == HeaderFileType.CHD);
                 if (isDisk)
                 {
                     extFile.isDisk = true;
-                    if (rvfile.AltMD5!=null || rvfile.AltSHA1!=null)
+                    extFile.Name = VarFix.CleanCHD(extFile.Name);
+                    extFile.Merge = VarFix.CleanCHD(extFile.Merge);
+                    if (rvfile.AltMD5 != null || rvfile.AltSHA1 != null)
                     {
                         extFile.Size = rvfile.AltSize;
                         extFile.CRC = rvfile.AltCRC;
@@ -81,33 +140,53 @@ namespace RomVaultCore.ReadDat
             }
 
             string gameName = rvfile.Name;
-            if (rvfile.FileType==FileType.Zip)
+            if (rvfile.FileType == FileType.Zip)
                 gameName = gameName.Substring(0, gameName.Length - 4);
-            else if (rvfile.FileType==FileType.SevenZip)
+            else if (rvfile.FileType == FileType.SevenZip)
                 gameName = gameName.Substring(0, gameName.Length - 3);
 
-            DatDir extDir1 = new DatDir(gameName,DatFileType.UnSet);
-            
-            if (rvfile.Game!=null)
+            DatDir extDir1 = new DatDir(gameName, FileType.UnSet);
+
+            if (rvfile.Game != null)
+            {
+                extDir1.DGame = new DatGame
+                {
+                    Description = rvfile.Game.GetData(RvGame.GameData.Description),
+                    Category = CategoryList(rvfile.Game.GetData(RvGame.GameData.Category)),
+                    RomOf = rvfile.Game.GetData(RvGame.GameData.RomOf),
+                    IsBios = rvfile.Game.GetData(RvGame.GameData.IsBios),
+                    SourceFile = rvfile.Game.GetData(RvGame.GameData.Sourcefile),
+                    CloneOf = rvfile.Game.GetData(RvGame.GameData.CloneOf),
+                    SampleOf = rvfile.Game.GetData(RvGame.GameData.SampleOf),
+                    Board = rvfile.Game.GetData(RvGame.GameData.Board),
+                    Year = rvfile.Game.GetData(RvGame.GameData.Year),
+                    Manufacturer = rvfile.Game.GetData(RvGame.GameData.Manufacturer)
+                };
+                if (extDir1.DGame.Description != null && extDir1.DGame.Description == "¤")
+                    extDir1.DGame.Description = Path.GetFileNameWithoutExtension(rvfile.Name);
+            }
+            else if (rvfile.FileType == FileType.Zip)
             {
                 extDir1.DGame = new DatGame();
-                extDir1.DGame.Description = rvfile.Game.GetData(RvGame.GameData.Description);
-                extDir1.DGame.Category = rvfile.Game.GetData(RvGame.GameData.Category);
-                extDir1.DGame.RomOf = rvfile.Game.GetData(RvGame.GameData.RomOf);
-                extDir1.DGame.IsBios = rvfile.Game.GetData(RvGame.GameData.IsBios);
-                extDir1.DGame.SourceFile = rvfile.Game.GetData(RvGame.GameData.Sourcefile);
-                extDir1.DGame.CloneOf = rvfile.Game.GetData(RvGame.GameData.CloneOf);
-                extDir1.DGame.SampleOf = rvfile.Game.GetData(RvGame.GameData.SampleOf);
-                extDir1.DGame.Board = rvfile.Game.GetData(RvGame.GameData.Board);
-                extDir1.DGame.Year = rvfile.Game.GetData(RvGame.GameData.Year);
-                extDir1.DGame.Manufacturer = rvfile.Game.GetData(RvGame.GameData.Manufacturer);
             }
             extDir.ChildAdd(extDir1);
 
-            for(int i=0;i<rvfile.ChildCount;i++)
+            for (int i = 0; i < rvfile.ChildCount; i++)
             {
                 ChildAdd(extDir1, rvfile.Child(i));
             }
+        }
+
+        private static List<string> CategoryList(string instr)
+        {
+            if (string.IsNullOrWhiteSpace(instr))
+                return null;
+
+            string[] splitList = instr.Split('|');
+            for (int i = 0; i < splitList.Length; i++)
+                splitList[i] = splitList[i].Trim();
+
+            return splitList.ToList();
         }
     }
 }

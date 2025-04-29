@@ -8,12 +8,12 @@ namespace DATReader.DatReader
 {
     public static class DatCmpReader
     {
-        public static bool ReadDat(string strFilename, ReportError errorReport, out DatHeader datHeader)
+        public static bool ReadDat(System.IO.Stream fStream, string strFilename, ReportError errorReport, out DatHeader datHeader)
         {
             using (DatFileLoader dfl = new DatFileLoader())
             {
-                datHeader = new DatHeader { BaseDir = new DatDir("", DatFileType.UnSet) };
-                int errorCode = dfl.LoadDat(strFilename, DatRead.Enc);
+                datHeader = new DatHeader { BaseDir = new DatDir("", FileType.UnSet) };
+                int errorCode = dfl.LoadDat(fStream, strFilename);
                 if (errorCode != 0)
                 {
                     errorReport?.Invoke(strFilename, new Win32Exception(errorCode).Message);
@@ -232,7 +232,7 @@ namespace DATReader.DatReader
                 errorReport?.Invoke(dfl.Filename, "Name not found as first object in ( ), on line " + dfl.LineNumber);
                 return false;
             }
-            DatDir dir = new DatDir(dfl.GnRest(), DatFileType.UnSet);
+            DatDir dir = new DatDir(dfl.GnRest(), FileType.UnSet);
 
             dfl.Gn();
             parentDir.ChildAdd(dir);
@@ -277,7 +277,7 @@ namespace DATReader.DatReader
             name = Path.Combine(pathextra, name);
 
             dfl.Gn();
-            DatDir dDir = new DatDir(name, DatFileType.UnSet) { DGame = new DatGame() };
+            DatDir dDir = new DatDir(name, FileType.UnSet) { DGame = new DatGame() };
             DatGame dGame = dDir.DGame;
             while (dfl.Next != ")" && !dfl.EndOfStream())
             {
@@ -349,9 +349,16 @@ namespace DATReader.DatReader
                     case "device_ref":
                     case "driverstatus":
                     case "ismechanical":
+                    case "note":
                     case "#": // comments
 
                         dfl.GnRest();
+                        break;
+
+                    case "/*": // comments
+                        string next = dfl.Gn();
+                        while (next != "*/")
+                            next = dfl.Gn();
                         break;
 
                     case "name":
@@ -360,6 +367,12 @@ namespace DATReader.DatReader
                         break;
 
                     case "rom":
+                    case "badrom": // should set status to baddump
+                    case "unusedrom": 
+                    case "znbiosrom":
+                    case "s16sndrom":
+                    case "s16gfxrom":
+                    case "neosndrom":
                         if (!LoadRomFromDat(dfl, dDir, errorReport))
                         {
                             return false;
@@ -406,7 +419,7 @@ namespace DATReader.DatReader
             }
 
 
-            DatFile dRom = new DatFile(dfl.Gn(), DatFileType.UnSet);
+            DatFile dRom = new DatFile(dfl.Gn(), FileType.UnSet);
             dfl.Gn();
 
 
@@ -492,7 +505,7 @@ namespace DATReader.DatReader
                 return false;
             }
 
-            DatFile dRom = new DatFile(VarFix.CleanCHD(dfl.Gn()),  DatFileType.UnSet)
+            DatFile dRom = new DatFile(VarFix.CleanCHD(dfl.Gn()), FileType.UnSet)
             {
                 isDisk = true
             };
@@ -512,7 +525,7 @@ namespace DATReader.DatReader
                         dRom.Region = VarFix.String(dfl.Gn());
                         break;
                     case "merge":
-                        dRom.Merge = VarFix.String(dfl.Gn());
+                        dRom.Merge = VarFix.CleanCHD(VarFix.String(dfl.Gn()));
                         break;
                     case "index":
                         dfl.Gn();

@@ -13,10 +13,10 @@ namespace DATReader.Utils
 
         public string Filename { get; private set; }
 
-        public int LoadDat(string strFilename, Encoding enc)
+        public int LoadDat(System.IO.Stream fStream, string strFilename)
         {
             Filename = strFilename;
-            _streamReader = File.OpenText(strFilename, enc);
+            _streamReader = new System.IO.StreamReader(fStream, Encoding.UTF8, true, 4096, true);
             return 0;
         }
 
@@ -50,7 +50,7 @@ namespace DATReader.Utils
         {
             int sizePos = _line.ToLower().LastIndexOf(" size ");
             string strret = (sizePos == 0) ? "" : _line.Substring(0, sizePos);
-            _line = _line.Substring(sizePos+1);
+            _line = _line.Substring(sizePos + 1);
             Next = strret;
             return strret;
         }
@@ -64,7 +64,7 @@ namespace DATReader.Utils
                 LineNumber++;
 
                 _line = (_line ?? "").Replace("" + (char)9, " ");
-              
+
                 int indexof = _line.IndexOf(@"//");
                 if (indexof >= 0)
                 {

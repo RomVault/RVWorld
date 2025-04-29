@@ -78,7 +78,7 @@ namespace Compress.ZipFile
             return true;
         }
 
-
+        /*
         public void NtfsTime(long mTime, long aTime, long cTime)
         {
             _extraField.AddRange(BitConverter.GetBytes((ushort)0x000a));
@@ -127,6 +127,6 @@ namespace Compress.ZipFile
             _extraField.Add(flags);
             _extraField.AddRange(eTime);
         }
-
+        */
     }
 }

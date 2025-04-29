@@ -1,117 +1,61 @@
-﻿using System.Collections.Generic;
+﻿using Compress;
 using DATReader.DatStore;
 
 namespace DATReader.DatClean
 {
     public static class DatSetCompressionType
     {
-        public static void SetZip(DatBase inDat, bool is7Zip = false)
+
+
+        public static FileType[] GetFileTypeFromDir = new FileType[]
         {
-            SetZip(inDat, is7Zip, new List<DatDir>());
-        }
+            FileType.UnSet,
+            FileType.File,
+            FileType.FileZip,
+            FileType.FileSevenZip
+        };
 
-        private static void SetZip(DatBase inDat, bool is7Zip, List<DatDir> parents)
+        public static void SetType(DatBase inDat, FileType fileType, ZipStructure zs, bool fix)
         {
-            if (parents == null)
-                parents = new List<DatDir>();
-
-            int parentCount = parents.Count;
-
             if (inDat is DatFile dFile)
             {
-                if (dFile.isDisk)
-                {
-                    //go up 2 levels to find the directory of the game
-                    DatDir dir = parents[parentCount - 2];
-                    DatDir zipDir = parents[parentCount - 1];
-
-                    DatDir tmpFile = new DatDir(zipDir.Name,DatFileType.Dir)
-                    { DGame = zipDir.DGame };
-
-                    if (dir.ChildNameSearch(tmpFile, out int index) != 0)
-                    {
-                        dir.ChildAdd(tmpFile);
-                    }
-                    else
-                    {
-                        tmpFile = (DatDir)dir[index];
-                    }
-                    dFile.DatFileType = DatFileType.File;
-                    tmpFile.ChildAdd(dFile);
-
-                }
-                else
-                {
-                    dFile.Name = dFile.Name.Replace("\\", "/");
-                    dFile.DatFileType = is7Zip ? DatFileType.File7Zip : DatFileType.FileTorrentZip;
-                    parents[parentCount - 1].ChildAdd(dFile);
-                }
+                dFile.FileType = GetFileTypeFromDir[(int)fileType];
                 return;
             }
 
             if (!(inDat is DatDir dDir))
                 return;
 
-            if (inDat.Name != null)
+            if (dDir.DGame == null || fileType == FileType.Dir)
             {
-                inDat.Name = inDat.Name.TrimStart(new[] { ' ' });
-                inDat.Name = inDat.Name.TrimEnd(new[] { ' ' });
-                if (string.IsNullOrWhiteSpace(inDat.Name))
-                    inDat.Name = "_";
-            }
-
-            if (parents.Count > 0)
-                parents[parentCount - 1].ChildAdd(inDat);
-
-            dDir.DatFileType = dDir.DGame == null ?
-                DatFileType.Dir :
-                (is7Zip ? DatFileType.Dir7Zip : DatFileType.DirTorrentZip);
-
-            DatBase[] children = dDir.ToArray();
-            if (children == null)
-                return;
-
-            dDir.ChildrenClear();
-
-            parents.Add(dDir);
-            foreach (DatBase child in children)
-            {
-                SetZip(child, is7Zip, parents);
-            }
-            parents.RemoveAt(parentCount);
-        }
-
-
-        public static void SetFile(DatBase inDat)
-        {
-            if (inDat.Name != null)
-            {
-                inDat.Name = inDat.Name.TrimStart(new[] { ' ' });
-                inDat.Name = inDat.Name.TrimEnd(new[] { '.', ' ' });
-                if (string.IsNullOrWhiteSpace(inDat.Name))
-                    inDat.Name = "_";
-            }
-
-            if (inDat is DatFile dFile)
-            {
-                //if (dFile.DatFileType == DatFileType.UnSet)
-                dFile.DatFileType = DatFileType.File;
-                return;
-            }
-
-            if (!(inDat is DatDir dDir))
-                return;
-
-            if (dDir.DGame == null)
-            {
-                //if (dDir.DatFileType == DatFileType.UnSet)
-                dDir.DatFileType = DatFileType.Dir;
+                dDir.FileType = FileType.Dir;
             }
             else
             {
-                //if (dDir.DatFileType == DatFileType.UnSet)
-                dDir.DatFileType = DatFileType.Dir;
+                if (dDir.FileType!=FileType.UnSet)
+                {
+                    if (dDir.FileType == FileType.Dir)
+                    {
+                        fileType = FileType.Dir;
+                        zs = ZipStructure.None;
+                    }
+                    if (dDir.FileType == FileType.Zip)
+                    {
+                        fileType = FileType.Zip;
+                        zs = ZipStructure.ZipTrrnt;
+                    }
+                    if (dDir.FileType == FileType.SevenZip)
+                    {
+                        fileType = FileType.SevenZip;
+                        zs = ZipStructure.SevenZipNZSTD;
+                    }
+                }
+                dDir.FileType = fileType;
+
+                ZipStructure zsChecked = IsTrrntzipDateTimes(dDir, zs) ? ZipStructure.ZipTrrnt : zs;
+                dDir.SetDatStruct(zsChecked, fix);
             }
+
 
             DatBase[] children = dDir.ToArray();
             if (children == null)
@@ -121,11 +65,34 @@ namespace DATReader.DatClean
 
             foreach (DatBase child in children)
             {
-                SetFile(child);
+                SetType(child, fileType, zs, fix);
                 dDir.ChildAdd(child);
             }
 
         }
+
+
+        private static bool IsTrrntzipDateTimes(DatDir dDir, ZipStructure zs)
+        {
+            if (dDir.FileType != FileType.Zip || zs != ZipStructure.ZipTDC)
+                return false;
+
+            DatBase[] children = dDir.ToArray();
+            foreach (DatBase child in children)
+            {
+                if (child is DatFile)
+                {
+                    if (child.DateModified != Compress.StructuredZip.StructuredZip.TrrntzipDosDateTime)
+                        return false;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
 
     }
 }

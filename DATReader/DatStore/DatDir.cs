@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Compress;
+using SortMethods;
+using System;
 using System.Collections.Generic;
 
 namespace DATReader.DatStore
@@ -10,11 +12,34 @@ namespace DATReader.DatStore
 
     public class DatDir : DatBase
     {
+
+        private byte _datStruct;
+        public ZipStructure DatStruct { get { return (ZipStructure)(_datStruct & 0x7f); } } // Structure of Zip Found in Dat
+        public bool DatStructFix { get { return (_datStruct & 0x80) == 0x80; } }
+        public void SetDatStruct(ZipStructure zipStruncture, bool fix)
+        {
+            _datStruct = (byte)zipStruncture;
+            if (fix)
+                _datStruct |= 0x80;
+        }
+
         public DatGame DGame;
         private readonly List<DatBase> _children = new List<DatBase>();
         private readonly List<int> _childrenNameIndex = new List<int>();
 
-        public DatDir(string name, DatFileType type) : base(name, type) { }
+        public DatDir(string name, FileType type) : base(name, type) { }
+
+        public DatDir(DatDir dd) : base(dd)
+        {
+            DGame = dd.DGame != null ? new DatGame(dd.DGame) : null;
+            foreach (DatBase child in dd._children)
+            {
+                if (child is DatDir ddChild) _children.Add(new DatDir(ddChild));
+                if (child is DatFile ddFile) _children.Add(new DatFile(ddFile));
+            }
+            foreach (int childIndex in dd._childrenNameIndex)
+                _childrenNameIndex.Add(childIndex);
+        }
 
         public int Count => _children.Count;
 
@@ -22,7 +47,7 @@ namespace DATReader.DatStore
 
         public DatBase ChildSorted(int index)
         {
-            return DatFileType == DatFileType.UnSet ?
+            return FileType == FileType.UnSet ?
                 _children[_childrenNameIndex[index]] :
                 _children[index];
         }
@@ -35,7 +60,7 @@ namespace DATReader.DatStore
         public int ChildAdd(DatBase datItem)
         {
             int index;
-            if (DatFileType == DatFileType.UnSet)
+            if (FileType == FileType.UnSet)
             {
                 ChildNameBinarySearch(datItem, true, false, out int indexSearch);
                 _children.Add(datItem);
@@ -59,7 +84,7 @@ namespace DATReader.DatStore
 
                 _children.RemoveAt(i);
 
-                if (DatFileType != DatFileType.UnSet)
+                if (FileType != FileType.UnSet)
                     return;
 
                 for (int j = 0; j < count; j++)
@@ -85,7 +110,7 @@ namespace DATReader.DatStore
 
         public int ChildNameSearch(DatBase lName, out int index)
         {
-            if (DatFileType != DatFileType.UnSet)
+            if (FileType != FileType.UnSet)
                 return ChildNameBinarySearch(lName, false, true, out index);
 
             int retval = ChildNameBinarySearch(lName, true, true, out index);
@@ -93,6 +118,13 @@ namespace DATReader.DatStore
             return retval;
         }
 
+        public void ChildNameSearchAdd(ref DatDir dirFind)
+        {
+            if (ChildNameSearch(dirFind, out int index) != 0)
+                ChildAdd(dirFind);
+            else
+                dirFind = (DatDir)_children[index];
+        }
 
         private int ChildNameBinarySearch(DatBase lName, bool useIndex, bool findFirst, out int index)
         {
@@ -106,7 +138,7 @@ namespace DATReader.DatStore
             {
                 intMid = (intBottom + intTop) / 2;
 
-                intRes = CompareName(lName, _children[useIndex ? _childrenNameIndex[intMid] : intMid]);
+                intRes = SortCompareName(lName, _children[useIndex ? _childrenNameIndex[intMid] : intMid]);
                 if (intRes < 0)
                 {
                     intTop = intMid;
@@ -126,7 +158,7 @@ namespace DATReader.DatStore
                     int intRes1 = 0;
                     while ((index > 0) && (intRes1 == 0))
                     {
-                        intRes1 = CompareName(lName, _children[useIndex ? _childrenNameIndex[index - 1] : index - 1]);
+                        intRes1 = SortCompareName(lName, _children[useIndex ? _childrenNameIndex[index - 1] : index - 1]);
                         if (intRes1 == 0)
                         {
                             index--;
@@ -135,13 +167,13 @@ namespace DATReader.DatStore
                 }
                 else
                 {
-                    // if match was found check down the list to point past the last match
+                    // if match was not found check down the list to point past the last match
                     // this is used so that if a duplicate is found, we return the next record as the index
                     // where the duplicate item should be added.
                     int intRes1 = 0;
                     while ((index < _children.Count - 1) && (intRes1 == 0))
                     {
-                        intRes1 = CompareName(lName, _children[useIndex ? _childrenNameIndex[index + 1] : index + 1]);
+                        intRes1 = SortCompareName(lName, _children[useIndex ? _childrenNameIndex[index + 1] : index + 1]);
                         if (intRes1 == 0)
                         {
                             index++;
@@ -166,42 +198,45 @@ namespace DATReader.DatStore
 
         }
 
-        private int CompareName(DatBase lName, DatBase dBase)
+        private int SortCompareName(DatBase lName, DatBase dBase)
         {
 
-            switch (DatFileType)
+            switch (FileType)
             {
-                case DatFileType.UnSet:
+                case FileType.UnSet:
                     {
-                        int res = Math.Sign(string.Compare(lName.Name, dBase.Name, StringComparison.InvariantCulture));
-                        if (res != 0)
-                            return res;
-                        break;
-
-                    }
-
-                case DatFileType.Dir:
-                case DatFileType.DirRVZip:
-                case DatFileType.DirTorrentZip:
-                    {
-                        int res = Math.Sign(DatSort.TrrntZipStringCompareCase(lName.Name, dBase.Name));
+                        int res = Sorters.StringCompare(lName.Name, dBase.Name);
                         if (res != 0)
                             return res;
                         break;
                     }
-                case DatFileType.Dir7Zip:
+                case FileType.Dir:
                     {
-                        int res = Math.Sign(DatSort.Trrnt7ZipStringCompare(lName.Name, dBase.Name));
+                        int res = Sorters.DirectoryNameCompareCase(lName.Name, dBase.Name);
+                        if (res != 0)
+                            return res;
+                        break;
+                    }
+                case FileType.Zip:
+                    {
+                        int res = Sorters.TrrntZipStringCompareCase(lName.Name, dBase.Name);
+                        if (res != 0)
+                            return res;
+                        break;
+                    }
+                case FileType.SevenZip:
+                    {
+                        int res = Sorters.Trrnt7ZipStringCompare(lName.Name, dBase.Name);
                         if (res != 0)
                             return res;
                         break;
                     }
                 default:
 
-                    throw new InvalidOperationException("Invalid directory compare type " + DatFileType);
+                    throw new InvalidOperationException("Invalid directory compare type " + FileType);
 
             }
-            return lName.DatFileType.CompareTo(dBase.DatFileType);
+            return lName.FileType.CompareTo(dBase.FileType);
         }
     }
 }

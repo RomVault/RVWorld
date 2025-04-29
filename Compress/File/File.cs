@@ -1,6 +1,4 @@
-﻿using System;
-using System.IO;
-using Compress.Support.Utils;
+﻿using System.IO;
 using Path = RVIO.Path;
 using FileInfo = RVIO.FileInfo;
 using FileStream = RVIO.FileStream;
@@ -17,19 +15,16 @@ namespace Compress.File
 
         public long TimeStamp => _fileInfo?.LastWriteTime ?? 0;
 
+        public string FileComment => null;
+
         public ZipOpenType ZipOpen { get; private set; }
 
+        public int LocalFilesCount => 1;
+        public ZipStructure ZipStruct => ZipStructure.None;
 
-        public ZipStatus ZipStatus { get; private set; }
-
-        public int LocalFilesCount()
+        public FileHeader GetFileHeader(int i)
         {
-            return 1;
-        }
-
-        public LocalFile GetLocalFile(int i)
-        {
-            LocalFile lf = new()
+            FileHeader lf = new()
             {
                 Filename = Path.GetFileName(ZipFilename),
                 UncompressedSize = _fileInfo != null ? (ulong)_fileInfo.Length : (ulong)_inStream.Length,
@@ -53,7 +48,7 @@ namespace Compress.File
             CompressUtils.CreateDirForFile(newFilename);
             _fileInfo = new FileInfo(newFilename);
 
-            int errorCode = FileStream.OpenFileWrite(newFilename, out _inStream);
+            int errorCode = FileStream.OpenFileWrite(newFilename, FileStream.BufSizeMax, out _inStream);
             if (errorCode != 0)
             {
                 ZipFileClose();
@@ -96,11 +91,9 @@ namespace Compress.File
             }
         }
 
-
-        public ZipReturn ZipFileOpen(string newFilename, long timestamp, bool readHeaders)
+        public ZipReturn ZipFileOpen(string newFilename, long timestamp, bool readHeaders, int bufferSize = 4096)
         {
             ZipFileClose();
-            ZipStatus = ZipStatus.None;
             _fileInfo = null;
 
             try
@@ -116,11 +109,11 @@ namespace Compress.File
                     ZipFileClose();
                     return ZipReturn.ZipErrorTimeStamp;
                 }
-                int errorCode = FileStream.OpenFileRead(newFilename, out _inStream);
+                int errorCode = FileStream.OpenFileRead(newFilename, bufferSize, out _inStream);
                 if (errorCode != 0)
                 {
                     ZipFileClose();
-                    if (errorCode == 32 || errorCode==5)
+                    if (errorCode == -2147024864)
                     {
                         return ZipReturn.ZipFileLocked;
                     }
@@ -146,20 +139,12 @@ namespace Compress.File
         public ZipReturn ZipFileOpen(Stream inStream)
         {
             ZipFileClose();
-            ZipStatus = ZipStatus.None;
             _fileInfo = null;
             _inStream = inStream;
             ZipOpen = ZipOpenType.OpenRead;
 
             //return ZipFileReadHeaders();
             return ZipReturn.ZipGood;
-        }
-
-
-
-        public void ZipFileAddZeroLengthFile()
-        {
-            throw new NotImplementedException();
         }
 
         public ZipReturn ZipFileCloseWriteStream(byte[] crc32)
@@ -181,7 +166,7 @@ namespace Compress.File
             return ZipReturn.ZipGood;
         }
 
-        public ZipReturn ZipFileOpenWriteStream(bool raw, bool trrntzip, string filename, ulong uncompressedSize, ushort compressionMethod, out Stream stream, TimeStamps dateTime)
+        public ZipReturn ZipFileOpenWriteStream(bool raw, string filename, ulong uncompressedSize, ushort compressionMethod, out Stream stream, long? modTime, int? threadCount = null)
         {
             _inStream.Position = 0;
             stream = _inStream;

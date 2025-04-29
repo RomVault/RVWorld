@@ -6,9 +6,9 @@
     <AllowUnsafeBlocks>False</AllowUnsafeBlocks>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <DefineConstants>TRACE;RomShare</DefineConstants>
-  </PropertyGroup>
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+		<DefineConstants>TRACE;RomShare</DefineConstants>
+	</PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseFC|AnyCPU'">
     <DefineConstants>$(DefineConstants)TRACE;RomShare</DefineConstants>
@@ -16,19 +16,31 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="System.ServiceModel.Duplex" Version="4.9.0" />
-    <PackageReference Include="System.ServiceModel.Http" Version="4.9.0" />
-    <PackageReference Include="System.ServiceModel.NetTcp" Version="4.9.0" />
-    <PackageReference Include="System.ServiceModel.Security" Version="4.9.0" />
-    <PackageReference Include="System.Text.Json" Version="6.0.5" />
+    <Compile Remove="Sharing\**" />
+    <EmbeddedResource Remove="Sharing\**" />
+    <None Remove="Sharing\**" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\CHDlib\CHDlib.csproj" />
+    <Compile Remove="AutoUpdate.cs" />
+    <Compile Remove="MIAReport.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.ServiceModel.Duplex" Version="4.10.0" />
+    <PackageReference Include="System.ServiceModel.Http" Version="4.10.0" />
+    <PackageReference Include="System.ServiceModel.NetTcp" Version="4.10.0" />
+    <PackageReference Include="System.ServiceModel.Security" Version="4.10.0" />
+    <PackageReference Include="System.Text.Json" Version="8.0.5" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ByteSortedList\StorageList.csproj" />
+    <ProjectReference Include="..\CHDlib\CHDSharpLib.csproj" />
     <ProjectReference Include="..\Compress\Compress.csproj" />
     <ProjectReference Include="..\DATReader\DATReader.csproj" />
-    <ProjectReference Include="..\FileHeaderReader\FileHeaderReader.csproj" />
-    <ProjectReference Include="..\RVServiceAccess\RVServiceAccess.csproj" />
+    <ProjectReference Include="..\FileScanner\FileScanner.csproj" />
+    <ProjectReference Include="..\SharedEnum\SharedEnum.csproj" />
   </ItemGroup>
 
 </Project>

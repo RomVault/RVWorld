@@ -1,6 +1,5 @@
 ﻿using System;
-using System.Diagnostics;
-using System.IO.Compression;
+using FileScanner;
 using RomVaultCore.RvDB;
 using RomVaultCore.Utils;
 
@@ -39,264 +38,220 @@ We could not confirm a match above so we need to deep scan the file and try agai
 */
 namespace RomVaultCore.Scanner
 {
-    public static class Compare
+
+    public static partial class FileScanning
     {
-        public static bool Phase1Test(RvFile dbFile, RvFile testFile, EScanLevel eScanLevel,int indexCase, out bool MatchedAlt)
+        private static class FileCompare
         {
-            MatchedAlt = false;
-            //Debug.WriteLine("Comparing Dat File " + dbFile.TreeFullName);
-            //Debug.WriteLine("Comparing File     " + testFile.TreeFullName);
-
-            int retv = indexCase == 0 ?
-                dbFile.Name.CompareTo(testFile.Name):
-                DBHelper.CompareName(dbFile, testFile);
-            if (retv != 0)
+            internal static bool Phase1Test(RvFile dbFile, ScannedFile testFile, EScanLevel eScanLevel, int indexCase, out bool MatchedAlt)
             {
-                return false;
-            }
+                MatchedAlt = false;
+                //Debug.WriteLine("Comparing Dat File " + dbFile.TreeFullName);
+                //Debug.WriteLine("Comparing File     " + testFile.TreeFullName);
 
-            FileType dbfileType = dbFile.FileType;
-            FileType dbtestFile = testFile.FileType;
+                int retv = indexCase == 0 ?
+                    dbFile.Name.CompareTo(testFile.Name) :
+                    RVSorters.CompareName(dbFile, testFile);
+                if (retv != 0)
+                    return false;
+
+                FileType dbfileType = dbFile.FileType;
+                FileType testFileType = testFile.FileType;
 
 #if ZipFile
-            if (dbfileType == FileType.File && dbtestFile == FileType.Zip) 
-                dbtestFile = FileType.File;
+            if (dbfileType == FileType.File && testFileType == FileType.Zip) 
+                testFileType = FileType.File;
 #endif
-            retv = Math.Sign(dbfileType.CompareTo(dbtestFile));
-            if (retv != 0)
-            {
-                return false;
-            }
+                retv = Math.Sign(dbfileType.CompareTo(testFileType));
+                if (retv != 0)
+                    return false;
 
-            // filetypes are now know to be the same
+                // filetypes are now know to be the same
 
-            // Dir's and Zip's are not deep scanned so matching here is done
-            if (dbfileType == FileType.Dir || dbfileType == FileType.Zip || dbfileType == FileType.SevenZip)
-            {
+                // Dir's and Zip's are not deep scanned so matching here is done
+                if (dbfileType == FileType.Dir || dbfileType == FileType.Zip || dbfileType == FileType.SevenZip)
+                    return true;
+
+                // check headerTypes
+                if (dbFile.HeaderFileTypeRequired)
+                {
+                    if (dbFile.HeaderFileType != testFile.HeaderFileType)
+                        return false;
+                }
+
+                // we can now fully test anything that had a CRC in the testFile
+                // this is anything that came from an archive, or a file that was level 3 scanned
+                if (testFile.CRC != null)
+                    return CompareWithAlt(dbFile, testFile, out MatchedAlt);
+
+
+                // we are now just dealing with Files that were not scanned at all already.
+                // Phase 1 we will try and just do a timestamp / file size match for this.
+                // but if we are scanning at a deeper level than the DB file then we cannot timestamp match.
+                //
+                // this could happen where we started with a level 1 scan of a file, and are now re-scanning at level 2
+                if (eScanLevel != EScanLevel.Level1 && !dbFile.IsDeepScanned)
+                    return false;
+
+                if (dbFile.FileModTimeStamp != testFile.FileModTimeStamp)
+                    return false;
+
+                if (dbFile.Size == testFile.Size)
+                    return true;
+
+                if ((dbFile.Size ?? 0) + (ulong)FileHeaderReader.GetFileHeaderLength(dbFile.HeaderFileType) != testFile.Size)
+                    return false;
+
+                MatchedAlt = true;
                 return true;
             }
 
-            // check headerTypes
-            if (dbFile.HeaderFileTypeRequired)
+            internal static bool Phase2Test(RvFile dbFile, ScannedFile testFile, EScanLevel eScanLevel, int indexCase, string fullDir, ThreadWorker thWrk, int fileIndex, ref bool fileErrorAbort, out bool MatchedAlt)
             {
-                if (dbFile.HeaderFileType != testFile.HeaderFileType)
+                MatchedAlt = false;
+                //Debug.WriteLine("Comparing Dat File " + dbFile.TreeFullName);
+                //Debug.WriteLine("Comparing File     " + testFile.TreeFullName);
+                int retv = indexCase == 0 ?
+                   dbFile.Name.CompareTo(testFile.Name) :
+                   RVSorters.CompareName(dbFile, testFile);
+                if (retv != 0)
                     return false;
-            }
 
-            // we can now fully test anything that had a CRC in the testFile
-            // this is anything that came from an archive, or a file that was level 3 scanned
-            if (testFile.CRC != null)
-            {
+                FileType dbFileType = dbFile.FileType;
+                FileType testFileType = testFile.FileType;
+#if ZipFile
+            if (dbFileType == FileType.File && testFileType == FileType.Zip) 
+                testFileType = FileType.File;
+#endif
+                if (dbFileType != FileType.File || testFileType != FileType.File)
+                    return false;
+
+
+                thWrk.Report(new bgwValue2((int)fileIndex));
+                thWrk.Report(new bgwText2(testFile.Name));
+                Populate.FromAFile(testFile, fullDir, eScanLevel, thWrk, ref fileErrorAbort);
+                if (fileErrorAbort)
+                    return false;
+
+                if (testFile.GotStatus == GotStatus.FileLocked)
+                    return true;
+
                 return CompareWithAlt(dbFile, testFile, out MatchedAlt);
             }
 
 
-            // we are now just dealing with Files that were not scanned at all already.
-            // Phase 1 we will try and just do a timestamp / file size match for this.
-            // but if we are scanning at a deeper level than the DB file then we cannot timestamp match.
-            //
-            // this could happen where we started with a level 1 scan of a file, and are now re-scanning at level 2
-            if (eScanLevel != EScanLevel.Level1 && !Utils.IsDeepScanned(dbFile))
-                return false;
-
-            if (dbFile.FileModTimeStamp != testFile.FileModTimeStamp)
-                return false;
-      
-
-            if (dbFile.Size == testFile.Size)
-                return true;
-
-            if ((dbFile.Size ?? 0) + (ulong)FileHeaderReader.FileHeaderReader.GetFileHeaderLength(dbFile.HeaderFileType) != testFile.Size)
-                return false;
-
-            MatchedAlt = true;
-            return true;
-        }
-
-        public static bool Phase2Test(RvFile dbFile, RvFile testFile, EScanLevel eScanLevel, int indexCase, string fullDir, ThreadWorker thWrk, ref bool fileErrorAbort, out bool MatchedAlt)
-        {
-            MatchedAlt = false;
-            //Debug.WriteLine("Comparing Dat File " + dbFile.TreeFullName);
-            //Debug.WriteLine("Comparing File     " + testFile.TreeFullName);
-            int retv = indexCase == 0 ?
-               dbFile.Name.CompareTo(testFile.Name) :
-               DBHelper.CompareName(dbFile, testFile);
-            if (retv != 0)
+            private static bool CompareWithAlt(RvFile dbFile, ScannedFile testFile, out bool altMatch)
             {
-                return false;
-            }
-
-            FileType dbfileType = dbFile.FileType;
-            FileType dbtestFile = testFile.FileType;
-#if ZipFile
-            if (dbfileType == FileType.File && dbtestFile == FileType.Zip) 
-                dbtestFile = FileType.File;
-#endif
-            if (dbfileType != FileType.File || dbtestFile != FileType.File)
-                return false;
-
-            Populate.FromAFile(testFile, fullDir, eScanLevel, thWrk, ref fileErrorAbort);
-            if (fileErrorAbort)
-                return false;
-
-            if (testFile.GotStatus == GotStatus.FileLocked)
-                return true;
-
-            return CompareWithAlt(dbFile, testFile, out MatchedAlt);
-        }
-
-
-
-        public static bool DatMergeCompare(RvFile dbFile, RvFile testFile, out bool altMatch)
-        {
-            altMatch = false;
-            int retv = DBHelper.CompareName(dbFile, testFile);
-            if (retv != 0)
-            {
-                return false;
-            }
-
-            FileType dbFileType = dbFile.FileType;
-            FileType newFileType = testFile.FileType;
-            retv = Math.Sign(dbFileType.CompareTo(newFileType));
-            if (retv != 0)
-            {
-                return false;
-            }
-
-            // filetypes are now know to be the same
-
-            // Dir's and Zip's are not deep scanned so matching here is done
-            if (dbFileType == FileType.Dir || dbFileType == FileType.Zip || dbFileType == FileType.SevenZip)
-            {
-                return true;
-            }
-
-            // check headerTypes
-            if (testFile.HeaderFileTypeRequired)
-            {
-                if (dbFile.HeaderFileType != testFile.HeaderFileType)
-                    return false;
-            }
-
-            return CompareWithAlt(testFile, dbFile, out altMatch);
-        }
-
-
-        private static bool CompareWithAlt(RvFile dbFile, RvFile testFile, out bool altMatch)
-        {
-            if (CompareHash(dbFile, testFile))
-            {
-                altMatch = false;
-                return true;
-            }
-
-            if (CompareAltHash(dbFile, testFile))
-            {
-                altMatch = true;
-                return true;
-            }
-
-            altMatch = false;
-            return false;
-        }
-
-        private static bool CompareHash(RvFile dbFile, RvFile testFile)
-        {
-            //Debug.WriteLine("Comparing Dat File " + dbFile.TreeFullName);
-            //Debug.WriteLine("Comparing File     " + testFile.TreeFullName);
-
-            bool testFound = false;
-            int retv;
-            if (dbFile.Size != null && testFile.Size != null)
-            {
-                retv = ULong.iCompare(dbFile.Size, testFile.Size);
-                if (retv != 0)
-                    return false;
-
-                //special zero size test case, if the dat size is 0 and the testfile size is 0
-                //and there are no other hash values in the dat, then assume it is a match.
-                if (testFile.Size == 0 && dbFile.CRC == null && dbFile.SHA1 == null && dbFile.MD5 == null)
+                if (CompareHash(dbFile, testFile))
                 {
+                    altMatch = false;
                     return true;
                 }
-            }
 
+                if (CompareAltHash(dbFile, testFile))
+                {
+                    altMatch = true;
+                    return true;
+                }
 
-            if (dbFile.CRC != null && testFile.CRC != null)
-            {
-                testFound = true;
-                retv = ArrByte.ICompare(dbFile.CRC, testFile.CRC);
-                if (retv != 0)
-                    return false;
-            }
-
-            if (dbFile.SHA1 != null && testFile.SHA1 != null)
-            {
-                testFound = true;
-                retv = ArrByte.ICompare(dbFile.SHA1, testFile.SHA1);
-                if (retv != 0)
-                    return false;
-            }
-
-            if (dbFile.MD5 != null && testFile.MD5 != null)
-            {
-                testFound = true;
-                retv = ArrByte.ICompare(dbFile.MD5, testFile.MD5);
-                if (retv != 0)
-                    return false;
-            }
-
-            return testFound;
-        }
-
-
-        private static bool CompareAltHash(RvFile dbFile, RvFile testFile)
-        {
-            Debug.WriteLine("ComparingAlt Dat File " + dbFile.TreeFullName);
-            Debug.WriteLine("ComparingAlt File     " + testFile.TreeFullName);
-
-            if (!FileHeaderReader.FileHeaderReader.AltHeaderFile(testFile.HeaderFileType))
+                altMatch = false;
                 return false;
-
-            if (dbFile.HeaderFileType != testFile.HeaderFileType)
-                return false;
-
-
-            bool testFound = false;
-            int retv;
-            if (dbFile.Size != null && testFile.AltSize != null)
-            {
-                retv = ULong.iCompare(dbFile.Size, testFile.AltSize);
-                if (retv != 0)
-                    return false;
             }
 
-            if (dbFile.CRC != null && testFile.AltCRC != null)
+
+            private static bool CompareHash(RvFile dbFile, ScannedFile testFile)
             {
-                testFound = true;
-                retv = ArrByte.ICompare(dbFile.CRC, testFile.AltCRC);
-                if (retv != 0)
-                    return false;
+                //Debug.WriteLine("Comparing Dat File " + dbFile.TreeFullName);
+                //Debug.WriteLine("Comparing File     " + testFile.TreeFullName);
+
+                bool testFound = false;
+                int retv;
+                if (dbFile.Size != null && testFile.Size != null)
+                {
+                    retv = ULong.iCompare(dbFile.Size, testFile.Size);
+                    if (retv != 0)
+                        return false;
+
+                    //special zero size test case, if the dat size is 0 and the testfile size is 0
+                    //and there are no other hash values in the dat, then assume it is a match.
+                    if (testFile.Size == 0 && dbFile.CRC == null && dbFile.SHA1 == null && dbFile.MD5 == null)
+                    {
+                        return true;
+                    }
+                }
+
+
+                if (dbFile.CRC != null && testFile.CRC != null)
+                {
+                    testFound = true;
+                    retv = ArrByte.ICompare(dbFile.CRC, testFile.CRC);
+                    if (retv != 0)
+                        return false;
+                }
+
+                if (dbFile.SHA1 != null && testFile.SHA1 != null)
+                {
+                    testFound = true;
+                    retv = ArrByte.ICompare(dbFile.SHA1, testFile.SHA1);
+                    if (retv != 0)
+                        return false;
+                }
+
+                if (dbFile.MD5 != null && testFile.MD5 != null)
+                {
+                    testFound = true;
+                    retv = ArrByte.ICompare(dbFile.MD5, testFile.MD5);
+                    if (retv != 0)
+                        return false;
+                }
+
+                return testFound;
             }
 
-            if (dbFile.SHA1 != null && testFile.AltSHA1 != null)
+            private static bool CompareAltHash(RvFile dbFile, ScannedFile testFile)
             {
-                testFound = true;
-                retv = ArrByte.ICompare(dbFile.SHA1, testFile.AltSHA1);
-                if (retv != 0)
+                if (!FileScanner.FileHeaderReader.AltHeaderFile(testFile.HeaderFileType))
                     return false;
-            }
 
-            if (dbFile.MD5 != null && testFile.AltMD5 != null)
-            {
-                testFound = true;
-                retv = ArrByte.ICompare(dbFile.MD5, testFile.AltMD5);
-                if (retv != 0)
+                if (dbFile.HeaderFileType != testFile.HeaderFileType)
                     return false;
-            }
 
-            return testFound;
+
+                bool testFound = false;
+                int retv;
+                if (dbFile.Size != null && testFile.AltSize != null)
+                {
+                    retv = ULong.iCompare(dbFile.Size, testFile.AltSize);
+                    if (retv != 0)
+                        return false;
+                }
+
+                if (dbFile.CRC != null && testFile.AltCRC != null)
+                {
+                    testFound = true;
+                    retv = ArrByte.ICompare(dbFile.CRC, testFile.AltCRC);
+                    if (retv != 0)
+                        return false;
+                }
+
+                if (dbFile.SHA1 != null && testFile.AltSHA1 != null)
+                {
+                    testFound = true;
+                    retv = ArrByte.ICompare(dbFile.SHA1, testFile.AltSHA1);
+                    if (retv != 0)
+                        return false;
+                }
+
+                if (dbFile.MD5 != null && testFile.AltMD5 != null)
+                {
+                    testFound = true;
+                    retv = ArrByte.ICompare(dbFile.MD5, testFile.AltMD5);
+                    if (retv != 0)
+                        return false;
+                }
+
+                return testFound;
+            }
         }
     }
 }

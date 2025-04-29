@@ -16,5 +16,7 @@ namespace TrrntZip
         RepeatFilesFound = 128,
         Cancel=256,
         ErrorOutputFile=512,
+        SourceFileLocked=1024,
+        CatchError=2048
     }
 }

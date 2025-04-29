@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Compress.StructuredZip;
+using SortMethods;
+using System;
 using System.Collections.Generic;
 
 /***************************************************************************************************************
@@ -39,9 +41,8 @@ namespace TrrntZip
                 for (int j = 0; j < bytes.Length; j++)
                 {
                     if (bytes[j] != 92)
-                    {
                         continue;
-                    }
+
                     fixDir = true;
                     bytes[j] = (char)47;
                     tzStatus |= TrrntZipStatus.BadDirectorySeparator;
@@ -52,9 +53,7 @@ namespace TrrntZip
                     }
                 }
                 if (fixDir)
-                {
                     t.Name = new string(bytes);
-                }
             }
 
 
@@ -63,29 +62,22 @@ namespace TrrntZip
             //
             // if needed sort the files correctly, and return Unsorted if errors found.
             bool error2 = false;
-            bool thisSortFound = true;
-            while (thisSortFound)
-            {
-                thisSortFound = false;
-                for (int i = 0; i < zippedFiles.Count - 1; i++)
-                {
-                    int c = TrrntZipStringCompare(zippedFiles[i].Name, zippedFiles[i + 1].Name);
-                    if (c > 0)
-                    {
-                        ZippedFile T = zippedFiles[i];
-                        zippedFiles[i] = zippedFiles[i + 1];
-                        zippedFiles[i + 1] = T;
 
-                        tzStatus |= TrrntZipStatus.Unsorted;
-                        thisSortFound = true;
-                        if (!error2 && Program.VerboseLogging)
-                        {
-                            error2 = true;
-                            statusLogCallBack?.Invoke(threadId, "Incorrect file order found");
-                        }
-                    }
+            for (int i = 0; i < zippedFiles.Count - 1; i++)
+            {
+                int c = TrrntZipStringCompare(zippedFiles[i], zippedFiles[i + 1]);
+                if (c > 0)
+                {
+                    tzStatus |= TrrntZipStatus.Unsorted;
+                    error2 = true;
+                    if (Program.VerboseLogging)
+                        statusLogCallBack?.Invoke(threadId, "Incorrect file order found");
+
+                    break;
                 }
             }
+            if (error2) // we need to sort the list so sort it.
+                zippedFiles = StorageList.FastArraySort.SortList(zippedFiles, TrrntZipStringCompare);
 
 
             // ***************************** RULE 3 *************************************
@@ -102,16 +94,12 @@ namespace TrrntZip
             {
                 // check if this is a directory entry
                 if (zippedFiles[i].Name[zippedFiles[i].Name.Length - 1] != 47)
-                {
                     continue;
-                }
 
                 // check if the next filename is shorter or equal to this filename.
                 // if it is shorter or equal it cannot be a file in the directory.
                 if (zippedFiles[i + 1].Name.Length <= zippedFiles[i].Name.Length)
-                {
                     continue;
-                }
 
                 // check if the directory part of the two file enteries match
                 // if they do we found an incorrect directory entry.
@@ -160,48 +148,7 @@ namespace TrrntZip
         }
 
 
-        // perform an ascii based lower case string file compare
-        private static int TrrntZipStringCompare(string string1, string string2)
-        {
-            char[] bytes1 = string1.ToCharArray();
-            char[] bytes2 = string2.ToCharArray();
 
-            int pos1 = 0;
-            int pos2 = 0;
-
-            for (; ; )
-            {
-                if (pos1 == bytes1.Length)
-                {
-                    return pos2 == bytes2.Length ? 0 : -1;
-                }
-                if (pos2 == bytes2.Length)
-                {
-                    return 1;
-                }
-
-                int byte1 = bytes1[pos1++];
-                int byte2 = bytes2[pos2++];
-
-                if ((byte1 >= 65) && (byte1 <= 90))
-                {
-                    byte1 += 0x20;
-                }
-                if ((byte2 >= 65) && (byte2 <= 90))
-                {
-                    byte2 += 0x20;
-                }
-
-                if (byte1 < byte2)
-                {
-                    return -1;
-                }
-                if (byte1 > byte2)
-                {
-                    return 1;
-                }
-            }
-        }
 
 
 
@@ -223,9 +170,8 @@ namespace TrrntZip
                 for (int j = 0; j < bytes.Length; j++)
                 {
                     if (bytes[j] != 92)
-                    {
                         continue;
-                    }
+
                     fixDir = true;
                     bytes[j] = (char)47;
                     tzStatus |= TrrntZipStatus.BadDirectorySeparator;
@@ -236,32 +182,11 @@ namespace TrrntZip
                     }
                 }
                 if (fixDir)
-                {
                     t.Name = new string(bytes);
-                }
             }
 
 
-            List<ZippedFile> dirSortTest = new List<ZippedFile>();
-            dirSortTest.AddRange(zippedFiles);
 
-            bool thisSortFound = true;
-            while (thisSortFound)
-            {
-                thisSortFound = false;
-                for (int i = 0; i < dirSortTest.Count - 1; i++)
-                {
-                    int c = Math.Sign(string.Compare(dirSortTest[i].Name, dirSortTest[i + 1].Name, StringComparison.Ordinal));
-                    if (c > 0)
-                    {
-                        ZippedFile T = dirSortTest[i];
-                        dirSortTest[i] = dirSortTest[i + 1];
-                        dirSortTest[i + 1] = T;
-
-                        thisSortFound = true;
-                    }
-                }
-            }
 
             // ***************************** RULE 3 *************************************
             // Directory marker files are only needed if they are empty directories.
@@ -272,21 +197,19 @@ namespace TrrntZip
             // If we find this 2 entry pattern (directory followed by file in that directory)
             // then the directory entry should not be present and the torrentzip is incorrect.
             // return ExtraDirectoryEnteries if error is found. 
+            List<ZippedFile> dirSortTest = StorageList.FastArraySort.SortList(zippedFiles, NameSort);
+
             bool error3 = false;
             for (int i = 0; i < dirSortTest.Count - 1; i++)
             {
                 // check if this is a directory entry
                 if (dirSortTest[i].Name[dirSortTest[i].Name.Length - 1] != 47)
-                {
                     continue;
-                }
 
                 // check if the next filename is shorter or equal to this filename.
                 // if it is shorter or equal it cannot be a file in the directory.
                 if (dirSortTest[i + 1].Name.Length <= dirSortTest[i].Name.Length)
-                {
                     continue;
-                }
 
                 // check if the directory part of the two file enteries match
                 // if they do we found an incorrect directory entry.
@@ -330,29 +253,23 @@ namespace TrrntZip
             //
             // if needed sort the files correctly, and return Unsorted if errors found.
             bool error2 = false;
-            thisSortFound = true;
-            while (thisSortFound)
+            for (int i = 0; i < zippedFiles.Count - 1; i++)
             {
-                thisSortFound = false;
-                for (int i = 0; i < zippedFiles.Count - 1; i++)
+                int c = Trrnt7ZipStringCompare(zippedFiles[i], zippedFiles[i + 1]);
+                if (c > 0)
                 {
-                    int c = Trrnt7ZipStringCompare(zippedFiles[i].Name, zippedFiles[i + 1].Name);
-                    if (c > 0)
-                    {
-                        ZippedFile T = zippedFiles[i];
-                        zippedFiles[i] = zippedFiles[i + 1];
-                        zippedFiles[i + 1] = T;
 
-                        tzStatus |= TrrntZipStatus.Unsorted;
-                        thisSortFound = true;
-                        if (!error2 && Program.VerboseLogging)
-                        {
-                            error2 = true;
-                            statusLogCallBack?.Invoke(threadId, "Incorrect file order found");
-                        }
-                    }
+                    tzStatus |= TrrntZipStatus.Unsorted;
+                    error2 = true;
+                    if (Program.VerboseLogging)
+                        statusLogCallBack?.Invoke(threadId, "Incorrect file order found");
+
+                    break;
                 }
+
             }
+            if (error2) // we need to sort the list so sort it.
+                zippedFiles = StorageList.FastArraySort.SortList(zippedFiles, Trrnt7ZipStringCompare);
 
 
             // check for repeat files
@@ -369,64 +286,23 @@ namespace TrrntZip
                     }
                 }
             }
-            
-            
+
+
             return tzStatus;
         }
 
-
-
-
-        public static int Trrnt7ZipStringCompare(string string1, string string2)
+        public static int NameSort(ZippedFile z0, ZippedFile z1)
         {
-            splitFilename(string1, out string path1, out string name1, out string ext1);
-            splitFilename(string2, out string path2, out string name2, out string ext2);
-
-            int res = Math.Sign(string.Compare(ext1, ext2, StringComparison.Ordinal));
-            if (res != 0)
-                return res;
-
-            res = Math.Sign(string.Compare(name1, name2, StringComparison.Ordinal));
-            if (res != 0)
-                return res;
-
-            res = Math.Sign(string.Compare(path1, path2, StringComparison.Ordinal));
-            if (res != 0)
-                return res;
-
-
-            return 0;
+            return Sorters.StringCompare(z0.Name, z1.Name);
+        }
+        private static int TrrntZipStringCompare(ZippedFile z1, ZippedFile z2)
+        {
+            return Sorters.TrrntZipStringCompare(z1.Name, z2.Name);
         }
 
-
-        private static void splitFilename(string filename, out string path, out string name, out string ext)
+        public static int Trrnt7ZipStringCompare(ZippedFile z0, ZippedFile z1)
         {
-            int dirIndex = filename.LastIndexOf('/');
-
-            if (dirIndex >= 0)
-            {
-                path = filename.Substring(0, dirIndex);
-                name = filename.Substring(dirIndex + 1);
-            }
-            else
-            {
-                path = "";
-                name = filename;
-            }
-
-            int extIndex = name.LastIndexOf('.');
-
-            if (extIndex >= 0)
-            {
-                ext = name.Substring(extIndex + 1);
-                name = name.Substring(0, extIndex);
-            }
-            else
-            {
-                ext = "";
-            }
-
+            return Sorters.Trrnt7ZipStringCompare(z0.Name, z1.Name);
         }
-
     }
 }

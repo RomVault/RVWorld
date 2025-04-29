@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Threading.Tasks;
 using RomVaultCore.RvDB;
 
 namespace RomVaultCore.FindFix
@@ -7,62 +8,58 @@ namespace RomVaultCore.FindFix
     {
         public static void GroupListCheck(FileGroup[] filegroupList)
         {
-            foreach (FileGroup ff in filegroupList)
-            {
-                if (ff.Size == 0 && ff.CRC[0] == 0 && ff.CRC[1] == 0 && ff.CRC[2] == 0 && ff.CRC[3] == 0)
-                    ZeroListCheck(ff);
-                else
-                    ListCheck(ff);
-            }
+            Parallel.ForEach(filegroupList, ff => ListCheck(ff));
         }
 
-        private static void ZeroListCheck(FileGroup family)
+        public static void ListCheck(FileGroup family)
         {
             List<RvFile> files = family.Files;
-            // set the found status of this file
-            foreach (RvFile tFile in files)
-            {
-                if (treeType(tFile) == RvTreeRow.TreeSelect.Locked)
-                    continue;
 
-                switch (tFile.RepStatus)
+            if (family.Size == 0 && family.CRC[0] == 0 && family.CRC[1] == 0 && family.CRC[2] == 0 && family.CRC[3] == 0)
+            {
+                // set the found status of this file
+                foreach (RvFile tFile in files)
                 {
-                    case RepStatus.UnScanned:
-                        break;
-                    case RepStatus.Missing:
-                        tFile.RepStatus = tFile.DatStatus == DatStatus.InDatMIA ? RepStatus.CanBeFixedMIA : RepStatus.CanBeFixed;
-                        break;
-                    case RepStatus.Correct:
-                    case RepStatus.CorrectMIA:
-                        break;
-                    case RepStatus.Corrupt:
-                        if (tFile.DatStatus == DatStatus.InDatCollect)
-                            tFile.RepStatus = tFile.DatStatus == DatStatus.InDatMIA ? RepStatus.CanBeFixedMIA : RepStatus.CanBeFixed; // corrupt files that are also InDatcollect are treated as missing files, and a fix should be found.
-                        else
-                            tFile.RepStatus = RepStatus.Delete; // all other corrupt files should be deleted or moved to tosort/corrupt
-                        break;
-                    case RepStatus.UnNeeded:
-                    case RepStatus.Unknown:
-                        tFile.RepStatus = RepStatus.Delete;
-                        break;
-                    case RepStatus.NotCollected:
-                        break;
-                    case RepStatus.InToSort:
-                        tFile.RepStatus = RepStatus.Delete;
-                        break;
-                    case RepStatus.Ignore:
-                        break; // Ignore File
-                    default:
-                        ReportError.SendAndShow("Unknown test status " + tFile.FullName + "," + tFile.DatStatus + "," + tFile.RepStatus);
-                        break;
+                    if (RvFile.treeType(tFile) == RvTreeRow.TreeSelect.Locked)
+                        continue;
 
+                    switch (tFile.RepStatus)
+                    {
+                        case RepStatus.UnScanned:
+                            break;
+                        case RepStatus.Missing:
+                            tFile.RepStatus = tFile.DatStatus == DatStatus.InDatMIA ? RepStatus.CanBeFixedMIA : RepStatus.CanBeFixed;
+                            break;
+                        case RepStatus.Correct:
+                        case RepStatus.CorrectMIA:
+                            break;
+                        case RepStatus.Corrupt:
+                            if (tFile.DatStatus == DatStatus.InDatCollect)
+                                tFile.RepStatus = tFile.DatStatus == DatStatus.InDatMIA ? RepStatus.CanBeFixedMIA : RepStatus.CanBeFixed; // corrupt files that are also InDatcollect are treated as missing files, and a fix should be found.
+                            else
+                                tFile.RepStatus = RepStatus.Delete; // all other corrupt files should be deleted or moved to tosort/corrupt
+                            break;
+                        case RepStatus.UnNeeded:
+                        case RepStatus.Unknown:
+                        case RepStatus.IncompleteRemove:
+                            tFile.RepStatus = RepStatus.Delete;
+                            break;
+                        case RepStatus.NotCollected:
+                        case RepStatus.Incomplete:
+                            break;
+                        case RepStatus.InToSort:
+                            tFile.RepStatus = RepStatus.Delete;
+                            break;
+                        case RepStatus.Ignore:
+                            break; // Ignore File
+                        default:
+                            ReportError.SendAndShow("Unknown test status " + tFile.FullName + "," + tFile.DatStatus + "," + tFile.RepStatus);
+                            break;
+
+                    }
                 }
+                return;
             }
-        }
-
-        private static void ListCheck(FileGroup family)
-        {
-            List<RvFile> files = family.Files;
 
             List<RvFile> missingFiles = new List<RvFile>(); // files we dont have that we need
 
@@ -90,16 +87,18 @@ namespace RomVaultCore.FindFix
                         correctFiles.Add(tFile);
                         break;
                     case RepStatus.Corrupt:
-                        if (tFile.DatStatus == DatStatus.InDatCollect)
+                        if (tFile.DatStatus == DatStatus.InDatCollect || tFile.DatStatus == DatStatus.InDatMIA)
                             missingFiles.Add(tFile); // corrupt files that are also InDatcollect are treated as missing files, and a fix should be found.
                         else
                             corruptFiles.Add(tFile); // all other corrupt files should be deleted or moved to tosort/corrupt
                         break;
                     case RepStatus.UnNeeded:
                     case RepStatus.Unknown:
+                    case RepStatus.IncompleteRemove:
                         unNeededFiles.Add(tFile);
                         break;
                     case RepStatus.NotCollected:
+                    case RepStatus.Incomplete:
                         break;
                     case RepStatus.InToSort:
                         inToSortFiles.Add(tFile);
@@ -123,7 +122,7 @@ namespace RomVaultCore.FindFix
 
             foreach (RvFile missingFile in missingFiles)
             {
-                if (treeType(missingFile) == RvTreeRow.TreeSelect.Locked)
+                if (RvFile.treeType(missingFile) == RvTreeRow.TreeSelect.Locked)
                     continue;
 
                 /*
@@ -153,7 +152,7 @@ namespace RomVaultCore.FindFix
 
             foreach (RvFile corruptFile in corruptFiles)
             {
-                if (treeType(corruptFile) == RvTreeRow.TreeSelect.Locked)
+                if (RvFile.treeType(corruptFile) == RvTreeRow.TreeSelect.Locked)
                     continue;
 
                 if (allGotFiles.Count > 0)
@@ -198,7 +197,7 @@ namespace RomVaultCore.FindFix
                 }
                 if (unNeededFile.RepStatus == RepStatus.NeededForFix) continue;
 
-                if (treeType(unNeededFile) == RvTreeRow.TreeSelect.Locked)
+                if (RvFile.treeType(unNeededFile) == RvTreeRow.TreeSelect.Locked)
                     continue;
 
                 // now that we know this file is not needed for a fix do a CRC only find against correct files to see if this file can be deleted.
@@ -241,7 +240,7 @@ namespace RomVaultCore.FindFix
                 // check if the ToSortFile is needed to fix a missing file
                 foreach (RvFile missingFile in missingFiles)
                 {
-                    if (treeType(missingFile) == RvTreeRow.TreeSelect.Locked)
+                    if (RvFile.treeType(missingFile) == RvTreeRow.TreeSelect.Locked)
                         continue;
 
                     if (!DBHelper.CheckIfMissingFileCanBeFixedByGotFile(missingFile, inToSortFile)) continue;
@@ -251,7 +250,7 @@ namespace RomVaultCore.FindFix
                 if (inToSortFile.RepStatus == RepStatus.NeededForFix)
                     continue;
 
-                if (treeType(inToSortFile) == RvTreeRow.TreeSelect.Locked)
+                if (RvFile.treeType(inToSortFile) == RvTreeRow.TreeSelect.Locked)
                     continue;
 
 
@@ -273,7 +272,7 @@ namespace RomVaultCore.FindFix
             List<RvFile> canBeFixed = new List<RvFile>();
             foreach (RvFile fLoop in files)
             {
-                if (fLoop.RepStatus != RepStatus.CanBeFixed && fLoop.RepStatus!=RepStatus.CanBeFixedMIA) continue;
+                if (fLoop.RepStatus != RepStatus.CanBeFixed && fLoop.RepStatus != RepStatus.CanBeFixedMIA) continue;
                 canBeFixed.Add(fLoop);
             }
 
@@ -289,18 +288,6 @@ namespace RomVaultCore.FindFix
                     fOutLoop.RepStatus = RepStatus.Rename;
                 }
             }
-        }
-
-        public static RvTreeRow.TreeSelect treeType(RvFile tfile)
-        {
-            if (tfile == null)
-                return RvTreeRow.TreeSelect.Locked;
-            if (tfile.Tree != null)
-            {
-                return tfile.Tree.Checked;
-            }
-
-            return treeType(tfile.Parent);
         }
 
     }

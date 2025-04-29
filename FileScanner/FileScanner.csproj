@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+	<LangVersion>latest</LangVersion>
+    <Configurations>Debug;Release</Configurations>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="FileScanParallel.cs" />
+    <Compile Remove="pZipReader.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ByteSortedList\StorageList.csproj" />
+    <ProjectReference Include="..\Compress\Compress.csproj" />
+    <ProjectReference Include="..\SharedEnum\SharedEnum.csproj" />
+  </ItemGroup>
+
+</Project>

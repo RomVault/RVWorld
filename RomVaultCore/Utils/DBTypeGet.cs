@@ -1,7 +1,7 @@
 ﻿/******************************************************
  *     ROMVault3 is written by Gordon J.              *
  *     Contact gordon@romvault.com                    *
- *     Copyright 2022                                 *
+ *     Copyright 2025                                 *
  ******************************************************/
 
 using RomVaultCore.RvDB;
@@ -16,9 +16,9 @@ namespace RomVaultCore.Utils
             {
                 case FileType.File:
                     return FileType.Dir;
-                case FileType.ZipFile:
+                case FileType.FileZip:
                     return FileType.Zip;
-                case FileType.SevenZipFile:
+                case FileType.FileSevenZip:
                     return FileType.SevenZip;
             }
             return FileType.Zip;
@@ -31,9 +31,9 @@ namespace RomVaultCore.Utils
                 case FileType.Dir:
                     return FileType.File;
                 case FileType.Zip:
-                    return FileType.ZipFile;
+                    return FileType.FileZip;
                 case FileType.SevenZip:
-                    return FileType.SevenZipFile;
+                    return FileType.FileSevenZip;
             }
             return FileType.Zip;
         }

@@ -1,7 +1,7 @@
 ﻿/******************************************************
  *     ROMVault3 is written by Gordon J.              *
  *     Contact gordon@romvault.com                    *
- *     Copyright 2022                                 *
+ *     Copyright 2025                                 *
  ******************************************************/
 
 using System;
@@ -15,7 +15,7 @@ namespace RomVaultCore.RvDB
 {
     public static class DBVersion
     {
-        public const int Version = 2;
+        public const int Version = 3;
         public static int VersionNow;
     }
 
@@ -48,9 +48,9 @@ namespace RomVaultCore.RvDB
             {
                 Name = "ToSort",
                 Tree = new RvTreeRow(),
-                DatStatus = DatStatus.InDatCollect
+                DatStatus = DatStatus.InToSort,
             };
-            ts.FileStatusSet(FileStatus.PrimaryToSort | FileStatus.CacheToSort);
+            ts.ToSortStatusSet(RvFile.ToSortDirType.ToSortPrimary | RvFile.ToSortDirType.ToSortCache);
             DirRoot.ChildAdd(ts);
         }
 
@@ -69,14 +69,13 @@ namespace RomVaultCore.RvDB
 
             try
             {
-                using (FileStream fs = new FileStream(tname, FileMode.CreateNew, FileAccess.Write))
+                using (FileStream fs = new FileStream(tname, FileMode.CreateNew, FileAccess.Write, FileShare.None, 4096 * 1024))
                 {
                     using (BinaryWriter bw = new BinaryWriter(fs, Encoding.UTF8, true))
                     {
                         DBVersion.VersionNow = DBVersion.Version;
                         bw.Write(DBVersion.Version);
                         DirRoot.Write(bw);
-
                         bw.Write(EndCacheMarker);
 
                         bw.Flush();
@@ -88,7 +87,7 @@ namespace RomVaultCore.RvDB
             }
             catch (Exception e)
             {
-                ReportError.UnhandledExceptionHandler($"Error Writing Cache File, your cache is now out of date, fix this error and rescan: {e.Message}");
+                ReportError.Show($"Error Writing Cache File, your cache is now out of date, fix this error and rescan: {e.Message}");
                 return;
             }
 
@@ -117,14 +116,19 @@ namespace RomVaultCore.RvDB
         public static void Read(ThreadWorker thWrk)
         {
             ThWrk = thWrk;
-            if (!File.Exists(Settings.rvSettings.CacheFile))
+            string cacheFilename = Settings.rvSettings.CacheFile;
+            if (!File.Exists(cacheFilename))
             {
-                OpenDefaultDB();
-                ThWrk = null;
-                return;
+                cacheFilename = cacheFilename.Replace("3_3.Cache", "3_2.Cache");
+                if (!File.Exists(cacheFilename))
+                {
+                    OpenDefaultDB();
+                    ThWrk = null;
+                    return;
+                }
             }
-            DirRoot = new RvFile(FileType.Dir);
-            using (FileStream fs = new FileStream(Settings.rvSettings.CacheFile, FileMode.Open, FileAccess.Read))
+
+            using (FileStream fs = new FileStream(cacheFilename, FileMode.Open, FileAccess.Read))
             {
                 if (fs.Length < 4)
                 {
@@ -143,16 +147,8 @@ namespace RomVaultCore.RvDB
 
                     if (DBVersion.VersionNow != DBVersion.Version)
                     {
-                        if (DBVersion.VersionNow == 1 && DBVersion.Version == 2 && Settings.rvSettings.CacheFile.Contains("3_1.Cache"))
+                        if (DBVersion.VersionNow < 2)
                         {
-                            Settings.rvSettings.CacheFile = Settings.rvSettings.CacheFile.Replace("3_1.Cache", "3_2.Cache");
-                            DirRoot.Read(br, null);
-                            DB.Write();
-                            Settings.WriteConfig(Settings.rvSettings);
-                        }
-                        else
-                        {
-
                             ReportError.Show(
                                 "Data Cache version is out of date you should now rescan your dat directory and roms directory.");
                             br.Close();
@@ -164,10 +160,19 @@ namespace RomVaultCore.RvDB
                             return;
                         }
                     }
-                    else
+                    if ((DBVersion.VersionNow == 2 || DBVersion.VersionNow == 3) && Settings.rvSettings.CacheFile.Contains("3_2.Cache"))
                     {
-                        DirRoot.Read(br, null);
+                        DirRoot = new RvFile(br);
+                        Settings.rvSettings.CacheFile = Settings.rvSettings.CacheFile.Replace("3_2.Cache", "3_3.Cache");
+                        Write();
+                        Settings.WriteConfig(Settings.rvSettings);
                     }
+                    else
+                        DirRoot = new RvFile(br);
+
+
+                    UpdateFixToSortStatus(DirRoot);
+
 
                     if (fs.Position > fs.Length - 8)
                     {
@@ -179,24 +184,40 @@ namespace RomVaultCore.RvDB
                     {
                         ReportError.UnhandledExceptionHandler("Cache is Corrupt, revert to Backup.");
                     }
-
                 }
             }
 
             ThWrk = null;
         }
 
-        public static string Fn(string v)
+        private static void UpdateFixToSortStatus(RvFile DirRoot)
+        {
+            for (int i = 0; i < DirRoot.ChildCount; i++)
+            {
+                if (DirRoot.Child(i).ToSortStatusIs(RvFile.ToSortDirType.ToSortPrimary | RvFile.ToSortDirType.ToSortCache))
+                    return;
+            }
+            for (int i = 0; i < DirRoot.ChildCount; i++)
+            {
+                if (DirRoot.Child(i).FileStatusIs((FileStatus)(1 << 30))) // Old ToSortPrimary
+                    DirRoot.Child(i).ToSortStatusSet(RvFile.ToSortDirType.ToSortPrimary);
+                if (DirRoot.Child(i).FileStatusIs((FileStatus)(1 << 31))) // Old ToSortCache
+                    DirRoot.Child(i).ToSortStatusSet(RvFile.ToSortDirType.ToSortCache);
+                DirRoot.Child(i).FileStatusClear((FileStatus)((1 << 30) | (1 << 31)));
+            }
+        }
+
+        public static string FixNull(string v)
         {
             return v ?? "";
         }
 
-        public static RvFile RvFileCache()
+        public static RvFile GetToSortCache()
         {
             for (int i = 0; i < DirRoot.ChildCount; i++)
             {
                 RvFile t = DirRoot.Child(i);
-                if (t.FileStatusIs(FileStatus.CacheToSort))
+                if (t.ToSortStatusIs(RvFile.ToSortDirType.ToSortCache))
                 {
                     return t;
                 }
@@ -205,12 +226,12 @@ namespace RomVaultCore.RvDB
             return DirRoot.Child(1);
         }
 
-        public static RvFile RvFileToSort()
+        public static RvFile GetToSortPrimary()
         {
-            for (int i = 0; i < DirRoot.ChildCount; i++)
+            for (int i = 1; i < DirRoot.ChildCount; i++)
             {
                 RvFile t = DirRoot.Child(i);
-                if (t.FileStatusIs(FileStatus.PrimaryToSort))
+                if (t.ToSortStatusIs(RvFile.ToSortDirType.ToSortPrimary))
                 {
                     return t;
                 }
@@ -219,10 +240,44 @@ namespace RomVaultCore.RvDB
             return DirRoot.Child(1);
         }
 
-        public static string ToSort()
+        public static RvFile GetToSortFileOnly()
         {
-            return RvFileToSort().Name;
+            for (int i = 1; i < DirRoot.ChildCount; i++)
+            {
+                RvFile t = DirRoot.Child(i);
+                if (t.ToSortStatusIs(RvFile.ToSortDirType.ToSortFileOnly))
+                {
+                    return t;
+                }
+            }
+
+            return GetToSortPrimary();
         }
 
+        public static void MoveToSortUp(RvFile t)
+        {
+            for (int i = 2; i < DirRoot.ChildCount; i++)
+            {
+                if (DirRoot.Child(i) == t)
+                {
+                    DirRoot.ChildRemove(i);
+                    DirRoot.ChildAdd(t, i - 1);
+                    return;
+                }
+            }
+        }
+        public static void MoveToSortDown(RvFile t)
+        {
+            for (int i = 1; i < DirRoot.ChildCount - 1; i++)
+            {
+                if (DirRoot.Child(i) == t)
+                {
+                    DirRoot.ChildRemove(i);
+                    DirRoot.ChildAdd(t, i + 1);
+                    return;
+                }
+            }
+
+        }
     }
 }

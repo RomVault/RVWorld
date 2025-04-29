@@ -1,23 +1,23 @@
 ﻿using System;
+using System.Text;
 using DATReader.DatStore;
 using DATReader.Utils;
-using RVIO;
 
 namespace DATReader.DatReader
 {
     public static class DatROMCenterReader
     {
-        public static bool ReadDat(string strFilename, ReportError errorReport, out DatHeader datHeader)
+        public static bool ReadDat(System.IO.Stream fStream, string strFilename, ReportError errorReport, out DatHeader datHeader)
         {
             datHeader = new DatHeader
             {
-                BaseDir = new DatDir("", DatFileType.UnSet),
+                BaseDir = new DatDir("", FileType.UnSet),
                 Filename = strFilename
             };
 
             using (DatFileLoader dfl = new DatFileLoader())
             {
-                dfl.LoadDat(strFilename);
+                dfl.LoadDat(fStream, strFilename);
                 dfl.Gn();
 
                 while (!dfl.EndOfStream())
@@ -217,7 +217,13 @@ namespace DATReader.DatReader
                 if (line.Substring(0, 1) == "[")
                     return true;
 
-                string[] parts = line.Split('¬');
+                string[] parts;
+                if (line.Contains("�"))
+                    parts = line.Split('�');
+                else if (line.Contains("¬"))
+                    parts = line.Split('¬');
+                else
+                    continue;
 
                 // 1 parent name         = clone of
                 // 2 parent description  = description (from parent)
@@ -241,10 +247,10 @@ namespace DATReader.DatReader
 
                 int index;
                 DatDir dDir;
-                DatDir searchDir = new DatDir(GameName, DatFileType.Dir);
+                DatDir searchDir = new DatDir(GameName, FileType.UnSet);
                 if (parentDir.ChildNameSearch(searchDir, out index) != 0)
                 {
-                    dDir = new DatDir(GameName, DatFileType.UnSet) { DGame = new DatGame() };
+                    dDir = new DatDir(GameName, FileType.UnSet) { DGame = new DatGame() };
                     DatGame dGame = dDir.DGame;
                     dGame.Description = GameDescription;
                     if (ParentName != GameName)
@@ -257,7 +263,7 @@ namespace DATReader.DatReader
                     // need to check everything matches
                 }
 
-                DatFile dRom = new DatFile(romName, DatFileType.UnSet);
+                DatFile dRom = new DatFile(romName, FileType.UnSet);
                 dRom.CRC = VarFix.CleanMD5SHA1(romCRC, 8);
                 dRom.Size = VarFix.ULong(romSize);
                 dRom.Merge = merge;
@@ -283,7 +289,14 @@ namespace DATReader.DatReader
                 if (line.Substring(0, 1) == "[")
                     return true;
 
-                string[] parts = line.Split('¬');
+                string[] parts;
+                if (line.Contains("�"))
+                    parts = line.Split('�');
+                else if (line.Contains("¬"))
+                    parts = line.Split('¬');
+                else
+                    continue;
+
 
                 // 1 parent name         = clone of
                 // 2 parent description  = description (from parent)
@@ -307,10 +320,10 @@ namespace DATReader.DatReader
 
                 int index;
                 DatDir dDir;
-                DatDir searchDir = new DatDir(GameName, DatFileType.Dir);
+                DatDir searchDir = new DatDir(GameName, FileType.Dir);
                 if (parentDir.ChildNameSearch(searchDir, out index) != 0)
                 {
-                    dDir = new DatDir(GameName, DatFileType.UnSet) { DGame = new DatGame() };
+                    dDir = new DatDir(GameName, FileType.UnSet) { DGame = new DatGame() };
                     DatGame dGame = dDir.DGame;
                     dGame.Description = GameDescription;
                     if (ParentName != GameName)
@@ -323,11 +336,11 @@ namespace DATReader.DatReader
                     // need to check everything matches
                 }
 
-                DatFile dRom = new DatFile(VarFix.CleanCHD(romName), DatFileType.UnSet)
+                DatFile dRom = new DatFile(VarFix.CleanCHD(romName), FileType.UnSet)
                 {
                     isDisk = true,
                     SHA1 = VarFix.CleanMD5SHA1(romCRC, 40),
-                    Merge = merge
+                    Merge = VarFix.CleanCHD(merge)
                 };
                 // dRom.Size = VarFix.ULong(romSize);
                 // check romof=ParentName
@@ -360,10 +373,10 @@ namespace DATReader.DatReader
 
             public string Filename { get; private set; }
 
-            public int LoadDat(string strFilename)
+            public int LoadDat(System.IO.Stream fStream, string strFilename)
             {
                 Filename = strFilename;
-                _streamReader = File.OpenText(strFilename, DatRead.Enc);
+                _streamReader = new System.IO.StreamReader(fStream, Encoding.UTF8, true, 4096, true);
                 return 0;
             }
 

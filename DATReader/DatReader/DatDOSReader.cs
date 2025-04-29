@@ -1,4 +1,6 @@
-﻿using System.ComponentModel;
+﻿using System;
+using System.ComponentModel;
+using Compress;
 using DATReader.DatStore;
 using DATReader.Utils;
 
@@ -6,12 +8,12 @@ namespace DATReader.DatReader
 {
     public static class DatDOSReader
     {
-        public static bool ReadDat(string strFilename, ReportError errorReport, out DatHeader datHeader)
+        public static bool ReadDat(System.IO.Stream fStream, string strFilename, ReportError errorReport, out DatHeader datHeader)
         {
             using (DatFileLoader dfl = new DatFileLoader())
             {
-                datHeader = new DatHeader { BaseDir = new DatDir("", DatFileType.UnSet) };
-                int errorCode = dfl.LoadDat(strFilename, System.Text.Encoding.UTF8);
+                datHeader = new DatHeader { BaseDir = new DatDir("", FileType.UnSet) };
+                int errorCode = dfl.LoadDat(fStream, strFilename);
                 if (errorCode != 0)
                 {
                     errorReport?.Invoke(strFilename, new Win32Exception(errorCode).Message);
@@ -67,6 +69,7 @@ namespace DATReader.DatReader
             dfl.Gn();
 
             datHeader.Filename = filename;
+            datHeader.Compression = "TDC";
 
             while (dfl.Next != ")")
             {
@@ -152,7 +155,7 @@ namespace DATReader.DatReader
 
             dfl.Gn();
 
-            DatDir dDir = new DatDir(name, DatFileType.UnSet) { DGame = new DatGame() };
+            DatDir dDir = new DatDir(name, FileType.UnSet) { DGame = new DatGame() };
 
             while (dfl.Next != ")")
             {
@@ -199,7 +202,7 @@ namespace DATReader.DatReader
                 return false;
             }
 
-            DatFile dRom = new DatFile(dfl.GnNameToSize(), DatFileType.UnSet);
+            DatFile dRom = new DatFile(dfl.GnNameToSize(), FileType.UnSet);
             dfl.Gn();
 
 
@@ -215,8 +218,12 @@ namespace DATReader.DatReader
                         dRom.CRC = VarFix.CleanMD5SHA1(dfl.Gn(), 8);
                         dfl.Gn();
                         break;
+                    case "sha1":
+                        dRom.SHA1 = VarFix.CleanMD5SHA1(dfl.Gn(), 40);
+                        dfl.Gn();
+                        break;
                     case "date":
-                        dRom.DateModified = dfl.Gn() + " " + dfl.Gn();
+                        dRom.DateModified = StringDateTimeToTicks(dfl.Gn() + " " + dfl.Gn());
                         dfl.Gn();
                         break;
                     default:
@@ -232,5 +239,38 @@ namespace DATReader.DatReader
         }
 
 
+        private static long? StringDateTimeToTicks(string strDateTime)
+        {
+            // string format is yyyy/mm/dd hh:mm:ss
+
+            if (strDateTime.Length != 19)
+                return null;
+
+            if (strDateTime[4] != '/' || strDateTime[7] != '/' || strDateTime[10] != ' ')
+                return null;
+            if (strDateTime[13] != ':' || strDateTime[16] != ':')
+                return null;
+
+            if (!int.TryParse(strDateTime.Substring(0, 4), out int year))
+                return null;
+            if (!int.TryParse(strDateTime.Substring(5, 2), out int month))
+                return null;
+            if (!int.TryParse(strDateTime.Substring(8, 2), out int day))
+                return null;
+
+            if (!int.TryParse(strDateTime.Substring(11, 2), out int hours))
+                return null;
+            if (!int.TryParse(strDateTime.Substring(14, 2), out int minutes))
+                return null;
+            if (!int.TryParse(strDateTime.Substring(17, 2), out int seconds))
+                return null;
+
+            if ((year - 1980) < 0 || (year - 1980) > 0x7f || (seconds % 1) == 1)
+                return new DateTime(year, month, day, hours, minutes, seconds).Ticks;
+
+            ushort dosFileDate = (ushort)((day & 0x1f) | ((month & 0x0f) << 5) | (((year - 1980) & 0x7f) << 9));
+            ushort dosFileTime = (ushort)(((seconds >> 1) & 0x1f) | ((minutes & 0x3f) << 5) | ((hours & 0x1f) << 11));
+            return (dosFileDate << 16) | dosFileTime;
+        }
     }
 }

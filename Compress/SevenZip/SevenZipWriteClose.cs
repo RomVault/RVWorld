@@ -117,14 +117,24 @@ namespace Compress.SevenZip
 
         private void CloseWriting7Zip()
         {
-#if solid
-            if (_packedOutStreams[0].compType != SevenZipCompressType.uncompressed)
+            if (zIsSolid)
             {
-                _compressStream.Flush();
-                _compressStream.Close();
+                if (_packedOutStreams.Count > 0)
+                {
+                    if (_compressStream is LzmaStream dfStream)
+                    {
+                        dfStream.Close();
+                        dfStream.Dispose();
+                    }
+                    else if (_compressStream is RVZstdSharp.CompressionStream dfStream2)
+                    {
+                        dfStream2.Close();
+                        dfStream2.Dispose();
+                    }
+
+                    _packedOutStreams[0].packedSize = (ulong)_zipFs.Position - _packedOutStreams[0].packedStart;
+                }            
             }
-            _packedOutStreams[0].packedSize = (ulong)_zipFs.Position - _packedOutStreams[0].packedStart;
-#endif
             Create7ZStructure();
 
             byte[] newHeaderByte;
@@ -140,7 +150,7 @@ namespace Compress.SevenZip
 
             uint mainHeaderCRC = CRC.CalculateDigest(newHeaderByte, 0, (uint)newHeaderByte.Length);
 
-#region Header Compression
+            #region Header Compression
             long packedHeaderPos = _zipFs.Position;
             LzmaEncoderProperties ep = new(true, GetDictionarySizeFromUncompressedSize((ulong)newHeaderByte.Length), 64);
             LzmaStream lzs = new(ep, false, _zipFs);
@@ -186,7 +196,7 @@ namespace Compress.SevenZip
                 headerMem.Read(newHeaderByte, 0, newHeaderByte.Length);
             }
             mainHeaderCRC = CRC.CalculateDigest(newHeaderByte, 0, (uint)newHeaderByte.Length);
-#endregion
+            #endregion
 
 
             using (BinaryWriter bw = new(_zipFs, Encoding.UTF8, true))
@@ -197,7 +207,6 @@ namespace Compress.SevenZip
                 _zipFs.Write(newHeaderByte, 0, newHeaderByte.Length);
                 _signatureHeader.WriteFinal(bw, headerPosition, (ulong)newHeaderByte.Length, mainHeaderCRC);
             }
-            _zipFs.Flush();
             _zipFs.Close();
             _zipFs.Dispose();
         }

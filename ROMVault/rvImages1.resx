@@ -118,319 +118,406 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
-  <data name="btnFindFixes_Disabled" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Resources\btnFindFixes_Disabled.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="btnFindFixes_Enabled" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Resources\btnFindFixes_Enabled.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="btnFixFiles_Disabled" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Resources\btnFixFiles_Disabled.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="btnFixFiles_Enabled" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Resources\btnFixFiles_Enabled.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="btnReport_Disabled" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Resources\btnReport_Disabled.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="btnReport_Enabled" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Resources\btnReport_Enabled.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="btnScanRoms_Disabled" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Resources\btnScanRoms_Disabled.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="btnScanRoms_Enabled" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Resources\btnScanRoms_Enabled.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="btnUpdateDats_Disabled" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Resources\btnUpdateDats_Disabled.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="btnUpdateDats_Enabled" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Resources\btnUpdateDats_Enabled.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="default1" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Resources\default1.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="default2" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Resources\default2.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="default3" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Resources\default3.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="default4" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Resources\default4.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="Dir" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Resources\Dir.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="DirectoryTree1" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Resources\DirectoryTree1.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="DirectoryTree2" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Resources\DirectoryTree2.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="DirectoryTree3" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Resources\DirectoryTree3.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="DirectoryTree4" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Resources\DirectoryTree4.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="DirectoryTree5" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Resources\DirectoryTree5.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="DirMissing" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Resources\DirMissing.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="ExpandBoxMinus" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Resources\ExpandBoxMinus.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="ExpandBoxPlus" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Resources\ExpandBoxPlus.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="eye" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Resources\eye.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="G_CanBeFixed" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Resources\G_CanBeFixed.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="G_CanBeFixedMIA" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Resources\G_CanBeFixedMIA.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="G_Correct" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Resources\G_Correct.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="G_CorrectMIA" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Resources\G_CorrectMIA.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="G_Corrupt" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Resources\G_Corrupt.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="G_CorruptCanBeFixed" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Resources\G_CorruptCanBeFixed.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="G_Delete" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Resources\G_Delete.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="G_DirCorrupt" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Resources\G_DirCorrupt.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="G_Ignore" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Resources\G_Ignore.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="G_InToSort" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Resources\G_InToSort.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="G_Missing" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Resources\G_Missing.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="G_MissingMIA" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Resources\G_MissingMIA.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="G_MissingMIA1" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Resources\G_MissingMIA.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="G_MoveToCorrupt" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Resources\G_MoveToCorrupt.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="G_MoveToSort" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Resources\G_MoveToSort.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="G_NeededForFix" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Resources\G_NeededForFix.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="G_NotCollected" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Resources\G_NotCollected.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="G_Rename" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Resources\G_Rename.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="G_Unknown" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Resources\G_Unknown.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="G_UnNeeded" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Resources\G_UnNeeded.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="G_UnScanned" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Resources\G_UnScanned.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="link" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Resources\link.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="link1" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Resources\link1.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  <data name="R_InDatCollect_Missing" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\R_InDatCollect_Missing.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
   <data name="logo" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>Resources\logo.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
-  <data name="Pause" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Resources\Pause.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="picPatreon" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Resources\picPatreon.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="picPayPal" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Resources\picPayPal.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="refresh" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Resources\refresh.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="Resume" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Resources\Resume.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="romvaultTZ" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Resources\romvaultTZ.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="R_InDatBad_Correct" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Resources\R_InDatBad_Correct.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="R_InDatBad_NotCollected" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Resources\R_InDatBad_NotCollected.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="R_InDatCollect_CanBeFixed" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Resources\R_InDatCollect_CanBeFixed.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="R_InDatCollect_Correct" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Resources\R_InDatCollect_Correct.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="R_InDatCollect_Corrupt" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Resources\R_InDatCollect_Corrupt.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="R_InDatCollect_CorruptCanBeFixed" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Resources\R_InDatCollect_CorruptCanBeFixed.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="R_InDatCollect_Missing" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Resources\R_InDatCollect_Missing.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="R_InDatCollect_MoveToCorrupt" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Resources\R_InDatCollect_MoveToCorrupt.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="R_InDatCollect_UnScanned" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Resources\R_InDatCollect_UnScanned.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="R_InDatMerged_Deleted" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Resources\R_InDatMerged_Deleted.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="R_InDatMerged_NeededForFix" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Resources\R_InDatMerged_NeededForFix.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="R_InDatMerged_NotCollected" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Resources\R_InDatMerged_NotCollected.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="R_InDatMerged_UnNeeded" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Resources\R_InDatMerged_UnNeeded.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="R_InDatMIA_CanBeFixedMIA" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Resources\R_InDatMIA_CanBeFixedMIA.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="R_InDatMIA_CorrectMIA" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Resources\R_InDatMIA_CorrectMIA.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="R_InDatMIA_MissingMIA" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Resources\R_InDatMIA_MissingMIA.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="R_InToSort_Corrupt" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Resources\R_InToSort_Corrupt.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="R_InToSort_Delete" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Resources\R_InToSort_Delete.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="R_InToSort_Deleted" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Resources\R_InToSort_Deleted.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="R_InToSort_InToSort" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Resources\R_InToSort_InToSort.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="R_InToSort_MoveToCorrupt" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Resources\R_InToSort_MoveToCorrupt.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="R_InToSort_NeededForFix" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Resources\R_InToSort_NeededForFix.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  <data name="btnFixFiles_Enabled" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\btnFixFiles_Enabled.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
   <data name="R_InToSort_UnScanned" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>Resources\R_InToSort_UnScanned.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
-  <data name="R_NotInDat_Corrupt" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Resources\R_NotInDat_Corrupt.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  <data name="R_InToSort_Delete" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\R_InToSort_Delete.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
-  <data name="R_NotInDat_Delete" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Resources\R_NotInDat_Delete.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  <data name="link" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\link.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
-  <data name="R_NotInDat_Deleted" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Resources\R_NotInDat_Deleted.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  <data name="G_CorrectMIA" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\G_CorrectMIA.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
-  <data name="R_NotInDat_Ignore" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Resources\R_NotInDat_Ignore.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  <data name="R_InDatMerged_MoveToSort" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\R_InDatMerged_MoveToSort.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
-  <data name="R_NotInDat_MoveToCorrupt" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Resources\R_NotInDat_MoveToCorrupt.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="R_NotInDat_MoveToSort" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Resources\R_NotInDat_MoveToSort.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="R_NotInDat_NeededForFix" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Resources\R_NotInDat_NeededForFix.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="R_NotInDat_Rename" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Resources\R_NotInDat_Rename.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="R_NotInDat_Unknown" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Resources\R_NotInDat_Unknown.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="R_NotInDat_UnScanned" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Resources\R_NotInDat_UnScanned.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="SevenZip" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Resources\SevenZip.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="SevenZipCorrupt" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Resources\SevenZipCorrupt.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="SevenZipMissing" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Resources\SevenZipMissing.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="SevenZipT7Z" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Resources\SevenZipT7Z.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="SevenZipTZ" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Resources\SevenZipTZ.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="TickBoxLocked" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Resources\TickBoxLocked.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="TickBoxTicked" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Resources\TickBoxTicked.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
-  </data>
-  <data name="TickBoxUnTicked" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Resources\TickBoxUnTicked.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  <data name="G_UnNeeded" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\G_UnNeeded.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
   <data name="Tree1" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>Resources\Tree1.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
-  <data name="Tree2" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Resources\Tree2.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  <data name="G_NotCollected" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\G_NotCollected.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
-  <data name="Tree3" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Resources\Tree3.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  <data name="R_NotInDat_Rename" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\R_NotInDat_Rename.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
-  <data name="Tree4" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Resources\Tree4.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  <data name="DirMissing" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\DirMissing.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
-  <data name="Tree5" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Resources\Tree5.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  <data name="btnFixFiles_Disabled" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\btnFixFiles_Disabled.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
-  <data name="Zip" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Resources\Zip.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  <data name="default2" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\default2.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="DirectoryTree3" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\DirectoryTree3.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="btnReport_Enabled" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\btnReport_Enabled.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="refresh" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\refresh.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="SevenZip" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\SevenZip.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="G_Delete" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\G_Delete.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="R_InDatCollect_UnScanned" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\R_InDatCollect_UnScanned.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="TickBoxTicked" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\TickBoxTicked.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="G_Ignore" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\G_Ignore.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="R_NotInDat_Ignore" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\R_NotInDat_Ignore.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="R_InToSort_MoveToCorrupt" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\R_InToSort_MoveToCorrupt.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="R_InDatMIA_CorrectMIA" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\R_InDatMIA_CorrectMIA.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="G_NeededForFix" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\G_NeededForFix.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
   <data name="ZipCorrupt" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>Resources\ZipCorrupt.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
-  <data name="ZipMissing" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Resources\ZipMissing.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  <data name="picPayPal" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\picPayPal.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
-  <data name="ZipTZ" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Resources\ZipTZ.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  <data name="R_InDatCollect_Corrupt" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\R_InDatCollect_Corrupt.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
-  <data name="ZipTZCorrupt" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>Resources\ZipTZCorrupt.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  <data name="G_MoveToSort" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\G_MoveToSort.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="DirectoryTree5" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\DirectoryTree5.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="G_Unknown" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\G_Unknown.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="R_InDatCollect_MoveToCorrupt" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\R_InDatCollect_MoveToCorrupt.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="R_NotInDat_Unknown" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\R_NotInDat_Unknown.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="btnUpdateDats_Enabled" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\btnUpdateDats_Enabled.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="Tree3" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\Tree3.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="R_InDatMIA_CanBeFixedMIA" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\R_InDatMIA_CanBeFixedMIA.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="R_InToSort_InToSort" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\R_InToSort_InToSort.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="G_CanBeFixedMIA" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\G_CanBeFixedMIA.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="R_InToSort_NeededForFix" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\R_InToSort_NeededForFix.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="G_CorruptCanBeFixed" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\G_CorruptCanBeFixed.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="R_InToSort_Deleted" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\R_InToSort_Deleted.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="R_NotInDat_MoveToCorrupt" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\R_NotInDat_MoveToCorrupt.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="DirectoryTree2" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\DirectoryTree2.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="link1" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\link1.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="R_NotInDat_Deleted" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\R_NotInDat_Deleted.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="Dir" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\Dir.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="G_Missing" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\G_Missing.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="btnFindFixes_Disabled" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\btnFindFixes_Disabled.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="default4" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\default4.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="R_InDatMerged_NotCollected" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\R_InDatMerged_NotCollected.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="romvaultTZ" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\romvaultTZ.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="G_MoveToCorrupt" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\G_MoveToCorrupt.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="R_NotInDat_Delete" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\R_NotInDat_Delete.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="SevenZipCorrupt" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\SevenZipCorrupt.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="R_InDatCollect_CanBeFixed" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\R_InDatCollect_CanBeFixed.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="R_InDatMerged_NeededForFix" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\R_InDatMerged_NeededForFix.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="TickBoxLocked" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\TickBoxLocked.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="G_DirCorrupt" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\G_DirCorrupt.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="eye" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\eye.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="R_InDatMIA_MissingMIA" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\R_InDatMIA_MissingMIA.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="G_Corrupt" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\G_Corrupt.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="default3" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\default3.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="R_InDatCollect_Correct" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\R_InDatCollect_Correct.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="R_InDatMerged_Deleted" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\R_InDatMerged_Deleted.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="R_NotInDat_NeededForFix" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\R_NotInDat_NeededForFix.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="DirectoryTree1" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\DirectoryTree1.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="btnFindFixes_Enabled" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\btnFindFixes_Enabled.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="R_NotInDat_UnScanned" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\R_NotInDat_UnScanned.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="Resume" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\Resume.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="Zip" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\Zip.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="ExpandBoxPlus" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\ExpandBoxPlus.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="G_CanBeFixed" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\G_CanBeFixed.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="Pause" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\Pause.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="btnReport_Disabled" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\btnReport_Disabled.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="R_NotInDat_Corrupt" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\R_NotInDat_Corrupt.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="G_InToSort" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\G_InToSort.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="btnUpdateDats_Disabled" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\btnUpdateDats_Disabled.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="R_InDatMerged_UnNeeded" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\R_InDatMerged_UnNeeded.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="R_InDatCollect_CorruptCanBeFixed" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\R_InDatCollect_CorruptCanBeFixed.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="G_Correct" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\G_Correct.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="DirectoryTree4" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\DirectoryTree4.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="btnScanRoms_Disabled" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\btnScanRoms_Disabled.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="R_InToSort_Corrupt" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\R_InToSort_Corrupt.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="Tree2" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\Tree2.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="Tree4" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\Tree4.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="G_UnScanned" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\G_UnScanned.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="picPatreon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\picPatreon.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="btnScanRoms_Enabled" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\btnScanRoms_Enabled.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="R_InDatMerged_Delete" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\R_InDatMerged_Delete.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="R_NotInDat_MoveToSort" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\R_NotInDat_MoveToSort.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="G_Rename" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\G_Rename.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="G_MissingMIA" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\G_MissingMIA.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="default1" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\default1.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="Tree5" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\Tree5.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="ExpandBoxMinus" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\ExpandBoxMinus.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="TickBoxUnTicked" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\TickBoxUnTicked.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="deleteOld" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\deleteOld.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="R_InDatMerged_Corrupt" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\R_InDatMerged_Corrupt.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="R_InDatMerged_MoveToCorrupt" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\R_InDatMerged_MoveToCorrupt.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="R_InDatMerged_UnScanned" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\R_InDatMerged_UnScanned.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="R_InDatMIA_Corrupt" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\R_InDatMIA_Corrupt.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="R_InDatMIA_CorruptCanBeFixed" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\R_InDatMIA_CorruptCanBeFixed.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="R_InDatMIA_MoveToCorrupt" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\R_InDatMIA_MoveToCorrupt.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="R_InDatMIA_UnScanned" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\R_InDatMIA_UnScanned.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="G_Incomplete" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\G_Incomplete.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="R_InDatCollect_Incomplete" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\R_InDatCollect_Incomplete.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="R_InDatCollect_MoveToSort" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\R_InDatCollect_MoveToSort.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="R_InDatCollect_NeededForFix" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\R_InDatCollect_NeededForFix.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="R_InDatCollect_Delete" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\R_InDatCollect_Delete.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="TickBoxTristate" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\TickBoxTristate.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="Tick" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\Tick.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="unTick" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\unTick.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="R_InDatMIA_Delete" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\R_InDatMIA_Delete.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="R_InDatMIA_Incomplete" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\R_InDatMIA_Incomplete.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="R_InDatMIA_MoveToSort" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\R_InDatMIA_MoveToSort.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="ZipTDC" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\ZipTDC.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="ZipZSTD" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\ZipZSTD.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="ZipTrrnt" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\ZipTrrnt.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="SevenZipSLZMA" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\SevenZipSLZMA.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="SevenZipNLZMA" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\SevenZipNLZMA.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="SevenZipNZSTD" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\SevenZipNZSTD.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="SevenZipSZSTD" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\SevenZipSZSTD.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="SevenZipTrrnt" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\SevenZipTrrnt.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="SevenZipNLZMAMissing" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\SevenZipNLZMAMissing.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="SevenZipNZSTDMissing" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\SevenZipNZSTDMissing.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="SevenZipSLZMAMissing" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\SevenZipSLZMAMissing.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="SevenZipSZSTDMissing" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\SevenZipSZSTDMissing.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="ZipTDCMissing" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\ZipTDCMissing.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="ZipTrrntMissing" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\ZipTrrntMissing.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="ZipZSTDMissing" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\ZipZSTDMissing.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="ZipConvert" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\ZipConvert.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="ZipConvert1" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\ZipConvert1.png;System.Drawing.Bitmap, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
 </root>

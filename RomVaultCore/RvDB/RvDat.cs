@@ -1,13 +1,15 @@
 ﻿/******************************************************
  *     ROMVault3 is written by Gordon J.              *
  *     Contact gordon@romvault.com                    *
- *     Copyright 2022                                 *
+ *     Copyright 2025                                 *
  ******************************************************/
 
 using System;
 using System.Collections.Generic;
 using System.IO;
 using DATReader.DatClean;
+using DATReader.DatStore;
+using RomVaultCore.Storage.Dat;
 
 namespace RomVaultCore.RvDB
 {
@@ -16,11 +18,23 @@ namespace RomVaultCore.RvDB
         Delete,
         Correct
     }
+    [Flags]
+    public enum DatFlags
+    {
+        AutoAddedDirectory = 1,
+        MultiDatOverride = 2,
+        MultiDatsInDirectory = 4,
+        UseDescriptionAsDirName = 8,
+        SingleArchive = 16,
+        UseIdForName = 32
+    }
 
     public class RvDat
     {
+
         public enum DatData
         {
+            Id = 0,
             DatName = 1,
             DatRootFullName = 2,
 
@@ -38,64 +52,21 @@ namespace RomVaultCore.RvDB
             SuperDat = 14,
             DirSetup = 15,
             Header = 16,
-            SubDirType = 17
+            SubDirType = 17,
+            Compression = 18
         }
 
         private readonly List<DatMetaData> _gameMetaData = new List<DatMetaData>();
         public int DatIndex = -1;
         public DatUpdateStatus Status;
+        public long TimeStamp { get; private set; }
+        private DatFlags datFlags;
 
-        public RemoveSubType SubDirType
-        {
-            get
-            {
-                string dirType = GetData(DatData.SubDirType);
-                if (string.IsNullOrWhiteSpace(dirType))
-                    return RemoveSubType.KeepAllSubDirs;
-                return (RemoveSubType)Convert.ToInt32(dirType);
-            }
-            set => SetData(DatData.SubDirType,((int)value).ToString());
-        }
 
-        public long TimeStamp;
-        public bool MultiDatOverride;
-        public bool MultiDatsInDirectory;
-        public bool AutoAddedDirectory;
-        public bool UseDescriptionAsDirName;
-        public bool SingleArchive;
-
-        public void Write(BinaryWriter bw)
-        {
-            bw.Write(TimeStamp);
-            byte bools = (byte)
-                (
-                    (AutoAddedDirectory ? 1 : 0) |
-                    (MultiDatOverride ? 2 : 0) |
-                    (MultiDatsInDirectory ? 4 : 0) |
-                    (UseDescriptionAsDirName ? 8 : 0) |
-                    (SingleArchive ? 16 : 0)
-                 );
-            bw.Write(bools);
-
-            bw.Write((byte)_gameMetaData.Count);
-            foreach (DatMetaData gameMD in _gameMetaData)
-            {
-                gameMD.Write(bw);
-            }
-        }
-
-        public void Read(BinaryReader br)
+        public RvDat(BinaryReader br)
         {
             TimeStamp = br.ReadInt64();
-            if (TimeStamp < RVIO.FileParamConvert.FileTimeOffset)
-                TimeStamp += RVIO.FileParamConvert.FileTimeOffset;
-
-            byte bools = br.ReadByte();
-            AutoAddedDirectory = (bools & 1) == 1;
-            MultiDatOverride = (bools & 2) == 2;
-            MultiDatsInDirectory = (bools & 4) == 4;
-            UseDescriptionAsDirName = (bools & 8) == 8;
-            SingleArchive = (bools & 16) == 16;
+            datFlags = (DatFlags)br.ReadByte();
 
             byte c = br.ReadByte();
             _gameMetaData.Clear();
@@ -106,7 +77,84 @@ namespace RomVaultCore.RvDB
             }
         }
 
-        public void SetData(DatData id, string val)
+
+        public RvDat(DatImportDat fileDat)
+        {
+            DatHeader datHeaderExternal = fileDat.datHeader;
+
+            Status = DatUpdateStatus.Correct;
+            TimeStamp = fileDat.TimeStamp;
+
+            SetData(DatData.Id, datHeaderExternal.Id);
+            SetData(DatData.DatName, datHeaderExternal.Name);
+            SetData(DatData.DatRootFullName, fileDat.DatFullName);
+
+            SetData(DatData.RootDir, datHeaderExternal.RootDir);
+            SetData(DatData.Description, datHeaderExternal.Description);
+            SetData(DatData.Category, datHeaderExternal.Category);
+            SetData(DatData.Version, datHeaderExternal.Version);
+            SetData(DatData.Date, datHeaderExternal.Date);
+            SetData(DatData.Author, datHeaderExternal.Author);
+            SetData(DatData.Email, datHeaderExternal.Email);
+            SetData(DatData.HomePage, datHeaderExternal.Homepage);
+            SetData(DatData.URL, datHeaderExternal.URL);
+            SetData(DatData.DirSetup, datHeaderExternal.Dir);
+            SetData(DatData.Header, datHeaderExternal.Header);
+            SetData(DatData.Compression, datHeaderExternal.Compression);
+            SetFlags(fileDat.Flags);
+            SubDirType = fileDat.SubDirType; // stored in DatData.SubDirType
+        }
+
+        public void InvalidateDatTimeStamp()
+        {
+            TimeStamp = long.MaxValue;
+        }
+
+
+        public RemoveSubType SubDirType
+        {
+            get
+            {
+                string dirType = GetData(DatData.SubDirType);
+                if (string.IsNullOrWhiteSpace(dirType))
+                    return RemoveSubType.KeepAllSubDirs;
+                return (RemoveSubType)Convert.ToInt32(dirType);
+            }
+            set => SetData(DatData.SubDirType, ((int)value).ToString());
+        }
+
+
+        public bool Flag(DatFlags datFlag)
+        {
+            return (datFlags & datFlag) != 0;
+        }
+        public void SetFlag(DatFlags datFlag, bool value)
+        {
+            datFlags = datFlags & ~datFlag;
+            if (value) datFlags |= datFlag;
+        }
+        public void SetFlags(DatFlags datFlags)
+        {
+            this.datFlags = datFlags;
+        }
+        public int FlagsCompareTo(RvDat d1)
+        {
+            return Math.Sign(datFlags.CompareTo(d1.datFlags));
+        }
+
+        public void Write(BinaryWriter bw)
+        {
+            bw.Write(TimeStamp);
+            bw.Write((byte)datFlags);
+
+            bw.Write((byte)_gameMetaData.Count);
+            foreach (DatMetaData gameMD in _gameMetaData)
+            {
+                gameMD.Write(bw);
+            }
+        }
+
+        private void SetData(DatData id, string val)
         {
             if (string.IsNullOrWhiteSpace(val))
             {
@@ -164,7 +212,7 @@ namespace RomVaultCore.RvDB
             public void Write(BinaryWriter bw)
             {
                 bw.Write((byte)Id);
-                bw.Write(DB.Fn(Value));
+                bw.Write(DB.FixNull(Value));
             }
         }
     }

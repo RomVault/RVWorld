@@ -1,7 +1,7 @@
 ﻿/******************************************************
  *     ROMVault3 is written by Gordon J.              *
  *     Contact gordon@romvault.com                    *
- *     Copyright 2022                                 *
+ *     Copyright 2025                                 *
  ******************************************************/
 
 using System;
@@ -27,13 +27,15 @@ namespace ROMVault
 
         private bool _bDone;
 
+        private bool _closeOnExit;
 
-        private ThreadWorker ThWrk;
+
+        private ThreadWorker _thWrk;
         private readonly Finished _funcFinished;
 
-
-        public FrmProgressWindowFix(Form parentForm, Finished funcFinished)
+        public FrmProgressWindowFix(Form parentForm, bool closeOnExit, Finished funcFinished)
         {
+            _closeOnExit = closeOnExit;
             _rowCount = 0;
             _rowDisplay = -1;
             _pageDisplayIndex = -1;
@@ -44,11 +46,14 @@ namespace ROMVault
             _funcFinished = funcFinished;
             InitializeComponent();
             dataGridView1.Columns["FileSize"].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleRight;
-           
+
 
             Type dgvType = dataGridView1.GetType();
             PropertyInfo pi = dgvType.GetProperty("DoubleBuffered", BindingFlags.Instance | BindingFlags.NonPublic);
             pi.SetValue(dataGridView1, true, null);
+
+            if (Settings.rvSettings.Darkness)
+                Dark.dark.SetColors(this);
 
             timer1.Interval = 250;
             timer1.Enabled = true;
@@ -113,8 +118,8 @@ namespace ROMVault
         private void FrmProgressWindowFixShown(object sender, EventArgs e)
         {
             SetDataGridSize();
-            ThWrk = new ThreadWorker(Fix.PerformFixes) { wReport = BgwProgressChanged, wFinal = BgwRunWorkerCompleted };
-            ThWrk.StartAsync();
+            _thWrk = new ThreadWorker(Fix.PerformFixes) { wReport = BgwProgressChanged, wFinal = BgwRunWorkerCompleted };
+            _thWrk.StartAsync();
         }
 
 
@@ -194,9 +199,20 @@ namespace ROMVault
                 return;
             }
 
-            cancelButton.Text = "Close";
-            cancelButton.Enabled = true;
-            _bDone = true;
+            RVPlayer.PlaySound("audio\\complete.wav");
+
+            if (!_closeOnExit)
+            {
+                cancelButton.Text = "Close";
+                cancelButton.Enabled = true;
+                _bDone = true;
+            }
+            else
+            {
+                _funcFinished?.Invoke();
+                _parentForm.Show();
+                Close();
+            }
         }
 
         private void UpdateStatusText()
@@ -222,7 +238,7 @@ namespace ROMVault
             {
                 cancelButton.Enabled = false;
                 cancelButton.Text = "Cancelling";
-                ThWrk.Cancel();
+                _thWrk.Cancel();
             }
         }
 

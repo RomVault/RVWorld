@@ -9,7 +9,15 @@ namespace Compress.SevenZip
         // not finalized yet, so do not use
         private void WriteRomVault7Zip(BinaryWriter bw, ulong headerPos, ulong headerLength, uint headerCRC)
         {
-            const string sig = "RomVault7Z01";
+            string index = "0";
+            switch (ZipStruct)
+            {
+                case ZipStructure.SevenZipSLZMA: index = "1"; break;
+                case ZipStructure.SevenZipNLZMA: index = "2"; break;
+                case ZipStructure.SevenZipSZSTD: index = "3"; break;
+                case ZipStructure.SevenZipNZSTD: index = "4"; break;
+            }
+            string sig = "RomVault7Z0" + index;
             byte[] RV7Zid = Util.Enc.GetBytes(sig);
 
             // RomVault 7Zip torrent header
@@ -22,31 +30,26 @@ namespace Compress.SevenZip
             bw.Write(headerCRC);
             bw.Write(headerPos);
             bw.Write(headerLength);
-
-            ZipStatus = ZipStatus.TrrntZip;
         }
 
-        private bool IsRomVault7Z(long testBaseOffset,ulong testHeaderPos,ulong testHeaderLength,uint testHeaderCRC)
+        private ZipStructure IsRomVault7Z(long testBaseOffset, ulong testHeaderPos, ulong testHeaderLength, uint testHeaderCRC)
         {
             long length = _zipFs.Length;
             if (length < 32)
-            {
-                return false;
-            }
+                return ZipStructure.None;
+
             _zipFs.Seek(_baseOffset + (long)testHeaderPos - 32, SeekOrigin.Begin);
 
-            const string sig = "RomVault7Z01";
+            const string sig = "RomVault7Z0";
             byte[] rv7Zid = Util.Enc.GetBytes(sig);
             byte[] header = new byte[12];
             _zipFs.Read(header, 0, 12);
-            
-            
-            for (int i = 0; i < 12; i++)
+
+
+            for (int i = 0; i < 11; i++)
             {
                 if (header[i] != rv7Zid[i])
-                {
-                    return false;
-                }
+                    return ZipStructure.None;
             }
 
             uint headerCRC;
@@ -60,19 +63,29 @@ namespace Compress.SevenZip
             }
 
             if (headerCRC != testHeaderCRC)
-                return false;
+                return ZipStructure.None;
 
-            if (headerOffset != testHeaderPos+(ulong)testBaseOffset)
-                return false;
+            if (headerOffset != testHeaderPos + (ulong)testBaseOffset)
+                return ZipStructure.None;
 
-            return headerSize == testHeaderLength;
+            if (headerSize != testHeaderLength)
+                return ZipStructure.None;
+
+            switch (header[11])
+            {
+                case (byte)'1': return ZipStructure.SevenZipSLZMA;
+                case (byte)'2': return ZipStructure.SevenZipNLZMA;
+                case (byte)'3': return ZipStructure.SevenZipSZSTD;
+                case (byte)'4': return ZipStructure.SevenZipNZSTD;
+            }
+            return ZipStructure.None;
         }
 
-        private bool Istorrent7Z()
+        private ZipStructure Istorrent7Z()
         {
             const int crcsz = 128;
             const int t7ZsigSize = 16 + 1 + 9 + 4 + 4;
-            byte[] kSignature = { (byte)'7', (byte)'z', 0xBC, 0xAF, 0x27, 0x1C };
+            byte[] kSignature = [(byte)'7', (byte)'z', 0xBC, 0xAF, 0x27, 0x1C];
             int kSignatureSize = kSignature.Length;
             const string sig = "\xa9\x9f\xd1\x57\x08\xa9\xd7\xea\x29\x64\xb2\x36\x1b\x83\x52\x33\x01torrent7z_0.9beta";
             byte[] t7Zid = Util.Enc.GetBytes(sig);
@@ -148,12 +161,12 @@ namespace Compress.SevenZip
 
                     if (inCrc32 == calcCrc32)
                     {
-                        return true;
+                        return ZipStructure.SevenZipTrrnt;
                     }
                 }
             }
 
-            return false;
+            return ZipStructure.None;
         }
 
     }

@@ -3,7 +3,7 @@
 namespace RomVaultCore
 {
 
-    public delegate void WorkerStart(ThreadWorker work);
+    public delegate void WorkerStart(ThreadWorker thWrk);
     public delegate void WorkerReport(object obj);
     public delegate void Worker();
 

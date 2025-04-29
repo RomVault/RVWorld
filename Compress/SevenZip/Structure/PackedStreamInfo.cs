@@ -75,7 +75,7 @@ namespace Compress.SevenZip.Structure
             }
 
             // Only checking the first CRC assuming all the reset will be the same
-            if (packedStreams[0].Crc != null)
+            if (packedStreams.Length>0 && packedStreams[0].Crc != null)
             {
                 bw.Write((byte) HeaderProperty.kCRC);
                 for (ulong i = 0; i < numPackStreams; i++)

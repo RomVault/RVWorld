@@ -1,7 +1,7 @@
 ﻿/******************************************************
  *     ROMVault3 is written by Gordon J.              *
  *     Contact gordon@romvault.com                    *
- *     Copyright 2022                                 *
+ *     Copyright 2025                                 *
  ******************************************************/
 
 using System;
@@ -19,12 +19,9 @@ namespace ROMVault
         public FrmSplashScreen()
         {
             InitializeComponent();
-            lblVersion.Text = $@"Version {Program.StrVersion} : {Application.StartupPath}";
+            lblVersion.Text = $@"Version {Program.strVersion} : {Application.StartupPath}";
             Opacity = 0;
             timer1.Interval = 50;
-
-            label1.Text = $@"Registered to : {UISettings.Username}                      Contact Email : {UISettings.EMail}";
-
 
             _thWrk = new ThreadWorker(StartUpCode) {wReport = BgwProgressChanged, wFinal = BgwRunWorkerCompleted};
         }
@@ -36,10 +33,10 @@ namespace ROMVault
         }
 
 
-        private static void StartUpCode(ThreadWorker e)
+        private static void StartUpCode(ThreadWorker thWrk)
         {
             RepairStatus.InitStatusCheck();
-            DB.Read(e);
+            DB.Read(thWrk);
         }
 
 

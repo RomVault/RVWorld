@@ -1,4 +1,5 @@
 ﻿using System;
+using Compress;
 using DATReader.DatStore;
 using DATReader.Utils;
 
@@ -53,8 +54,8 @@ namespace DATReader.DatClean
                                 string name0 = df0.Name;
                                 string name1 = df1.Name;
 
-                                bool nS0 = name0.Contains("\\");
-                                bool ns1 = name1.Contains("\\");
+                                bool nS0 = name0.Contains("/");
+                                bool ns1 = name1.Contains("/");
 
                                 if (nS0 && !ns1)
                                 {
@@ -66,8 +67,8 @@ namespace DATReader.DatClean
                                 }
                                 else if (nS0 && ns1)
                                 {
-                                    string s0 = name0.Substring(0, name0.IndexOf("\\", StringComparison.Ordinal));
-                                    string s1 = name1.Substring(0, name1.IndexOf("\\", StringComparison.Ordinal));
+                                    string s0 = name0.Substring(0, name0.IndexOf("/", StringComparison.Ordinal));
+                                    string s1 = name1.Substring(0, name1.IndexOf("/", StringComparison.Ordinal));
                                     if (s0 != s1)
                                         mGame.ChildRemove(df1);
                                     else
@@ -131,7 +132,7 @@ namespace DATReader.DatClean
         {
             if (inDat is DatFile dFile)
             {
-                return (dFile.DatStatus == DatFileStatus.InDatCollect || dFile.DatStatus == DatFileStatus.InDatBad);
+                return (dFile.DatStatus == DatStatus.InDatCollect || dFile.DatStatus == DatStatus.InDatNoDump);
             }
 
             DatDir dDir = inDat as DatDir;
@@ -155,6 +156,7 @@ namespace DATReader.DatClean
 
             return found;
         }
+
 
         public static void RemoveNoDumps(DatDir tDat)
         {
@@ -231,6 +233,20 @@ namespace DATReader.DatClean
             }
         }
 
+        public static void RemoveAllDateTime(DatDir tDat)
+        {
+            for (int g = 0; g < tDat.Count; g++)
+            {
+                tDat[g].DateModified = null;
+                if (tDat[g] is DatDir mGame)
+                {
+                    if (mGame.DatStruct == ZipStructure.ZipTDC)
+                        continue;
+                    RemoveAllDateTime(mGame);
+                }
+            }
+        }
+
         public static void RemoveUnNeededDirectories(DatDir tDat)
         {
             for (int g = 0; g < tDat.Count; g++)
@@ -238,14 +254,13 @@ namespace DATReader.DatClean
                 if (!(tDat[g] is DatDir mGame))
                     continue;
 
-                if (mGame.DGame == null)
-                {
+                if (mGame.FileType == FileType.Dir || (mGame.FileType == FileType.UnSet && mGame.DGame == null))
                     RemoveUnNeededDirectories(mGame);
-                }
                 else
                 {
-                    if (mGame.DatFileType != DatFileType.DirRVZip)
-                        RemoveUnNeededDirectoriesFromZip(mGame);
+                    if (mGame.DatStruct == ZipStructure.ZipTDC)
+                        continue;
+                    RemoveUnNeededDirectoriesFromZip(mGame);
                 }
             }
         }
@@ -255,7 +270,7 @@ namespace DATReader.DatClean
             for (int r = 0; r < mGame.Count; r++)
             {
                 DatFile df1 = (DatFile)mGame[r];
-                if (df1.Size != 0 || df1.Name.Length == 0 || df1.Name.Substring(df1.Name.Length - 1) != "\\")
+                if (df1.Size != 0 || df1.Name.Length == 0 || df1.Name.Substring(df1.Name.Length - 1) != "/")
                     continue;
                 bool found = false;
                 for (int r1 = 0; r1 < mGame.Count; r1++)
@@ -281,30 +296,45 @@ namespace DATReader.DatClean
             }
         }
 
+        public static void RemoveFilesNotInGames(DatDir tDat)
+        {
+            for (int g = 0; g < tDat.Count; g++)
+            {
+                if (tDat[g] is DatFile datFile)
+                {
+                    tDat.ChildRemove(datFile);
+                    g--;
+                    continue;
+                }
+
+                if (!(tDat[g] is DatDir datDir))
+                    continue;
+
+                if (datDir.DGame == null)
+                    RemoveFilesNotInGames(datDir);
+            }
+        }
+
         public static void RemoveEmptyDirectories(DatDir tDat)
         {
             for (int g = 0; g < tDat.Count; g++)
             {
-                if (!(tDat[g] is DatDir mGame))
+                if (!(tDat[g] is DatDir datDir))
                     continue;
 
-                if (mGame.DGame == null)
+                if (datDir.DGame == null)
                 {
-                    RemoveEmptyDirectories(mGame);
+                    RemoveEmptyDirectories(datDir);
                 }
                 else
                 {
-                    if (mGame.Count == 0)
+                    if (datDir.Count == 0)
                     {
-                        tDat.ChildRemove(mGame);
+                        tDat.ChildRemove(datDir);
                         g--;
                     }
                 }
             }
         }
-
-
-
-
     }
 }

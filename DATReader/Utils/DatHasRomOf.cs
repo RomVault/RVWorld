@@ -26,6 +26,8 @@ namespace DATReader.Utils
                         return true;
                     if (!String.IsNullOrWhiteSpace(mGame.DGame.CloneOf))
                         return true;
+                    if (!String.IsNullOrWhiteSpace(mGame.DGame.CloneOfId))
+                        return true;
                 }
 
             }

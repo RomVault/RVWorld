@@ -9,7 +9,7 @@
     <OutputType>WinExe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>ROMVault</RootNamespace>
-    <AssemblyName>ROMVault35</AssemblyName>
+    <AssemblyName>ROMVault37</AssemblyName>
     <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <TargetFrameworkProfile>
     </TargetFrameworkProfile>
@@ -34,7 +34,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
     <DebugSymbols>true</DebugSymbols>
-    <OutputPath>E:\RomVault\</OutputPath>
+    <OutputPath>..\..\stage\Private\Debug\RomVault\</OutputPath>
     <DefineConstants>TRACE;DEBUG;RomShare</DefineConstants>
     <DebugType>full</DebugType>
     <PlatformTarget>x64</PlatformTarget>
@@ -71,7 +71,7 @@
     <DefineConstants>TRACE;RomShare</DefineConstants>
     <Optimize>true</Optimize>
     <DebugType>full</DebugType>
-    <PlatformTarget>AnyCPU</PlatformTarget>
+    <PlatformTarget>x64</PlatformTarget>
     <CodeAnalysisLogFile>bin\Release\ROMVault2.exe.CodeAnalysisLog.xml</CodeAnalysisLogFile>
     <CodeAnalysisUseTypeNameInSuppression>true</CodeAnalysisUseTypeNameInSuppression>
     <CodeAnalysisModuleSuppressionsFile>GlobalSuppressions.cs</CodeAnalysisModuleSuppressionsFile>
@@ -87,8 +87,8 @@
     <ApplicationIcon>chip.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Microsoft.Bcl.AsyncInterfaces, Version=6.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
-      <HintPath>..\packages\Microsoft.Bcl.AsyncInterfaces.6.0.0\lib\net461\Microsoft.Bcl.AsyncInterfaces.dll</HintPath>
+    <Reference Include="Microsoft.Bcl.AsyncInterfaces, Version=8.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.Bcl.AsyncInterfaces.8.0.0\lib\net462\Microsoft.Bcl.AsyncInterfaces.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Buffers, Version=4.0.3.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
@@ -110,20 +110,17 @@
     </Reference>
     <Reference Include="System.Runtime.Serialization" />
     <Reference Include="System.ServiceModel" />
-    <Reference Include="System.ServiceModel.Http, Version=4.9.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <HintPath>..\packages\System.ServiceModel.Http.4.9.0\lib\net461\System.ServiceModel.Http.dll</HintPath>
+    <Reference Include="System.ServiceModel.Http, Version=4.10.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.ServiceModel.Http.4.10.0\lib\net461\System.ServiceModel.Http.dll</HintPath>
     </Reference>
-    <Reference Include="System.ServiceModel.Primitives, Version=4.9.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <HintPath>..\packages\System.ServiceModel.Primitives.4.9.0\lib\net461\System.ServiceModel.Primitives.dll</HintPath>
+    <Reference Include="System.ServiceModel.Primitives, Version=4.10.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.ServiceModel.Primitives.4.10.0\lib\net461\System.ServiceModel.Primitives.dll</HintPath>
     </Reference>
-    <Reference Include="System.Text.Encoding.CodePages, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <HintPath>..\packages\System.Text.Encoding.CodePages.6.0.0\lib\net461\System.Text.Encoding.CodePages.dll</HintPath>
+    <Reference Include="System.Text.Encodings.Web, Version=8.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Text.Encodings.Web.8.0.0\lib\net462\System.Text.Encodings.Web.dll</HintPath>
     </Reference>
-    <Reference Include="System.Text.Encodings.Web, Version=6.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
-      <HintPath>..\packages\System.Text.Encodings.Web.6.0.0\lib\net461\System.Text.Encodings.Web.dll</HintPath>
-    </Reference>
-    <Reference Include="System.Text.Json, Version=6.0.0.5, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
-      <HintPath>..\packages\System.Text.Json.6.0.5\lib\net461\System.Text.Json.dll</HintPath>
+    <Reference Include="System.Text.Json, Version=8.0.0.5, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Text.Json.8.0.5\lib\net462\System.Text.Json.dll</HintPath>
     </Reference>
     <Reference Include="System.ValueTuple, Version=4.0.3.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
       <HintPath>..\packages\System.ValueTuple.4.5.0\lib\net47\System.ValueTuple.dll</HintPath>
@@ -133,15 +130,20 @@
     </Reference>
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
-    <Reference Include="ZstdNet, Version=1.4.5.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\ZstdNet.1.4.5\lib\net45\ZstdNet.dll</HintPath>
-    </Reference>
-    <Reference Include="ZstdSharp, Version=0.6.2.0, Culture=neutral, PublicKeyToken=8d151af33a4ad5cf, processorArchitecture=MSIL">
-      <HintPath>..\packages\ZstdSharp.Port.0.6.2\lib\net461\ZstdSharp.dll</HintPath>
-    </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="EmuArcHelper.cs" />
+    <Compile Include="Automate.cs" />
+    <Compile Include="FolderBrowser.cs" />
+    <Compile Include="HelperSideInfo.cs" />
+    <Compile Include="FolderBrowserDialogEx.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="FrmDirectoryMappings.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="FrmDirectoryMappings.Designer.cs">
+      <DependentUpon>FrmDirectoryMappings.cs</DependentUpon>
+    </Compile>
     <Compile Include="FrmMain_Artwork.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -153,12 +155,6 @@
     </Compile>
     <Compile Include="FrmMain_RomGrid.cs">
       <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="FrmRegistration.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="FrmRegistration.designer.cs">
-      <DependentUpon>FrmRegistration.cs</DependentUpon>
     </Compile>
     <Compile Include="FrmRomInfo.cs">
       <SubType>Form</SubType>
@@ -235,7 +231,11 @@
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="UISettings.cs" />
+    <Compile Include="SoundPlayer.cs" />
+    <EmbeddedResource Include="FrmDirectoryMappings.resx">
+      <DependentUpon>FrmDirectoryMappings.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
     <EmbeddedResource Include="FrmHelpAbout.resx">
       <DependentUpon>FrmHelpAbout.cs</DependentUpon>
     </EmbeddedResource>
@@ -257,9 +257,6 @@
       <DependentUpon>FrmDirectorySettings.cs</DependentUpon>
       <SubType>Designer</SubType>
     </EmbeddedResource>
-    <EmbeddedResource Include="FrmRegistration.resx">
-      <DependentUpon>FrmRegistration.cs</DependentUpon>
-    </EmbeddedResource>
     <EmbeddedResource Include="FrmRomInfo.resx">
       <DependentUpon>FrmRomInfo.cs</DependentUpon>
     </EmbeddedResource>
@@ -272,6 +269,7 @@
     </EmbeddedResource>
     <EmbeddedResource Include="FrmSplashScreen.resx">
       <DependentUpon>FrmSplashScreen.cs</DependentUpon>
+      <SubType>Designer</SubType>
     </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
@@ -321,20 +319,56 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="chdman.exe">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
     <Content Include="chip.ico" />
     <Content Include="Resources\default1.png" />
     <Content Include="Resources\default2.png" />
     <Content Include="Resources\default3.png" />
     <Content Include="Resources\default4.png" />
+    <None Include="Resources\unTick.png" />
+    <None Include="Resources\R_InDatMIA_MoveToSort.png" />
+    <None Include="Resources\R_InDatMIA_Delete.png" />
+    <None Include="Resources\R_InDatMIA_Incomplete.png" />
+    <None Include="Resources\ZipTDC.png" />
+    <None Include="Resources\ZipTDCCorrupt.png" />
+    <None Include="Resources\ZipZSTD.png" />
+    <None Include="Resources\SevenZipSZSTD.png" />
+    <None Include="Resources\SevenZipNLZMA.png" />
+    <None Include="Resources\SevenZipNZSTD.png" />
+    <None Include="Resources\ZipTDCMissing.png" />
+    <None Include="Resources\SevenZipNLZMAMissing.png" />
+    <None Include="Resources\SevenZipNZSTDMissing.png" />
+    <None Include="Resources\SevenZipSLZMAMissing.png" />
+    <None Include="Resources\SevenZipSZSTDMissing.png" />
+    <None Include="Resources\ZipTrrntMissing.png" />
+    <None Include="Resources\ZipZSTDMissing.png" />
+    <None Include="Resources\ZipConvert.png" />
+    <None Include="Resources\ZipConvert1.png" />
+    <None Include="Resources\Tick.png" />
+    <None Include="Resources\pngDown.png" />
+    <None Include="Resources\pngUp.png" />
+    <None Include="Resources\TickBoxTristate.png" />
+    <None Include="Resources\R_InDatCollect_Delete.png" />
+    <None Include="Resources\R_InDatCollect_NeededForFix.png" />
+    <None Include="Resources\R_InDatCollect_Incomplete.png" />
+    <None Include="Resources\R_InDatCollect_MoveToSort.png" />
+    <None Include="Resources\G_Incomplete.png" />
+    <None Include="Resources\R_InDatMIA_CorruptCanBeFixed.png" />
+    <None Include="Resources\R_InDatMIA_Corrupt.png" />
+    <None Include="Resources\R_InDatMIA_UnScanned.png" />
+    <None Include="Resources\R_InDatMIA_MoveToCorrupt.png" />
+    <None Include="Resources\R_InDatMerged_UnScanned.png" />
+    <None Include="Resources\R_InDatMerged_Corrupt.png" />
+    <None Include="Resources\R_InDatMerged_MoveToCorrupt.png" />
+    <None Include="Resources\deleteOld.png" />
+    <None Include="Resources\R_InDatNoDump_NotCollected.png" />
+    <None Include="Resources\R_InDatNoDump_Correct.png" />
+    <None Include="Resources\R_InDatMerged_Delete.png" />
+    <None Include="Resources\R_InDatMerged_MoveToSort.png" />
     <None Include="Resources\R_InDatMIA_CanBeFixedMIA.png" />
     <None Include="Resources\R_InDatMIA_CorrectMIA.png" />
     <None Include="Resources\R_InDatMIA_MissingMIA.png" />
     <None Include="Resources\G_CanBeFixedMIA.png" />
     <None Include="Resources\G_CorrectMIA.png" />
-    <None Include="Resources\SevenZipMissing.png" />
     <None Include="Resources\SevenZipCorrupt.png" />
     <None Include="Resources\SevenZip.png" />
     <None Include="Resources\romvaultTZ.png" />
@@ -368,8 +402,6 @@
     <None Include="Resources\R_InDatCollect_Corrupt.png" />
     <None Include="Resources\R_InDatCollect_Correct.png" />
     <None Include="Resources\R_InDatCollect_CanBeFixed.png" />
-    <None Include="Resources\R_InDatBad_NotCollected.png" />
-    <None Include="Resources\R_InDatBad_Correct.png" />
     <None Include="Resources\picPayPal.png" />
     <None Include="Resources\picPatreon.png" />
     <None Include="Resources\Pause.png" />
@@ -414,9 +446,8 @@
     <None Include="Resources\btnFixFiles_Disabled.png" />
     <None Include="Resources\btnFindFixes_Enabled.png" />
     <None Include="Resources\btnFindFixes_Disabled.png" />
-    <None Include="Resources\ZipTZCorrupt.png" />
-    <None Include="Resources\ZipTZ.png" />
-    <None Include="Resources\ZipMissing.png" />
+    <None Include="Resources\ZipTrrntCorrupt.png" />
+    <None Include="Resources\ZipTrrnt.png" />
     <None Include="Resources\ZipCorrupt.png" />
     <None Include="Resources\Zip.png" />
     <None Include="Resources\Tree5.png" />
@@ -427,21 +458,29 @@
     <None Include="Resources\TickBoxUnTicked.png" />
     <None Include="Resources\TickBoxTicked.png" />
     <None Include="Resources\TickBoxLocked.png" />
-    <None Include="Resources\SevenZipTZ.png" />
-    <None Include="Resources\SevenZipT7Z.png" />
+    <None Include="Resources\SevenZipSLZMA.png" />
+    <None Include="Resources\SevenZipTrrnt.png" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\ByteSortedList\StorageList.csproj">
+      <Project>{B2C09C3D-1164-456B-A0CE-8B44C5026088}</Project>
+      <Name>StorageList</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\CodePage\CodePage.csproj">
+      <Project>{18789149-d200-43ee-b5ea-cfd3ed4523d9}</Project>
+      <Name>CodePage</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Compress\Compress.csproj">
       <Project>{c30ee098-15d3-40d8-90f6-465d924d9987}</Project>
       <Name>Compress</Name>
     </ProjectReference>
+    <ProjectReference Include="..\Dark\Dark.csproj">
+      <Project>{80b6f476-6144-40cf-804a-593d429bd874}</Project>
+      <Name>Dark</Name>
+    </ProjectReference>
     <ProjectReference Include="..\DATReader\DATReader.csproj">
       <Project>{2ffd495b-2eca-49a5-983b-f2e10d64830e}</Project>
       <Name>DATReader</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\FileHeaderReader\FileHeaderReader.csproj">
-      <Project>{8a90a6cf-f673-4633-829a-8484efdf14fe}</Project>
-      <Name>FileHeaderReader</Name>
     </ProjectReference>
     <ProjectReference Include="..\RomVaultCore\RomVaultCore.csproj">
       <Project>{dda3c8cb-c4a1-4511-aad6-601b1c1f589a}</Project>
@@ -451,9 +490,17 @@
       <Project>{ff8a7a0a-6319-49e0-a6e6-df3754bffdd1}</Project>
       <Name>RVIO</Name>
     </ProjectReference>
-    <ProjectReference Include="..\RVServiceAccess\RVServiceAccess.csproj">
-      <Project>{0ea83fef-430f-4804-8cdb-cc771b461102}</Project>
-      <Name>RVServiceAccess</Name>
+    <ProjectReference Include="..\SharedEnum\SharedEnum.csproj">
+      <Project>{9a957da4-1c75-46cd-b491-010724a441d5}</Project>
+      <Name>SharedEnum</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\SortMethods\SortMethods.csproj">
+      <Project>{b86c5b58-d543-4351-a3d7-40dd1bbd1fcf}</Project>
+      <Name>SortMethods</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\TrrntZipUICore\TrrntZipUICore.csproj">
+      <Project>{a9710c37-095a-4a12-b940-8c98c4527ac1}</Project>
+      <Name>TrrntZipUICore</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
@@ -476,13 +523,4 @@
     <Exec Command="&quot;C:\Program Files (x86)\ILRepack\ILRepack.exe&quot; /out:@(MainAssembly) /targetplatform:v4,&quot;$(ReferenceAssemblies)&quot; &quot;@(IntermediateAssembly)&quot; @(AssembliesToMerge->'&quot;%(FullPath)&quot;', ' ')" />
     <Delete Files="@(ReferenceCopyLocalPaths->'$(OutDir)%(DestinationSubDirectory)%(Filename)%(Extension)')" />
   </Target>
-  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
-    <PropertyGroup>
-      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
-    </PropertyGroup>
-    <Error Condition="!Exists('..\packages\ZstdNet.1.4.5\build\ZstdNet.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\ZstdNet.1.4.5\build\ZstdNet.targets'))" />
-    <Error Condition="!Exists('..\packages\System.Text.Json.6.0.5\build\System.Text.Json.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\System.Text.Json.6.0.5\build\System.Text.Json.targets'))" />
-  </Target>
-  <Import Project="..\packages\ZstdNet.1.4.5\build\ZstdNet.targets" Condition="Exists('..\packages\ZstdNet.1.4.5\build\ZstdNet.targets')" />
-  <Import Project="..\packages\System.Text.Json.6.0.5\build\System.Text.Json.targets" Condition="Exists('..\packages\System.Text.Json.6.0.5\build\System.Text.Json.targets')" />
 </Project>

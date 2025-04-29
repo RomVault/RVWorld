@@ -6,8 +6,9 @@
 
 using System;
 using System.Collections.Generic;
-using DATReader;
+using RomVaultCore.Storage.Dat;
 using RomVaultCore.Utils;
+using SortMethods;
 
 namespace RomVaultCore.RvDB
 {
@@ -55,7 +56,7 @@ namespace RomVaultCore.RvDB
                     continue;
                 }
                 RvFile tDir = thisDir.Child(i);
-                if (!tDir.IsDir)
+                if (!tDir.IsDirectory)
                 {
                     continue;
                 }
@@ -73,74 +74,89 @@ namespace RomVaultCore.RvDB
         }
 
 
-        public static int CompareName(RvFile var1, RvFile var2)
-        {
-            FileType f1 = var1.FileType;
-            FileType f2 = var2.FileType;
-            int res = 0;
-            if (f1 == FileType.ZipFile || f2 == FileType.ZipFile)
-            {
-                if (f1 != f2)
-                {
-                    ReportError.SendAndShow("Incompatible Compare type");
-                }
-                res= Math.Sign(DatSort.TrrntZipStringCompare(var1.Name, var2.Name));
-                return res != 0
-                    ? res
-                    : Math.Sign(string.Compare(var1.Name, var2.Name, StringComparison.Ordinal));
-            }
-            if (f1 == FileType.SevenZipFile || f2 == FileType.SevenZipFile)
-            {
-                if (f1 != f2)
-                {
-                    ReportError.SendAndShow("Incompatible Compare type");
-                }
-                return Math.Sign(DatSort.Trrnt7ZipStringCompare(var1.Name, var2.Name));
-            }
-
-            res = DatSort.TrrntZipStringCompare(var1.Name, var2.Name);
-            if (res != 0)
-                return res;
-#if ZipFile
-            if (f1== FileType.File && f2 == FileType.Zip) 
-                f2 = FileType.File;
-#endif
-            return f1.CompareTo(f2);
-        }
 
         public static int DatCompare(RvDat var1, RvDat var2)
         {
-            int retv = Math.Sign(string.Compare(var1.GetData(RvDat.DatData.DatRootFullName), var2.GetData(RvDat.DatData.DatRootFullName), StringComparison.CurrentCultureIgnoreCase));
+            //TODO check this
+            int retv = RVSorters.CompareDatName(var1, var2);
             if (retv != 0)
             {
                 return retv;
             }
-            
+
             retv = Math.Sign(var1.TimeStamp.CompareTo(var2.TimeStamp));
             if (retv != 0)
             {
                 return retv;
             }
 
-            retv = Math.Sign(var1.MultiDatsInDirectory.CompareTo(var2.MultiDatsInDirectory));
+            retv = Math.Sign(var1.Flag(DatFlags.MultiDatsInDirectory).CompareTo(var2.Flag(DatFlags.MultiDatsInDirectory)));
             if (retv != 0)
             {
                 return retv;
             }
 
-            retv = Math.Sign(var1.MultiDatOverride.CompareTo(var2.MultiDatOverride));
+            retv = Math.Sign(var1.Flag(DatFlags.MultiDatOverride).CompareTo(var2.Flag(DatFlags.MultiDatOverride)));
             if (retv != 0)
             {
                 return retv;
             }
 
-            retv = Math.Sign(var1.UseDescriptionAsDirName.CompareTo(var2.UseDescriptionAsDirName));
+            retv = Math.Sign(var1.Flag(DatFlags.UseDescriptionAsDirName).CompareTo(var2.Flag(DatFlags.UseDescriptionAsDirName)));
             if (retv != 0)
             {
                 return retv;
             }
-            
-            retv = Math.Sign(var1.SingleArchive.CompareTo(var2.SingleArchive));
+
+            retv = Math.Sign(var1.Flag(DatFlags.SingleArchive).CompareTo(var2.Flag(DatFlags.SingleArchive)));
+            if (retv != 0)
+            {
+                return retv;
+            }
+            retv = Math.Sign(var1.SubDirType.CompareTo(var2.SubDirType));
+            if (retv != 0)
+            {
+                return retv;
+            }
+
+            return 0;
+        }
+
+
+        public static int DatCompare(RvDat var1, DatImportDat var2)
+        {
+            //TODO check this
+            int retv = RVSorters.CompareDatName(var1, var2);
+            if (retv != 0)
+            {
+                return retv;
+            }
+
+            retv = Math.Sign(var1.TimeStamp.CompareTo(var2.TimeStamp));
+            if (retv != 0)
+            {
+                return retv;
+            }
+
+            retv = Math.Sign(var1.Flag(DatFlags.MultiDatsInDirectory).CompareTo(var2.Flag(DatFlags.MultiDatsInDirectory)));
+            if (retv != 0)
+            {
+                return retv;
+            }
+
+            retv = Math.Sign(var1.Flag(DatFlags.MultiDatOverride).CompareTo(var2.Flag(DatFlags.MultiDatOverride)));
+            if (retv != 0)
+            {
+                return retv;
+            }
+
+            retv = Math.Sign(var1.Flag(DatFlags.UseDescriptionAsDirName).CompareTo(var2.Flag(DatFlags.UseDescriptionAsDirName)));
+            if (retv != 0)
+            {
+                return retv;
+            }
+
+            retv = Math.Sign(var1.Flag(DatFlags.SingleArchive).CompareTo(var2.Flag(DatFlags.SingleArchive)));
             if (retv != 0)
             {
                 return retv;
@@ -160,12 +176,12 @@ namespace RomVaultCore.RvDB
         public static bool CheckIfMissingFileCanBeFixedByGotFile(RvFile missingFile, RvFile gotFile)
         {
             // should probably be checking that the header type also match
-            if (missingFile.HeaderFileType!=FileHeaderReader.HeaderFileType.Nothing && gotFile.HeaderFileType!=FileHeaderReader.HeaderFileType.Nothing)
+            if (missingFile.HeaderFileType != HeaderFileType.Nothing && gotFile.HeaderFileType != HeaderFileType.Nothing)
             {
                 if (missingFile.HeaderFileType != gotFile.HeaderFileType)
                     return false;
             }
-            if (missingFile.HeaderFileTypeRequired && (gotFile.HeaderFileType == FileHeaderReader.HeaderFileType.Nothing || !gotFile.FileStatusIs(FileStatus.HeaderFileTypeFromHeader)))
+            if (missingFile.HeaderFileTypeRequired && (gotFile.HeaderFileType == HeaderFileType.Nothing || !gotFile.FileStatusIs(FileStatus.HeaderFileTypeFromHeader)))
                 return false;
 
 

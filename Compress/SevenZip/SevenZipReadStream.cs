@@ -18,11 +18,18 @@ namespace Compress.SevenZip
         private int _streamIndex = -1;
         private Stream _stream;
 
-        public ZipReturn ZipFileOpenReadStream(int index, out Stream stream, out ulong unCompressedSize)
+        public ZipReturn ZipFileOpenReadStream(int index, out Stream stream, out ulong streamSize)
         {
+            return ZipFileOpenReadStream(index, false, out stream, out streamSize, out ushort _ ,out byte[] _);
+        }
+        public ZipReturn ZipFileOpenReadStream(int index, bool raw, out Stream stream, out ulong streamSize, out ushort compressionMethod,out byte[] properties)
+        {
+            compressionMethod = 0;
+            properties = null;
+
             Debug.WriteLine("Opening File " + _localFiles[index].Filename);
             stream = null;
-            unCompressedSize = 0;
+            streamSize = 0;
 
             try
             {
@@ -31,14 +38,59 @@ namespace Compress.SevenZip
                     return ZipReturn.ZipErrorGettingDataStream;
                 }
 
-                if (GetLocalFile(index).IsDirectory)
+                if (GetFileHeader(index).IsDirectory)
                 {
                     return ZipReturn.ZipTryingToAccessADirectory;
                 }
 
-                unCompressedSize = _localFiles[index].UncompressedSize;
+                streamSize = _localFiles[index].UncompressedSize;
                 int thisStreamIndex = _localFiles[index].StreamIndex;
                 ulong streamOffset = _localFiles[index].StreamOffset;
+
+                if (raw)
+                {
+                    ZipFileCloseReadStream();
+
+                    if (streamSize == 0)
+                        return ZipReturn.ZipErrorGettingDataStream;
+                    if (streamOffset != 0)
+                        return ZipReturn.ZipErrorGettingDataStream;
+                    // now check that no other file is using this streamIndex
+                    for (int i = 0; i < _localFiles.Count; i++)
+                    {
+                        if (i == index || _localFiles[i].IsDirectory || _localFiles[i].UncompressedSize == 0)
+                            continue;
+                        if (_localFiles[i].StreamIndex == thisStreamIndex)
+                            return ZipReturn.ZipErrorGettingDataStream;
+                    }
+
+                    Folder rawFolder = _header.StreamsInfo.Folders[thisStreamIndex];
+                    if (rawFolder.Coders.Length > 1)
+                        return ZipReturn.ZipErrorGettingDataStream;
+                    if (rawFolder.BindPairs.Length > 0)
+                        return ZipReturn.ZipErrorGettingDataStream;
+                    ulong packedStreamIndex = rawFolder.PackedStreamIndexBase;
+
+                    switch (rawFolder.Coders[0].DecoderType)
+                    {
+                        case DecompressType.LZMA:
+                            compressionMethod = 14; break;
+                        case DecompressType.ZSTD:
+                            compressionMethod = 93; break;
+                        case DecompressType.Stored:
+                            compressionMethod = 0; break;
+                        default:
+                            return ZipReturn.ZipErrorGettingDataStream;
+                    }
+
+                    ulong StreamPosition = _header.StreamsInfo.PackedStreams[(int)packedStreamIndex].StreamPosition;
+                    streamSize = _header.StreamsInfo.PackedStreams[(int)packedStreamIndex].PackedSize;
+                    properties = rawFolder.Coders[0].Properties;
+                    _zipFs.Seek(_baseOffset + (long)StreamPosition, SeekOrigin.Begin);
+                    stream = _zipFs;
+                    return ZipReturn.ZipGood;
+                }
+
 
                 if ((thisStreamIndex == _streamIndex) && (streamOffset >= (ulong)_stream.Position))
                 {
@@ -53,6 +105,14 @@ namespace Compress.SevenZip
                 if (_header.StreamsInfo == null)
                 {
                     stream = null;
+                    _streamIndex = -1;
+                    return ZipReturn.ZipGood;
+                }
+
+                if (_header.StreamsInfo.Folders.Length==0)
+                {
+                    stream = null;
+                    _streamIndex = -1;
                     return ZipReturn.ZipGood;
                 }
 
@@ -142,9 +202,6 @@ namespace Compress.SevenZip
                                 case DecompressType.Stored:
                                     coder.DecoderStream = inputCoders[0];
                                     break;
-                                case DecompressType.Delta:
-                                    coder.DecoderStream = new Delta(folder.Coders[i].Properties, inputCoders[0]);
-                                    break;
                                 case DecompressType.LZMA:
                                     coder.DecoderStream = new LzmaStream(folder.Coders[i].Properties, inputCoders[0]);
                                     break;
@@ -154,18 +211,47 @@ namespace Compress.SevenZip
                                 case DecompressType.PPMd:
                                     coder.DecoderStream = new PpmdStream(new PpmdProperties(folder.Coders[i].Properties), inputCoders[0], false);
                                     break;
+                                case DecompressType.Deflate:
+                                    coder.DecoderStream = new DeflateStream(inputCoders[0], CompressionMode.Decompress, true);
+                                    break;
                                 case DecompressType.BZip2:
                                     coder.DecoderStream = new CBZip2InputStream(inputCoders[0], false);
                                     break;
+                                case DecompressType.ZSTD:
+                                    coder.DecoderStream = new RVZStdSharp(inputCoders[0]);
+                                    break;
+
+
+
                                 case DecompressType.BCJ:
                                     coder.DecoderStream = new BCJFilter(false, inputCoders[0]);
                                     break;
                                 case DecompressType.BCJ2:
                                     coder.DecoderStream = new BCJ2Filter(inputCoders[0], inputCoders[1], inputCoders[2], inputCoders[3]);
                                     break;
-                                case DecompressType.ZSTD:
-                                    coder.DecoderStream =new zStdSharp(inputCoders[0]);
+
+//                                case DecompressType.ARM64:
+//                                    break;
+                                case DecompressType.ARMT:
+                                    coder.DecoderStream = new BCJFilterARMT(false, inputCoders[0]);
                                     break;
+                                case DecompressType.ARM:
+                                    coder.DecoderStream = new BCJFilterARM(false, inputCoders[0]);
+                                    break;
+                                case DecompressType.PPC:
+                                    coder.DecoderStream = new BCJFilterPPC(false, inputCoders[0]);
+                                    break;
+                                case DecompressType.SPARC:
+                                    coder.DecoderStream = new BCJFilterSPARC(false, inputCoders[0]);
+                                    break;
+                                case DecompressType.IA64:
+                                    coder.DecoderStream = new BCJFilterIA64(false, inputCoders[0]);
+                                    break;
+                                case DecompressType.Delta:
+                                    coder.DecoderStream = new DeltaFilter(folder.Coders[i].Properties, inputCoders[0]);
+                                    break;
+
+
                                 default:
                                     return ZipReturn.ZipDecodeError;
                             }
@@ -209,7 +295,7 @@ namespace Compress.SevenZip
             switch (s)
             {
                 case System.IO.FileStream _:
-                    int errorCode = FileStream.OpenFileRead(ZipFilename, out Stream streamOut);
+                    int errorCode = FileStream.OpenFileRead(ZipFilename, FileStream.BufSizeMax, out Stream streamOut);
                     return errorCode != 0 ? null : streamOut;
 
                 case MemoryStream memStream:

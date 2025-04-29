@@ -46,7 +46,7 @@ namespace Compress.Support.Compression.LZMA
         }
 
         public LzmaStream(byte[] properties, Stream inputStream, long inputSize, long outputSize,
-            Stream presetDictionary, bool isLZMA2)
+            Stream presetDictionary, bool isLZMA2, byte[] outWindowBuff = null)
         {
             this.inputStream = inputStream;
             this.inputSize = inputSize;
@@ -56,7 +56,7 @@ namespace Compress.Support.Compression.LZMA
             if (!isLZMA2)
             {
                 dictionarySize = BitConverter.ToInt32(properties, 1);
-                outWindow.Create(dictionarySize);
+                outWindow.Create(dictionarySize, outWindowBuff);
                 if (presetDictionary != null)
                     outWindow.Train(presetDictionary);
 
@@ -180,11 +180,11 @@ namespace Compress.Support.Compression.LZMA
                     toProcess = (int)availableBytes;
 
                 outWindow.SetLimit(toProcess);
-                if(uncompressedChunk)
+                if (uncompressedChunk)
                 {
                     inputPosition += outWindow.CopyStream(inputStream, toProcess);
                 }
-                else if(decoder.Code(dictionarySize, outWindow, rangeDecoder)
+                else if (decoder.Code(dictionarySize, outWindow, rangeDecoder)
                         && outputSize < 0)
                 {
                     availableBytes = outWindow.AvailableBytes;
@@ -280,10 +280,10 @@ namespace Compress.Support.Compression.LZMA
 
         public override long Seek(long offset, SeekOrigin origin)
         {
-            if (origin!=SeekOrigin.Current)
-               throw new NotImplementedException();
+            if (origin != SeekOrigin.Current)
+                throw new NotImplementedException();
 
-            byte[] tmpBuff=new byte[1024];
+            byte[] tmpBuff = new byte[1024];
             long sizeToGo = offset;
             while (sizeToGo > 0)
             {
@@ -291,7 +291,7 @@ namespace Compress.Support.Compression.LZMA
                 Read(tmpBuff, 0, sizenow);
                 sizeToGo -= sizenow;
             }
-            
+
             return offset;
         }
 

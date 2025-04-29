@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using Compress;
 using Compress.SevenZip;
+using Compress.StructuredZip;
 using Compress.Support.Utils;
 using Compress.ZipFile;
 using File = RVIO.File;
@@ -12,16 +13,20 @@ namespace TrrntZip
 {
     public static class TorrentZipRebuild
     {
-        public static TrrntZipStatus ReZipFiles(List<ZippedFile> zippedFiles, ICompress originalZipFile, byte[] buffer, StatusCallback statusCallBack, LogCallback logCallback, int threadId, PauseCancel pc)
+        public static TrrntZipStatus ReZipFiles(List<ZippedFile> zippedFiles, ICompress originalZipFile, byte[] buffer, StatusCallback statusCallBack, LogCallback logCallback, ErrorCallback errorCallback, int threadId, int threadCount, PauseCancel pc)
         {
             zipType inputType;
+
+            string inExt = "";
             switch (originalZipFile)
             {
                 case Zip _:
                     inputType = zipType.zip;
+                    inExt = ".zip";
                     break;
                 case SevenZ _:
                     inputType = zipType.sevenzip;
+                    inExt = ".7z";
                     break;
                 case Compress.File.File _:
                     inputType = zipType.file;
@@ -30,7 +35,7 @@ namespace TrrntZip
                     return TrrntZipStatus.Unknown;
             }
 
-            zipType outputType = Program.OutZip == zipType.archive ? inputType : Program.OutZip;
+            ZipStructure outputType = Program.OutZip;
 
             int bufferSize = buffer.Length;
 
@@ -41,12 +46,12 @@ namespace TrrntZip
             string fileNameOutputPart = inputType == zipType.file ? Path.GetFileName(filename) : Path.GetFileNameWithoutExtension(filename);
             string fileNameOutputDir = Path.GetDirectoryName(filename);
 
-            string tmpFilename = Path.Combine(fileNameOutputDir, "__" + Path.GetFileName(filename) + ".tztmp");
+            string tmpFilename = Path.Combine(fileNameOutputDir, "__" + Path.GetFileName(filename) + ".samtmp");
 
-            string outExt = outputType == zipType.zip ? ".zip" : ".7z";
+            string outExt = outputType == ZipStructure.ZipTrrnt || outputType == ZipStructure.ZipZSTD ? ".zip" : ".7z";
             string outfilename = Path.Combine(fileNameOutputDir, fileNameOutputPart + outExt);
 
-            if (inputType != outputType)
+            if (inExt != outExt)
             {
                 if (File.Exists(outfilename))
                 {
@@ -60,18 +65,24 @@ namespace TrrntZip
                 File.Delete(tmpFilename);
             }
 
-            ICompress zipFileOut = outputType == zipType.zip ? new Zip() : (ICompress)new SevenZ();
 
+            ICompress zipFileOut = null;
             try
             {
                 ZipReturn zr;
-                if (outputType == zipType.zip)
+                if (outputType == ZipStructure.ZipTrrnt || outputType == ZipStructure.ZipZSTD)
                 {
-                    zr = ((Zip)zipFileOut).ZipFileCreate(tmpFilename, OutputZipType.TrrntZip);
+                    zipFileOut = new StructuredZip();
+                    zr = ((StructuredZip)zipFileOut).ZipFileCreate(tmpFilename, outputType);
                 }
                 else
                 {
-                    zr = zipFileOut.ZipFileCreate(tmpFilename);
+                    ulong unCompressedSize = 0;
+                    foreach (ZippedFile f in zippedFiles)
+                        unCompressedSize += f.Size;
+
+                    zipFileOut = new SevenZ();
+                    zr = ((SevenZ)zipFileOut).ZipFileCreateFromUncompressedSize(tmpFilename, outputType, unCompressedSize);
                 }
                 if (zr != ZipReturn.ZipGood)
                     return TrrntZipStatus.ErrorOutputFile;
@@ -82,6 +93,24 @@ namespace TrrntZip
                 foreach (ZippedFile f in zippedFiles)
                 {
                     fileSizeTotal += f.Size;
+                }
+
+                ushort outputCompressionType = 0;
+                switch (outputType)
+                {
+                    case ZipStructure.ZipTrrnt:
+                        outputCompressionType = 8;
+                        break;
+                    case ZipStructure.ZipZSTD:
+                    case ZipStructure.SevenZipSZSTD:
+                    case ZipStructure.SevenZipNZSTD:
+                        outputCompressionType = 93;
+                        break;
+                    case ZipStructure.SevenZipSLZMA:
+                    case ZipStructure.SevenZipNLZMA:
+                        outputCompressionType = 14;
+                        break;
+
                 }
 
                 // by now the zippedFiles have been sorted so just loop over them
@@ -99,16 +128,16 @@ namespace TrrntZip
 
                     if (t.Size > 0)
                     {
-                        switch (originalZipFile)
+                        switch (inputType)
                         {
-                            case Zip z:
-                                zrInput = z.ZipFileOpenReadStream(t.Index, false, out readStream, out streamSize, out ushort _);
+                            case zipType.zip:
+                                zrInput = ((Zip)originalZipFile).ZipFileOpenReadStream(t.Index, false, out readStream, out streamSize, out ushort _);
                                 break;
-                            case SevenZ z7:
-                                zrInput = z7.ZipFileOpenReadStream(t.Index, out readStream, out streamSize);
+                            case zipType.sevenzip:
+                                zrInput = originalZipFile.ZipFileOpenReadStream(t.Index, out readStream, out streamSize);
                                 break;
-                            case Compress.File.File zf:
-                                zrInput = zf.ZipFileOpenReadStream(t.Index, out readStream, out streamSize);
+                            case zipType.file:
+                                zrInput = originalZipFile.ZipFileOpenReadStream(t.Index, out readStream, out streamSize);
                                 break;
                         }
                     }
@@ -118,7 +147,7 @@ namespace TrrntZip
                         zrInput = ZipReturn.ZipGood;
                     }
 
-                    ZipReturn zrOutput = zipFileOut.ZipFileOpenWriteStream(false, true, t.Name, streamSize, 8, out Stream writeStream);
+                    ZipReturn zrOutput = zipFileOut.ZipFileOpenWriteStream(false, t.Name, streamSize, outputCompressionType, out Stream writeStream, threadCount: threadCount);
 
                     if ((zrInput != ZipReturn.ZipGood) || (zrOutput != ZipReturn.ZipGood))
                     {
@@ -160,7 +189,7 @@ namespace TrrntZip
                         writeStream.Write(buffer, 0, sizenow);
                         sizetogo = sizetogo - (ulong)sizenow;
                     }
-                    writeStream.Flush();
+                    writeStream?.Flush();
 
                     crcCs.Close();
                     if (inputType != zipType.sevenzip)
@@ -175,9 +204,32 @@ namespace TrrntZip
 
                     if (crc != t.CRC)
                     {
-                        zipFileOut.ZipFileCloseFailed();
-                        originalZipFile.ZipFileClose();
-                        File.Delete(tmpFilename);
+                        try
+                        {
+                            zipFileOut.ZipFileCloseFailed();
+                        }
+                        catch (Exception e)
+                        {
+                            errorCallback?.Invoke(threadId, $"Error In TorrentZipRebuid\nError Closing Temp zipfile With CRC match error {tmpFilename}\n{e.Message}");
+                        }
+                        try
+                        {
+                            originalZipFile.ZipFileClose();
+                        }
+                        catch (Exception e)
+                        {
+                            errorCallback?.Invoke(threadId, $"Error In TorrentZipRebuid\nError Closing Source zipfile With CRC match error {filename}\n{e.Message}");
+                        }
+                        try
+                        {
+                            File.Delete(tmpFilename);
+                        }
+                        catch (Exception e)
+                        {
+                            errorCallback?.Invoke(threadId, $"Error In TorrentZipRebuid\nError Deleting temp zipfile {tmpFilename}\n{e.Message}");
+                        }
+
+
                         return TrrntZipStatus.CorruptZip;
                     }
 
@@ -185,18 +237,61 @@ namespace TrrntZip
                 }
                 statusCallBack?.Invoke(threadId, 100);
 
-                zipFileOut.ZipFileClose();
-                originalZipFile.ZipFileClose();
-                File.Delete(filename);
-                File.Move(tmpFilename, outfilename);
+                TrrntZipStatus result = TrrntZipStatus.Trrntzipped;
+                try
+                {
+                    zipFileOut.ZipFileClose();
+                }
+                catch (Exception e)
+                {
+                    errorCallback?.Invoke(threadId, $"Error In TorrentZipRebuid\nError Closing Temp zipfile {tmpFilename}\n{e.Message}");
+                    result = TrrntZipStatus.CatchError;
+                }
+                try
+                {
+                    originalZipFile.ZipFileClose();
+                }
+                catch (Exception e)
+                {
+                    errorCallback?.Invoke(threadId, $"Error In TorrentZipRebuid\nError Closing Source zipfile {filename}\n{e.Message}");
+                    result = TrrntZipStatus.CatchError;
+                }
+                try
+                {
+                    File.Delete(filename);
+                }
+                catch (Exception e)
+                {
+                    errorCallback?.Invoke(threadId, $"Error In TorrentZipRebuid\nError Deleting Source zipfile {filename}\n{e.Message}");
+                    result = TrrntZipStatus.CatchError;
+                }
+                try
+                {
+                    File.Move(tmpFilename, outfilename);
+                }
+                catch (Exception e)
+                {
+                    errorCallback?.Invoke(threadId, $"Error In TorrentZipRebuid\nError Renameing temp file {tmpFilename} to {outfilename}\n{e.Message}");
+                    result = TrrntZipStatus.CatchError;
+                }
 
-                return TrrntZipStatus.Trrntzipped;
+                return result;
             }
-            catch (Exception)
+            catch (Exception e)
             {
                 zipFileOut?.ZipFileCloseFailed();
                 originalZipFile?.ZipFileClose();
-                return TrrntZipStatus.CorruptZip;
+
+                lock (Program.lockObj)
+                {
+                    string content = $"Error In TorrentZipRebuid - {filename}\n";
+                    content += $"{e.Message}";
+                    if (e.InnerException != null)
+                        content += $"\nInnerException: {e.InnerException.Message}";
+                    errorCallback?.Invoke(threadId, content);
+                }
+
+                return TrrntZipStatus.CatchError;
             }
         }
     }

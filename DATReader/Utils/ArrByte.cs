@@ -90,5 +90,44 @@
                 p++;
             }
         }
+
+
+
+        //https://stackoverflow.com/questions/311165/how-do-you-convert-a-byte-array-to-a-hexadecimal-string-and-vice-versa#24343727
+        private static readonly uint[] Lookup32 = CreateLookup32();
+
+        private static uint[] CreateLookup32()
+        {
+            uint[] result = new uint[256];
+            for (int i = 0; i < 256; i++)
+            {
+                string s = i.ToString("X2").ToLower();
+                result[i] = s[0] + ((uint)s[1] << 16);
+            }
+            return result;
+        }
+        private static string ByteArrayToHexViaLookup32(byte[] bytes)
+        {
+            char[] result = new char[bytes.Length * 2];
+            int c = 0;
+            foreach (byte b in bytes)
+            {
+                uint val = Lookup32[b];
+                result[c++] = (char)val;
+                result[c++] = (char)(val >> 16);
+            }
+            return new string(result);
+        }
+
+        public static string ToHexNullString(this byte[] b)
+        {
+            return b == null ? null : ByteArrayToHexViaLookup32(b);
+        }
+
+
+        public static string ToHexString(this byte[] b)
+        {
+            return b == null ? "" : ByteArrayToHexViaLookup32(b);
+        }
     }
 }

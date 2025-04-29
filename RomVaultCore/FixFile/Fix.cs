@@ -1,7 +1,7 @@
 ﻿/******************************************************
  *     ROMVault3 is written by Gordon J.              *
  *     Contact gordon@romvault.com                    *
- *     Copyright 2022                                 *
+ *     Copyright 2025                                 *
  ******************************************************/
 
 using System;
@@ -9,7 +9,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
-using RomVaultCore.FixFile.Util;
+using RomVaultCore.FixFile.Utils;
 using RomVaultCore.RvDB;
 using RVIO;
 
@@ -121,7 +121,7 @@ namespace RomVaultCore.FixFile
                         {
                             continue;
                         }
-                        if (child.RepStatus == RepStatus.CanBeFixed || child.RepStatus==RepStatus.CanBeFixedMIA)
+                        if (child.RepStatus == RepStatus.CanBeFixed || child.RepStatus == RepStatus.CanBeFixedMIA)
                         {
                             count++;
                         }
@@ -181,7 +181,10 @@ namespace RomVaultCore.FixFile
                 }
             }
             // here we check to see if the directory we just scanned should be deleted
-            FixFileUtils.CheckDeleteFile(dir);
+            // this is maybe un-needed, as any file delete should also now delete its parent file if needed.
+            // this may stay to delete pre-existing empty dirs.
+            if (thisSelected)
+                FixFileUtils.CheckDeleteFile(dir);
             return ReturnCode.Good;
         }
 
@@ -205,21 +208,6 @@ namespace RomVaultCore.FixFile
                     if (!thisSelected)
                     {
                         return ReturnCode.Good;
-                    }
-
-                    if (!string.IsNullOrEmpty(child.FileName))
-                    {
-                        string strDir = child.Parent.FullNameCase;
-
-                        Report.ReportProgress(new bgwShowFix(strDir, child.Name, null, null, "Rename", null, child.FileName, null));
-
-                        string fixedName = Path.Combine(strDir, child.Name);
-                        File.Move(Path.Combine(strDir, child.FileName), fixedName);
-
-                        while (!File.Exists(fixedName))
-                            Thread.Sleep(50);
-
-                        child.FileName = null;
                     }
 
                     returnCode = FixAZip.FixZip(child, fileProcessQueue, ref totalFixed, out errorMessage);
@@ -266,7 +254,10 @@ namespace RomVaultCore.FixFile
                 case ReturnCode.FileSystemError:
                     ReportError.Show($"{errorMessage}\n{returnCode}\n");
                     break;
-                case ReturnCode.FindFixes:
+                case ReturnCode.FindFixesMissingFileGroups:
+                    ReportError.Show("You Need to Find Fixes before Fixing.");
+                    break;
+                case ReturnCode.FindFixesInvalidStatus:
                     ReportError.Show("You Need to Find Fixes before Fixing. (Incorrect File Status's found for fixing.)");
                     break;
                 case ReturnCode.SourceCheckSumMismatch:
@@ -274,6 +265,7 @@ namespace RomVaultCore.FixFile
                     ReportError.Show(errorMessage);
                     break;
                 case ReturnCode.SourceDataStreamCorrupt:
+                case ReturnCode.CannotMove:
                     ReportError.Show(errorMessage);
                     break;
                 case ReturnCode.ToSortNotFound:

@@ -22,11 +22,14 @@ namespace DATReader.Utils
                 return;
             }
 
-            if (parentDir.ChildNameSearch(new DatDir(parentName, searchGame.DatFileType), out int intIndex) != 0)
+            if (parentDir.ChildNameSearch(new DatDir(parentName, searchGame.FileType), out int intIndex) != 0)
                 return;
 
             DatDir parentGame = (DatDir)parentDir[intIndex];
             if (!includeBios && parentGame.DGame?.IsBios == "yes")
+                return;
+
+            if (lstParentGames.Contains(parentGame))
                 return;
 
             lstParentGames.Add(parentGame);

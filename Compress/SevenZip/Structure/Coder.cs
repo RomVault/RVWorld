@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
 using System.Text;
 using Compress.Support.Utils;
@@ -23,14 +24,24 @@ namespace Compress.SevenZip.Structure
     {
         Unknown,
         Stored,
-        Delta,
         LZMA,
-        BCJ,
-        BCJ2,
+        LZMA2,
         PPMd,
         BZip2,
-        LZMA2,
-        ZSTD
+        ZSTD,
+        Deflate,
+
+        BCJ,
+        BCJ2,
+        ARM64,
+        ARMT,
+        ARM,
+        PPC,
+        SPARC,
+        IA64,
+        Delta,
+        Swap2,
+        Swap4
     }
 
 
@@ -42,7 +53,7 @@ namespace Compress.SevenZip.Structure
         public byte[] Properties;
 
         /************Local Variables***********/
-        public DecompressType DecoderType;
+        public DecompressType DecoderType = DecompressType.Unknown;
         public bool OutputUsedInternally = false;
         public InStreamSourceInfo[] InputStreamsSourceInfo;
         public Stream DecoderStream;
@@ -75,41 +86,43 @@ namespace Compress.SevenZip.Structure
             }
 
             if (Method.Length == 1 && Method[0] == 0)
-            {
                 DecoderType = DecompressType.Stored;
-            }
-            else if (Method.Length == 1 && Method[0] == 3)
-            {
-                DecoderType = DecompressType.Delta;
-            }
             else if (Method.Length == 3 && Method[0] == 3 && Method[1] == 1 && Method[2] == 1)
-            {
                 DecoderType = DecompressType.LZMA;
-            }
-            else if (Method.Length == 4 && Method[0] == 3 && Method[1] == 3 && Method[2] == 1 && Method[3] == 3)
-            {
-                DecoderType = DecompressType.BCJ;
-            }
-            else if (Method.Length == 4 && Method[0] == 3 && Method[1] == 3 && Method[2] == 1 && Method[3] == 27)
-            {
-                DecoderType = DecompressType.BCJ2;
-            }
-            else if (Method.Length == 3 && Method[0] == 3 && Method[1] == 4 && Method[2] == 1)
-            {
-                DecoderType = DecompressType.PPMd;
-            }
-            else if (Method.Length == 3 && Method[0] == 4 && Method[1] == 2 && Method[2] == 2)
-            {
-                DecoderType = DecompressType.BZip2;
-            }
             else if (Method.Length == 1 && Method[0] == 33)
-            {
                 DecoderType = DecompressType.LZMA2;
-            }
+            else if (Method.Length == 3 && Method[0] == 3 && Method[1] == 4 && Method[2] == 1)
+                DecoderType = DecompressType.PPMd;
+            else if (Method.Length == 3 && Method[0] == 4 && Method[1] == 1 && Method[2] == 8)
+                DecoderType = DecompressType.Deflate;
+            else if (Method.Length == 3 && Method[0] == 4 && Method[1] == 2 && Method[2] == 2)
+                DecoderType = DecompressType.BZip2;
             else if (Method.Length == 4 && Method[0] == 4 && Method[1] == 247 && Method[2] == 17 && Method[3] == 1)
-            {
                 DecoderType = DecompressType.ZSTD;
-            }
+
+
+            else if (Method.Length == 4 && Method[0] == 3 && Method[1] == 3 && Method[2] == 1 && Method[3] == 3)
+                DecoderType = DecompressType.BCJ;
+            else if (Method.Length == 4 && Method[0] == 3 && Method[1] == 3 && Method[2] == 1 && Method[3] == 27)
+                DecoderType = DecompressType.BCJ2;
+            //ARM64
+            else if (Method.Length == 4 && Method[0] == 3 && Method[1] == 3 && Method[2] == 7 && Method[3] == 1)
+                DecoderType = DecompressType.ARMT;
+            else if (Method.Length == 4 && Method[0] == 3 && Method[1] == 3 && Method[2] == 5 && Method[3] == 1)
+                DecoderType = DecompressType.ARM;
+            else if (Method.Length == 4 && Method[0] == 3 && Method[1] == 3 && Method[2] == 2 && Method[3] == 5)
+                DecoderType = DecompressType.PPC;
+            else if (Method.Length == 4 && Method[0] == 3 && Method[1] == 3 && Method[2] == 8 && Method[3] == 5)
+                DecoderType = DecompressType.SPARC;
+            else if (Method.Length == 4 && Method[0] == 3 && Method[1] == 3 && Method[2] == 4 && Method[3] == 1)
+                DecoderType = DecompressType.IA64;
+            else if (Method.Length == 1 && Method[0] == 3)
+                DecoderType = DecompressType.Delta;
+            //Swap2
+            //Swap4
+
+            else
+                Debug.WriteLine("Error");
 
             InputStreamsSourceInfo = new InStreamSourceInfo[NumInStreams];
             for (uint i = 0; i < NumInStreams; i++)

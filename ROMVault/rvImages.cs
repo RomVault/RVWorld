@@ -12,22 +12,22 @@ namespace ROMVault
         {
             if (bmps.TryGetValue(bitmapName, out Bitmap bmp))
             {
-                return duplicate?new Bitmap(bmp):bmp;
+                return duplicate ? new Bitmap(bmp) : bmp;
             }
 
             if (File.Exists($"graphics.zip"))
             {
-                Zip zf=new Zip();
+                Zip zf = new Zip();
                 zf.ZipFileOpen("graphics.zip", -1, true);
-                for(int i=0;i<zf.LocalFilesCount();i++)
+                for (int i = 0; i < zf.LocalFilesCount; i++)
                 {
-                    if (zf.GetLocalFile(i).Filename==bitmapName+".png")
+                    if (zf.GetFileHeader(i).Filename == bitmapName + ".png")
                     {
-                        zf.ZipFileOpenReadStream(i, out Stream stream,out ulong streamSize);
+                        zf.ZipFileOpenReadStream(i, out Stream stream, out ulong streamSize);
                         byte[] bBmp = new byte[(int)streamSize];
                         stream.Read(bBmp, 0, (int)streamSize);
                         Bitmap bmpf;
-                        using(MemoryStream ms = new MemoryStream(bBmp))
+                        using (MemoryStream ms = new MemoryStream(bBmp))
                             bmpf = new Bitmap(ms);
                         bmps.Add(bitmapName, new Bitmap(bmpf));
                         zf.ZipFileCloseReadStream();
@@ -53,7 +53,7 @@ namespace ROMVault
             if (bmObj != null)
             {
                 bm = (Bitmap)bmObj;
-                bmps.Add(bitmapName,new Bitmap(bm));
+                bmps.Add(bitmapName, new Bitmap(bm));
             }
 
             return bm;

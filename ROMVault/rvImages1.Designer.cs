@@ -203,6 +203,16 @@ namespace ROMVault {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
+        internal static System.Drawing.Bitmap deleteOld {
+            get {
+                object obj = ResourceManager.GetObject("deleteOld", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
         internal static System.Drawing.Bitmap Dir {
             get {
                 object obj = ResourceManager.GetObject("Dir", resourceCulture);
@@ -393,6 +403,16 @@ namespace ROMVault {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
+        internal static System.Drawing.Bitmap G_Incomplete {
+            get {
+                object obj = ResourceManager.GetObject("G_Incomplete", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
         internal static System.Drawing.Bitmap G_InToSort {
             get {
                 object obj = ResourceManager.GetObject("G_InToSort", resourceCulture);
@@ -416,16 +436,6 @@ namespace ROMVault {
         internal static System.Drawing.Bitmap G_MissingMIA {
             get {
                 object obj = ResourceManager.GetObject("G_MissingMIA", resourceCulture);
-                return ((System.Drawing.Bitmap)(obj));
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized resource of type System.Drawing.Bitmap.
-        /// </summary>
-        internal static System.Drawing.Bitmap G_MissingMIA1 {
-            get {
-                object obj = ResourceManager.GetObject("G_MissingMIA1", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
@@ -573,26 +583,6 @@ namespace ROMVault {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
-        internal static System.Drawing.Bitmap R_InDatBad_Correct {
-            get {
-                object obj = ResourceManager.GetObject("R_InDatBad_Correct", resourceCulture);
-                return ((System.Drawing.Bitmap)(obj));
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized resource of type System.Drawing.Bitmap.
-        /// </summary>
-        internal static System.Drawing.Bitmap R_InDatBad_NotCollected {
-            get {
-                object obj = ResourceManager.GetObject("R_InDatBad_NotCollected", resourceCulture);
-                return ((System.Drawing.Bitmap)(obj));
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized resource of type System.Drawing.Bitmap.
-        /// </summary>
         internal static System.Drawing.Bitmap R_InDatCollect_CanBeFixed {
             get {
                 object obj = ResourceManager.GetObject("R_InDatCollect_CanBeFixed", resourceCulture);
@@ -633,6 +623,26 @@ namespace ROMVault {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
+        internal static System.Drawing.Bitmap R_InDatCollect_Delete {
+            get {
+                object obj = ResourceManager.GetObject("R_InDatCollect_Delete", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap R_InDatCollect_Incomplete {
+            get {
+                object obj = ResourceManager.GetObject("R_InDatCollect_Incomplete", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
         internal static System.Drawing.Bitmap R_InDatCollect_Missing {
             get {
                 object obj = ResourceManager.GetObject("R_InDatCollect_Missing", resourceCulture);
@@ -653,6 +663,26 @@ namespace ROMVault {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
+        internal static System.Drawing.Bitmap R_InDatCollect_MoveToSort {
+            get {
+                object obj = ResourceManager.GetObject("R_InDatCollect_MoveToSort", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap R_InDatCollect_NeededForFix {
+            get {
+                object obj = ResourceManager.GetObject("R_InDatCollect_NeededForFix", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
         internal static System.Drawing.Bitmap R_InDatCollect_UnScanned {
             get {
                 object obj = ResourceManager.GetObject("R_InDatCollect_UnScanned", resourceCulture);
@@ -663,9 +693,49 @@ namespace ROMVault {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
+        internal static System.Drawing.Bitmap R_InDatMerged_Corrupt {
+            get {
+                object obj = ResourceManager.GetObject("R_InDatMerged_Corrupt", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap R_InDatMerged_Delete {
+            get {
+                object obj = ResourceManager.GetObject("R_InDatMerged_Delete", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
         internal static System.Drawing.Bitmap R_InDatMerged_Deleted {
             get {
                 object obj = ResourceManager.GetObject("R_InDatMerged_Deleted", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap R_InDatMerged_MoveToCorrupt {
+            get {
+                object obj = ResourceManager.GetObject("R_InDatMerged_MoveToCorrupt", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap R_InDatMerged_MoveToSort {
+            get {
+                object obj = ResourceManager.GetObject("R_InDatMerged_MoveToSort", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
@@ -703,6 +773,16 @@ namespace ROMVault {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
+        internal static System.Drawing.Bitmap R_InDatMerged_UnScanned {
+            get {
+                object obj = ResourceManager.GetObject("R_InDatMerged_UnScanned", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
         internal static System.Drawing.Bitmap R_InDatMIA_CanBeFixedMIA {
             get {
                 object obj = ResourceManager.GetObject("R_InDatMIA_CanBeFixedMIA", resourceCulture);
@@ -723,9 +803,79 @@ namespace ROMVault {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
+        internal static System.Drawing.Bitmap R_InDatMIA_Corrupt {
+            get {
+                object obj = ResourceManager.GetObject("R_InDatMIA_Corrupt", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap R_InDatMIA_CorruptCanBeFixed {
+            get {
+                object obj = ResourceManager.GetObject("R_InDatMIA_CorruptCanBeFixed", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap R_InDatMIA_Delete {
+            get {
+                object obj = ResourceManager.GetObject("R_InDatMIA_Delete", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap R_InDatMIA_Incomplete {
+            get {
+                object obj = ResourceManager.GetObject("R_InDatMIA_Incomplete", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
         internal static System.Drawing.Bitmap R_InDatMIA_MissingMIA {
             get {
                 object obj = ResourceManager.GetObject("R_InDatMIA_MissingMIA", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap R_InDatMIA_MoveToCorrupt {
+            get {
+                object obj = ResourceManager.GetObject("R_InDatMIA_MoveToCorrupt", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap R_InDatMIA_MoveToSort {
+            get {
+                object obj = ResourceManager.GetObject("R_InDatMIA_MoveToSort", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap R_InDatMIA_UnScanned {
+            get {
+                object obj = ResourceManager.GetObject("R_InDatMIA_UnScanned", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
@@ -953,9 +1103,9 @@ namespace ROMVault {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
-        internal static System.Drawing.Bitmap SevenZipMissing {
+        internal static System.Drawing.Bitmap SevenZipNLZMA {
             get {
-                object obj = ResourceManager.GetObject("SevenZipMissing", resourceCulture);
+                object obj = ResourceManager.GetObject("SevenZipNLZMA", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
@@ -963,9 +1113,9 @@ namespace ROMVault {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
-        internal static System.Drawing.Bitmap SevenZipT7Z {
+        internal static System.Drawing.Bitmap SevenZipNLZMAMissing {
             get {
-                object obj = ResourceManager.GetObject("SevenZipT7Z", resourceCulture);
+                object obj = ResourceManager.GetObject("SevenZipNLZMAMissing", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
@@ -973,9 +1123,79 @@ namespace ROMVault {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
-        internal static System.Drawing.Bitmap SevenZipTZ {
+        internal static System.Drawing.Bitmap SevenZipNZSTD {
             get {
-                object obj = ResourceManager.GetObject("SevenZipTZ", resourceCulture);
+                object obj = ResourceManager.GetObject("SevenZipNZSTD", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap SevenZipNZSTDMissing {
+            get {
+                object obj = ResourceManager.GetObject("SevenZipNZSTDMissing", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap SevenZipSLZMA {
+            get {
+                object obj = ResourceManager.GetObject("SevenZipSLZMA", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap SevenZipSLZMAMissing {
+            get {
+                object obj = ResourceManager.GetObject("SevenZipSLZMAMissing", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap SevenZipSZSTD {
+            get {
+                object obj = ResourceManager.GetObject("SevenZipSZSTD", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap SevenZipSZSTDMissing {
+            get {
+                object obj = ResourceManager.GetObject("SevenZipSZSTDMissing", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap SevenZipTrrnt {
+            get {
+                object obj = ResourceManager.GetObject("SevenZipTrrnt", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap Tick {
+            get {
+                object obj = ResourceManager.GetObject("Tick", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
@@ -996,6 +1216,16 @@ namespace ROMVault {
         internal static System.Drawing.Bitmap TickBoxTicked {
             get {
                 object obj = ResourceManager.GetObject("TickBoxTicked", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap TickBoxTristate {
+            get {
+                object obj = ResourceManager.GetObject("TickBoxTristate", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
@@ -1063,9 +1293,39 @@ namespace ROMVault {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
+        internal static System.Drawing.Bitmap unTick {
+            get {
+                object obj = ResourceManager.GetObject("unTick", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
         internal static System.Drawing.Bitmap Zip {
             get {
                 object obj = ResourceManager.GetObject("Zip", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap ZipConvert {
+            get {
+                object obj = ResourceManager.GetObject("ZipConvert", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap ZipConvert1 {
+            get {
+                object obj = ResourceManager.GetObject("ZipConvert1", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
@@ -1083,9 +1343,9 @@ namespace ROMVault {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
-        internal static System.Drawing.Bitmap ZipMissing {
+        internal static System.Drawing.Bitmap ZipTDC {
             get {
-                object obj = ResourceManager.GetObject("ZipMissing", resourceCulture);
+                object obj = ResourceManager.GetObject("ZipTDC", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
@@ -1093,9 +1353,9 @@ namespace ROMVault {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
-        internal static System.Drawing.Bitmap ZipTZ {
+        internal static System.Drawing.Bitmap ZipTDCMissing {
             get {
-                object obj = ResourceManager.GetObject("ZipTZ", resourceCulture);
+                object obj = ResourceManager.GetObject("ZipTDCMissing", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
@@ -1103,9 +1363,39 @@ namespace ROMVault {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
-        internal static System.Drawing.Bitmap ZipTZCorrupt {
+        internal static System.Drawing.Bitmap ZipTrrnt {
             get {
-                object obj = ResourceManager.GetObject("ZipTZCorrupt", resourceCulture);
+                object obj = ResourceManager.GetObject("ZipTrrnt", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap ZipTrrntMissing {
+            get {
+                object obj = ResourceManager.GetObject("ZipTrrntMissing", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap ZipZSTD {
+            get {
+                object obj = ResourceManager.GetObject("ZipZSTD", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap ZipZSTDMissing {
+            get {
+                object obj = ResourceManager.GetObject("ZipZSTDMissing", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }

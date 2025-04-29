@@ -22,15 +22,20 @@ namespace TrrntZip
         public ProcessFileEndCallback ProcessFileEndCallBack;
 
         public StatusCallback StatusCallBack;
+        public ErrorCallback ErrorCallBack;
         public PauseCancel pauseCancel;
+
+        public int workerCount;
 
         public void MigrateZip()
         {
             TorrentZip tz = new TorrentZip
             {
                 StatusCallBack = StatusCallBack,
+                ErrorCallBack = ErrorCallBack,
                 StatusLogCallBack = null,
-                ThreadId = ThreadId
+                ThreadId = ThreadId,
+                workerCount = workerCount
             };
             Debug.WriteLine($"Thread {ThreadId} Starting Up");
 
@@ -38,7 +43,7 @@ namespace TrrntZip
             {
                 if (pauseCancel.Cancelled)
                 {
-                    ProcessFileEndCallBack?.Invoke(ThreadId, file.fileId,TrrntZipStatus.Cancel);
+                    ProcessFileEndCallBack?.Invoke(ThreadId, file.fileId, TrrntZipStatus.Cancel);
                     continue;
                 }
                 pauseCancel.WaitOne();

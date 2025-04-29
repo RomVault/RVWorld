@@ -52,7 +52,7 @@
             this.label1.ForeColor = System.Drawing.Color.Blue;
             this.label1.Location = new System.Drawing.Point(279, 142);
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(178, 16);
+            this.label1.Size = new System.Drawing.Size(177, 16);
             this.label1.TabIndex = 7;
             this.label1.Text = "http://www.romvault.com/";
             this.label1.Click += new System.EventHandler(this.label1_Click);
@@ -79,6 +79,7 @@
             this.Controls.Add(this.lblVersion);
             this.DoubleBuffered = true;
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedToolWindow;
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "FrmHelpAbout";
             this.ShowInTaskbar = false;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;

@@ -11,7 +11,7 @@ namespace Compress.SevenZip
 {
     public partial class SevenZ
     {
-        public ZipReturn ZipFileOpen(string filename, long timestamp, bool readHeaders)
+        public ZipReturn ZipFileOpen(string filename, long timestamp, bool readHeaders, int bufferSize = 4096)
         {
             ZipFileClose();
             Debug.WriteLine(filename);
@@ -30,7 +30,7 @@ namespace Compress.SevenZip
                     ZipFileClose();
                     return ZipReturn.ZipErrorTimeStamp;
                 }
-                int errorCode = FileStream.OpenFileRead(filename, out _zipFs);
+                int errorCode = FileStream.OpenFileRead(filename, bufferSize, out _zipFs);
                 if (errorCode != 0)
                 {
                     ZipFileClose();
@@ -51,7 +51,7 @@ namespace Compress.SevenZip
             #endregion
 
             ZipOpen = ZipOpenType.OpenRead;
-            ZipStatus = ZipStatus.None;
+            ZipStruct = ZipStructure.None;
 
             return ZipFileReadHeaders();
         }
@@ -63,7 +63,7 @@ namespace Compress.SevenZip
             _zipFileInfo = null;
             _zipFs = inStream;
             ZipOpen = ZipOpenType.OpenRead;
-            ZipStatus = ZipStatus.None;
+            ZipStruct = ZipStructure.None;
             return ZipFileReadHeaders();
         }
 
@@ -75,9 +75,7 @@ namespace Compress.SevenZip
             {
                 SignatureHeader signatureHeader = new();
                 if (!signatureHeader.Read(_zipFs))
-                {
                     return ZipReturn.ZipSignatureError;
-                }
 
                 _baseOffset = _zipFs.Position;
 
@@ -92,17 +90,16 @@ namespace Compress.SevenZip
                     _zipFs.Seek(_baseOffset + (long)signatureHeader.NextHeaderOffset, SeekOrigin.Begin);
                     ZipReturn zr = Header.ReadHeaderOrPackedHeader(_zipFs, _baseOffset, out _header);
                     if (zr != ZipReturn.ZipGood)
-                    {
                         return zr;
-                    }
                 }
 
 
-                ZipStatus = ZipStatus.None;
-                ZipStatus |= IsRomVault7Z(_baseOffset, signatureHeader.NextHeaderOffset, signatureHeader.NextHeaderSize, signatureHeader.NextHeaderCRC) ? ZipStatus.TrrntZip : ZipStatus.None;
-
-                _zipFs.Seek(_baseOffset + (long)(signatureHeader.NextHeaderOffset + signatureHeader.NextHeaderSize), SeekOrigin.Begin);
-                ZipStatus |= Istorrent7Z() ? ZipStatus.Trrnt7Zip : ZipStatus.None;
+                ZipStruct = IsRomVault7Z(_baseOffset, signatureHeader.NextHeaderOffset, signatureHeader.NextHeaderSize, signatureHeader.NextHeaderCRC);
+                if (ZipStruct == ZipStructure.None)
+                {
+                    _zipFs.Seek(_baseOffset + (long)(signatureHeader.NextHeaderOffset + signatureHeader.NextHeaderSize), SeekOrigin.Begin);
+                    ZipStruct = Istorrent7Z();
+                }
                 PopulateLocalFiles(out _localFiles);
 
                 return ZipReturn.ZipGood;
@@ -150,7 +147,7 @@ namespace Compress.SevenZip
                 else
                 {
                     lf.UncompressedSize = 0;
-                    lf.CRC = new byte[] { 0, 0, 0, 0 };
+                    lf.CRC = [0, 0, 0, 0];
                     lf.IsDirectory = (_header.FileInfo.EmptyFileFlags == null) || !_header.FileInfo.EmptyFileFlags[emptyFileIndex++];
 
                     if (lf.IsDirectory)
@@ -161,7 +158,7 @@ namespace Compress.SevenZip
                         }
                     }
                 }
-                
+
                 if (_header.FileInfo.TimeLastWrite != null)
                     lf.ModifiedTime = DateTime.FromFileTimeUtc((long)_header.FileInfo.TimeLastWrite[i]).Ticks;
                 if (_header.FileInfo.TimeCreation != null)

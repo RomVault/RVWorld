@@ -59,7 +59,7 @@ namespace DATReader.DatClean
 
         private static void AddDevice(string device, List<DatDir> devices, DatDir tDat)
         {
-            if (tDat.ChildNameSearch(new DatDir(device, tDat.DatFileType), out int index) != 0)
+            if (tDat.ChildNameSearch(new DatDir(device, tDat.FileType), out int index) != 0)
                 return;
             DatDir devChild = (DatDir)tDat[index];
             if (devChild == null)

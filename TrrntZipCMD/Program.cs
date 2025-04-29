@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Compress;
+using System;
 using System.IO;
 using System.Reflection;
 using TrrntZip;
@@ -49,7 +50,7 @@ namespace TrrntZipCMD
                         case "?":
                             Console.WriteLine($"TorrentZip.Net v{Assembly.GetExecutingAssembly().GetName().Version.ToString(3)} - Powered by RomVault");
                             Console.WriteLine("");
-                            Console.WriteLine("Copyright (C) 2022 GordonJ");
+                            Console.WriteLine("Copyright (C) 2024 GordonJ");
                             Console.WriteLine("Homepage : http://www.romvault.com/trrntzip");
                             Console.WriteLine("");
                             Console.WriteLine("Usage: trrntzip [OPTIONS] [PATH/ZIP FILE]");
@@ -57,13 +58,49 @@ namespace TrrntZipCMD
                             Console.WriteLine("Options:");
                             Console.WriteLine("");
                             Console.WriteLine("-? : show this help");
+                            Console.WriteLine("-o : Set Output Archive Structure");
+                            Console.WriteLine("     ZT  = Zip-Trrnt");
+                            Console.WriteLine("     ZZ  = Zip-ZSTD");
+                            Console.WriteLine("     7SL = 7Zip-Solid-LZMA");
+                            Console.WriteLine("     7NL = 7Zip-NonSolid-LZMA");
+                            Console.WriteLine("     7SZ = 7Zip-Solid-ZSTD");
+                            Console.WriteLine("     7NZ = 7Zip-NonSolid-ZSTD");
                             Console.WriteLine("-s : prevent sub-directory recursion");
                             Console.WriteLine("-f : force re-zip");
                             Console.WriteLine("-c : Check files only do not repair");
                             Console.WriteLine("-l : verbose logging");
                             Console.WriteLine("-v : show version");
                             Console.WriteLine("-g : pause when finished");
+                            Console.ReadLine();
                             return;
+                        case "o":
+                            string nextArt= args[i++];
+                            switch (nextArt)
+                            {
+                                case "ZT":
+                                    TrrntZip.Program.OutZip = ZipStructure.ZipTrrnt;
+                                    break;
+                                case "ZZ":
+                                    TrrntZip.Program.OutZip = ZipStructure.ZipZSTD;
+                                    break;
+                                case "7SL":
+                                    TrrntZip.Program.OutZip = ZipStructure.SevenZipSLZMA;
+                                    break;
+                                case "7NL":
+                                    TrrntZip.Program.OutZip = ZipStructure.SevenZipNLZMA;
+                                    break;
+                                case "7SZ":
+                                    TrrntZip.Program.OutZip = ZipStructure.SevenZipSZSTD;
+                                    break;
+                                case "7NZ":
+                                    TrrntZip.Program.OutZip = ZipStructure.SevenZipNZSTD;
+                                    break;
+                                default:
+                                    Console.WriteLine("Unknown Output Archive Structure : " + nextArt);
+                                    Console.WriteLine("Valid Structures are : ZT, ZZ, 7SL, 7NL, 7SZ, 7NZ");
+                                    return;
+                            }
+                            break;
                         case "s":
                             _noRecursion = true;
                             break;

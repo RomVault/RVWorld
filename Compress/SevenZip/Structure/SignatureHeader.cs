@@ -6,7 +6,7 @@ namespace Compress.SevenZip.Structure
 {
     internal class SignatureHeader
     {
-        private static readonly byte[] Signature = { (byte)'7', (byte)'z', 0xBC, 0xAF, 0x27, 0x1C };
+        private static readonly byte[] Signature = [(byte)'7', (byte)'z', 0xBC, 0xAF, 0x27, 0x1C];
 
         private uint _startHeaderCRC;
 

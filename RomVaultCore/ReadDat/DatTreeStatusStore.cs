@@ -1,4 +1,10 @@
-﻿using RomVaultCore.RvDB;
+﻿/******************************************************
+ *     ROMVault3 is written by Gordon J.              *
+ *     Contact gordon@romvault.com                    *
+ *     Copyright 2025                                 *
+ ******************************************************/
+
+using RomVaultCore.RvDB;
 using System.Collections.Generic;
 using System.IO;
 using System.Xml.Serialization;
@@ -28,11 +34,12 @@ namespace RomVaultCore.ReadDat
         {
             PreStoreTreeValue(DB.DirRoot);
 
-
             List<Entry> entries = new List<Entry>(treeRows.Count);
-            foreach (string key in treeRows.Keys)
+            foreach (var row in treeRows)
             {
-                entries.Add(new Entry(key, treeRows[key].Checked, treeRows[key].TreeExpanded));
+                RvTreeRow rvTreeRow = row.Value;
+                if (rvTreeRow != null)
+                    entries.Add(new Entry(row.Key, rvTreeRow.Checked, rvTreeRow.TreeExpanded));
             }
             using (FileStream writer = File.Create($"treeDefault{ind}.xml"))
             {

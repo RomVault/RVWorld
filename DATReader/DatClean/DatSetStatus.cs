@@ -18,7 +18,7 @@ namespace DATReader.DatClean
                 }
                 if (nf is DatFile mFile)
                 {
-                    RomCheckCollect(mFile, false);
+                    RomCheckCollect(mFile);
                     continue;
                 }
             }
@@ -31,17 +31,10 @@ namespace DATReader.DatClean
          */
 
 
-        internal static void RomCheckCollect(DatFile tRom, bool merge)
+        internal static void RomCheckCollect(DatFile tRom)
         {
-            if (merge)
-            {
-                if (string.IsNullOrEmpty(tRom.Merge))
-                {
-                    tRom.Merge = "(Auto Merged)";
-                }
-                tRom.DatStatus = DatFileStatus.InDatMerged;
+            if (tRom.DatStatus == DatStatus.InDatMerged)
                 return;
-            }
 
             if (!string.IsNullOrEmpty(tRom.Merge))
             {
@@ -50,22 +43,22 @@ namespace DATReader.DatClean
 
             if (tRom.Status == "nodump")
             {
-                tRom.DatStatus = DatFileStatus.InDatBad;
+                tRom.DatStatus = DatStatus.InDatNoDump;
                 return;
             }
-            if (tRom.MIA?.ToLower() == "yes")
+            if (tRom.MIA?.ToLower() == "yes" && tRom.Size!=0)
             {
-                tRom.DatStatus = DatFileStatus.InDatMIA;
+                tRom.DatStatus = DatStatus.InDatMIA;
                 return;
             }
 
             if (ArrByte.bCompare(tRom.CRC, new byte[] { 0, 0, 0, 0 }) && (tRom.Size == 0))
             {
-                tRom.DatStatus = DatFileStatus.InDatCollect;
+                tRom.DatStatus = DatStatus.InDatCollect;
                 return;
             }
 
-            tRom.DatStatus = DatFileStatus.InDatCollect;
+            tRom.DatStatus = DatStatus.InDatCollect;
         }
 
 

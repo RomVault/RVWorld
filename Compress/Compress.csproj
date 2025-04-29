@@ -8,20 +8,18 @@
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <DefineConstants>$(DefineConstants)TRACE;solid</DefineConstants>
+    <DefineConstants>$(DefineConstants);TRACE;solid</DefineConstants>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <DefineConstants>$(DefineConstants)TRACE;solid</DefineConstants>
+    <DefineConstants>$(DefineConstants);TRACE;solid</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="System.Text.Encoding.CodePages" Version="6.0.0" />
-    <PackageReference Include="ZstdSharp.Port" Version="0.6.2" />
-  </ItemGroup>
-
-  <ItemGroup>
+    <ProjectReference Include="..\CodePage\CodePage.csproj" />
     <ProjectReference Include="..\RVIO\RVIO.csproj" />
+    <ProjectReference Include="..\RVZstdSharp\RVZstdSharp.csproj" />
+    <ProjectReference Include="..\SortMethods\SortMethods.csproj" />
   </ItemGroup>
 
 </Project>

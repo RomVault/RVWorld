@@ -2,11 +2,11 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <Authors>GordonJ</Authors>
     <Company>RomVault</Company>
-    <AssemblyVersion>3.4.2.0</AssemblyVersion>
-    <Version>3.4.2</Version>
+    <AssemblyVersion>3.7.2.0</AssemblyVersion>
+    <Version>3.7.4</Version>
     <BaseOutputPath></BaseOutputPath>
     <Configurations>Debug;Release</Configurations>
   </PropertyGroup>
@@ -18,10 +18,6 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <OutputPath>..\..\stage\Private\Debug\RVCmd\</OutputPath>
   </PropertyGroup>
-
-  <ItemGroup>
-    <PackageReference Include="System.Text.Encoding.CodePages" Version="6.0.0" />
-  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\RomVaultCore\RomVaultCore.csproj" />

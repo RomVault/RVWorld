@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using FileHeaderReader;
 using RomVaultCore.RvDB;
 using RomVaultCore.Utils;
 
@@ -25,7 +24,7 @@ namespace RomVaultCore.FindFix
             CRC = sourceFile.CRC.Copy();
             SHA1 = sourceFile.SHA1.Copy();
             MD5 = sourceFile.MD5.Copy();
-            HeaderFT = FileHeaderReader.FileHeaderReader.AltHeaderFile(sourceFile.HeaderFileType) ? sourceFile.HeaderFileType : HeaderFileType.Nothing;
+            HeaderFT = FileScanner.FileHeaderReader.AltHeaderFile(sourceFile.HeaderFileType) ? sourceFile.HeaderFileType : HeaderFileType.Nothing;
             AltSize = sourceFile.AltSize;
             AltCRC = sourceFile.AltCRC.Copy();
             AltSHA1 = sourceFile.AltSHA1.Copy();
@@ -43,7 +42,7 @@ namespace RomVaultCore.FindFix
             if (SHA1 == null && file.SHA1 != null) SHA1 = file.SHA1.Copy();
             if (MD5 == null && file.MD5 != null) MD5 = file.MD5.Copy();
 
-            if (HeaderFT == HeaderFileType.Nothing && FileHeaderReader.FileHeaderReader.AltHeaderFile(file.HeaderFileType)) HeaderFT = file.HeaderFileType;
+            if (HeaderFT == HeaderFileType.Nothing && FileScanner.FileHeaderReader.AltHeaderFile(file.HeaderFileType)) HeaderFT = file.HeaderFileType;
             if (AltSize == null && file.AltSize != null) AltSize = file.AltSize;
             if (AltCRC == null && file.AltCRC != null) AltCRC = file.AltCRC.Copy();
             if (AltSHA1 == null && file.AltSHA1 != null) AltSHA1 = file.AltSHA1.Copy();
@@ -56,7 +55,7 @@ namespace RomVaultCore.FindFix
 
         public void MergeAltFileIntoGroup(RvFile file)
         {
-            if (HeaderFT == HeaderFileType.Nothing && FileHeaderReader.FileHeaderReader.AltHeaderFile(file.HeaderFileType)) HeaderFT = file.HeaderFileType;
+            if (HeaderFT == HeaderFileType.Nothing && FileScanner.FileHeaderReader.AltHeaderFile(file.HeaderFileType)) HeaderFT = file.HeaderFileType;
             if (AltSize == null && file.Size != null) AltSize = file.Size;
             if (AltCRC == null && file.CRC != null) AltCRC = file.CRC.Copy();
             if (AltSHA1 == null && file.SHA1 != null) AltSHA1 = file.SHA1.Copy();

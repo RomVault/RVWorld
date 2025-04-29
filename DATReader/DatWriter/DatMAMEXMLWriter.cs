@@ -1,4 +1,5 @@
 ﻿using System;
+using Compress;
 using DATReader.DatStore;
 using RVIO;
 
@@ -141,8 +142,10 @@ namespace DATReader.DatWriter
                     sw.WriteItem("crc", baseRom.CRC);
                     sw.WriteItem("sha1", baseRom.SHA1);
                     sw.WriteItem("md5", baseRom.MD5);
-                    if (baseRom.DateModified != "1996/12/24 23:32:00")
-                        sw.WriteItem("date", baseRom.DateModified);
+
+                    if (baseObj.DateModified != null && baseObj.DateModified != Compress.StructuredZip.StructuredZip.TrrntzipDateTime)
+                        sw.WriteItem("date", CompressUtils.zipDateTimeToString(baseObj.DateModified));
+
                     if (baseRom.Status != null && baseRom.Status.ToLower() != "good")
                         sw.WriteItem("status", baseRom.Status);
                     sw.WriteEnd("/>");

@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "TrrntZipCMD": {
+      "commandName": "Project",
+      "commandLineArgs": "-?"
+    }
+  }
+}

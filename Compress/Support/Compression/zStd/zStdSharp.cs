@@ -3,10 +3,10 @@
 namespace Compress.Support.Compression.zStd
 {
     // C# version of zstd
-    internal class zStdSharp : ZstdSharp.DecompressionStream
+    public class RVZStdSharp : RVZstdSharp.DecompressionStream
     {
         long pos = 0;
-        public zStdSharp(Stream stream, int bufferSize = 0) : base(stream, bufferSize)
+        public RVZStdSharp(Stream stream, int bufferSize = 0) : base(stream, bufferSize)
         {
             pos = 0;
         }
@@ -14,9 +14,15 @@ namespace Compress.Support.Compression.zStd
 
         public override int Read(byte[] buffer, int offset, int count)
         {
-            int read = base.Read(buffer, offset, count);
-            pos += read;
-            return read;
+            int totalRead = 0;
+            while (totalRead < count)
+            {
+                int bytesRead = base.Read(buffer, offset + totalRead, count - totalRead);
+                if (bytesRead == 0) break;
+                totalRead += bytesRead;
+            }
+            pos+= totalRead;
+            return totalRead;
         }
 
         public override bool CanSeek => true;
@@ -32,7 +38,7 @@ namespace Compress.Support.Compression.zStd
                     {
                         if (offset < pos)
                         {
-                            // error connot go backwards
+                            // error cannot go backwards
                             return -1;
                         }
                         readLen = offset - pos;

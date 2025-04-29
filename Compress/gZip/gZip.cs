@@ -1,8 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using CodePage;
 using Compress.Support.Compression.Deflate;
-using Compress.Support.Utils;
 using FileInfo = RVIO.FileInfo;
 using FileStream = RVIO.FileStream;
 using Path = RVIO.Path;
@@ -18,20 +19,23 @@ namespace Compress.gZip
 
         private byte[] CRC;
         private ulong UnCompressedSize;
+        private byte _compressionMethod;
         public ulong CompressedSize { get; private set; }
         private uint MTime;
+
+        private byte[] _fileComment;
+
+        public string FileComment { get { return CodePage437.GetString(_fileComment); } }
 
         private long headerStartPos;
         private long dataStartPos;
 
-        public int LocalFilesCount()
-        {
-            return 1;
-        }
+        public int LocalFilesCount => 1;
+        public ZipStructure ZipStruct => ZipStructure.None;
 
-        public LocalFile GetLocalFile(int i)
+        public FileHeader GetFileHeader(int i)
         {
-            LocalFile lf = new()
+            FileHeader lf = new()
             {
                 Filename = Path.GetFileName(ZipFilename),
                 UncompressedSize = UnCompressedSize,
@@ -45,10 +49,9 @@ namespace Compress.gZip
 
         public ZipOpenType ZipOpen { get; private set; }
 
-        public ZipReturn ZipFileOpen(string newFilename, long timestamp = -1, bool readHeaders = true)
+        public ZipReturn ZipFileOpen(string newFilename, long timestamp = -1, bool readHeaders = true, int bufferSize = 4096)
         {
             ZipFileClose();
-            ZipStatus = ZipStatus.None;
 
             try
             {
@@ -63,11 +66,11 @@ namespace Compress.gZip
                     ZipFileClose();
                     return ZipReturn.ZipErrorTimeStamp;
                 }
-                int errorCode = FileStream.OpenFileRead(newFilename, out _zipFs);
+                int errorCode = FileStream.OpenFileRead(newFilename, bufferSize, out _zipFs);
                 if (errorCode != 0)
                 {
                     ZipFileClose();
-                    if (errorCode == 32)
+                    if (errorCode == -2147024864)
                     {
                         return ZipReturn.ZipFileLocked;
                     }
@@ -90,7 +93,7 @@ namespace Compress.gZip
                 ZipFileClose();
                 return ZipReturn.ZipErrorOpeningFile;
             }
-            catch(Exception)
+            catch (Exception)
             {
                 ZipFileClose();
                 return ZipReturn.ZipErrorReadingFile;
@@ -101,7 +104,6 @@ namespace Compress.gZip
         public ZipReturn ZipFileOpen(Stream inStream)
         {
             ZipFileClose();
-            ZipStatus = ZipStatus.None;
             _zipFileInfo = null;
             _zipFs = inStream;
 
@@ -123,11 +125,12 @@ namespace Compress.gZip
             }
 
             byte CM = zipBr.ReadByte();
-            if (CM != 8)
+            if (CM != 8 && CM != 93)
             {
                 _zipFs.Close();
                 return ZipReturn.ZipUnsupportedCompression;
             }
+            _compressionMethod = CM;
 
             byte FLG = zipBr.ReadByte();
 
@@ -193,15 +196,27 @@ namespace Compress.gZip
             //if FLG.FNAME set
             if ((FLG & 0x8) == 0x8)
             {
-                int XLen = zipBr.ReadInt16();
-                byte[] bytes = zipBr.ReadBytes(XLen);
+                List<byte> bName = new List<byte>();
+                while (true)
+                {
+                    byte bIn = zipBr.ReadByte();
+                    if (bIn == 0)
+                        break;
+                    bName.Add(bIn);
+                }
             }
 
             //if FLG.FComment set
             if ((FLG & 0x10) == 0x10)
             {
-                int XLen = zipBr.ReadInt16();
-                byte[] bytes = zipBr.ReadBytes(XLen);
+                List<byte> bComments = new List<byte>();
+                while (true)
+                {
+                    byte bIn = zipBr.ReadByte();
+                    if (bIn == 0)
+                        break;
+                    bComments.Add(bIn);
+                }
             }
 
             //if FLG.FHCRC set
@@ -244,6 +259,8 @@ namespace Compress.gZip
                     return ZipReturn.ZipDecodeError;
                 }
             }
+            else
+                UnCompressedSize = gzLength;
 
             return ZipReturn.ZipGood;
         }
@@ -303,18 +320,25 @@ namespace Compress.gZip
             }
             else
             {
-                //_compressionStream = new ZlibBaseStream(_zipFs, CompressionMode.Decompress, CompressionLevel.Default, ZlibStreamFlavor.DEFLATE, true);
-                _compressionStream = new System.IO.Compression.DeflateStream(_zipFs, System.IO.Compression.CompressionMode.Decompress, true);
+                switch (_compressionMethod)
+                {
+                    case 8:
+                        //_compressionStream = new ZlibBaseStream(_zipFs, CompressionMode.Decompress, CompressionLevel.Default, ZlibStreamFlavor.DEFLATE, true);
+                        _compressionStream = new DeflateStream(_zipFs, System.IO.Compression.CompressionMode.Decompress, true);
+                        break;
+                    case 93:
+                        _compressionStream = new RVZstdSharp.DecompressionStream(_zipFs);
+                        break;
+                }
                 stream = _compressionStream;
                 streamSize = UnCompressedSize;
             }
-
             return ZipReturn.ZipGood;
         }
 
         public byte[] ExtraData;
 
-        public ZipReturn ZipFileOpenWriteStream(bool raw, bool trrntzip, string filename, ulong unCompressedSize, ushort compressionMethod, out Stream stream, TimeStamps dateTime)
+        public ZipReturn ZipFileOpenWriteStream(bool raw, string filename, ulong unCompressedSize, ushort compressionMethod, out Stream stream, long? modTime, int? threadCount = null)
         {
             using (BinaryWriter zipBw = new(_zipFs, Encoding.UTF8, true))
             {
@@ -367,26 +391,25 @@ namespace Compress.gZip
                 dfStream.Close();
                 dfStream.Dispose();
             }
-            else if (_compressionStream is System.IO.Compression.DeflateStream dfioStream)
+            else if (_compressionStream is DeflateStream dfioStream)
             {
                 dfioStream.Close();
                 dfioStream.Dispose();
             }
+            else if (_compressionStream is RVZstdSharp.DecompressionStream zstdSharpStream)
+            {
+                zstdSharpStream.Close();
+                zstdSharpStream.Dispose();
+            }
+
             _compressionStream = null;
 
             return ZipReturn.ZipGood;
         }
 
-        public ZipStatus ZipStatus { get; private set; }
-
         public string ZipFilename => _zipFileInfo != null ? _zipFileInfo.FullName : "";
 
         public long TimeStamp => _zipFileInfo?.LastWriteTime ?? 0;
-
-        public void ZipFileAddZeroLengthFile()
-        {
-            throw new NotImplementedException();
-        }
 
         public ZipReturn ZipFileCreate(string newFilename)
         {
@@ -398,7 +421,7 @@ namespace Compress.gZip
             CompressUtils.CreateDirForFile(newFilename);
             _zipFileInfo = new FileInfo(newFilename);
 
-            int errorCode = FileStream.OpenFileWrite(newFilename, out _zipFs);
+            int errorCode = FileStream.OpenFileWrite(newFilename, FileStream.BufSizeMax, out _zipFs);
             if (errorCode != 0)
             {
                 ZipFileClose();
@@ -496,7 +519,7 @@ namespace Compress.gZip
             int errorCode = FileStream.OpenFileRead(_zipFileInfo.FullName, out st);
             if (errorCode != 0)
             {
-                if (errorCode == 32)
+                if (errorCode == -2147024864)
                 {
                     return ZipReturn.ZipFileLocked;
                 }

@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Security.Cryptography;
+using Compress;
 using DATReader.DatStore;
 using RVIO;
 
@@ -46,9 +48,10 @@ namespace DATReader.DatWriter
         private static void WriteHeader(DatStreamWriter sw, DatHeader datHeader)
         {
             sw.WriteLine("<header>", 1);
+            sw.WriteNode("id", datHeader.Id);
             sw.WriteNode("name", datHeader.Name);
-            sw.WriteNode("rootdir", datHeader.RootDir);
             sw.WriteNode("type", datHeader.Type);
+            sw.WriteNode("rootdir", datHeader.RootDir);
             sw.WriteNode("description", datHeader.Description);
             sw.WriteNode("category", datHeader.Category);
             sw.WriteNode("version", datHeader.Version);
@@ -67,7 +70,7 @@ namespace DATReader.DatWriter
 
         private static void writeBase(DatStreamWriter sw, DatDir baseDirIn, bool newStyle)
         {
-            DatBase[] dirChildren = baseDirIn.ToArray();
+            DatBase[] dirChildren = baseDirIn?.ToArray();
 
             if (dirChildren == null)
                 return;
@@ -75,50 +78,63 @@ namespace DATReader.DatWriter
             {
                 if (baseObj is DatDir baseDir)
                 {
-                    if (baseDir.DGame != null)
-                    {
-                        DatGame g = baseDir.DGame;
+
+                    DatGame g = baseDir.DGame;
+                    if (g == null)
+                        sw.Write("<dir");
+                    else
                         sw.Write(newStyle ? @"<set" : @"<game");
 
-                        sw.WriteItem("name", baseDir.Name);
+                    sw.WriteItem("name", baseDir.Name);
 
-                        if (newStyle)
+                    if (newStyle)
+                    {
+                        if (baseDir.FileType == FileType.Zip)
                         {
-                            if (baseDir.DatFileType == DatFileType.DirTorrentZip)
-                            {
-                                sw.WriteItem("type", "trrntzip");
-                            }
-                            else if (baseDir.DatFileType == DatFileType.DirRVZip)
-                            {
-                                sw.WriteItem("type", "rvzip");
-                            }
-                            else if (baseDir.DatFileType == DatFileType.Dir7Zip)
-                            {
-                                sw.WriteItem("type", "7zip");
-                            }
-                            else if (baseDir.DatFileType == DatFileType.Dir)
-                            {
-                                sw.WriteItem("type", "dir");
-                            }
+                            sw.WriteItem("type", "trrntzip");
+                        }
+                        else if (baseDir.FileType == FileType.SevenZip)
+                        {
+                            sw.WriteItem("type", "7zip");
+                        }
+                        else if (baseDir.FileType == FileType.Dir)
+                        {
+                            sw.WriteItem("type", "dir");
                         }
 
+                        if (baseObj.DateModified != null)
+                            sw.WriteItem("date", baseObj.DateModified.ToString());
+                    }
+                    if (g != null)
+                    {
                         if (!g.IsEmuArc)
                         {
+                            sw.WriteItem("id", g.Id);
                             sw.WriteItem("cloneof", g.CloneOf);
+                            sw.WriteItem("cloneofid", g.CloneOfId);
                             sw.WriteItem("romof", g.RomOf);
                         }
                         if (!string.IsNullOrWhiteSpace(g.IsBios) && g.IsBios != "no") sw.WriteItem("isbios", g.IsBios);
                         if (!string.IsNullOrWhiteSpace(g.IsDevice) && g.IsDevice != "no") sw.WriteItem("isdevice", g.IsDevice);
                         if (!string.IsNullOrWhiteSpace(g.Runnable) && g.Runnable != "yes") sw.WriteItem("runnable", g.Runnable);
-                        sw.WriteEnd(@">", 1);
+                    }
+                    sw.WriteEnd(@">", 1);
 
-                        sw.WriteNode("description", g.Description);
+                    if (g != null)
+                    {
+                        if (g.Category != null)
+                            foreach (string Category in g.Category)
+                                sw.WriteNode("category", Category);
+
+                        string desc = g.Description;
+                        sw.WriteNode("description", desc);
+
                         //if (newStyle && !string.IsNullOrWhiteSpace(g.Comments))
                         //    sw.WriteNode("comments", g.Comments);
                         if (g.IsEmuArc)
                         {
                             sw.WriteLine("<trurip>", 1);
-                            sw.WriteNode("titleid", g.TitleId);
+                            sw.WriteNode("titleid", g.Id);
                             sw.WriteNode("source", g.Source);
                             sw.WriteNode("publisher", g.Publisher);
                             sw.WriteNode("developer", g.Developer);
@@ -140,37 +156,35 @@ namespace DATReader.DatWriter
                             sw.WriteNode("year", g.Year);
                             sw.WriteNode("manufacturer", g.Manufacturer);
                         }
-
-                        writeBase(sw, baseDir, newStyle);
-
-                        if (g.device_ref != null)
-                        {
-                            foreach (string d in g.device_ref)
-                            {
-                                sw.WriteLine($@"<device_ref name=""{d}""/>");
-                            }
-                        }
-
-                        sw.WriteLine(newStyle ? @"</set>" : @"</game>", -1);
                     }
-                    else
+
+                    writeBase(sw, baseDir, newStyle);
+
+                    if (g != null && g.device_ref != null)
                     {
-                        sw.WriteLine(@"<dir name=""" + Etxt(baseDir.Name) + @""">", 1);
-                        writeBase(sw, baseDir, newStyle);
-                        sw.WriteLine(@"</dir>", -1);
+                        foreach (string d in g.device_ref)
+                        {
+                            sw.WriteLine($@"<device_ref name=""{d}""/>");
+                        }
                     }
+
+                    if (g == null)
+                        sw.WriteLine("</dir>", -1);
+                    else
+                        sw.WriteLine(newStyle ? @"</set>" : @"</game>", -1);
+
                     continue;
                 }
 
                 if (baseObj is DatFile baseRom)
                 {
-                    if (baseRom.Name.Substring(baseRom.Name.Length - 1) == "/" && newStyle)
+                    if (baseRom.Name.EndsWith("/") && newStyle)
                     {
                         sw.Write(@"<dir");
                         sw.WriteItem("name", baseRom.Name.Substring(0, baseRom.Name.Length - 1));
                         //sw.WriteItem("merge", baseRom.Merge);
-                        if (baseRom.DateModified != "1996/12/24 23:32:00")
-                            sw.WriteItem("date", baseRom.DateModified);
+                        if (baseObj.DateModified != null && baseObj.DateModified != Compress.StructuredZip.StructuredZip.TrrntzipDateTime)
+                            sw.WriteItem("date", CompressUtils.zipDateTimeToString(baseObj.DateModified));
                         sw.WriteEnd("/>");
                     }
                     else
@@ -187,8 +201,8 @@ namespace DATReader.DatWriter
                         sw.WriteItem("sha1", baseRom.SHA1);
                         sw.WriteItem("sha256", baseRom.SHA256);
                         sw.WriteItem("md5", baseRom.MD5);
-                        if (baseRom.DateModified != "1996/12/24 23:32:00")
-                            sw.WriteItem("date", baseRom.DateModified);
+                        if (baseObj.DateModified != null && baseObj.DateModified != Compress.StructuredZip.StructuredZip.TrrntzipDateTime)
+                            sw.WriteItem("date", CompressUtils.zipDateTimeToString(baseObj.DateModified));
                         if (baseRom.Status != null && baseRom.Status.ToLower() != "good")
                             sw.WriteItem("status", baseRom.Status);
                         if (baseRom.MIA == "yes")
@@ -238,7 +252,7 @@ namespace DATReader.DatWriter
             }
             public DatStreamWriter(System.IO.Stream stOut)
             {
-                _sw= new System.IO.StreamWriter(stOut);
+                _sw = new System.IO.StreamWriter(stOut);
             }
 
             public void Dispose()

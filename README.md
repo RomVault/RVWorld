@@ -1,8 +1,7 @@
 # RVWorld (RomVaultWorld)
 
-## The home of RomVault 3.0
+## The home of RomVault 3.7
 
-RomVaultX is the DeDup'ed version of RomVault, where everything is stored using the files SHA1
 
 * Compress         --  7Zip & Zip compression libraries
 * DATReader        --  Reads DAT files into a Class structure
@@ -12,7 +11,6 @@ RomVaultX is the DeDup'ed version of RomVault, where everything is stored using 
 * ROMVault         --  The UI code for ROMVault3
 * RVCore           --  The Core Engine for ROMVault3
 * RVIO             --  File code that enabled long filenames
-* RomVaultX        --  DeDup'ed Sqlite version of RomVault
 * Trrntzip         --  Trrntzip core library code
 * TrrntzipCMD      --  Commandline version of Trrntzip
 * TrrntzipUI       --  UI version of Trrntzip

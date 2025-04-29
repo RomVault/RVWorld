@@ -1,7 +1,7 @@
 ﻿/******************************************************
  *     ROMVault3 is written by Gordon J.              *
  *     Contact gordon@romvault.com                    *
- *     Copyright 2022                                 *
+ *     Copyright 2025                                 *
  ******************************************************/
 
 using System;
@@ -22,6 +22,18 @@ namespace ROMVault
             cboFixLevel.Items.Add("Level 1 - Fast copy Match on CRC");
             cboFixLevel.Items.Add("Level 2 - Fast copy if SHA1 scanned");
             cboFixLevel.Items.Add("Level 3 - Uncompress/Hash/Compress");
+
+            cboCores.Items.Add("Auto");
+            for (int i = 1; i <= 64; i++)
+                cboCores.Items.Add(i.ToString());
+
+            cbo7zStruct.Items.Add("LZMA Solid - rv7z");
+            cbo7zStruct.Items.Add("LZMA Non-Solid");
+            cbo7zStruct.Items.Add("ZSTD Solid");
+            cbo7zStruct.Items.Add("ZSTD Non-Solid");
+
+            if (Settings.rvSettings.Darkness)
+                Dark.dark.SetColors(this);
         }
 
         private void FrmConfigLoad(object sender, EventArgs e)
@@ -34,14 +46,20 @@ namespace ROMVault
             {
                 textBox1.Text += file + Environment.NewLine;
             }
-            chkTrrntZip.Checked = Settings.rvSettings.ConvertToTrrntzip;
-            chkrv7Zip.Checked = Settings.rvSettings.ConvertToRV7Z;
+            chkSendFoundMIA.Checked = Settings.rvSettings.MIACallback;
+            chkSendFoundMIAAnon.Checked = Settings.rvSettings.MIAAnon;
 
             chkDetailedReporting.Checked = Settings.rvSettings.DetailedFixReporting;
             chkDoubleCheckDelete.Checked = Settings.rvSettings.DoubleCheckDelete;
             chkCacheSaveTimer.Checked = Settings.rvSettings.CacheSaveTimerEnabled;
             upTime.Value = Settings.rvSettings.CacheSaveTimePeriod;
             chkDebugLogs.Checked = Settings.rvSettings.DebugLogsEnabled;
+            chkDeleteOldCueFiles.Checked = Settings.rvSettings.DeleteOldCueFiles;
+            cboCores.SelectedIndex = Settings.rvSettings.zstdCompCount >= cboCores.Items.Count ? 0 : Settings.rvSettings.zstdCompCount;
+            cbo7zStruct.SelectedIndex = Settings.rvSettings.sevenZDefaultStruct;
+            chkDarkMode.Checked = Settings.rvSettings.Darkness;
+            chkDoNotReportFeedback.Checked = Settings.rvSettings.DoNotReportFeedback;
+
         }
 
         private void BtnCancelClick(object sender, EventArgs e)
@@ -75,8 +93,16 @@ namespace ROMVault
             Settings.rvSettings.CacheSaveTimerEnabled = chkCacheSaveTimer.Checked;
             Settings.rvSettings.CacheSaveTimePeriod = (int)upTime.Value;
 
-            Settings.rvSettings.ConvertToTrrntzip = chkTrrntZip.Checked;
-            Settings.rvSettings.ConvertToRV7Z = chkrv7Zip.Checked;
+            Settings.rvSettings.MIACallback = chkSendFoundMIA.Checked;
+            Settings.rvSettings.MIAAnon = chkSendFoundMIAAnon.Checked;
+            Settings.rvSettings.DeleteOldCueFiles = chkDeleteOldCueFiles.Checked;
+
+            Settings.rvSettings.zstdCompCount = cboCores.SelectedIndex;
+
+            Settings.rvSettings.sevenZDefaultStruct = cbo7zStruct.SelectedIndex;
+            Settings.rvSettings.Darkness = chkDarkMode.Checked;
+
+            Settings.rvSettings.DoNotReportFeedback = chkDoNotReportFeedback.Checked;
 
             Settings.WriteConfig(Settings.rvSettings);
             Close();
@@ -99,5 +125,11 @@ namespace ROMVault
 
             lblDATRoot.Text = RelativePath.MakeRelative(AppDomain.CurrentDomain.BaseDirectory, browse.SelectedPath);
         }
+
+        private void chkSendFoundMIA_CheckedChanged(object sender, EventArgs e)
+        {
+            chkSendFoundMIAAnon.Enabled = chkSendFoundMIA.Checked;
+        }
+
     }
 }

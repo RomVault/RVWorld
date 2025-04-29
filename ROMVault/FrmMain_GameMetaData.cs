@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Drawing;
 using System.Windows.Forms;
 using RomVaultCore;
 using RomVaultCore.RvDB;
+using RVIO;
 
 namespace ROMVault
 {
@@ -142,13 +144,48 @@ namespace ROMVault
 
             gbSetInfo_Resize(null, new EventArgs());
             UpdateGameMetaData(new RvFile(FileType.Dir));
+
+            //       _textGameName.Click += _textGameName_Click;
+            //       _textTruripTitleId.Click += _textTruripTitleId_Click;
+        }
+        /*
+        private void _textGameName_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                if (!_textTruripTitleId.Visible)
+                    return;
+                if (string.IsNullOrWhiteSpace(_textTruripTitleId.Text))
+                    return;
+                try{Process.Start($"http://database.trurip.org/st/st{_textTruripTitleId.Text}"); } catch { }
+            }
+            catch (Exception)
+            {
+            }
         }
 
+        private void _textTruripTitleId_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(_textTruripTitleId.Text))
+                    return;
+                try{Process.Start($"http://database.trurip.org/st/st{_textTruripTitleId.Text}"); } catch { }
+            }
+            catch (Exception)
+            {
+            }
+        }
+        */
 
         private void UpdateGameMetaData(RvFile tGame)
         {
             _labelGameName.Visible = true;
             _textGameName.Text = tGame.Name;
+            string gameId = tGame.Game?.GetData(RvGame.GameData.Id);
+            if (!string.IsNullOrWhiteSpace(gameId))
+                _textGameName.Text += $" (ID:{gameId})";
+
             if (tGame.Game == null)
             {
                 _labelGameDescription.Visible = false;
@@ -219,7 +256,9 @@ namespace ROMVault
                 {
                     _labelGameDescription.Visible = true;
                     _textGameDescription.Visible = true;
-                    _textGameDescription.Text = tGame.Game.GetData(RvGame.GameData.Description);
+                    string desc = tGame.Game.GetData(RvGame.GameData.Description);
+                    if (desc == "¤") desc = Path.GetFileNameWithoutExtension(tGame.Name);
+                    _textGameDescription.Text = desc;
 
                     _labelTruripPublisher.Visible = true;
                     _textTruripPublisher.Visible = true;
@@ -232,7 +271,7 @@ namespace ROMVault
 
                     _labelTruripTitleId.Visible = true;
                     _textTruripTitleId.Visible = true;
-                    _textTruripTitleId.Text = tGame.Game.GetData(RvGame.GameData.TitleId);
+                    _textTruripTitleId.Text = tGame.Game.GetData(RvGame.GameData.Id);
 
                     _labelTruripSource.Visible = true;
                     _textTruripSource.Visible = true;
@@ -300,6 +339,9 @@ namespace ROMVault
                     }
 
                     if (!found)
+                        found = LoadNFOPannel(tGame);
+
+                    if (!found)
                         found = LoadC64Pannel(tGame);
 
                     if (!found)
@@ -307,7 +349,9 @@ namespace ROMVault
 
                     _labelGameDescription.Visible = true;
                     _textGameDescription.Visible = true;
-                    _textGameDescription.Text = tGame.Game.GetData(RvGame.GameData.Description);
+                    string desc = tGame.Game.GetData(RvGame.GameData.Description);
+                    if (desc == "¤") desc = Path.GetFileNameWithoutExtension(tGame.Name);
+                    _textGameDescription.Text = desc;
 
                     _labelGameManufacturer.Visible = true;
                     _textGameManufacturer.Visible = true;
@@ -334,6 +378,8 @@ namespace ROMVault
             {
                 HidePannel();
             }
+
+            this.ActiveControl = GameGrid;
         }
 
 

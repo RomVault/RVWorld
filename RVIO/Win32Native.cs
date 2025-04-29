@@ -1,7 +1,7 @@
 ﻿/******************************************************
  *     ROMVault3 is written by Gordon J.              *
  *     Contact gordon@romvault.com                    *
- *     Copyright 2022                                 *
+ *     Copyright 2025                                 *
  ******************************************************/
 
 using System;
@@ -9,9 +9,7 @@ using System.IO;
 using System.Runtime.ConstrainedExecution;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
-using System.Security.Permissions;
 using System.Text;
-using Microsoft.Win32.SafeHandles;
 
 namespace RVIO
 {
@@ -28,6 +26,9 @@ namespace RVIO
             int shortPathLength
         );
 
+        [DllImport(KERNEL32, SetLastError = true, CharSet = CharSet.Auto, BestFitMapping = false)]
+        [ResourceExposure(ResourceScope.Machine)]
+        internal static extern bool CreateDirectory(string path, IntPtr lpSecurityAttributes);
     }
  
     public static class FileParamConvert

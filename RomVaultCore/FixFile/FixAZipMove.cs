@@ -1,16 +1,18 @@
-﻿using RomVaultCore.FindFix;
-using RomVaultCore.FixFile.Util;
+﻿using Compress;
+using FileScanner;
+using RomVaultCore.FixFile.FixAZipCore;
+using RomVaultCore.FixFile.Utils;
 using RomVaultCore.RvDB;
 using RomVaultCore.Utils;
 using RVIO;
 using System;
 using System.Collections.Generic;
+using System.Threading;
 
 namespace RomVaultCore.FixFile
 {
     internal static class FixAZipMove
     {
-
         public static ReturnCode CheckFileMove(RvFile fixZip, Dictionary<string, RvFile> filesUserForFix, ref int totalFixed, out string error)
         {
             error = "";
@@ -18,52 +20,64 @@ namespace RomVaultCore.FixFile
             if (fixZip.FileType != FileType.Zip && fixZip.FileType != FileType.SevenZip)
                 return ReturnCode.Cancel;
 
-            bool zipTypeSet = fixZip.FileType == FileType.Zip ? Settings.rvSettings.ConvertToTrrntzip : Settings.rvSettings.ConvertToRV7Z;
 
             FileType archiveNeeded = fixZip.FileType;
+            ZipStructure structureNeeded = fixZip.ZipDatStruct;
+
+            if (
+                structureNeeded != ZipStructure.ZipTrrnt &&
+                structureNeeded != ZipStructure.ZipZSTD &&
+                structureNeeded != ZipStructure.ZipTDC &&
+                structureNeeded != ZipStructure.SevenZipSLZMA &&
+                structureNeeded != ZipStructure.SevenZipNLZMA &&
+                structureNeeded != ZipStructure.SevenZipSZSTD &&
+                structureNeeded != ZipStructure.SevenZipNZSTD
+                )
+                return ReturnCode.Cancel;
 
             int totalToFix = 0;
-            // first check if every rom in the zip file we are about to try and fix can be fixed.
-            // (This is good as a start, but should be just match to the copying file in the future.)
+            int totalToMove = 0;
+
+            // check that we only have fixable/correct/missing files in the file we are trying to fix.
             int indexOfCanBeFixed = -1;
-            for (int iRom = 0; iRom < fixZip.ChildCount; iRom++)
+            for (int fixZipIndex = 0; fixZipIndex < fixZip.ChildCount; fixZipIndex++)
             {
-                if (fixZip.Child(iRom).RepStatus == RepStatus.CanBeFixed ||
-                    fixZip.Child(iRom).RepStatus == RepStatus.CanBeFixedMIA
-                    )
+                RvFile fixFile = fixZip.Child(fixZipIndex);
+                if (fixFile.RepStatus == RepStatus.CanBeFixed || fixFile.RepStatus == RepStatus.CanBeFixedMIA || fixFile.RepStatus == RepStatus.CorruptCanBeFixed)
                 {
                     totalToFix++;
-                    if (indexOfCanBeFixed == -1)
-                        indexOfCanBeFixed = iRom;
+                    totalToMove++;
+                    if (fixFile.Size != 0 && indexOfCanBeFixed == -1)
+                        indexOfCanBeFixed = fixZipIndex;
                     continue;
                 }
-                if (fixZip.Child(iRom).RepStatus == RepStatus.Correct ||
-                    fixZip.Child(iRom).RepStatus == RepStatus.CorrectMIA
-                    )
+                if (fixFile.RepStatus == RepStatus.Correct || fixFile.RepStatus == RepStatus.CorrectMIA)
+                {
+                    totalToMove++;
+                    continue;
+                }
+                if (fixFile.RepStatus == RepStatus.Missing || fixFile.RepStatus == RepStatus.MissingMIA || fixFile.RepStatus == RepStatus.NotCollected)
                     continue;
 
                 return ReturnCode.Cancel;
             }
-            // if we only found correct, we a trrntzipping so return.
-            if(indexOfCanBeFixed==-1)
+            // if we only found correct, we are trrntzipping so return.
+            if (indexOfCanBeFixed == -1)
                 return ReturnCode.Cancel;
 
             // next get the list of all the match files that can fix the first file in this zip
             List<RvFile> lstFixRomTable = FindSourceFile.GetFixFileList(fixZip.Child(indexOfCanBeFixed));
 
-            // now see which of these files are zip files
+            // now see which of these files are a matching structure
             List<RvFile> lstFixSourceZips = new List<RvFile>();
             foreach (RvFile file in lstFixRomTable)
             {
-                if (FindFixesListCheck.treeType(file) == RvTreeRow.TreeSelect.Locked)
+                if (RvFile.treeType(file) == RvTreeRow.TreeSelect.Locked)
                     continue;
 
                 RvFile parentFile = file.Parent;
                 // parentFile can be null for the zero byte dummy file.
-                if (parentFile == null || parentFile.FileType != archiveNeeded)
-                    continue;
-
-                if (zipTypeSet && parentFile.ZipStatus != Compress.ZipStatus.TrrntZip)
+                if (parentFile == null || parentFile.FileType != archiveNeeded || parentFile.ZipStruct != structureNeeded)
                     continue;
 
                 if (lstFixSourceZips.Contains(parentFile))
@@ -75,98 +89,201 @@ namespace RomVaultCore.FixFile
                 return ReturnCode.Cancel;
 
             // now try and find a matching zip
+            bool found = false;
+            RvFile sourceZip = null;
             for (int i = 0; i < lstFixSourceZips.Count; i++)
             {
-                RvFile testZip = lstFixSourceZips[i];
-                if (testZip.ChildCount != fixZip.ChildCount)
+                found = false;
+                sourceZip = lstFixSourceZips[i];
+                if (sourceZip.ChildCount != totalToMove)
                     continue;
-                bool found = true;
-                for (int j = 0; j < fixZip.ChildCount; j++)
+
+                found = true;
+                int sourceZipIndexTest = 0;
+                for (int fixZipIndex = 0; fixZipIndex < fixZip.ChildCount; fixZipIndex++)
                 {
-                    RvFile fixFile = fixZip.Child(j);
-                    RvFile usingFile = testZip.Child(j);
+                    RvFile fixFile = fixZip.Child(fixZipIndex);
+                    if (fixFile.RepStatus == RepStatus.Missing || fixFile.RepStatus == RepStatus.MissingMIA || fixFile.RepStatus == RepStatus.NotCollected)
+                        continue;
+
+                    RvFile usingFile = sourceZip.Child(sourceZipIndexTest);
 
                     // check this for source and destination fix types, for a full match
                     if (usingFile.RepStatus != RepStatus.NeededForFix && usingFile.RepStatus != RepStatus.Delete) { found = false; break; }
                     // need to check that the files are an exact match
                     if (!CheckFileMove(fixFile, usingFile)) { found = false; break; }
+                    sourceZipIndexTest++;
                 }
-                if (!found)
-                    continue;
-
-                string fixZipFullName = fixZip.FullName;
-                string sourceZipFullName = testZip.FullNameCase;
-                Report.ReportProgress(new bgwShowFix(Path.GetDirectoryName(fixZipFullName), Path.GetFileName(fixZipFullName), "", null, "<--ZipMove", Path.GetDirectoryName(sourceZipFullName), Path.GetFileName(sourceZipFullName), ""));
-
-                // check the source file timestamp
+                if (found)
+                    break;
+            }
+            if (!found)
+                return ReturnCode.Cancel;
 
 
-                try
+            // DO ZIP MOVE.
+
+            string fixZipFullName = fixZip.FullName;
+            string fixZipTreeFullName = fixZip.TreeFullName;
+            string sourceZipFullName = sourceZip.FullNameCase;
+            string sourceZipTreeFullName = sourceZip.TreeFullName;
+            Report.ReportProgress(new bgwShowFix(Path.GetDirectoryName(fixZipTreeFullName), Path.GetFileName(fixZipTreeFullName), "", null, fixZip.FileType == FileType.Zip ? "<--ZipMove" : "<--7ZMove", Path.GetDirectoryName(sourceZipTreeFullName), Path.GetFileName(sourceZipTreeFullName), ""));
+
+            // check the source file timestamp
+            long modTimeStamp;
+            try
+            {
+                if (File.Exists(fixZipFullName))
                 {
+                    string strPath = Path.GetDirectoryName(fixZipFullName);
+                    string tempZipFilename = Path.Combine(strPath, $"__RomVault.{DateTime.Now.Ticks}.tmp");
+
+                    if (File.Exists(tempZipFilename))
+                        File.Delete(tempZipFilename);
+                    File.Move(sourceZipFullName, tempZipFilename);
                     if (File.Exists(fixZipFullName))
-                    {
-                        string strPath = Path.GetDirectoryName(fixZipFullName);
-                        string tempZipFilename = Path.Combine(strPath, "__RomVault.tmp");
-
-                        if (File.Exists(tempZipFilename))
-                            File.Delete(tempZipFilename);
-                        File.Move(sourceZipFullName, tempZipFilename);
-                        if (File.Exists(fixZipFullName))
-                            File.Delete(fixZipFullName);
-                        File.Move(tempZipFilename, fixZipFullName);
-                    }
-                    else
-                    {
-                        File.Move(sourceZipFullName, fixZipFullName);
-                    }
+                        File.Delete(fixZipFullName);
+                    File.Move(tempZipFilename, fixZipFullName);
                 }
-                catch(Exception ex)
+                else
                 {
-                    error = "Error reading Source File " + ex.Message;
-                    return ReturnCode.FileSystemError;
+                    File.Move(sourceZipFullName, fixZipFullName);
                 }
 
-                // update the fixed file
-                int intLoopFix = 0;
-                for (int j = 0; j < fixZip.ChildCount; j++)
-                {
-                    fixZip.Child(j).FileAdd(testZip.Child(intLoopFix), false);
+                while (!File.Exists(fixZipFullName))
+                    Thread.Sleep(50);
 
-                    lstFixRomTable = FindSourceFile.GetFixFileList(fixZip.Child(j));
-                    foreach (RvFile fixingFiles in lstFixRomTable)
-                    {
-                        string treeFullName = fixingFiles.TreeFullName;
-                        if (!filesUserForFix.ContainsKey(treeFullName))
-                            filesUserForFix.Add(treeFullName, fixingFiles);
-                    }
+                FileInfo file = new FileInfo(fixZipFullName);
+                fixZip.FileModTimeStamp = file.LastWriteTime;
 
-                    if (testZip.Child(intLoopFix).FileRemove() == EFile.Delete)
-                    {
-                        testZip.ChildRemove(intLoopFix);
-                        continue;
-                    }
-                    intLoopFix++;
-                }
-                fixZip.GotStatus = GotStatus.Got;
-                fixZip.ZipStatus = testZip.ZipStatus;
-                fixZip.FileModTimeStamp = testZip.FileModTimeStamp;
-
-                FixFileUtils.CheckDeleteFile(testZip);
-
-                totalFixed += totalToFix;
-
-                return ReturnCode.Good;
+            }
+            catch (Exception ex)
+            {
+                error = "Error reading Source File " + ex.Message;
+                return ReturnCode.FileSystemError;
             }
 
-            return ReturnCode.Cancel;
+            // update the fixed file
+
+
+            //ScannedItem zipMoving = sourceZip.fileOut();
+
+            //fixZip.GotStatus = GotStatus.Got;
+            //fixZip.ZipStruct = sourceZip.ZipStruct;
+            //fixZip.FileModTimeStamp = modTimeStamp;
+            //fixZip.MergeInArchive(zipMoving);
+
+            //sourceZip.MarkAsMissing();
+
+
+            int sourceZipIndex = 0;
+            for (int fixZipIndex = 0; fixZipIndex < fixZip.ChildCount; fixZipIndex++)
+            {
+                if (fixZip.Child(fixZipIndex).RepStatus == RepStatus.Missing || fixZip.Child(fixZipIndex).RepStatus == RepStatus.MissingMIA || fixZip.Child(fixZipIndex).RepStatus == RepStatus.NotCollected)
+                    continue;
+
+                fixZip.Child(fixZipIndex).FileMergeIn(sourceZip.Child(sourceZipIndex), false);
+
+                lstFixRomTable = FindSourceFile.GetFixFileList(fixZip.Child(fixZipIndex));
+                foreach (RvFile fixingFiles in lstFixRomTable)
+                {
+                    string treeFullName = fixingFiles.TreeFullName;
+                    if (!filesUserForFix.ContainsKey(treeFullName))
+                        filesUserForFix.Add(treeFullName, fixingFiles);
+                }
+
+                if (sourceZip.Child(sourceZipIndex).FileRemove() == EFile.Delete)
+                {
+                    sourceZip.ChildRemove(sourceZipIndex);
+                    continue;
+                }
+                sourceZipIndex++;
+            }
+            fixZip.GotStatus = GotStatus.Got;
+            fixZip.ZipStruct = sourceZip.ZipStruct;
+
+            FixFileUtils.CheckDeleteFile(sourceZip);
+
+            totalFixed += totalToFix;
+
+            return ReturnCode.Good;
         }
+
+
+
+        public static ReturnCode CheckFileMoveToSort(RvFile fixZip, ref int totalFixed, out string error)
+        {
+            error = "";
+            if (fixZip.FileType != FileType.Zip && fixZip.FileType != FileType.SevenZip)
+                return ReturnCode.Cancel;
+
+            for (int iRom = 0; iRom < fixZip.ChildCount; iRom++)
+            {
+                RepStatus rs = fixZip.Child(iRom).RepStatus;
+                if (rs != RepStatus.MoveToSort && rs != RepStatus.Missing && rs != RepStatus.MissingMIA && rs != RepStatus.NotCollected)
+                    return ReturnCode.Cancel;
+            }
+
+            // everything needs moved tosort
+
+            ReturnCode retCode = FixFileUtils.CreateToSortDirs(fixZip, out RvFile outDir, out string toSortFileName);
+            if (retCode != ReturnCode.Good)
+            {
+                error = "Error Creating ToSortDirs";
+                return retCode;
+            }
+
+            string fixZipFullName = fixZip.FullNameCase;
+            string fixZipTreeFullName = fixZip.TreeFullName;
+            string toSortFullName = Path.Combine(outDir.FullName, toSortFileName);
+
+            Report.ReportProgress(new bgwShowFix(Path.GetDirectoryName(fixZipTreeFullName), Path.GetFileName(fixZipTreeFullName), "", null, fixZip.FileType == FileType.Zip ? "ZipMove-->" : "7ZMove-->", outDir.TreeFullName, toSortFileName, ""));
+
+            long modTimeStamp;
+            try
+            {
+                File.Move(fixZipFullName, toSortFullName);
+
+                while (!File.Exists(toSortFullName))
+                    Thread.Sleep(50);
+
+                FileInfo file = new FileInfo(toSortFullName);
+                modTimeStamp = file.LastWriteTime;
+            }
+            catch (Exception ex)
+            {
+                error = "Error reading Source File " + ex.Message;
+                return ReturnCode.FileSystemError;
+            }
+
+            ScannedFile zipMoving = fixZip.fileOut();
+
+            RvFile toSortGame = new RvFile(fixZip.FileType)
+            {
+                Name = toSortFileName,
+                DatStatus = DatStatus.InToSort,
+                GotStatus = GotStatus.Got,
+                ZipStruct = fixZip.ZipStruct,
+                FileModTimeStamp = modTimeStamp
+            };
+            outDir.ChildAdd(toSortGame);
+            toSortGame.MergeInArchive(zipMoving);
+
+            fixZip.MarkAsMissing();
+            FixFileUtils.CheckDeleteFile(fixZip);
+
+            return ReturnCode.Good;
+        }
+
+
+
         private static bool CheckFileMove(RvFile fixFile, RvFile usingFile)
         {
             if (fixFile.Name != usingFile.Name)
                 return false;
             if (fixFile.Size != usingFile.Size)
                 return false;
-            if (FileHeaderReader.FileHeaderReader.AltHeaderFile(usingFile.HeaderFileType))
+            if (FileScanner.FileHeaderReader.AltHeaderFile(usingFile.HeaderFileType))
                 return false;
             if (!usingFile.FileStatusIs(FileStatus.CRCVerified))
                 return false;

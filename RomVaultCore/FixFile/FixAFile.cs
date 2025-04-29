@@ -1,7 +1,9 @@
 ﻿using System.Collections.Generic;
-using RomVaultCore.FixFile.Util;
+using System.Linq;
+using RomVaultCore.FixFile.Utils;
 using RomVaultCore.RvDB;
 using RVIO;
+using static RomVaultCore.FixFile.FixAZipCore.FindSourceFile;
 
 namespace RomVaultCore.FixFile
 {
@@ -15,7 +17,7 @@ namespace RomVaultCore.FixFile
             switch (fixFile.RepStatus)
             {
                 case RepStatus.Unknown:
-                    return ReturnCode.FindFixes;
+                    return ReturnCode.FindFixesInvalidStatus;
 
 
                 case RepStatus.UnScanned:
@@ -26,6 +28,9 @@ namespace RomVaultCore.FixFile
                     // nothing can be done so moving right along
                     return ReturnCode.Good;
 
+                case RepStatus.Incomplete:
+                    // nothing to do here
+                    return ReturnCode.Good;
 
                 case RepStatus.Correct:
                 case RepStatus.CorrectMIA:
@@ -92,8 +97,7 @@ namespace RomVaultCore.FixFile
                 string sourceFullName = Path.Combine(fixFile.Parent.FullName, fixFile.FileName);
                 if (!File.SetAttributes(sourceFullName, FileAttributes.Normal))
                 {
-                    int error = Error.GetLastError();
-                    Report.ReportProgress(new bgwShowError(sourceFullName, "Error Setting File Attributes to Normal. Before Case correction Rename. Code " + error));
+                    Report.ReportProgress(new bgwShowError(sourceFullName, $"Error Setting File Attributes to Normal. Before Case correction Rename. {Error.ErrorMessage}"));
                 }
 
                 File.Move(sourceFullName, fixFile.FullName);
@@ -119,8 +123,7 @@ namespace RomVaultCore.FixFile
 
                 if (!File.SetAttributes(filename, FileAttributes.Normal))
                 {
-                    int error = Error.GetLastError();
-                    Report.ReportProgress(new bgwShowError(filename, "Error Setting File Attributes to Normal. Before Delete. Code " + error));
+                    Report.ReportProgress(new bgwShowError(filename, $"Error Setting File Attributes to Normal. Before Delete. {Error.ErrorMessage}"));
                 }
                 File.Delete(filename);
             }
@@ -140,8 +143,6 @@ namespace RomVaultCore.FixFile
                 return returnCode;
             }
 
-            string fixFileFullName = fixFile.FullName;
-            string toSortFullName = Path.Combine(outDir.FullName, toSortFileName);
 
             //create new tosort record
             // FileInfo toSortFile = new FileInfo(toSortFullName);
@@ -153,31 +154,21 @@ namespace RomVaultCore.FixFile
                 //TimeStamp = toSortFile.LastWriteTime,
                 DatStatus = DatStatus.InToSort
             };
+
+
+            string fixFileFullName = fixFile.FullNameCase;
             Report.ReportProgress(new bgwShowFix(Path.GetDirectoryName(fixFileFullName), "", Path.GetFileName(fixFileFullName), fixFile.Size, "-->", outDir.FullName, "", fixFileFullName));
 
+            string toSortFullName = Path.Combine(outDir.FullName, toSortFileName);
             returnCode = FixFileUtils.MoveFile(fixFile, toSortRom, toSortFullName, out bool fileMoved, out errorMessage);
             if (returnCode != ReturnCode.Good)
                 return returnCode;
 
             if (!fileMoved)
             {
-                returnCode = FixFileUtils.CopyFile(fixFile, null, toSortFullName, toSortRom, false, out errorMessage);
-                if (returnCode != ReturnCode.Good)
-                    return returnCode;
-
                 string fixFilePath = fixFile.FullName;
-                if (!File.SetAttributes(fixFilePath, FileAttributes.Normal))
-                {
-                    int error = Error.GetLastError();
-                    Report.ReportProgress(new bgwShowError(fixFilePath,
-                        "Error Setting File Attributes to Normal. Before Delete Moving ToSort. Code " + error));
-                }
-
-                File.Delete(fixFilePath);
-
-                // here we just deleted a file so also delete it from the DB,
-                // and recurse up deleting unnedded DIR's
-                FixFileUtils.CheckDeleteFile(fixFile);
+                Report.ReportProgress(new bgwShowError(fixFilePath, $"Logic error moving this file to ToSort"));
+                return ReturnCode.LogicError;
             }
 
             outDir.ChildAdd(toSortRom);
@@ -187,15 +178,13 @@ namespace RomVaultCore.FixFile
 
         private static ReturnCode FixFileMoveToCorrupt(RvFile fixFile, out string errorMessage)
         {
-            string corruptDir = Path.Combine(DB.ToSort(), "Corrupt");
+            string corruptDir = Path.Combine(DB.GetToSortPrimary().Name, "Corrupt");
             if (!Directory.Exists(corruptDir))
             {
                 Directory.CreateDirectory(corruptDir);
             }
-
-            string fixFileFullName = fixFile.FullName;
-
-            string toSortCorruptFullName = Path.Combine(corruptDir, fixFile.Name);
+                        
+            string toSortCorruptFullName = Path.Combine(corruptDir, fixFile.NameCase);
             string toSortCorruptFileName = fixFile.Name;
             int fileC = 0;
             while (File.Exists(toSortCorruptFullName))
@@ -216,6 +205,7 @@ namespace RomVaultCore.FixFile
                 DatStatus = DatStatus.InToSort
             };
 
+            string fixFileFullName = fixFile.FullNameCase;
             Report.ReportProgress(new bgwShowFix(Path.GetDirectoryName(fixFileFullName), "", Path.GetFileName(fixFileFullName), fixFile.Size, "-->", "Corrupt", "", fixFile.Name));
 
             ReturnCode returnCode = FixFileUtils.MoveFile(fixFile, toSortCorruptRom, toSortCorruptFullName, out bool fileMoved, out errorMessage);
@@ -224,27 +214,12 @@ namespace RomVaultCore.FixFile
 
             if (!fileMoved)
             {
-                returnCode = FixFileUtils.CopyFile(fixFile, null, toSortCorruptFullName, toSortCorruptRom, false,
-                    out errorMessage);
-                if (returnCode != ReturnCode.Good)
-                    return returnCode;
-
                 string fixFilePath = fixFile.FullName;
-                if (!File.SetAttributes(fixFilePath, FileAttributes.Normal))
-                {
-                    int error = Error.GetLastError();
-                    Report.ReportProgress(new bgwShowError(fixFilePath,
-                        "Error Setting File Attributes to Normal. Before Delete Moving ToSort. Code " + error));
-                }
-
-                File.Delete(fixFilePath);
-
-                // here we just deleted a file so also delete it from the DB,
-                // and recurse up deleting unnedded DIR's
-                FixFileUtils.CheckDeleteFile(fixFile);
+                Report.ReportProgress(new bgwShowError(fixFilePath, $"Logic error moving this file to ToSort"));
+                return ReturnCode.LogicError;
             }
 
-            RvFile toSort = DB.RvFileToSort();
+            RvFile toSort = DB.GetToSortPrimary();
             RvFile rvCorruptDir = new RvFile(FileType.Dir) { Name = "Corrupt", DatStatus = DatStatus.InToSort };
             int found = toSort.ChildNameSearch(rvCorruptDir, out int indexCorrupt);
             if (found != 0)
@@ -282,7 +257,7 @@ namespace RomVaultCore.FixFile
             testList.Add(parent.Child(index++));
 
             // now loop to see if there are any more files with the same name. (This is a case insensative compare)                        
-            while (index < parent.ChildCount && DBHelper.CompareName(fixFile, parent.Child(index)) == 0)
+            while (index < parent.ChildCount && RVSorters.CompareName(fixFile, parent.Child(index)) == 0)
             {
                 testList.Add(parent.Child(index));
                 index++;
@@ -390,12 +365,12 @@ namespace RomVaultCore.FixFile
 
             // now we can fix the file.
 
-            List<RvFile> fixFiles = FindSourceFile.GetFixFileList(fixFile);
+            List<RvFile> fixFiles = GetFixFileList(fixFile);
 
             if (DBHelper.IsZeroLengthFile(fixFile))
             {
                 RvFile fileIn = new RvFile(FileType.File) { Size = 0 };
-                returnCode = FixFileUtils.CopyFile(fileIn, null, fixFile.FullName, fixFile, false, out errorMessage);
+                returnCode = FixFileUtils.CopyFile(fileIn, null, fixFile.FullName, fixFile, FixStyle.Zero, out errorMessage);
                 if (returnCode != ReturnCode.Good)
                 {
                     errorMessage = fixFile.FullName + " " + fixFile.RepStatus + " " + returnCode + " : " + errorMessage;
@@ -408,18 +383,45 @@ namespace RomVaultCore.FixFile
                 return ReturnCode.Good;
             }
 
-            RvFile fixingFile = FindSourceFile.FindSourceToUseForFix(fixFile, fixFiles);
+            RvFile fixingFile = FindSourceToUseForFix(null, fixFile, fixFiles, out FixStyle fixStyle).FirstOrDefault();
 
+
+            if (fixStyle == FixStyle.ExtractToCache)
+            {
+                //Dictionary<string, RvFile> filesUsedForFix = new Dictionary<string, RvFile>();
+                ReturnCode returnCode1 = Decompress7ZipFile.DecompressSource7ZipFile(fixingFile.Parent, false, null, out errorMessage);
+                if (returnCode1 != ReturnCode.Good)
+                {
+                    ReportError.LogOut($"DecompressSource7Zip: {fixingFile.Parent.FileName} return {returnCode1}");
+                    return returnCode1;
+                }
+                fixFiles = GetFixFileList(fixFile);
+                fixingFile = FindSourceToUseForFix(null, fixFile, fixFiles, out fixStyle).FirstOrDefault();
+                if (fixStyle == FixStyle.ExtractToCache)
+                {
+                    ReportError.LogOut($"DecompressSource7Zip: {fixingFile.Parent.FileName}");
+                    return ReturnCode.LogicError;
+                }
+                //List<RvFile> usedFiles = filesUsedForFix.Values.ToList();
+                //fixFiles.AddRange(usedFiles);
+            }
+
+            // this needs expanded up to see if there is any file in the returned list of files from FindSourcetoUseForFixNew that can be moved to the correct location.
             bool fileMove = FixFileUtils.TestFileMove(fixingFile, fixFile);
             string fts = fixingFile.FullName;
             Report.ReportProgress(new bgwShowFix(Path.GetDirectoryName(fixFileFullName), "", Path.GetFileName(fixFileFullName), fixFile.Size, "<--" + (fileMove ? "Move" : "Copy"), Path.GetDirectoryName(fts), Path.GetFileName(fts), fixingFile.Name));
 
+            // this may move the hash values to the altHash locations.
             fixFile.FileTestFix(fixingFile);
-
 
             returnCode = FixFileUtils.MoveFile(fixingFile, fixFile, null, out bool fileMoved, out errorMessage);
             if (returnCode != ReturnCode.Good)
+            {
+                // if the altHash Values are set move them back.
+                fixFile.FileRemove();
                 return returnCode;
+            }
+
             if (fileMoved)
             {
                 // Check the files that we found that where used to fix this file, and if they not listed as correct files, they can be set to be deleted.
@@ -429,7 +431,7 @@ namespace RomVaultCore.FixFile
                 return ReturnCode.Good;
             }
 
-            returnCode = FixFileUtils.CopyFile(fixingFile, null, fixFile.FullName, fixFile, false, out errorMessage);
+            returnCode = FixFileUtils.CopyFile(fixingFile, null, fixFile.FullName, fixFile, FixStyle.Zero, out errorMessage);
 
             switch (returnCode)
             {

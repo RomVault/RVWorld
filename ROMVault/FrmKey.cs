@@ -1,7 +1,7 @@
 ﻿/******************************************************
  *     ROMVault3 is written by Gordon J.              *
  *     Contact gordon@romvault.com                    *
- *     Copyright 2022                                 *
+ *     Copyright 2025                                 *
  ******************************************************/
 
 using System;
@@ -17,6 +17,8 @@ namespace ROMVault
         public FrmKey()
         {
             InitializeComponent();
+            
+
         }
 
         private void AddLabel(Point location, Size size, string name, string text)
@@ -51,7 +53,9 @@ namespace ROMVault
                 RepStatus.CanBeFixed,
                 RepStatus.CanBeFixedMIA,
                 RepStatus.NeededForFix,
+                RepStatus.Rename,
                 RepStatus.MoveToSort,
+                RepStatus.Incomplete,
                 RepStatus.Delete,
 
 
@@ -64,13 +68,13 @@ namespace ROMVault
 
             for (int i = 0; i < displayList.Count; i++)
             {
-                if (i == 8)
+                if (i == 9)
                 {
                     AddLabel(new Point(6, i * 46 + eOffset), new Size(538, 20), "LabelFix", "Fix Statuses");
                     eOffset += 20;
                 }
 
-                if (i == 12)
+                if (i == 16)
                 {
                     AddLabel(new Point(6, i * 46 + eOffset), new Size(538, 20), "LabelProblem", "Problem Statuses");
                     eOffset += 20;
@@ -108,49 +112,55 @@ namespace ROMVault
                         text = "Red - This ROM is missing.";
                         break;
                     case RepStatus.MissingMIA:
-                        text = "Salmon - This ROM is known missing (MIA).";
+                        text = "Salmon - This ROM is known to be private or missing in action (MIA).";
                         break;
                     case RepStatus.Correct:
                         text = "Green - This ROM is Correct.";
                         break;
                     case RepStatus.CorrectMIA:
-                        text = "SuperGreen - This ROM is a Found MIA rom, good job on finding an MIA rom.";
+                        text = "SuperGreen - The ROM was known to be MIA (Missing In Action), but you found it. (Good Job!)";
                         break;
                     case RepStatus.NotCollected:
-                        text = "Gray - This ROM is not collected. Either it is in the parent set, or it is a 'BadDump ROM'";
+                        text = "Gray - The ROM is not collected here because it belongs in the parent or primary deduped set.";
                         break;
                     case RepStatus.UnNeeded:
-                        text = "Light Cyan - This ROM is unneeded here, as this ROM is collected in the parent set.";
+                        text = "Light Cyan - The ROM is not needed here because it belongs in the parent or primary deduped set.";
                         break;
                     case RepStatus.Unknown:
-                        text = "Cyan - This ROM is not needed here. (Find Fixes to see what should be done with this ROM)";
+                        text = "Cyan - The ROM is not needed here. Use 'Find Fixes' to see what should be done with the ROM.";
                         break;
                     case RepStatus.InToSort:
-                        text = "Magenta - This ROM is in the ToSort directory, after Finding Fixes this ROM is not needed in any sets.";
+                        text = "Magenta - The ROM is in a ToSort directory.";
                         break;
                     case RepStatus.Corrupt:
-                        text = "Red - This ROM is Corrupt in the Zip File.";
+                        text = "Red - This file is corrupt.";
                         break;
                     case RepStatus.UnScanned:
-                        text = "Blue - This file could not be scanned as it is locked by another process.";
+                        text = "Blue - The file could not be scanned. The file could be locked or have incompatible permissions.";
                         break;
                     case RepStatus.Ignore:
-                        text = "GreyBlue - This file is found in the Ignore file list.";
+                        text = "GreyBlue - The file matches an ignore rule.";
                         break;
                     case RepStatus.CanBeFixed:
-                        text = "Yellow - This ROM is missing here but has been found somewhere else, and so can be fixed.";
+                        text = "Yellow - The ROM is missing here, but it's available elsewhere. The ROM will be fixed.";
                         break;
                     case RepStatus.CanBeFixedMIA:
-                        text = "SuperYellow - This ROM is MIA missing here but has been found somewhere else, and so you can fix an MIA rom.";
+                        text = "SuperYellow - The MIA ROM is missing here, but it's available elsewhere. The ROM will be fixed.";
                         break;
                     case RepStatus.MoveToSort:
-                        text = "Purple - This ROM is not found in any DAT set, and so will be moved out to ToSort.";
+                        text = "Purple - The ROM is not needed here, but a copy isn't located elsewhere. The ROM will be moved to the Primary ToSort.";
                         break;
                     case RepStatus.Delete:
-                        text = "Brown - This ROM should be deleted, as a copy of it is correctly located somewhere else.";
+                        text = "Brown - The ROM is not needed here, but a copy is located elsewhere. The ROM will be deleted.";
                         break;
                     case RepStatus.NeededForFix:
-                        text = "Orange - This Rom in not needed here, but is required in another set somewhere else.";
+                        text = "Orange - The ROM is not needed here, but it's needed elsewhere. The ROM will be moved.";
+                        break;
+                    case RepStatus.Rename:
+                        text = "Light Orange - The ROM is needed here, but has the incorrect name. The ROM will be renamed.";
+                        break;
+                    case RepStatus.Incomplete:
+                        text = "Pink - This is a ROM that could be fixed, but will not be because it is part of an incomplete set.";
                         break;
 
                     default:
@@ -161,6 +171,11 @@ namespace ROMVault
                 label.Text = text;
                 Controls.Add(label);
             }
+
+
+
+            if (Settings.rvSettings.Darkness)
+                Dark.dark.SetColors(this);
         }
     }
 }

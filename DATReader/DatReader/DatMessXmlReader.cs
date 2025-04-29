@@ -8,7 +8,7 @@ namespace DATReader.DatReader
     {
         public static bool ReadDat(XmlDocument doc, string strFilename, out DatHeader datHeader)
         {
-            datHeader = new DatHeader { BaseDir = new DatDir("", DatFileType.UnSet) };
+            datHeader = new DatHeader { BaseDir = new DatDir("", FileType.UnSet) };
             if (!LoadHeaderFromDat(doc, strFilename, datHeader))
             {
                 return false;
@@ -59,7 +59,7 @@ namespace DATReader.DatReader
                 return;
             }
 
-            DatDir dDir = new DatDir(VarFix.String(gameNode.Attributes.GetNamedItem("name")), DatFileType.UnSet)
+            DatDir dDir = new DatDir(VarFix.String(gameNode.Attributes.GetNamedItem("name")), FileType.UnSet)
             {
                 DGame = new DatGame()
             };
@@ -137,7 +137,7 @@ namespace DATReader.DatReader
             string loadflag = VarFix.String(romNode.Attributes.GetNamedItem("loadflag"));
             if (name != null)
             {
-                DatFile dRom = new DatFile(VarFix.String(name), DatFileType.UnSet)
+                DatFile dRom = new DatFile(VarFix.String(name), FileType.UnSet)
                 {
                     Size = VarFix.ULong(romNode.Attributes.GetNamedItem("size")),
                     CRC = VarFix.CleanMD5SHA1(romNode.Attributes.GetNamedItem("crc"), 8),
@@ -166,7 +166,7 @@ namespace DATReader.DatReader
                 return;
             }
 
-            DatFile dRom = new DatFile(VarFix.CleanCHD(romNode.Attributes.GetNamedItem("name")), DatFileType.UnSet)
+            DatFile dRom = new DatFile(VarFix.CleanCHD(romNode.Attributes.GetNamedItem("name")), FileType.UnSet)
             {
                 SHA1 = VarFix.CleanMD5SHA1(romNode.Attributes.GetNamedItem("sha1"), 40),
                 Status = VarFix.ToLower(romNode.Attributes.GetNamedItem("status")),

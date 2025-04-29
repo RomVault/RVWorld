@@ -7,6 +7,59 @@ namespace DATReader.DatClean
 
     public static partial class DatClean
     {
+
+        public static void RemoveDateTime(DatDir dDir)
+        {
+            DatBase[] arrDir = dDir.ToArray();
+            foreach (DatBase db in arrDir)
+            {
+                if (db is DatFile df)
+                {
+                    df.DateModified = null;
+                    continue;
+                }
+
+                if (db is DatDir ddir)
+                {
+                    RemoveDateTime(ddir);
+                }
+            }
+        }
+        public static void RemoveMD5(DatDir dDir)
+        {
+            DatBase[] arrDir = dDir.ToArray();
+            foreach (DatBase db in arrDir)
+            {
+                if (db is DatFile df)
+                {
+                    df.MD5 = null;
+                    continue;
+                }
+
+                if (db is DatDir ddir)
+                {
+                    RemoveMD5(ddir);
+                }
+            }
+        }
+        public static void RemoveSHA256(DatDir dDir)
+        {
+            DatBase[] arrDir = dDir.ToArray();
+            foreach (DatBase db in arrDir)
+            {
+                if (db is DatFile df)
+                {
+                    df.SHA256 = null;
+                    continue;
+                }
+
+                if (db is DatDir ddir)
+                {
+                    RemoveSHA256(ddir);
+                }
+            }
+        }
+
         public static void CleanFilenames(DatDir dDir)
         {
             DatBase[] arrDir = dDir.ToArray();
@@ -30,15 +83,15 @@ namespace DATReader.DatClean
             string retName = name;
             //retName = retName.TrimStart(new[] { ' ' });
             //retName = retName.TrimEnd(new[] { '.', ' ' });
-            retName = retName.Replace("/", "\\");
+            retName = retName.Replace("\\", "/");
             //retName = retName.Replace("\\ ", "\\");
-            retName = retName.Replace(".\\", "\\");
+            retName = retName.Replace("./", "/");
 
             char[] charName = retName.ToCharArray();
             for (int i = 0; i < charName.Length; i++)
             {
                 int c = charName[i];
-                if (c == ':' || c == '*' || c == '?' || c == '<' || c == '>' || c == '|' || c=='"' || c < 32)
+                if (c == ':' || c == '*' || c == '?' || c == '<' || c == '>' || c == '|' || c == '"' || c < 32)
                     charName[i] = '-';
             }
             db.Name = new string(charName);
@@ -46,28 +99,92 @@ namespace DATReader.DatClean
 
 
 
+        public static void CleanFileNamesFull(DatBase inDat)
+        {
+            if (!(inDat is DatDir dDir))
+                return;
+            DatBase[] children = ((DatDir)inDat).ToArray();
+            if (children == null)
+                return;
 
-        public static void CleanFilenamesFixDupes(DatDir dDir)
+
+            foreach (DatBase child in children)
+            {
+                string originalName = child.Name;
+                switch (child.FileType)
+                {
+                    case FileType.UnSet:
+                    case FileType.File:
+                    case FileType.Dir:
+                        if (child.Name != null)
+                        {
+                            child.Name = child.Name.TrimStart(new[] { ' ' });
+                            child.Name = child.Name.TrimEnd(new[] { '.', ' ' });
+                        }
+                        break;
+                    case FileType.Zip:
+                    case FileType.SevenZip:
+                        if (child.Name != null)
+                        {
+                            child.Name = child.Name.TrimStart(new[] { ' ' });
+                            child.Name = child.Name.TrimEnd(new[] { ' ' });
+                        }
+                        break;
+                }
+                if (string.IsNullOrWhiteSpace(child.Name))
+                    child.Name = "_";
+
+                if (originalName != child.Name)
+                {
+                    ((DatDir)inDat).ChildRemove(child);
+                    ((DatDir)inDat).ChildAdd(child);
+                }
+
+                if (child.FileType == FileType.Dir)
+                    CleanFileNamesFull(child);
+            }
+
+        }
+
+
+
+        public static void FixDupes(DatDir dDir)
         {
             DatBase[] arrDir = dDir.ToArray();
             string lastName = "";
-            DatFileType lastFileType = DatFileType.UnSet;
+            FileType lastFileType = FileType.UnSet;
             int matchCount = 0;
             foreach (DatBase db in arrDir)
             {
                 string thisName = db.Name;
-                DatFileType fileType = db.DatFileType;
+                FileType fileType = db.FileType;
 
-                if (lastFileType==fileType && lastName.ToLowerInvariant() == thisName.ToLowerInvariant())
+                if (lastFileType == fileType && lastName.ToLowerInvariant() == thisName.ToLowerInvariant())
                 {
-                    Debug.WriteLine("Found match = " + lastName + " , " + thisName);
+                    switch (lastFileType)
+                    {
+                        case FileType.Dir:
+                        case FileType.Zip:
+                        case FileType.SevenZip:
+                            {
+                                db.Name = thisName + "_" + matchCount;
+                                break;
+                            }
+                        case FileType.UnSet:
+                        case FileType.File:
+                        case FileType.FileZip:
+                        case FileType.FileSevenZip:
+                            {
+                                string path1 = Path.GetExtension(thisName);
+                                string path0 = thisName.Substring(0, thisName.Length - path1.Length);
 
-                    string path1 = Path.GetExtension(thisName);
-                    string path0 = thisName.Substring(0, thisName.Length - path1.Length);
-
-                    db.Name = path0 + "_" + matchCount + path1;
-                    Debug.WriteLine("New filename = " + db.Name);
+                                db.Name = path0 + "_" + matchCount + path1;
+                                break;
+                            }
+                    }
                     matchCount += 1;
+                    dDir.ChildRemove(db);
+                    dDir.ChildAdd(db);
                 }
                 else
                 {
@@ -78,7 +195,7 @@ namespace DATReader.DatClean
 
                 if (db is DatDir ddir)
                 {
-                    CleanFilenamesFixDupes(ddir);
+                    FixDupes(ddir);
                 }
             }
         }

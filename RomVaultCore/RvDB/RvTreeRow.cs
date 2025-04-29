@@ -1,4 +1,10 @@
-﻿using System.IO;
+﻿/******************************************************
+ *     ROMVault3 is written by Gordon J.              *
+ *     Contact gordon@romvault.com                    *
+ *     Copyright 2025                                 *
+ ******************************************************/
+
+using System.IO;
 using System.Text;
 
 namespace RomVaultCore.RvDB
@@ -23,6 +29,14 @@ namespace RomVaultCore.RvDB
             _pTreeExpanded = true;
             _pChecked = TreeSelect.Selected;
         }
+
+        public RvTreeRow(BinaryReader br)
+        {
+            _filePointer = br.BaseStream.Position;
+            _pTreeExpanded = br.ReadBoolean();
+            _pChecked = (TreeSelect)br.ReadByte();
+        }
+
 
         public bool TreeExpanded
         {
@@ -56,13 +70,6 @@ namespace RomVaultCore.RvDB
             _filePointer = bw.BaseStream.Position;
             bw.Write(_pTreeExpanded);
             bw.Write((byte)_pChecked);
-        }
-
-        public void Read(BinaryReader br)
-        {
-            _filePointer = br.BaseStream.Position;
-            _pTreeExpanded = br.ReadBoolean();
-            _pChecked = (TreeSelect)br.ReadByte();
         }
 
 
