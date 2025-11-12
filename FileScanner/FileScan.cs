@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Compress;
 using Compress.SevenZip;
 using Compress.ThreadReaders;
@@ -6,7 +7,8 @@ using Compress.ZipFile;
 using Compress.File;
 using Stream = System.IO.Stream;
 using Compress.StructuredZip;
-using System.Collections.Concurrent;
+using System.Buffers;
+using System.Runtime.CompilerServices;
 
 namespace FileScanner;
 
@@ -38,6 +40,10 @@ public delegate void Message(string message);
 
 public class FileScan
 {
+    private static readonly byte[] ZeroCRC = new byte[] { 0, 0, 0, 0 };
+    private static readonly byte[] EmptySHA1 = new byte[] { 0xda, 0x39, 0xa3, 0xee, 0x5e, 0x6b, 0x4b, 0x0d, 0x32, 0x55, 0xbf, 0xef, 0x95, 0x60, 0x18, 0x90, 0xaf, 0xd8, 0x07, 0x09 };
+    private static readonly byte[] EmptySHA256 = new byte[] { 0xe3, 0xb0, 0xc4, 0x42, 0x98, 0xfc, 0x1c, 0x14, 0x9a, 0xfb, 0xf4, 0xc8, 0x99, 0x6f, 0xb9, 0x24, 0x27, 0xae, 0x41, 0xe4, 0x64, 0x9b, 0x93, 0x4c, 0xa4, 0x95, 0x99, 0x1b, 0x78, 0x52, 0xb8, 0x55 };
+    private static readonly byte[] EmptyMD5 = new byte[] { 0xd4, 0x1d, 0x8c, 0xd9, 0x8f, 0x00, 0xb2, 0x04, 0xe9, 0x80, 0x09, 0x98, 0xec, 0xf8, 0x42, 0x7e };
 
     public ZipReturn ScanArchiveFile(FileType archiveType, string filename, long timeStamp, bool deepScan, out ScannedFile scannedArchive, bool useDosDateTime = false, bool scanSHA256 = false,  Message progress = null)
     {
@@ -148,10 +154,10 @@ public class FileScan
             scannedFile.HeaderFileType = HeaderFileType.Nothing;
             scannedFile.GotStatus = GotStatus.Got;
             scannedFile.Size = 0;
-            scannedFile.CRC = new byte[] { 0, 0, 0, 0 };
-            scannedFile.SHA1 = new byte[] { 0xda, 0x39, 0xa3, 0xee, 0x5e, 0x6b, 0x4b, 0x0d, 0x32, 0x55, 0xbf, 0xef, 0x95, 0x60, 0x18, 0x90, 0xaf, 0xd8, 0x07, 0x09 };
-            scannedFile.SHA256 = new byte[] { 0xe3, 0xb0, 0xc4, 0x42, 0x98, 0xfc, 0x1c, 0x14, 0x9a, 0xfb, 0xf4, 0xc8, 0x99, 0x6f, 0xb9, 0x24, 0x27, 0xae, 0x41, 0xe4, 0x64, 0x9b, 0x93, 0x4c, 0xa4, 0x95, 0x99, 0x1b, 0x78, 0x52, 0xb8, 0x55 };
-            scannedFile.MD5 = new byte[] { 0xd4, 0x1d, 0x8c, 0xd9, 0x8f, 0x00, 0xb2, 0x04, 0xe9, 0x80, 0x09, 0x98, 0xec, 0xf8, 0x42, 0x7e };
+            scannedFile.CRC = ZeroCRC;
+            scannedFile.SHA1 = EmptySHA1;
+            scannedFile.SHA256 = EmptySHA256;
+            scannedFile.MD5 = EmptyMD5;
 
             scannedFile.StatusFlags |= FileStatus.CRCFromHeader | FileStatus.SizeVerified | FileStatus.CRCVerified | FileStatus.SHA1Verified | FileStatus.MD5Verified | FileStatus.SHA256Verified;
             return scannedFile;
@@ -207,19 +213,16 @@ public class FileScan
         return scannedFile;
     }
 
-
     private const int Buffersize = 4096 * 1024;
-    private static BlockingCollection<byte[]> bytebuffer = new BlockingCollection<byte[]>();
+    private static readonly ArrayPool<byte> _bufferPool = ArrayPool<byte>.Shared;
     static byte[] getbuffer()
     {
-        if (bytebuffer.TryTake(out byte[] buffer))
-            return buffer;
-
-        return new byte[Buffersize];
+        return _bufferPool.Rent(Buffersize);
     }
     static void putbuffer(byte[] buffer)
     {
-        bytebuffer.Add(buffer);
+        if (buffer != null)
+            _bufferPool.Return(buffer);
     }
 
     public int CheckSumRead(Stream inStream, ScannedFile scannedFile, ulong totalSize, bool fullScan, bool scanSHA256, Message progress, ulong sizetotal, ulong sizeSoFar)
@@ -297,7 +300,11 @@ public class FileScan
                     tsha1 = new ThreadSHA1();
                     atlmd5 = new ThreadMD5();
                     altsha1 = new ThreadSHA1();
-                    if (scanSHA256) tsha256 = new ThreadSHA256();
+                    if (scanSHA256)
+                    {
+                        tsha256 = new ThreadSHA256();
+                        altsha256 = new ThreadSHA256();
+                    }
                 }
 
                 if (sizenow > actualHeaderSize)
@@ -309,7 +316,7 @@ public class FileScan
                     tcrc32?.Trigger(_buffer0, actualHeaderSize);
                     tmd5?.Trigger(_buffer0, actualHeaderSize);
                     tsha1?.Trigger(_buffer0, actualHeaderSize);
-                    tsha256?.Trigger(_buffer0, sizenow);
+                    tsha256?.Trigger(_buffer0, actualHeaderSize);
                     tcrc32?.Wait();
                     tmd5?.Wait();
                     tsha1?.Wait();
@@ -317,14 +324,11 @@ public class FileScan
 
                     // put the rest of what we read into the second buffer, and scan with all hashers
                     int restSize = sizenow - actualHeaderSize;
-                    for (int i = 0; i < restSize; i++)
-                    {
-                        _buffer1[i] = _buffer0[actualHeaderSize + i];
-                    }
+                    Buffer.BlockCopy(_buffer0, actualHeaderSize, _buffer1, 0, restSize);
                     tcrc32?.Trigger(_buffer1, restSize);
                     tmd5?.Trigger(_buffer1, restSize);
                     tsha1?.Trigger(_buffer1, restSize);
-                    tsha256?.Trigger(_buffer1, sizenow);
+                    tsha256?.Trigger(_buffer1, restSize);
                     altcrc32.Trigger(_buffer1, restSize);
                     atlmd5?.Trigger(_buffer1, restSize);
                     altsha1?.Trigger(_buffer1, restSize);
@@ -388,11 +392,12 @@ public class FileScan
             bool whichBuffer = true;
 
             bool doReporting = progress != null && sizetotal > 0;
-            int persentReporting = -1;
+            const int ReportStep = 2;
+            int persentReporting = -ReportStep;
             if (doReporting)
             {
                 int persentNow = (int)(sizeSoFar * 100 / sizetotal);
-                progress?.Invoke($"Hashing: {persentNow}%");
+                progress?.Invoke(string.Concat("Hashing: ", persentNow.ToString(), "%"));
                 persentReporting = persentNow;
             }
 
@@ -409,13 +414,12 @@ public class FileScan
                 if (doReporting)
                 {
                     int persentNow = (int)((sizeSoFar + totalSize - (ulong)sizetogo) * 100 / sizetotal);
-                    if (persentNow > persentReporting)
+                    if (persentNow - persentReporting >= ReportStep)
                     {
-                        progress?.Invoke($"Hashing: {persentNow}%");
+                        progress?.Invoke(string.Concat("Hashing: ", persentNow.ToString(), "%"));
                         persentReporting = persentNow;
                     }
                 }
-
 
                 byte[] buffer = whichBuffer ? _buffer0 : _buffer1;
                 tcrc32?.Trigger(buffer, sizebuffer);
@@ -527,11 +531,13 @@ public class FileScan
         return 0;
     }
 
-
-
-
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static bool ByteArrCompare(byte[] b0, byte[] b1)
     {
+        if (ReferenceEquals(b0, b1))
+        {
+            return true;
+        }
         if (b0 == null || b1 == null)
         {
             return false;
@@ -540,14 +546,6 @@ public class FileScan
         {
             return false;
         }
-
-        for (int i = 0; i < b0.Length; i++)
-        {
-            if (b0[i] != b1[i])
-            {
-                return false;
-            }
-        }
-        return true;
+        return b0.AsSpan().SequenceEqual(b1);
     }
 }

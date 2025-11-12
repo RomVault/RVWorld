@@ -1,51 +1,52 @@
-﻿################################################################################
-# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
-################################################################################
-/ByteSortedList/bin
-/ByteSortedList/obj
-/CHDlib/bin
-/CHDlib/obj
-/CodePage/bin
-/CodePage/obj
-/Compress/bin
-/Compress/obj
-/Dark/bin
-/Dark/obj
-/DATReader/bin
-/DATReader/obj
-/FileScanner/bin
-/FileScanner/obj
-/DatVault/bin
-/DatVault/obj
-/packages
-/RomVault/bin
-/RomVault/obj
-/RomVaultCmd/bin
-/RomVaultCmd/obj
-/RomVaultCore/bin
-/RomVaultCore/obj
-/RVIO/bin
-/RVIO/obj
-/RVServiceAccess/bin
-/RVServiceAccess/obj
-/Trrntzip/bin
-/Trrntzip/obj
-/TrrntZipCMD/bin
-/TrrntZipCMD/obj
-/TrrntZipUI/bin
-/TrrntZipUI/obj
-/unzip/bin
-/unzip/obj
-/RVZstdSharp/bin
-/RVZstdSharp/obj
-/SharedEnum/bin
-/SharedEnum/obj
-/SortMethods/bin
-/SortMethods/obj
-/TrrntZipUICore/bin/Debug
-/TrrntZipUICore/obj
-/.vs/RVWorld/v16/Server/sqlite3
-/.vs/RVWorld/v16/.suo
-/.vs
+﻿## General
+.DS_Store
+Thumbs.db
+*.log
+*.tmp
+*.temp
+
+## IDE/Workspace
+.vs/
+*.suo
 *.user
-/.idea/
+*.userosscache
+*.sln.docstates
+.idea/
+
+## Build directories
+**/[Bb]in/
+**/[Oo]bj/
+**/[Dd]ebug/
+**/[R]elease/
+
+## Packages
+/packages/
+*.nupkg
+*.snupkg
+project.lock.json
+project.assets.json
+
+## Binaries & symbols
+*.dll
+*.exe
+*.pdb
+*.mdb
+*.ilk
+
+## Cache & intermediate
+*.cache
+*.tlog
+*.lastcodeanalysissucceeded
+
+## Test results
+[Tt]est[Rr]esult*/
+[Rr]eports/
+
+## ReSharper / Rider
+_ReSharper*/
+*.resharper
+
+## Misc
+*.psess
+*.vsp
+*.vspx

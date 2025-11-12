@@ -1,7 +1,10 @@
-﻿namespace CHDSharpLib.Utils;
+using System;
+using System.Runtime.CompilerServices;
+namespace CHDSharpLib.Utils;
 
 internal static class Util
 {
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static bool IsAllZeroArray(byte[] b)
     {
         if (b == null) return true;
@@ -11,8 +14,13 @@ internal static class Util
         return true;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static bool ByteArrEquals(byte[] b0, byte[] b1)
     {
+        if (b0 != null && ReferenceEquals(b0, b1))
+        {
+            return true;
+        }
         if ((b0 == null) || (b1 == null))
         {
             return false;
@@ -21,17 +29,8 @@ internal static class Util
         {
             return false;
         }
-
-        for (int i = 0; i < b0.Length; i++)
-        {
-            if (b0[i] != b1[i])
-            {
-                return false;
-            }
-        }
-        return true;
+        return b0.AsSpan().SequenceEqual(b1);
     }
-
 
     internal static int ByteArrCompare(byte[] x, byte[] y)
     {

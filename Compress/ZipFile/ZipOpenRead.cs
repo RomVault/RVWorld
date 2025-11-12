@@ -1,4 +1,4 @@
-﻿using System.IO;
+using System.IO;
 using Compress.Support.Utils;
 using FileInfo = RVIO.FileInfo;
 using FileStream = RVIO.FileStream;
@@ -203,7 +203,7 @@ namespace Compress.ZipFile
             if (HeaderCentral.HeaderLastModified != HeaderLocal.HeaderLastModified)
                 HeaderCentral.SetStatus(LocalFileStatus.DateTimeMisMatch);
 
-            if (!CompressUtils.CompareStringSlash(HeaderCentral.Filename.ToLower(), HeaderLocal.Filename.ToLower()))
+            if (!CompressUtils.CompareStringSlash(HeaderCentral.Filename, HeaderLocal.Filename))
                 HeaderCentral.SetStatus(LocalFileStatus.FilenameMisMatch);
 
             if (!CompressUtils.ByteArrCompare(HeaderCentral.CRC, HeaderLocal.CRC))

@@ -1,4 +1,6 @@
-﻿namespace DATReader.Utils
+﻿using System;
+using System.Runtime.CompilerServices;
+namespace DATReader.Utils
 {
     public static class ArrByte
     {
@@ -17,9 +19,13 @@
             return retB;
         }
 
-
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool bCompare(byte[] b1, byte[] b2)
         {
+            if (b1 != null && ReferenceEquals(b1, b2))
+            {
+                return true;
+            }
             if ((b1 == null) || (b2 == null))
             {
                 return false;
@@ -29,40 +35,23 @@
             {
                 return false;
             }
-
-            for (int i = 0; i < b1.Length; i++)
-            {
-                if (b1[i] != b2[i])
-                {
-                    return false;
-                }
-            }
-
-            return true;
+            return b1.AsSpan().SequenceEqual(b2);
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool nCompare(byte[] b1, byte[] b2)
         {
+            if (ReferenceEquals(b1, b2))
+            {
+                return true;
+            }
             if ((b1 == null) || (b2 == null))
             {
                 return true;
             }
-
-            if (b1.Length != b2.Length)
-            {
-                return false;
-            }
-
-            for (int i = 0; i < b1.Length; i++)
-            {
-                if (b1[i] != b2[i])
-                {
-                    return false;
-                }
-            }
-
-            return true;
+            return b1.AsSpan().SequenceEqual(b2);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int iCompare(byte[] b1, byte[] b2)
         {
             int b1Len = b1 == null ? 0 : b1.Length;
@@ -90,8 +79,6 @@
                 p++;
             }
         }
-
-
 
         //https://stackoverflow.com/questions/311165/how-do-you-convert-a-byte-array-to-a-hexadecimal-string-and-vice-versa#24343727
         private static readonly uint[] Lookup32 = CreateLookup32();

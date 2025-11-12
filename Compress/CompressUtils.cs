@@ -1,4 +1,5 @@
-﻿using System;
+using System;
+using System.Runtime.CompilerServices;
 using Directory = RVIO.Directory;
 using Path = RVIO.Path;
 
@@ -48,41 +49,30 @@ namespace Compress
             Directory.CreateDirectory(strTemp);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static bool CompareString(string s1, string s2)
         {
-            char[] c1 = s1.ToCharArray();
-            char[] c2 = s2.ToCharArray();
-
-            if (c1.Length != c2.Length)
-            {
-                return false;
-            }
-
-            for (int i = 0; i < c1.Length; i++)
-            {
-                if (c1[i] != c2[i])
-                {
-                    return false;
-                }
-            }
-            return true;
+            return string.Equals(s1, s2, StringComparison.Ordinal);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static bool CompareStringSlash(string s1, string s2)
         {
-            char[] c1 = s1.ToCharArray();
-            char[] c2 = s2.ToCharArray();
+            if (s1 == null || s2 == null) return false;
+            if (s1.Length != s2.Length) return false;
 
-            if (c1.Length != c2.Length)
+            for (int i = 0; i < s1.Length; i++)
             {
-                return false;
-            }
+                char c1 = s1[i];
+                char c2 = s2[i];
 
-            for (int i = 0; i < c1.Length; i++)
-            {
-                if (c1[i] == '/') c1[i] = '\\';
-                if (c2[i] == '/') c2[i] = '\\';
-                if (c1[i] != c2[i])
+                if (c1 == '/') c1 = '\\';
+                if (c2 == '/') c2 = '\\';
+
+                c1 = char.ToLowerInvariant(c1);
+                c2 = char.ToLowerInvariant(c2);
+
+                if (c1 != c2)
                 {
                     return false;
                 }
@@ -91,8 +81,13 @@ namespace Compress
         }
 
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool ByteArrCompare(byte[] b0, byte[] b1)
         {
+            if (b0 != null && ReferenceEquals(b0, b1))
+            {
+                return true;
+            }
             if ((b0 == null) || (b1 == null))
             {
                 return false;
@@ -101,15 +96,7 @@ namespace Compress
             {
                 return false;
             }
-
-            for (int i = 0; i < b0.Length; i++)
-            {
-                if (b0[i] != b1[i])
-                {
-                    return false;
-                }
-            }
-            return true;
+            return b0.AsSpan().SequenceEqual(b1);
         }
 
         public static ZipReturn GetFile(this ICompress zip, int index, out byte[] data)
