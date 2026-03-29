@@ -96,7 +96,9 @@ namespace RomVaultCore
                 if (child.IsDirectory)
                 {
                     RvFile tCopy = new RvFile(child.FileType);
+#pragma warning disable CS0618 // Type or member is obsolete
                     child.CopyTo(tCopy);
+#pragma warning restore CS0618 // Type or member is obsolete
                     tCopy.Game = child.Game;
                     int ret = RecursiveDatTreeFindingDat(rvDat, child, tCopy, redOnly);
                     found += ret;
@@ -110,7 +112,9 @@ namespace RomVaultCore
                      child.GotStatus != GotStatus.Got && (!redOnly || !(child.RepStatus == RepStatus.CanBeFixed || child.RepStatus == RepStatus.CanBeFixedMIA || child.RepStatus == RepStatus.CorruptCanBeFixed)))
                 {
                     RvFile tCopy = new RvFile(child.FileType);
+#pragma warning disable CS0618 // Type or member is obsolete
                     child.CopyTo(tCopy);
+#pragma warning restore CS0618 // Type or member is obsolete
                     outDir.ChildAdd(tCopy);
                     found++;
                 }
@@ -132,7 +136,9 @@ namespace RomVaultCore
                     continue;
                 }
                 RvFile tCopy = new RvFile(child.FileType);
+#pragma warning disable CS0618 // Type or member is obsolete
                 child.CopyTo(tCopy);
+#pragma warning restore CS0618 // Type or member is obsolete
 
                 filesToFix.Add(tCopy);
                 tDir.ChildRemove(i);

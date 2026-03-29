@@ -1,4 +1,4 @@
-﻿/******************************************************
+/******************************************************
  *     ROMVault3 is written by Gordon J.              *
  *     Contact gordon@romvault.com                    *
  *     Copyright 2025                                 *
@@ -148,7 +148,7 @@ namespace ROMVault
 
             if (InvokeRequired)
             {
-                BeginInvoke(new MethodInvoker(() => BgwProgressChanged(e)));
+                BeginInvoke(new System.Windows.Forms.MethodInvoker(() => BgwProgressChanged(e)));
                 return;
             }
 
@@ -195,7 +195,7 @@ namespace ROMVault
         {
             if (InvokeRequired)
             {
-                BeginInvoke(new MethodInvoker(BgwRunWorkerCompleted));
+                BeginInvoke(new System.Windows.Forms.MethodInvoker(BgwRunWorkerCompleted));
                 return;
             }
 

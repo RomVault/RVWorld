@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using Compress;
 using Compress.SevenZip;
@@ -209,7 +209,7 @@ namespace RomVaultCore.FixFile.Utils
 
                     try
                     {
-                        readStream.Read(buffer, 0, sizenow);
+                        readStream.ReadExactly(buffer, 0, sizenow);
                     }
                     catch (Exception ex)
                     {

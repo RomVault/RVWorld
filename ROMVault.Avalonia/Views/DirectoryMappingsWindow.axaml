@@ -1,0 +1,71 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="700" d:DesignHeight="400"
+        Width="700" Height="400"
+        x:Class="ROMVault.Avalonia.Views.DirectoryMappingsWindow"
+        Title="Set Directory Mapping"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False">
+    <DockPanel Margin="16">
+        <Border DockPanel.Dock="Bottom"
+                Background="{DynamicResource SurfaceBackgroundBrush}"
+                BorderBrush="{DynamicResource SurfaceBorderBrush}"
+                BorderThickness="0,1,0,0"
+                Padding="12"
+                CornerRadius="8">
+            <Grid ColumnDefinitions="Auto,Auto,*,Auto" ColumnSpacing="10">
+                <Button Grid.Column="0" Name="btnDeleteSelected" Content="Delete Selected" MinWidth="130"/>
+                <Button Grid.Column="1" Name="btnResetAll" Content="Reset All" MinWidth="110"/>
+                <Button Grid.Column="3" Name="btnClose" Content="Done" MinWidth="92" IsDefault="True"/>
+            </Grid>
+        </Border>
+
+        <StackPanel Spacing="12">
+            <Border Classes="Card" Padding="12">
+                <Grid ColumnDefinitions="120,*,Auto" RowDefinitions="Auto,Auto" ColumnSpacing="10" RowSpacing="10">
+                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Rule Path" Classes="Muted" VerticalAlignment="Center"/>
+                    <TextBox Grid.Row="0" Grid.Column="1" Name="txtDATLocation" IsReadOnly="True" Background="{DynamicResource SurfaceBackgroundAltBrush}"/>
+                    <Button Grid.Row="0" Grid.Column="2" Name="btnCopyRulePath" Content="Copy" MinWidth="72"/>
+
+                    <TextBlock Grid.Row="1" Grid.Column="0" Text="Dir Location" Classes="Muted" VerticalAlignment="Center"/>
+                    <TextBox Grid.Row="1" Grid.Column="1" Name="txtROMLocation" IsReadOnly="True" Background="{DynamicResource SurfaceBackgroundAltBrush}"/>
+                    <StackPanel Grid.Row="1" Grid.Column="2" Orientation="Horizontal" Spacing="8">
+                        <Button Name="btnSetROMLocation" Content="Browse" MinWidth="72"/>
+                        <Button Name="btnClearROMLocation" Content="Clear" MinWidth="72"/>
+                        <Button Name="btnCopyDirPath" Content="Copy" MinWidth="72"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <Border Classes="Card" Padding="12">
+                <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,*" RowSpacing="10" ColumnSpacing="10">
+                    <TextBlock Grid.Row="0" Grid.Column="0" Name="lblDelete" Text="Existing Mapping" Classes="SectionHeader"/>
+                    <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                        <Button Name="btnDelete" Content="Delete" MinWidth="92"/>
+                        <Button Name="btnSet" Content="Apply" MinWidth="92"/>
+                    </StackPanel>
+
+                    <DataGrid Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2"
+                              Name="DGDirectoryMappingRules"
+                              AutoGenerateColumns="False"
+                              IsReadOnly="True"
+                              HeadersVisibility="Column"
+                              GridLinesVisibility="None"
+                              BorderThickness="0">
+                        <DataGrid.Styles>
+                            <Style Selector="DataGridRow">
+                                <Setter Property="Background" Value="{Binding BgColor}"/>
+                            </Style>
+                        </DataGrid.Styles>
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Rule Path" Binding="{Binding DirKey}" Width="*"/>
+                            <DataGridTextColumn Header="Dir Location" Binding="{Binding DirPath}" Width="*"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </Border>
+        </StackPanel>
+    </DockPanel>
+</Window>

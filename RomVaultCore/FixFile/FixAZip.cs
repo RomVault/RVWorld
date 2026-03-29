@@ -172,8 +172,10 @@ namespace RomVaultCore.FixFile
                 {
                     RvFile fixZippedFile = new RvFile(DBTypeGet.FileFromDir(fixFileType));
                     RvFile fixingChild = fixZip.Child(iRom);
-             
+
+#pragma warning disable CS0618 // Type or member is obsolete
                     fixingChild.CopyTo(fixZippedFile);
+#pragma warning restore CS0618 // Type or member is obsolete
 
                     fixZipTemp.Add(fixZippedFile);
 
@@ -421,7 +423,9 @@ namespace RomVaultCore.FixFile
                         };
                         tmpZip.SetDatGotStatus(fixZip.DatStatus, GotStatus.Got);
 
+#pragma warning disable CS0618 // Type or member is obsolete
                         fixZip.FileMergeIn(tmpZip, false);
+#pragma warning restore CS0618 // Type or member is obsolete
                         fixZip.ZipStruct = tempFixZip.ZipStruct;
                     }
                     else
@@ -447,7 +451,9 @@ namespace RomVaultCore.FixFile
                 ReportError.procLog($"FixAZip: putting back data");
                 foreach (RvFile tmpZip in fixZipTemp)
                 {
+#pragma warning disable CS0618 // Type or member is obsolete
                     tmpZip.CopyTo(fixZip.Child(intLoopFix));
+#pragma warning restore CS0618 // Type or member is obsolete
 
                     if (fixZip.Child(intLoopFix).GotStatus == GotStatus.NotGot)
                     {

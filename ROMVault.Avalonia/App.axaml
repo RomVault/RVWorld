@@ -1,0 +1,168 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:styling="clr-namespace:Avalonia.Styling;assembly=Avalonia.Base"
+             x:Class="ROMVault.Avalonia.App"
+             RequestedThemeVariant="Default">
+  
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.ThemeDictionaries>
+                <ResourceDictionary x:Key="{x:Static styling:ThemeVariant.Light}">
+                    <SolidColorBrush x:Key="AppBackgroundBrush" Color="#F6F7FB"/>
+                    <SolidColorBrush x:Key="SurfaceBackgroundBrush" Color="#FFFFFF"/>
+                    <SolidColorBrush x:Key="SurfaceBackgroundAltBrush" Color="#FAFAFC"/>
+                    <SolidColorBrush x:Key="SurfaceBorderBrush" Color="#E2E5EE"/>
+                    <SolidColorBrush x:Key="SurfaceBorderBrushStrong" Color="#CBD1E1"/>
+                    <SolidColorBrush x:Key="AccentBrush" Color="#2B7FFF"/>
+                    <SolidColorBrush x:Key="AccentWeakBrush" Color="#1A2B7FFF"/>
+                    <SolidColorBrush x:Key="TextSecondaryBrush" Color="#6B7280"/>
+                    <SolidColorBrush x:Key="TextPrimaryBrush" Color="#111827"/>
+                    <SolidColorBrush x:Key="DataGridHoverRowBrush" Color="#08000000"/>
+                    <SolidColorBrush x:Key="DataGridSelectedRowBrush" Color="#12000000"/>
+                    <SolidColorBrush x:Key="TreeHoverBrush" Color="#0F000000"/>
+                    <SolidColorBrush x:Key="TreeSelectedBrush" Color="#332B7FFF"/>
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="{x:Static styling:ThemeVariant.Dark}">
+                    <SolidColorBrush x:Key="AppBackgroundBrush" Color="#0F1115"/>
+                    <SolidColorBrush x:Key="SurfaceBackgroundBrush" Color="#151821"/>
+                    <SolidColorBrush x:Key="SurfaceBackgroundAltBrush" Color="#1B2030"/>
+                    <SolidColorBrush x:Key="SurfaceBorderBrush" Color="#2B3245"/>
+                    <SolidColorBrush x:Key="SurfaceBorderBrushStrong" Color="#3A4560"/>
+                    <SolidColorBrush x:Key="AccentBrush" Color="#2B7FFF"/>
+                    <SolidColorBrush x:Key="AccentWeakBrush" Color="#332B7FFF"/>
+                    <SolidColorBrush x:Key="TextSecondaryBrush" Color="#A3A8B6"/>
+                    <SolidColorBrush x:Key="TextPrimaryBrush" Color="#E7E9EF"/>
+                    <SolidColorBrush x:Key="DataGridHoverRowBrush" Color="#14FFFFFF"/>
+                    <SolidColorBrush x:Key="DataGridSelectedRowBrush" Color="#22FFFFFF"/>
+                    <SolidColorBrush x:Key="TreeHoverBrush" Color="#22FFFFFF"/>
+                    <SolidColorBrush x:Key="TreeSelectedBrush" Color="#442B7FFF"/>
+                </ResourceDictionary>
+            </ResourceDictionary.ThemeDictionaries>
+        </ResourceDictionary>
+    </Application.Resources>
+
+    <Application.Styles>
+        <FluentTheme />
+        <StyleInclude Source="avares://Avalonia.Controls.DataGrid/Themes/Fluent.xaml"/>
+        
+        <Style Selector="Window">
+            <Setter Property="Background" Value="{DynamicResource AppBackgroundBrush}"/>
+        </Style>
+        
+        <Style Selector="Menu">
+            <Setter Property="Background" Value="{DynamicResource SurfaceBackgroundBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource SurfaceBorderBrush}"/>
+            <Setter Property="BorderThickness" Value="0,0,0,1"/>
+        </Style>
+        <Style Selector="MenuItem:pointerover">
+            <Setter Property="Background" Value="{DynamicResource SurfaceBackgroundAltBrush}"/>
+        </Style>
+        <Style Selector="ContextMenu">
+            <Setter Property="Background" Value="{DynamicResource SurfaceBackgroundBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource SurfaceBorderBrushStrong}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="10"/>
+        </Style>
+        
+        <Style Selector="GridSplitter">
+            <Setter Property="Background" Value="{DynamicResource SurfaceBorderBrush}"/>
+            <Setter Property="Width" Value="3"/>
+            <Setter Property="Height" Value="3"/>
+        </Style>
+        
+        <Style Selector="Border.Card">
+            <Setter Property="Background" Value="{DynamicResource SurfaceBackgroundBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource SurfaceBorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="BoxShadow" Value="0 8 24 0 #14000000"/>
+        </Style>
+
+        <Style Selector="TextBlock.SectionHeader">
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+        </Style>
+
+        <Style Selector="TextBlock.Muted">
+            <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
+        </Style>
+
+        <Style Selector="TextBox">
+            <Setter Property="Background" Value="{DynamicResource SurfaceBackgroundBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource SurfaceBorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Padding" Value="8,6"/>
+        </Style>
+        <Style Selector="TextBox.ReadOnlyLabel">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="IsReadOnly" Value="True"/>
+            <Setter Property="IsTabStop" Value="False"/>
+            <Setter Property="Focusable" Value="False"/>
+        </Style>
+
+        <Style Selector="NumericUpDown /template/ TextBox#PART_TextBox">
+            <Setter Property="Padding" Value="6,4"/>
+            <Setter Property="MinWidth" Value="60"/>
+        </Style>
+
+        <Style Selector="Button.ToolbarButton">
+            <Setter Property="Background" Value="{DynamicResource SurfaceBackgroundBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource SurfaceBorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="10"/>
+        </Style>
+        <Style Selector="Button.ToolbarButton:pointerover /template/ Border#border">
+            <Setter Property="Background" Value="{DynamicResource SurfaceBackgroundAltBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource SurfaceBorderBrushStrong}"/>
+        </Style>
+        <Style Selector="Button.ToolbarButton:pressed /template/ Border#border">
+            <Setter Property="Background" Value="{DynamicResource AccentWeakBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+        </Style>
+
+        <Style Selector="DataGrid">
+            <Setter Property="Background" Value="{DynamicResource SurfaceBackgroundBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource SurfaceBorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="GridLinesVisibility" Value="None"/>
+            <Setter Property="RowBackground" Value="{DynamicResource SurfaceBackgroundBrush}"/>
+        </Style>
+        <Style Selector="DataGridColumnHeader">
+            <Setter Property="Background" Value="{DynamicResource SurfaceBackgroundAltBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource SurfaceBorderBrush}"/>
+            <Setter Property="BorderThickness" Value="0,0,0,1"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+        </Style>
+        <Style Selector="DataGridRow:pointerover">
+            <Setter Property="Background" Value="{DynamicResource DataGridHoverRowBrush}"/>
+        </Style>
+        <Style Selector="DataGridRow:selected">
+            <Setter Property="Background" Value="{DynamicResource DataGridSelectedRowBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+        </Style>
+
+        <Style Selector="TabControl">
+            <Setter Property="Background" Value="{DynamicResource SurfaceBackgroundBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource SurfaceBorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="10"/>
+        </Style>
+        <Style Selector="TabItem">
+            <Setter Property="Padding" Value="10,6"/>
+        </Style>
+        <Style Selector="TabItem:selected">
+            <Setter Property="Background" Value="{DynamicResource SurfaceBackgroundAltBrush}"/>
+        </Style>
+
+        <Style Selector="CheckBox">
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+        </Style>
+
+        <Style Selector="ProgressBar">
+            <Setter Property="Height" Value="18"/>
+        </Style>
+    </Application.Styles>
+</Application>

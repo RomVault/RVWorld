@@ -1,0 +1,31 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="471" d:DesignHeight="172"
+        Width="471" Height="172"
+        x:Class="ROMVault.Avalonia.Views.HelpAboutWindow"
+        Title="FrmHelpAbout"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False"
+        SystemDecorations="Full">
+    <Window.Background>
+        <ImageBrush Source="avares://ROMVault.Avalonia/Assets/logo.png" Stretch="None" AlignmentX="Left" AlignmentY="Top"/>
+    </Window.Background>
+    <Grid>
+        <StackPanel Margin="12,115,12,0" VerticalAlignment="Top">
+            <TextBlock Name="lblVersion" Text="Version..." FontWeight="Bold" FontSize="12" TextAlignment="Center" Margin="0,0,0,10"/>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                
+                <Image Grid.Column="0" Source="avares://ROMVault.Avalonia/Assets/picPayPal.png" Height="29" Width="144" Cursor="Hand" PointerPressed="PayPal_PointerPressed"/>
+                
+                <TextBlock Grid.Column="2" Text="http://www.romvault.com/" Foreground="Blue" TextDecorations="Underline" Cursor="Hand" PointerPressed="Website_PointerPressed" VerticalAlignment="Center" FontWeight="Bold"/>
+            </Grid>
+        </StackPanel>
+    </Grid>
+</Window>

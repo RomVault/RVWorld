@@ -1,0 +1,56 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="511" d:DesignHeight="131"
+        x:Class="ROMVault.Avalonia.Views.ProgressWindow"
+        Title="Progress"
+        Width="511" Height="131"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False">
+    <Border Margin="10" Padding="12" Classes="Card">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Label 1 -->
+        <TextBlock Name="lblMessage" Grid.Row="0" Text="Initializing..." Margin="0,0,0,5"/>
+
+        <!-- Progress Bar 1 -->
+        <ProgressBar Name="progressBar1" Grid.Row="1" Height="20" Minimum="0" Maximum="100" Margin="0,0,0,10"/>
+
+        <!-- Label 2 -->
+        <TextBlock Name="lblMessage2" Grid.Row="2" Text="" Margin="0,0,0,5" IsVisible="False"/>
+
+        <!-- Progress Bar 2 -->
+        <ProgressBar Name="progressBar2" Grid.Row="3" Height="20" Minimum="0" Maximum="100" Margin="0,0,0,10" IsVisible="False"/>
+
+        <!-- Error Grid (Time Log) -->
+        <DataGrid Name="ErrorGrid" Grid.Row="4" AutoGenerateColumns="False" IsVisible="False" Margin="0,0,0,10">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Time" Binding="{Binding Time}" Width="100"/>
+                <DataGridTextColumn Header="Log" Binding="{Binding Log}" Width="*"/>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <!-- Cancel/Close Button -->
+        <Button Name="btnCancel"
+                Grid.Row="5"
+                Content="Cancel"
+                HorizontalAlignment="Right"
+                VerticalContentAlignment="Center"
+                HorizontalContentAlignment="Center"
+                Click="OnCancelClick"
+                MinWidth="92"
+                Height="32"
+                Padding="12,0"
+                FontSize="12"/>
+    </Grid>
+    </Border>
+</Window>

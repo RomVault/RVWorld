@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -31,8 +31,8 @@ namespace RomVaultCore.RvDB
 
     public partial class RvFile
     {
-        public string Name; // The Name of the File or Directory
-        public string FileName; // Found filename if different from Name (Should only be differences in Case)
+        public string Name { get; set; } // The Name of the File or Directory
+        public string FileName { get; set; } // Found filename if different from Name (Should only be differences in Case)
         public RvFile Parent; // A link to the Parent Directory
         public RvDat Dat; // the Dat that this item belongs to
         public long FileModTimeStamp = long.MinValue; // TimeStamp to match the filesystem TimeStamp, used to know if the file has been changed.
@@ -55,15 +55,15 @@ namespace RomVaultCore.RvDB
         public readonly ReportStatus DirStatus; // Counts the status of all children for reporting in the UI
 
         private byte _ZipDatStruct;
-        public ZipStructure ZipDatStruct { get { return (ZipStructure)(_ZipDatStruct & 0x7f); } } // Structure of Zip Found in Dat
-        public bool ZipDatStructFix { get { return (_ZipDatStruct & 0x80) == 0x80; } }
 
-        public void SetZipDatStruct(ZipStructure zipStruncture, bool fix)
+        public void SetZipDatStruct(ZipStructure zipStruct, bool zipStructFix)
         {
-            _ZipDatStruct = (byte)zipStruncture;
-            if (fix)
-                _ZipDatStruct |= 0x80;
+            _ZipDatStruct = (byte)zipStruct;
+            if (zipStructFix) _ZipDatStruct |= 0x80;
         }
+
+        public ZipStructure ZipDatStruct => (ZipStructure)(_ZipDatStruct & 0x7F);
+        public bool ZipDatStructFix => (_ZipDatStruct & 0x80) == 0x80;
 
         public ZipStructure ZipStruct; // Structure of Zip Found as a file
 
@@ -71,8 +71,8 @@ namespace RomVaultCore.RvDB
                                                 ? ZipStruct : ZipDatStruct;
 
         public RvTreeRow Tree; // TreeRow for UI
-        public RvGame Game; // Game info from DAT
-        public string UiDisplayName;
+        public RvGame Game { get; set; } // Game info from DAT
+        public string UiDisplayName { get; set; }
 
         private ToSortDirType _toSortType = ToSortDirType.None;
 
@@ -88,23 +88,36 @@ namespace RomVaultCore.RvDB
         /******************* RvFile **********************/
         public FileGroup FileGroup;
 
-        public ulong? Size;
-        public byte[] CRC;
-        public byte[] SHA1;
-        public byte[] MD5;
-        public ulong? AltSize;
-        public byte[] AltCRC;
-        public byte[] AltSHA1;
-        public byte[] AltMD5;
+        public ulong? Size { get; set; }
+        public byte[] CRC { get; set; }
+        public byte[] SHA1 { get; set; }
+        public byte[] MD5 { get; set; }
+        public ulong? AltSize { get; set; }
+        public byte[] AltCRC { get; set; }
+        public byte[] AltSHA1 { get; set; }
+        public byte[] AltMD5 { get; set; }
 
-        public string Merge;
-        public string Status;
+        public string Merge { get; set; }
+        public string Status { get; set; }
         private FileStatus _fileStatus;
 
-        public int ZipFileIndex = -1;
+        public int ZipFileIndex { get; set; } = -1;
         public ulong? ZipFileHeaderPosition;
 
         public uint? CHDVersion;
+
+        // Properties for UI Binding
+        public string Description => Game?.GetData(RvGame.GameData.Description) ?? Dat?.GetData(RvDat.DatData.Description);
+        public string DateTime => FileModTimeStamp == long.MinValue ? "" : new System.DateTime(FileModTimeStamp).ToString("g");
+        public string FileModDate => DateTime;
+        public string CRC32 => CRC.ToHexString();
+        public string SHA1Hex => SHA1.ToHexString();
+        public string MD5Hex => MD5.ToHexString();
+        public string AltCRC32 => AltCRC.ToHexString();
+        public string AltSHA1Hex => AltSHA1.ToHexString();
+        public string AltMD5Hex => AltMD5.ToHexString();
+        public int ZipIndex => ZipFileIndex;
+        public int InstanceCount => 0; 
 
         /*************************************************/
 
@@ -512,7 +525,9 @@ namespace RomVaultCore.RvDB
                 _datStatus = DatStatus.InToSort;
 
             _gotStatus = (GotStatus)br.ReadByte();
-            RepStatusReset();
+            
+            List<RepStatus> rs = RepairStatus.StatusCheck[(int)FileType, (int)_datStatus, (int)_gotStatus];
+            _repStatus = rs?[0] ?? RepStatus.Error;
 
             if (DBTypeGet.isCompressedDir(FileType))
             {
@@ -604,7 +619,11 @@ namespace RomVaultCore.RvDB
                     _datStatus = DatStatus.InToSort;
 
                 RvFile tChild = new RvFile(br, parentDirDats, this);
-                _children?.Add(tChild);
+                
+                _children.Insert(i, tChild);
+                DirStatus.RepStatusAddRemove(tChild.RepStatus, 1);
+                if (tChild.IsDirectory)
+                    DirStatus.RepStatusArrayAddRemove(tChild.DirStatus, 1);
             }
             if (baseDir)
                 _datStatus = DatStatus.InDatCollect;

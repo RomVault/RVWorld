@@ -1,0 +1,26 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="500" d:DesignHeight="250"
+        Width="500" Height="250"
+        x:Class="ROMVault.Avalonia.Views.SplashWindow"
+        Title="SplashWindow"
+        WindowStartupLocation="CenterScreen"
+        SystemDecorations="None"
+        CanResize="False"
+        Topmost="True"
+        Background="Transparent"
+        TransparencyLevelHint="Transparent">
+    
+    <Border Background="{DynamicResource SurfaceBackgroundBrush}" CornerRadius="10" BorderBrush="{DynamicResource SurfaceBorderBrush}" BorderThickness="1" BoxShadow="0 4 10 0 #40000000">
+        <Grid RowDefinitions="*,Auto,Auto,Auto" Margin="30">
+            <Image Grid.Row="0" Source="avares://ROMVault.Avalonia/Assets/logo.png" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            
+            <TextBlock Grid.Row="1" Name="lblVersion" Text="Version..." HorizontalAlignment="Right" FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,10,0,20"/>
+            
+            <TextBlock Grid.Row="2" Name="lblStatus" Text="Initializing..." FontSize="12" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,5"/>
+            <ProgressBar Grid.Row="3" Name="progressBar" Minimum="0" Maximum="100" Height="6" CornerRadius="3"/>
+        </Grid>
+    </Border>
+</Window>

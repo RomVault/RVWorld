@@ -1,4 +1,4 @@
-﻿using RomVaultCore.FindFix;
+using RomVaultCore.FindFix;
 using RomVaultCore.RvDB;
 using RomVaultCore.Utils;
 using File = RVIO.File;
@@ -43,7 +43,10 @@ namespace RomVaultCore.FixFile.Utils
             string fileNameOut = outFilename ?? fileOut.FullName;
             try
             {
-                File.Move(fileNameIn, fileNameOut);
+                if (!string.Equals(fileNameIn, fileNameOut, System.StringComparison.OrdinalIgnoreCase))
+                {
+                    File.Move(fileNameIn, fileNameOut);
+                }
             }
             catch
             {

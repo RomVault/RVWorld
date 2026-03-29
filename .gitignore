@@ -1,51 +1,23 @@
 ﻿################################################################################
-# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+# .NET Build exclusions
 ################################################################################
-/ByteSortedList/bin
-/ByteSortedList/obj
-/CHDlib/bin
-/CHDlib/obj
-/CodePage/bin
-/CodePage/obj
-/Compress/bin
-/Compress/obj
-/Dark/bin
-/Dark/obj
-/DATReader/bin
-/DATReader/obj
-/FileScanner/bin
-/FileScanner/obj
-/DatVault/bin
-/DatVault/obj
-/packages
-/RomVault/bin
-/RomVault/obj
-/RomVaultCmd/bin
-/RomVaultCmd/obj
-/RomVaultCore/bin
-/RomVaultCore/obj
-/RVIO/bin
-/RVIO/obj
-/RVServiceAccess/bin
-/RVServiceAccess/obj
-/Trrntzip/bin
-/Trrntzip/obj
-/TrrntZipCMD/bin
-/TrrntZipCMD/obj
-/TrrntZipUI/bin
-/TrrntZipUI/obj
-/unzip/bin
-/unzip/obj
-/RVZstdSharp/bin
-/RVZstdSharp/obj
-/SharedEnum/bin
-/SharedEnum/obj
-/SortMethods/bin
-/SortMethods/obj
-/TrrntZipUICore/bin/Debug
-/TrrntZipUICore/obj
-/.vs/RVWorld/v16/Server/sqlite3
-/.vs/RVWorld/v16/.suo
-/.vs
+
+# Build results
+[Bb]in/
+[Oo]bj/
+
+# Visual Studio
+.vs/
 *.user
+*.suo
+*.userprefs
+*.launchsettings.json
+
+# NuGet
+/packages
+*.nupkg
+
+# Other
 /.idea/
+.DS_Store
+Thumbs.db

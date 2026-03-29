@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using RomVaultCore.RvDB;
 using RomVaultCore.Utils;
 using RVIO;
@@ -80,6 +80,11 @@ namespace RomVaultCore.FixFile.Utils
 
             while (File.Exists(toSortFullName))
             {
+                if (string.Equals(toSortFullName, inFile.FullName, System.StringComparison.OrdinalIgnoreCase))
+                {
+                    break;
+                }
+
                 if (name == null)
                 {
                     int pIndex = inFile.Name.LastIndexOf('.');

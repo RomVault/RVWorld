@@ -1,0 +1,90 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="500"
+        x:Class="ROMVault.Avalonia.Views.TrrntZipWindow"
+        Title="SAM-UI" Width="800" Height="500"
+        WindowStartupLocation="CenterScreen">
+  
+  <Grid ColumnDefinitions="250, *">
+    <!-- Left Panel (StatusPanel) -->
+    <Border Grid.Column="0" Classes="Card" Margin="8" Padding="0">
+    <DockPanel Background="{DynamicResource SurfaceBackgroundBrush}">
+        <!-- Bottom Logos -->
+        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,10">
+            <Image Source="/Assets/picPatreon.png" Height="30" Margin="5" Cursor="Hand" ToolTip.Tip="Support on Patreon" PointerPressed="OnDonateClick"/>
+            <Image Source="/Assets/logo.png" Height="30" Margin="5" Cursor="Hand" ToolTip.Tip="Visit RomVault" PointerPressed="OnRomVaultClick"/>
+        </StackPanel>
+
+        <!-- Top Content -->
+        <StackPanel DockPanel.Dock="Top">
+             <!-- Title Image -->
+             <Image Source="/Assets/romvaultTZ.png" Height="84" Margin="10" HorizontalAlignment="Center"/>
+
+             <!-- DropBox Area -->
+             <Grid ColumnDefinitions="Auto, *" Margin="10,0">
+                  <Border Grid.Column="0" Name="DropBox" Width="63" Height="61"
+                          BorderBrush="{DynamicResource SurfaceBorderBrush}"
+                          BorderThickness="1"
+                          Background="{DynamicResource SurfaceBackgroundAltBrush}"
+                          CornerRadius="8"
+                          DragDrop.AllowDrop="True">
+                       <Image Source="/Assets/Zip.png" Stretch="Uniform" Margin="5"/>
+                  </Border>
+                  <StackPanel Grid.Column="1" Margin="10,0,0,0" VerticalAlignment="Center">
+                       <TextBlock Text="&lt;-- drop Files/Dirs here" FontSize="11" Margin="0,0,0,5"/>
+                       <StackPanel Orientation="Horizontal" Spacing="5">
+                            <Button Name="btnPause" Width="25" Height="25" Padding="2" IsEnabled="False">
+                                <Image Name="imgPause" Source="/Assets/Pause.png"/>
+                            </Button>
+                            <Button Name="btnCancel" Width="25" Height="25" Padding="2" IsEnabled="False">
+                                <Image Source="/Assets/G_Delete.png"/>
+                            </Button>
+                            <Button Name="btnAddFiles" Width="25" Height="25" Padding="2" ToolTip.Tip="Add files/folders">
+                                <TextBlock Text="+" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="14"/>
+                            </Button>
+                       </StackPanel>
+                  </StackPanel>
+             </Grid>
+
+             <!-- Settings -->
+             <Grid ColumnDefinitions="60, *" RowDefinitions="Auto, Auto, Auto, Auto" Margin="15,15,10,10">
+                  <TextBlock Grid.Row="0" Grid.Column="0" Text="Input:" VerticalAlignment="Center" Margin="0,0,10,10"/>
+                  <ComboBox Grid.Row="0" Grid.Column="1" Name="cboInType" HorizontalAlignment="Stretch" Margin="0,0,0,10"/>
+
+                  <TextBlock Grid.Row="1" Grid.Column="0" Text="Output:" VerticalAlignment="Center" Margin="0,0,10,10"/>
+                  <ComboBox Grid.Row="1" Grid.Column="1" Name="cboOutType" HorizontalAlignment="Stretch" Margin="0,0,0,10"/>
+
+                  <Grid Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2" ColumnDefinitions="Auto, Auto, *" Margin="0,0,0,10">
+                       <TextBlock Grid.Column="0" Name="lblTotalStatus" Text="( 0 / 0 )" VerticalAlignment="Center" Margin="0,0,10,0" Width="60"/>
+                       <CheckBox Grid.Column="1" Name="chkFix" Content="Fix" Margin="0,0,10,0" IsChecked="True"/>
+                       <CheckBox Grid.Column="2" Name="chkForce" Content="Force"/>
+                  </Grid>
+
+                  <Slider Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" Name="tbProccessors" Minimum="1" Maximum="16" Margin="0,10"/>
+             </Grid>
+
+             <!-- Thread Status Placeholders -->
+             <StackPanel Name="StatusPanel" Margin="10,0"/>
+        </StackPanel>
+    </DockPanel>
+    </Border>
+
+    <!-- Right Panel (DataGrid) -->
+    <Border Grid.Column="1" Classes="Card" Margin="8" Padding="0">
+        <DataGrid Name="dataGrid" AutoGenerateColumns="False" IsReadOnly="True" Margin="0" GridLinesVisibility="None" BorderThickness="0">
+            <DataGrid.ContextMenu>
+                <ContextMenu>
+                    <MenuItem Header="Copy Filename" Click="OnCopyFilenameClick"/>
+                    <MenuItem Header="Open Source" Click="OnOpenSourceClick"/>
+                </ContextMenu>
+            </DataGrid.ContextMenu>
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Filename" Binding="{Binding Filename}" Width="*"/>
+                <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="150"/>
+            </DataGrid.Columns>
+        </DataGrid>
+    </Border>
+  </Grid>
+</Window>

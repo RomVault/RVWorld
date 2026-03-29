@@ -1,4 +1,4 @@
-﻿/******************************************************
+/******************************************************
  *     ROMVault3 is written by Gordon J.              *
  *     Contact gordon@romvault.com                    *
  *     Copyright 2025                                 *
@@ -167,7 +167,7 @@ namespace RomVaultCore.FixFile.Utils
 
                     try
                     {
-                        readStream.Read(_buffer, 0, sizenow);
+                        readStream.ReadExactly(_buffer, 0, sizenow);
                     }
                     catch (Exception ex)
                     {

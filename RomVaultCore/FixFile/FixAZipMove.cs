@@ -1,4 +1,4 @@
-﻿using Compress;
+using Compress;
 using FileScanner;
 using RomVaultCore.FixFile.FixAZipCore;
 using RomVaultCore.FixFile.Utils;
@@ -130,7 +130,6 @@ namespace RomVaultCore.FixFile
             Report.ReportProgress(new bgwShowFix(Path.GetDirectoryName(fixZipTreeFullName), Path.GetFileName(fixZipTreeFullName), "", null, fixZip.FileType == FileType.Zip ? "<--ZipMove" : "<--7ZMove", Path.GetDirectoryName(sourceZipTreeFullName), Path.GetFileName(sourceZipTreeFullName), ""));
 
             // check the source file timestamp
-            long modTimeStamp;
             try
             {
                 if (File.Exists(fixZipFullName))
@@ -182,7 +181,9 @@ namespace RomVaultCore.FixFile
                 if (fixZip.Child(fixZipIndex).RepStatus == RepStatus.Missing || fixZip.Child(fixZipIndex).RepStatus == RepStatus.MissingMIA || fixZip.Child(fixZipIndex).RepStatus == RepStatus.NotCollected)
                     continue;
 
+#pragma warning disable CS0618 // Type or member is obsolete
                 fixZip.Child(fixZipIndex).FileMergeIn(sourceZip.Child(sourceZipIndex), false);
+#pragma warning restore CS0618 // Type or member is obsolete
 
                 lstFixRomTable = FindSourceFile.GetFixFileList(fixZip.Child(fixZipIndex));
                 foreach (RvFile fixingFiles in lstFixRomTable)
