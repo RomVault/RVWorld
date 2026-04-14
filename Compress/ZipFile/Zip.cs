@@ -116,7 +116,13 @@ namespace Compress.ZipFile
 
         ~Zip()
         {
-            ZipFileClose();
+            try
+            {
+                ZipFileCloseFailed();
+            }
+            catch
+            {
+            }
         }
 
 

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -509,6 +509,13 @@ namespace RomVaultCore.FixFile
                 ReportError.procLog($"FixAZip: Error Exception, nulling out.");
 
                 errorMessage = "In Fix Zip:\n" + ex.Message + "\nat\n:" + ex.StackTrace;
+                Exception checkEx = ex;
+                while (checkEx != null)
+                {
+                    if (checkEx is System.IO.IOException)
+                        return ReturnCode.FileSystemError;
+                    checkEx = checkEx.InnerException;
+                }
                 return ReturnCode.LogicError;
             }
             finally

@@ -1,4 +1,4 @@
-﻿using Compress.Support.Utils;
+using Compress.Support.Utils;
 using System.IO;
 using FileInfo = RVIO.FileInfo;
 using FileStream = RVIO.FileStream;
@@ -98,28 +98,33 @@ namespace Compress.ZipFile
 
         public void ZipFileCloseFailed()
         {
-            switch (ZipOpen)
+            try
             {
-                case ZipOpenType.Closed:
-                    return;
-                case ZipOpenType.OpenRead:
-                    if (_zipFs != null)
-                    {
-                        _zipFs.Close();
-                        _zipFs.Dispose();
-                    }
-                    break;
-                case ZipOpenType.OpenWrite:
-                    _zipFs.Flush();
-                    _zipFs.Close();
-                    _zipFs.Dispose();
-                    if (_zipFileInfo != null)
-                        RVIO.File.Delete(_zipFileInfo.FullName);
-                    _zipFileInfo = null;
-                    break;
+                switch (ZipOpen)
+                {
+                    case ZipOpenType.Closed:
+                        return;
+                    case ZipOpenType.OpenRead:
+                        try { _zipFs?.Close(); } catch { }
+                        try { _zipFs?.Dispose(); } catch { }
+                        break;
+                    case ZipOpenType.OpenWrite:
+                        try { _zipFs?.Flush(); } catch { }
+                        try { _zipFs?.Close(); } catch { }
+                        try { _zipFs?.Dispose(); } catch { }
+                        if (_zipFileInfo != null)
+                        {
+                            try { RVIO.File.Delete(_zipFileInfo.FullName); } catch { }
+                        }
+                        _zipFileInfo = null;
+                        break;
+                }
             }
-
-            ZipOpen = ZipOpenType.Closed;
+            finally
+            {
+                _zipFs = null;
+                ZipOpen = ZipOpenType.Closed;
+            }
         }
 
     }
