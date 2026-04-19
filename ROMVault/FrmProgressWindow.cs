@@ -1,4 +1,4 @@
-﻿/******************************************************
+/******************************************************
  *     ROMVault3 is written by Gordon J.              *
  *     Contact gordon@romvault.com                    *
  *     Copyright 2025                                 *
@@ -14,6 +14,9 @@ namespace ROMVault
 {
     public delegate void Finished();
 
+    /// <summary>
+    /// Modal progress window for long-running operations with cancel support and optional error list.
+    /// </summary>
     public partial class FrmProgressWindow : Form
     {
         private readonly string _titleRoot;
@@ -115,7 +118,7 @@ namespace ROMVault
         {
             if (InvokeRequired)
             {
-                BeginInvoke(new MethodInvoker(() => BgwProgressChanged(obj)));
+                BeginInvoke(new System.Windows.Forms.MethodInvoker(() => BgwProgressChanged(obj)));
                 return;
             }
 
@@ -231,7 +234,7 @@ namespace ROMVault
         {
             if (InvokeRequired)
             {
-                BeginInvoke(new MethodInvoker(BgwRunWorkerCompleted));
+                BeginInvoke(new System.Windows.Forms.MethodInvoker(BgwRunWorkerCompleted));
                 return;
             }
             RVPlayer.PlaySound("audio\\complete.wav");

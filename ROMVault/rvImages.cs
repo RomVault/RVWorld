@@ -1,10 +1,13 @@
-﻿using Compress.ZipFile;
+using Compress.ZipFile;
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 
 namespace ROMVault
 {
+    /// <summary>
+    /// Bitmap loader and cache for UI images (graphics.zip, graphics folder, or embedded resources).
+    /// </summary>
     public static class rvImages
     {
         private static Dictionary<string, Bitmap> bmps = new Dictionary<string, Bitmap>();

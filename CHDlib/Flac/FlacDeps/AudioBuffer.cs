@@ -1,7 +1,10 @@
-﻿using System;
+using System;
 
 namespace CHDReaderTest.Flac.FlacDeps
 {
+    /// <summary>
+    /// PCM sample buffer and conversion helpers used by the FLAC decoder.
+    /// </summary>
     public class AudioBuffer
     {
         #region Static Methods

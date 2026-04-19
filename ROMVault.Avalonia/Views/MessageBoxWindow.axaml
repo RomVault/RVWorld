@@ -1,0 +1,28 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="400" d:DesignHeight="200"
+        x:Class="ROMVault.Avalonia.Views.MessageBoxWindow"
+        Title="Message"
+        Width="460" Height="220"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False">
+    <DockPanel Margin="16">
+        <Border DockPanel.Dock="Bottom"
+                Background="{DynamicResource SurfaceBackgroundBrush}"
+                BorderBrush="{DynamicResource SurfaceBorderBrush}"
+                BorderThickness="0,1,0,0"
+                Padding="12"
+                CornerRadius="8">
+            <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="10">
+                <Button Grid.Column="1" Name="btnCancel" Content="Cancel" MinWidth="92" Click="OnCancelClick" IsCancel="True" IsVisible="False"/>
+                <Button Grid.Column="2" Name="btnOk" Content="OK" MinWidth="92" Click="OnOkClick" IsDefault="True"/>
+            </Grid>
+        </Border>
+
+        <Border Classes="Card" Padding="14">
+            <TextBlock Name="MessageText" TextWrapping="Wrap" FontSize="12"/>
+        </Border>
+    </DockPanel>
+</Window>

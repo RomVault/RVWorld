@@ -1,4 +1,4 @@
-﻿/******************************************************
+/******************************************************
  *     ROMVault3 is written by Gordon J.              *
  *     Contact gordon@romvault.com                    *
  *     Copyright 2025                                 *
@@ -12,6 +12,9 @@ using RomVaultCore;
 
 namespace ROMVault
 {
+    /// <summary>
+    /// Legend window describing the meaning of status colors and icons used by the UI.
+    /// </summary>
     public partial class FrmKey : Form
     {
         public FrmKey()

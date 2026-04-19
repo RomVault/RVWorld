@@ -1,4 +1,4 @@
-﻿using DATReader.DatStore;
+using DATReader.DatStore;
 using RomVaultCore.RvDB;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -6,6 +6,9 @@ using System.Threading.Tasks;
 
 namespace RomVaultCore.FindFix
 {
+    /// <summary>
+    /// Utilities for clearing partial/incomplete sets and resetting corrupt status based on selection rules.
+    /// </summary>
     public static class ClearPartial
     {
         public static void ResetCorrupt(RvFile basePath)
@@ -41,7 +44,8 @@ namespace RomVaultCore.FindFix
                 RvFile child = basePath.Child(i);
                 if (child.Game != null)
                 {
-                    if (nextSelect && datRule != null && datRule.CompleteOnly)
+                    bool isCompleteOnly = nextSelect && datRule != null && datRule.CompleteOnly;
+                    if (isCompleteOnly || child.FileType == FileType.CHD)
                         RemovePartialSets(child);
                 }
                 else

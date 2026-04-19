@@ -1,4 +1,4 @@
-﻿using System.Threading;
+using System.Threading;
 
 namespace RomVaultCore
 {
@@ -7,6 +7,9 @@ namespace RomVaultCore
     public delegate void WorkerReport(object obj);
     public delegate void Worker();
 
+    /// <summary>
+    /// Simple background worker abstraction with progress reporting and cancellation flag.
+    /// </summary>
     public class ThreadWorker
     {
         private readonly WorkerStart _startFunc;

@@ -1,8 +1,11 @@
-﻿using DATReader.DatStore;
+using DATReader.DatStore;
 using DATReader.Utils;
 
 namespace DATReader.DatClean
 {
+    /// <summary>
+    /// Assigns <see cref="DatStatus"/> values to DAT files based on status, merge, and missing-information rules.
+    /// </summary>
     public static class DatSetStatus
     {
 

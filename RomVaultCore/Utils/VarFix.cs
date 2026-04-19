@@ -1,4 +1,4 @@
-﻿/******************************************************
+/******************************************************
  *     ROMVault3 is written by Gordon J.              *
  *     Contact gordon@romvault.com                    *
  *     Copyright 2025                                 *
@@ -8,6 +8,9 @@ using System;
 
 namespace RomVaultCore.Utils
 {
+    /// <summary>
+    /// String parsing helpers for checksum and numeric fields.
+    /// </summary>
     public static class VarFix
     {
         public static byte[] CleanMD5SHA1(string checksum, int length)

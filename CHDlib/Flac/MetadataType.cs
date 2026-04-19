@@ -1,5 +1,8 @@
-﻿namespace CUETools.Codecs.Flake
+namespace CUETools.Codecs.Flake
 {
+    /// <summary>
+    /// FLAC metadata block type identifiers.
+    /// </summary>
     public enum MetadataType
     {
         /// <summary>

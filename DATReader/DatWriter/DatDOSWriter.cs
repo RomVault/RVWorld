@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Compress;
 using Compress.StructuredZip;
 using DATReader.DatStore;
@@ -6,6 +6,9 @@ using RVIO;
 
 namespace DATReader.DatWriter
 {
+    /// <summary>
+    /// Writer for DOSCenter-style DAT output.
+    /// </summary>
     public static class DatDOSWriter
     {
         public static void WriteDat(string strFilename, DatHeader datHeader)
@@ -108,6 +111,9 @@ namespace DATReader.DatWriter
             return b == null ? "" : BitConverter.ToString(b).ToLower().Replace("-", "");
         }
 
+        /// <summary>
+        /// Simple indentation-aware writer for DAT text output.
+        /// </summary>
         private class DatStreamWriter : IDisposable
         {
             private int _tabDepth;

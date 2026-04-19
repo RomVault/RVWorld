@@ -1,8 +1,11 @@
-﻿using RomVaultCore.RvDB;
+using RomVaultCore.RvDB;
 using System.Diagnostics;
 
 namespace RomVaultCore.Utils
 {
+    /// <summary>
+    /// Determines whether scanning/fixing should treat a directory as "files only" (no archive/container semantics).
+    /// </summary>
     public static class IsFileOnly
     {
         public static bool isFileOnly(RvFile inFile)

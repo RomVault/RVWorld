@@ -1,4 +1,4 @@
-﻿using CHDReaderTest.Flac.FlacDeps;
+using CHDReaderTest.Flac.FlacDeps;
 using CHDSharpLib.Utils;
 using Compress.Support.Compression.LZMA;
 using Compress.Support.Compression.zStd;
@@ -9,15 +9,49 @@ using System.IO.Compression;
 
 namespace CHDSharpLib;
 
+/// <summary>
+/// Decoder function signature used by <see cref="CHDBlockRead"/> for CHD block decompression.
+/// </summary>
+/// <param name="buffIn">Input buffer containing compressed data.</param>
+/// <param name="buffInLength">Length of compressed data within <paramref name="buffIn"/>.</param>
+/// <param name="buffOut">Output buffer for decompressed data.</param>
+/// <param name="buffOutLength">Expected decompressed output length.</param>
+/// <param name="codec">Reusable codec state for the current operation.</param>
+/// <returns>A <see cref="chd_error"/> indicating success or failure.</returns>
 internal delegate chd_error CHDReader(byte[] buffIn, int buffInLength, byte[] buffOut, int buffOutLength, CHDCodec codec);
 
+/// <summary>
+/// CHD block reader implementations for the supported compression codecs.
+/// </summary>
+/// <remarks>
+/// Each method matches <see cref="CHDReader"/> and is selected based on the CHD header codec slots.
+/// </remarks>
 internal static partial class CHDReaders
 {
 
+    /// <summary>
+    /// Decompresses a block using zlib/deflate.
+    /// </summary>
+    /// <param name="buffIn">Input buffer containing compressed data.</param>
+    /// <param name="buffInLength">Length of compressed data in <paramref name="buffIn"/>.</param>
+    /// <param name="buffOut">Destination buffer for decompressed output.</param>
+    /// <param name="buffOutLength">Expected decompressed output length.</param>
+    /// <param name="codec">Reusable codec state for the current operation.</param>
+    /// <returns>A <see cref="chd_error"/> indicating success or failure.</returns>
     internal static chd_error zlib(byte[] buffIn, int buffInLength, byte[] buffOut, int buffOutLength, CHDCodec codec)
     {
         return zlib(buffIn, 0, buffInLength, buffOut, buffOutLength);
     }
+
+    /// <summary>
+    /// Decompresses a deflate payload from a region within <paramref name="buffIn"/>.
+    /// </summary>
+    /// <param name="buffIn">Input buffer containing compressed data.</param>
+    /// <param name="buffInStart">Start offset within <paramref name="buffIn"/>.</param>
+    /// <param name="buffInLength">Number of bytes to read from <paramref name="buffIn"/>.</param>
+    /// <param name="buffOut">Destination buffer for decompressed output.</param>
+    /// <param name="buffOutLength">Expected decompressed output length.</param>
+    /// <returns>A <see cref="chd_error"/> indicating success or failure.</returns>
     private static chd_error zlib(byte[] buffIn, int buffInStart, int buffInLength, byte[] buffOut, int buffOutLength)
     {
         using var memStream = new MemoryStream(buffIn, buffInStart, buffInLength, false);
@@ -34,10 +68,29 @@ internal static partial class CHDReaders
     }
 
 
+    /// <summary>
+    /// Decompresses a block using zstd.
+    /// </summary>
+    /// <param name="buffIn">Input buffer containing compressed data.</param>
+    /// <param name="buffInLength">Length of compressed data in <paramref name="buffIn"/>.</param>
+    /// <param name="buffOut">Destination buffer for decompressed output.</param>
+    /// <param name="buffOutLength">Expected decompressed output length.</param>
+    /// <param name="codec">Reusable codec state for the current operation.</param>
+    /// <returns>A <see cref="chd_error"/> indicating success or failure.</returns>
     internal static chd_error zstd(byte[] buffIn, int buffInLength, byte[] buffOut, int buffOutLength, CHDCodec codec)
     {
         return zstd(buffIn, 0, buffInLength, buffOut, buffOutLength);
     }
+
+    /// <summary>
+    /// Decompresses a zstd payload from a region within <paramref name="buffIn"/>.
+    /// </summary>
+    /// <param name="buffIn">Input buffer containing compressed data.</param>
+    /// <param name="buffInStart">Start offset within <paramref name="buffIn"/>.</param>
+    /// <param name="buffInLength">Number of bytes to read from <paramref name="buffIn"/>.</param>
+    /// <param name="buffOut">Destination buffer for decompressed output.</param>
+    /// <param name="buffOutLength">Expected decompressed output length.</param>
+    /// <returns>A <see cref="chd_error"/> indicating success or failure.</returns>
     private static chd_error zstd(byte[] buffIn, int buffInStart, int buffInLength, byte[] buffOut, int buffOutLength)
     {
         using var memStream = new MemoryStream(buffIn, buffInStart, buffInLength, false);
@@ -57,11 +110,30 @@ internal static partial class CHDReaders
 
 
 
-
+    /// <summary>
+    /// Decompresses a block using LZMA.
+    /// </summary>
+    /// <param name="buffIn">Input buffer containing compressed data.</param>
+    /// <param name="buffInLength">Length of compressed data in <paramref name="buffIn"/>.</param>
+    /// <param name="buffOut">Destination buffer for decompressed output.</param>
+    /// <param name="buffOutLength">Expected decompressed output length.</param>
+    /// <param name="codec">Reusable codec state for the current operation.</param>
+    /// <returns>A <see cref="chd_error"/> indicating success or failure.</returns>
     internal static chd_error lzma(byte[] buffIn, int buffInLength, byte[] buffOut, int buffOutLength, CHDCodec codec)
     {
         return lzma(buffIn, 0, buffInLength, buffOut, buffOutLength, codec);
     }
+
+    /// <summary>
+    /// Decompresses an LZMA payload from a region within <paramref name="buffIn"/>.
+    /// </summary>
+    /// <param name="buffIn">Input buffer containing compressed data.</param>
+    /// <param name="buffInStart">Start offset within <paramref name="buffIn"/>.</param>
+    /// <param name="compsize">Compressed payload length.</param>
+    /// <param name="buffOut">Destination buffer for decompressed output.</param>
+    /// <param name="buffOutLength">Expected decompressed output length.</param>
+    /// <param name="codec">Reusable codec state for the current operation.</param>
+    /// <returns>A <see cref="chd_error"/> indicating success or failure.</returns>
     private static chd_error lzma(byte[] buffIn, int buffInStart, int compsize, byte[] buffOut, int buffOutLength, CHDCodec codec)
     {
         //hacky header creator
@@ -94,7 +166,15 @@ internal static partial class CHDReaders
 
 
 
-
+    /// <summary>
+    /// Decompresses a block encoded with CHD's Huffman scheme.
+    /// </summary>
+    /// <param name="buffIn">Input buffer containing compressed data.</param>
+    /// <param name="buffInLength">Length of compressed data in <paramref name="buffIn"/>.</param>
+    /// <param name="buffOut">Destination buffer for decompressed output.</param>
+    /// <param name="buffOutLength">Expected decompressed output length.</param>
+    /// <param name="codec">Reusable codec state for the current operation.</param>
+    /// <returns>A <see cref="chd_error"/> indicating success or failure.</returns>
     internal static chd_error huffman(byte[] buffIn, int buffInLength, byte[] buffOut, int buffOutLength, CHDCodec codec)
     {
         if (codec.bHuffman == null)
@@ -114,9 +194,15 @@ internal static partial class CHDReaders
     }
 
 
-
-
-
+    /// <summary>
+    /// Decompresses a FLAC-encoded block (used by CD FLAC codecs).
+    /// </summary>
+    /// <param name="buffIn">Input buffer containing compressed data.</param>
+    /// <param name="buffInLength">Length of compressed data in <paramref name="buffIn"/>.</param>
+    /// <param name="buffOut">Destination buffer for decompressed output.</param>
+    /// <param name="buffOutLength">Expected decompressed output length.</param>
+    /// <param name="codec">Reusable codec state for the current operation.</param>
+    /// <returns>A <see cref="chd_error"/> indicating success or failure.</returns>
     internal static chd_error flac(byte[] buffIn, int buffInLength, byte[] buffOut, int buffOutLength, CHDCodec codec)
     {
         byte endianType = buffIn[0];
@@ -125,7 +211,18 @@ internal static partial class CHDReaders
         return flac(buffIn, 1, buffInLength, buffOut, buffOutLength, swapEndian, codec, out _);
     }
 
-
+    /// <summary>
+    /// Decompresses a raw FLAC payload from a region within <paramref name="buffIn"/>.
+    /// </summary>
+    /// <param name="buffIn">Input buffer containing compressed data.</param>
+    /// <param name="buffInStart">Start offset within <paramref name="buffIn"/>.</param>
+    /// <param name="buffInLength">Number of bytes available from <paramref name="buffInStart"/>.</param>
+    /// <param name="buffOut">Destination buffer for decompressed output.</param>
+    /// <param name="buffOutLength">Expected decompressed output length.</param>
+    /// <param name="swapEndian">If true, swaps 16-bit endianness of decoded PCM samples.</param>
+    /// <param name="codec">Reusable codec state for the current operation.</param>
+    /// <param name="srcPos">Updated source offset into <paramref name="buffIn"/> after decoding.</param>
+    /// <returns>A <see cref="chd_error"/> indicating success or failure.</returns>
     private static chd_error flac(byte[] buffIn, int buffInStart, int buffInLength, byte[] buffOut, int buffOutLength, bool swapEndian, CHDCodec codec, out int srcPos)
     {
         codec.FLAC_settings ??= new AudioPCMConfig(16, 2, 44100);
@@ -164,12 +261,35 @@ internal static partial class CHDReaders
 
 
 
+    /// <summary>
+    /// Maximum sector payload in bytes for CD frames.
+    /// </summary>
     private const int CD_MAX_SECTOR_DATA = 2352;
+
+    /// <summary>
+    /// Subcode payload in bytes for CD frames.
+    /// </summary>
     private const int CD_MAX_SUBCODE_DATA = 96;
+
+    /// <summary>
+    /// Combined sector+subcode frame size.
+    /// </summary>
     private static readonly int CD_FRAME_SIZE = CD_MAX_SECTOR_DATA + CD_MAX_SUBCODE_DATA;
 
+    /// <summary>
+    /// CD sync header bytes used when reconstructing sectors with regenerated ECC.
+    /// </summary>
     private static readonly byte[] s_cd_sync_header = new byte[] { 0x00, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x00 };
 
+    /// <summary>
+    /// Decodes CD zlib blocks where sector and subcode streams are compressed separately.
+    /// </summary>
+    /// <param name="buffIn">Input buffer containing compressed CD frame data.</param>
+    /// <param name="buffInLength">Length of compressed data in <paramref name="buffIn"/>.</param>
+    /// <param name="buffOut">Destination buffer for decompressed frames (sector + subcode).</param>
+    /// <param name="buffOutLength">Expected decompressed output length.</param>
+    /// <param name="codec">Reusable codec state for the current operation.</param>
+    /// <returns>A <see cref="chd_error"/> indicating success or failure.</returns>
     internal static chd_error cdzlib(byte[] buffIn, int buffInLength, byte[] buffOut, int buffOutLength, CHDCodec codec)
     {
         /* determine header bytes */
@@ -211,6 +331,15 @@ internal static partial class CHDReaders
         return chd_error.CHDERR_NONE;
     }
 
+    /// <summary>
+    /// Decodes CD zstd blocks where sector and subcode streams are compressed separately.
+    /// </summary>
+    /// <param name="buffIn">Input buffer containing compressed CD frame data.</param>
+    /// <param name="buffInLength">Length of compressed data in <paramref name="buffIn"/>.</param>
+    /// <param name="buffOut">Destination buffer for decompressed frames (sector + subcode).</param>
+    /// <param name="buffOutLength">Expected decompressed output length.</param>
+    /// <param name="codec">Reusable codec state for the current operation.</param>
+    /// <returns>A <see cref="chd_error"/> indicating success or failure.</returns>
     internal static chd_error cdzstd(byte[] buffIn, int buffInLength, byte[] buffOut, int buffOutLength, CHDCodec codec)
     {
         /* determine header bytes */
@@ -253,6 +382,15 @@ internal static partial class CHDReaders
     }
 
 
+    /// <summary>
+    /// Decodes CD LZMA blocks where the sector stream is LZMA and the subcode stream is zlib.
+    /// </summary>
+    /// <param name="buffIn">Input buffer containing compressed CD frame data.</param>
+    /// <param name="buffInLength">Length of compressed data in <paramref name="buffIn"/>.</param>
+    /// <param name="buffOut">Destination buffer for decompressed frames (sector + subcode).</param>
+    /// <param name="buffOutLength">Expected decompressed output length.</param>
+    /// <param name="codec">Reusable codec state for the current operation.</param>
+    /// <returns>A <see cref="chd_error"/> indicating success or failure.</returns>
     internal static chd_error cdlzma(byte[] buffIn, int buffInLength, byte[] buffOut, int buffOutLength, CHDCodec codec)
     {
         /* determine header bytes */
@@ -295,6 +433,15 @@ internal static partial class CHDReaders
     }
 
 
+    /// <summary>
+    /// Decodes CD FLAC blocks where audio sectors are FLAC-compressed and subcode is zlib-compressed.
+    /// </summary>
+    /// <param name="buffIn">Input buffer containing compressed CD frame data.</param>
+    /// <param name="buffInLength">Length of compressed data in <paramref name="buffIn"/>.</param>
+    /// <param name="buffOut">Destination buffer for decompressed frames (sector + subcode).</param>
+    /// <param name="buffOutLength">Expected decompressed output length.</param>
+    /// <param name="codec">Reusable codec state for the current operation.</param>
+    /// <returns>A <see cref="chd_error"/> indicating success or failure.</returns>
     internal static chd_error cdflac(byte[] buffIn, int buffInLength, byte[] buffOut, int buffOutLength, CHDCodec codec)
     {
         int frames = buffOutLength / CD_FRAME_SIZE;

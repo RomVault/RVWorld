@@ -25,6 +25,15 @@ using System.Threading;
 
 namespace ROMVault
 {
+    /// <summary>
+    /// Main WinForms application window.
+    /// </summary>
+    /// <remarks>
+    /// Provides the primary UI for:
+    /// - scanning ROM roots into the DB tree
+    /// - finding fixes and applying fixes
+    /// - CHD workflows (verify container/parity and export)
+    /// </remarks>
     public partial class FrmMain : Form
     {
         private static readonly Color CBlue = Color.FromArgb(214, 214, 255);
@@ -93,7 +102,7 @@ namespace ROMVault
             btnDefault4.BackgroundImage = rvImages.GetBitmap("default4");
 
             AddGameMetaData();
-            Text = $@"RomVault ({Program.strVersion}) {Application.StartupPath}";
+            Text = $@"RomVault ({Program.strVersion}) {BuildInfo.DisplayString} {Application.StartupPath}";
 
             Type dgvType = GameGrid.GetType();
             PropertyInfo pi = dgvType.GetProperty("DoubleBuffered", BindingFlags.Instance | BindingFlags.NonPublic);
@@ -215,6 +224,30 @@ namespace ROMVault
             _mnuContext.Items.Add(mnuFixDat);
             _mnuContext.Items.Add(mnuMakeDat);
 
+            ToolStripMenuItem mnuVerifyChd = new ToolStripMenuItem
+            {
+                Text = @"Verify CHD Container...",
+                Tag = null
+            };
+            _mnuContext.Items.Add(new ToolStripSeparator());
+            _mnuContext.Items.Add(mnuVerifyChd);
+            mnuVerifyChd.Click += MnuVerifyChd;
+
+            ToolStripMenuItem mnuVerifyChdParity = new ToolStripMenuItem
+            {
+                Text = @"Verify CHD Parity (Stream vs Extract)...",
+                Tag = null
+            };
+            _mnuContext.Items.Add(mnuVerifyChdParity);
+            mnuVerifyChdParity.Click += MnuVerifyChdParity;
+
+            ToolStripMenuItem mnuExportChd = new ToolStripMenuItem
+            {
+                Text = @"Export Tracks from CHD...",
+                Tag = null
+            };
+            _mnuContext.Items.Add(mnuExportChd);
+            mnuExportChd.Click += MnuExportChd;
           
             mnuScan1.Click += MnuScan;
             mnuScan2.Click += MnuScan;
@@ -553,6 +586,111 @@ namespace ROMVault
             string tDir = _clickedTree.FullName;
             if (Directory.Exists(tDir))
                 try { Process.Start(tDir); } catch { }
+        }
+
+        /// <summary>
+        /// Context menu action: verify a CHD container against expected members for the selected node.
+        /// </summary>
+        private void MnuVerifyChd(object sender, EventArgs e)
+        {
+            RunChdVerifyFor(_clickedTree, ChdVerifyMode.Container);
+        }
+
+        /// <summary>
+        /// Context menu action: run parity verification (stream vs extract) for a CHD.
+        /// </summary>
+        private void MnuVerifyChdParity(object sender, EventArgs e)
+        {
+            RunChdVerifyFor(_clickedTree, ChdVerifyMode.Parity);
+        }
+
+        /// <summary>
+        /// Context menu action: export track files from a CHD.
+        /// </summary>
+        private void MnuExportChd(object sender, EventArgs e)
+        {
+            RunChdVerifyFor(_clickedTree, ChdVerifyMode.ExportTracks);
+        }
+
+        private enum ChdVerifyMode
+        {
+            Container,
+            Parity,
+            ExportTracks
+        }
+
+        /// <summary>
+        /// Executes a CHD operation on the currently selected tree node.
+        /// </summary>
+        /// <remarks>
+        /// Expected members are derived from the node's children (tracks/descriptors) so reports can include
+        /// mapping details relative to the active DAT.
+        /// </remarks>
+        private void RunChdVerifyFor(RvFile chdDir, ChdVerifyMode mode)
+        {
+            if (chdDir == null)
+                return;
+            string path = chdDir.FullName;
+            if (string.IsNullOrWhiteSpace(path) || !path.EndsWith(".chd", StringComparison.OrdinalIgnoreCase) || !System.IO.File.Exists(path))
+            {
+                MessageBox.Show("Please right-click a .chd file.", "RomVault", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+            try
+            {
+                List<RvFile> expected = new List<RvFile>();
+                for (int i = 0; i < chdDir.ChildCount; i++)
+                {
+                    RvFile c = chdDir.Child(i);
+                    if (c != null && c.IsFile)
+                        expected.Add(c);
+                }
+
+                switch (mode)
+                {
+                    case ChdVerifyMode.Container:
+                        using (FrmChdVerify frm = new FrmChdVerify("Verify CHD"))
+                        {
+                            frm.Show(this);
+                            frm.Refresh();
+                            int rc = ChdVerify.TryGenerateReport(path, expected, out string report, out var _);
+                            frm.SetText(report);
+                            if (rc != 0)
+                                frm.Text = "Verify CHD (errors)";
+                        }
+                        break;
+                    case ChdVerifyMode.Parity:
+                        using (FrmChdVerify frm = new FrmChdVerify("Verify CHD Parity"))
+                        {
+                            frm.Show(this);
+                            frm.Refresh();
+                            int rc = ChdVerify.TryGenerateParityReport(path, expected, out string report);
+                            frm.SetText(report);
+                            if (rc != 0)
+                                frm.Text = "Verify CHD Parity (errors)";
+                        }
+                        break;
+                    case ChdVerifyMode.ExportTracks:
+                        using (FolderBrowserDialog fbd = new FolderBrowserDialog())
+                        {
+                            fbd.Description = "Select output folder for extracted files";
+                            if (fbd.ShowDialog(this) != DialogResult.OK)
+                                return;
+
+                            int rc = ChdExport.Export(path, fbd.SelectedPath, expected, out string report);
+                            FrmChdVerify frm = new FrmChdVerify("Export Tracks from CHD");
+                            frm.SetText(report);
+                            frm.ShowDialog(this);
+                            if (rc != 0)
+                                MessageBox.Show("CHD export completed with errors. See report for details.", "CHD Export", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        }
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("CHD action failed: " + ex.Message, "RomVault", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
         private void MnuMakeFixDatClick(object sender, EventArgs e)
         {

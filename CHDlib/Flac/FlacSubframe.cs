@@ -1,7 +1,10 @@
-﻿using CHDReaderTest.Flac.FlacDeps;
+using CHDReaderTest.Flac.FlacDeps;
 
 namespace CUETools.Codecs.Flake
 {
+    /// <summary>
+    /// FLAC subframe container holding residual coding state for a single channel.
+    /// </summary>
     unsafe public class FlacSubframe
     {
         public FlacSubframe()

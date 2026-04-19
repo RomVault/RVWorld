@@ -1,5 +1,8 @@
-﻿namespace CHDSharpLib.Utils; 
+namespace CHDSharpLib.Utils; 
 
+/// <summary>
+/// CD-ROM sector helpers (ECC/EDC generation and sync/header utilities).
+/// </summary>
 public static class cdRom
 {
 
@@ -251,20 +254,15 @@ public static class cdRom
         return (data[sectorOffset + MODE_OFFSET] == 2 && offset < 4) ? (byte)0x00 : data[sectorOffset + SYNC_OFFSET + SYNC_NUM_BYTES + offset];
     }
 
-    /**
-     * @fn  void ecc_compute_bytes(const uint8_t *sector, const uint16_t *row, int rowlen, uint8_t &val1, uint8_t &val2)
-     *
-     * @brief   -------------------------------------------------
-     *            ecc_compute_bytes - calculate an ECC value (P or Q)
-     *          -------------------------------------------------.
-     *
-     * @param   sector          The sector.
-     * @param   row             The row.
-     * @param   rowlen          The rowlen.
-     * @param [in,out]  val1    The first value.
-     * @param [in,out]  val2    The second value.
-     */
-
+    /// <summary>
+    /// Computes ECC bytes (P or Q) for a sector and writes them into the sector buffer.
+    /// </summary>
+    /// <param name="data">Sector buffer.</param>
+    /// <param name="sectorOffset">Start offset of the sector within <paramref name="data"/>.</param>
+    /// <param name="row">Row definition describing which bytes participate.</param>
+    /// <param name="rowlen">Number of components in <paramref name="row"/> to process.</param>
+    /// <param name="val1Index">Index within <paramref name="data"/> where the first ECC byte is written.</param>
+    /// <param name="val2Index">Index within <paramref name="data"/> where the second ECC byte is written.</param>
     private static void ecc_compute_bytes(byte[] data, int sectorOffset, ushort[] row, int rowlen, int val1Index, int val2Index)
     {
         int component;
@@ -280,17 +278,11 @@ public static class cdRom
         data[val2Index] ^= data[val1Index];
     }
 
-    /**
-     * @fn  void ecc_generate(uint8_t *sector)
-     *
-     * @brief   -------------------------------------------------
-     *            ecc_generate - generate the P and Q ECC codes for a sector, overwriting any
-     *            existing codes
-     *          -------------------------------------------------.
-     *
-     * @param [in,out]  sector  If non-null, the sector.
-     */
-
+    /// <summary>
+    /// Generates the P and Q ECC codes for a sector, overwriting any existing codes.
+    /// </summary>
+    /// <param name="data">Sector buffer.</param>
+    /// <param name="sectorOffset">Start offset of the sector within <paramref name="data"/>.</param>
     public static void ecc_generate(byte[] data, int sectorOffset)
     {
         /* first verify P is */

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.ComponentModel;
 using Compress;
 using DATReader.DatStore;
@@ -6,6 +6,9 @@ using DATReader.Utils;
 
 namespace DATReader.DatReader
 {
+    /// <summary>
+    /// Parser for DOS-style DAT formats used by some legacy tooling.
+    /// </summary>
     public static class DatDOSReader
     {
         public static bool ReadDat(System.IO.Stream fStream, string strFilename, ReportError errorReport, out DatHeader datHeader)

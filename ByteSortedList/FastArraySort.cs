@@ -1,15 +1,26 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 
 namespace StorageList
 {
+    /// <summary>
+    /// Parallel merge-sort helper for arrays and lists, with optional pre-filtering.
+    /// </summary>
     public class FastArraySort
     {
         public delegate bool FindOn<T>(T fileGroup);
         public delegate int SortOn<T>(T fileGroup1, T fileGroup2);
 
+        /// <summary>
+        /// Filters <paramref name="arrToSort"/> using <paramref name="find"/> and sorts the remaining items.
+        /// </summary>
+        /// <typeparam name="T">Element type.</typeparam>
+        /// <param name="arrToSort">Source array.</param>
+        /// <param name="find">Predicate selecting which elements to include.</param>
+        /// <param name="sort">Comparison function.</param>
+        /// <param name="outArray">Filtered and sorted output array.</param>
         public static void SortWithFilter<T>(T[] arrToSort, FindOn<T> find, SortOn<T> sort, out T[] outArray)
         {
             List<T> outList = new List<T>();
@@ -23,6 +34,14 @@ namespace StorageList
 
             SortArray(0, outArray.Length, outArray, sort, 0);
         }
+
+        /// <summary>
+        /// Returns a sorted copy of the provided array.
+        /// </summary>
+        /// <typeparam name="T">Element type.</typeparam>
+        /// <param name="arrToSort">Source array.</param>
+        /// <param name="sortFunction">Comparison function.</param>
+        /// <returns>Sorted copy.</returns>
         public static T[] SortArray<T>(T[] arrToSort, SortOn<T> sortFunction)
         {
             T[] sortedCRC = new T[arrToSort.Length];
@@ -30,6 +49,14 @@ namespace StorageList
             SortArray(0, sortedCRC.Length, sortedCRC, sortFunction, 0);
             return sortedCRC;
         }
+
+        /// <summary>
+        /// Returns a sorted copy of the provided list.
+        /// </summary>
+        /// <typeparam name="T">Element type.</typeparam>
+        /// <param name="arrToSort">Source list.</param>
+        /// <param name="sortFunction">Comparison function.</param>
+        /// <returns>Sorted list.</returns>
         public static List<T> SortList<T>(List<T> arrToSort, SortOn<T> sortFunction)
         {
             T[] sortedCRC = arrToSort.ToArray();

@@ -1,5 +1,8 @@
-﻿namespace DATReader.DatStore
+namespace DATReader.DatStore
 {
+    /// <summary>
+    /// Header and root metadata for a parsed DAT, including the root directory tree.
+    /// </summary>
     public class DatHeader
     {
         public string Id;
@@ -30,6 +33,10 @@
 
         public DatHeader() { }
 
+        /// <summary>
+        /// Creates a copy of an existing DAT header.
+        /// </summary>
+        /// <param name="dh">Source header.</param>
         public DatHeader(DatHeader dh)
         {
             Id=dh.Id;

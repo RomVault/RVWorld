@@ -1,4 +1,4 @@
-﻿using CHDSharpLib.Utils;
+using CHDSharpLib.Utils;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.Design;
@@ -7,13 +7,27 @@ using System.Threading.Tasks;
 
 namespace CHDSharpLib
 {
+    /// <summary>
+    /// Block/hunk decoding helpers for CHD streams.
+    /// </summary>
+    /// <remarks>
+    /// This layer is responsible for:
+    /// - tracking repeated hunks (<see cref="compression_type.COMPRESSION_SELF"/>) to avoid redundant decompression
+    /// - selecting the correct block reader per codec slot
+    /// - performing per-block CRC verification when present
+    /// </remarks>
     internal static class CHDBlockRead
     {
-        // search for all COMPRESSION_SELF block, and increase the counter of the block it is referencing.
-        // the first time the referenced block is decompressed a copy of its data is kept.
-        // this copy is then used (instead of re-decompressing.) until the use count returns to zero
-        // at which time the backup copy if removed.
-
+        /// <summary>
+        /// Resolves <see cref="compression_type.COMPRESSION_SELF"/> links and updates per-source reuse counts.
+        /// </summary>
+        /// <param name="chd">CHD header containing the decoded block map.</param>
+        /// <param name="consoleOut">Optional logger. When non-null, emits summary stats about map composition.</param>
+        /// <remarks>
+        /// For each self-referencing entry, this links <see cref="mapentry.selfMapEntry"/> to its source entry and
+        /// increments the source entry's <see cref="mapentry.UseCount"/>. The decompressor uses this to cache decoded
+        /// blocks that are referenced repeatedly.
+        /// </remarks>
         internal static void FindRepeatedBlocks(CHDHeader chd, Message consoleOut)
         {
             int totalFound = 0;
@@ -85,6 +99,12 @@ namespace CHDSharpLib
             }
         }
 
+        /// <summary>
+        /// Selects a subset of repeated blocks to keep cached based on estimated decompression cost and reuse count.
+        /// </summary>
+        /// <param name="chd">CHD header containing the decoded block map.</param>
+        /// <param name="blocksToKeep">Maximum number of repeated source blocks to keep cached.</param>
+        /// <param name="consoleOut">Optional logger for summary output.</param>
         internal static void KeepMostRepeatedBlocks(CHDHeader chd, int blocksToKeep, Message consoleOut)
         {
             List<mapentry> mapentries = new List<mapentry>();
@@ -136,6 +156,13 @@ namespace CHDSharpLib
                 me.selfMapEntry = null;
             });
         }
+
+        /// <summary>
+        /// Estimates relative decompression cost weight for a block based on codec and block characteristics.
+        /// </summary>
+        /// <param name="chd">CHD header containing codec slots.</param>
+        /// <param name="me">Map entry describing the block to decode.</param>
+        /// <returns>Relative weight where higher means more expensive to decode.</returns>
         internal static int GetWeigth(CHDHeader chd, mapentry me)
         {
             if (me.comptype == compression_type.COMPRESSION_NONE)
@@ -160,6 +187,10 @@ namespace CHDSharpLib
             }
         }
 
+        /// <summary>
+        /// Builds the per-codec reader table (<see cref="CHDHeader.chdReader"/>) for the supplied header.
+        /// </summary>
+        /// <param name="chd">Parsed CHD header.</param>
         internal static void FindBlockReaders(CHDHeader chd)
         {
             chd.chdReader = new CHDReader[chd.compression.Length];
@@ -185,6 +216,16 @@ namespace CHDSharpLib
             }
         }
 
+        /// <summary>
+        /// Decodes a single CHD block/hunk into the provided output buffer.
+        /// </summary>
+        /// <param name="mapentry">Map entry describing the block.</param>
+        /// <param name="arrPool">Array pool used for temporary and cached buffers.</param>
+        /// <param name="compression">Codec reader table indexed by <see cref="compression_type"/>.</param>
+        /// <param name="codec">Per-operation codec state container.</param>
+        /// <param name="buffOut">Destination buffer for decoded output.</param>
+        /// <param name="buffOutLength">Expected decoded output length, in bytes.</param>
+        /// <returns>A <see cref="chd_error"/> indicating success or failure.</returns>
         internal static chd_error ReadBlock(mapentry mapentry, ArrayPool arrPool, CHDReader[] compression, CHDCodec codec, byte[] buffOut, int buffOutLength)
         {
             bool checkCrc = true;

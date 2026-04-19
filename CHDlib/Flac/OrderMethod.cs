@@ -1,5 +1,8 @@
-﻿namespace CUETools.Codecs.Flake
+namespace CUETools.Codecs.Flake
 {
+    /// <summary>
+    /// Strategy used to select LPC order candidates.
+    /// </summary>
     public enum OrderMethod
     {
         /// <summary>

@@ -1,8 +1,11 @@
-﻿using System;
+using System;
 using System.IO;
 
 namespace RomVaultCore.Utils
 {
+    /// <summary>
+    /// Byte-array helper and extension methods used for hash IO and comparisons.
+    /// </summary>
     public static class ArrByte
     {
         public static void WriteByteArray(this BinaryWriter bw, byte[] b)

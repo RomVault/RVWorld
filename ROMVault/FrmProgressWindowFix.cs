@@ -1,4 +1,4 @@
-﻿/******************************************************
+/******************************************************
  *     ROMVault3 is written by Gordon J.              *
  *     Contact gordon@romvault.com                    *
  *     Copyright 2025                                 *
@@ -14,6 +14,9 @@ using RomVaultCore.FixFile;
 
 namespace ROMVault
 {
+    /// <summary>
+    /// Progress window specialized for Fix workflows, including paging of the fix report grid.
+    /// </summary>
     public partial class FrmProgressWindowFix : Form
     {
         private readonly Form _parentForm;
@@ -148,7 +151,7 @@ namespace ROMVault
 
             if (InvokeRequired)
             {
-                BeginInvoke(new MethodInvoker(() => BgwProgressChanged(e)));
+                BeginInvoke(new System.Windows.Forms.MethodInvoker(() => BgwProgressChanged(e)));
                 return;
             }
 
@@ -195,7 +198,7 @@ namespace ROMVault
         {
             if (InvokeRequired)
             {
-                BeginInvoke(new MethodInvoker(BgwRunWorkerCompleted));
+                BeginInvoke(new System.Windows.Forms.MethodInvoker(BgwRunWorkerCompleted));
                 return;
             }
 

@@ -1,4 +1,4 @@
-﻿using Compress;
+using Compress;
 using Compress.SevenZip;
 using Compress.StructuredZip;
 using RomVaultCore.FixFile.Utils;
@@ -7,9 +7,27 @@ using RVIO;
 
 namespace RomVaultCore.FixFile
 {
+    /// <summary>
+    /// Helper functions used by the archive fix pipeline.
+    /// </summary>
+    /// <remarks>
+    /// These helpers are used when rebuilding archives (ZIP/7z) as part of fixing:
+    /// - opening output archives with the right structure
+    /// - estimating uncompressed size for solid compression planning
+    /// - moving unrecoverable archives to the Corrupt area in ToSort
+    /// </remarks>
     public static class FixAZipFunctions
     {
 
+        /// <summary>
+        /// Opens an output archive for writing, using the correct target structure and compression settings.
+        /// </summary>
+        /// <param name="fixZip">The source archive being fixed.</param>
+        /// <param name="UncompressedSize">Estimated uncompressed size of the output archive.</param>
+        /// <param name="outputZipFilename">Temporary output filename to create.</param>
+        /// <param name="outputFixZip">Opened archive writer.</param>
+        /// <param name="errorMessage">Error message on failure.</param>
+        /// <returns>A <see cref="ReturnCode"/>.</returns>
         public static ReturnCode OpenOutputZip(RvFile fixZip, ulong UncompressedSize, string outputZipFilename, out ICompress outputFixZip, out string errorMessage)
         {
             outputFixZip = null;
@@ -50,7 +68,9 @@ namespace RomVaultCore.FixFile
             return ReturnCode.Good;
         }
 
-
+        /// <summary>
+        /// Returns the total uncompressed size of members that will be present in the rebuilt archive.
+        /// </summary>
         public static ulong GetUncompressedSize(RvFile fixZip)
         {
             ulong uncompressedSize = 0;
@@ -76,6 +96,9 @@ namespace RomVaultCore.FixFile
             return uncompressedSize;
         }
 
+        /// <summary>
+        /// Returns the total uncompressed size of members that are being moved to ToSort.
+        /// </summary>
         public static ulong GetMoveToSortUncompressedSize(RvFile fixZip)
         {
             ulong uncompressedSize = 0;
@@ -96,7 +119,9 @@ namespace RomVaultCore.FixFile
             return uncompressedSize;
         }
 
-
+        /// <summary>
+        /// Moves a corrupt archive to the ToSort\\Corrupt folder and updates the DB tree accordingly.
+        /// </summary>
         public static ReturnCode MoveZipToCorrupt(RvFile fixZip, out string errorMessage)
         {
             errorMessage = "";

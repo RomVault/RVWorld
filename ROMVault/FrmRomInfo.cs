@@ -1,4 +1,4 @@
-﻿using RomVaultCore.RvDB;
+using RomVaultCore.RvDB;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -11,6 +11,9 @@ using System.Windows.Forms;
 
 namespace ROMVault
 {
+    /// <summary>
+    /// Debug/info window displaying the file-group members for a selected ROM.
+    /// </summary>
     public partial class FrmRomInfo : Form
     {
         public FrmRomInfo()

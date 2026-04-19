@@ -1,8 +1,16 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.IO;
 
 namespace FileScanner;
 
+/// <summary>
+/// Detects container/headered file types by inspecting magic bytes at known offsets.
+/// </summary>
+/// <remarks>
+/// This is used by the scanning pipeline to identify cases where the same underlying payload can be represented
+/// with different leading headers (for example: certain ROM formats). For CHDs, this also provides a fast signature
+/// check for the container magic.
+/// </remarks>
 public static class FileHeaderReader
 {
     private static readonly List<Detector> Detectors;
@@ -50,6 +58,11 @@ public static class FileHeaderReader
         };
     }
 
+    /// <summary>
+    /// Returns the header length (in bytes) for a given detected header type.
+    /// </summary>
+    /// <param name="FType">Header file type.</param>
+    /// <returns>Header length in bytes, or 0 if the type is not recognized.</returns>
     public static int GetFileHeaderLength(HeaderFileType FType)
     {
         foreach (Detector d in Detectors)
@@ -61,6 +74,11 @@ public static class FileHeaderReader
         return 0;
     }
 
+    /// <summary>
+    /// Resolves a <see cref="HeaderFileType"/> from a textual header identifier.
+    /// </summary>
+    /// <param name="header">Header id string.</param>
+    /// <returns>Detected header type, or <see cref="HeaderFileType.Nothing"/> when unknown.</returns>
     public static HeaderFileType GetFileTypeFromHeader(string header)
     {
         if (string.IsNullOrWhiteSpace(header))
@@ -82,6 +100,11 @@ public static class FileHeaderReader
         return HeaderFileType.Nothing;
     }
 
+    /// <summary>
+    /// Returns true when a header type can produce an alternate "headerless" hash representation.
+    /// </summary>
+    /// <param name="fileType">Detected file type.</param>
+    /// <returns>True when alternate header hashing is applicable; otherwise false.</returns>
     public static bool AltHeaderFile(HeaderFileType fileType)
     {
         HeaderFileType header = fileType & HeaderFileType.HeaderMask;
@@ -97,6 +120,12 @@ public static class FileHeaderReader
                (header == HeaderFileType.CHD);
     }
 
+    /// <summary>
+    /// Detects a header type from the current position of a readable stream.
+    /// </summary>
+    /// <param name="sIn">Readable stream.</param>
+    /// <param name="offset">Detected header length in bytes.</param>
+    /// <returns>Detected header type.</returns>
     public static HeaderFileType GetType(Stream sIn, out int offset)
     {
         int headerSize = 128;
@@ -112,6 +141,13 @@ public static class FileHeaderReader
         return GetType(buffer, headerSize, out offset);
     }
 
+    /// <summary>
+    /// Detects a header type from a byte buffer.
+    /// </summary>
+    /// <param name="buffer">Header buffer.</param>
+    /// <param name="headerSize">Number of valid bytes in <paramref name="buffer"/>.</param>
+    /// <param name="offset">Detected header length in bytes.</param>
+    /// <returns>Detected header type.</returns>
     public static HeaderFileType GetType(byte[] buffer, int headerSize, out int offset)
     {
         foreach (Detector detector in Detectors)
@@ -148,6 +184,9 @@ public static class FileHeaderReader
         return true;
     }
 
+    /// <summary>
+    /// Header detector rule that maps a magic byte pattern to a <see cref="HeaderFileType"/>.
+    /// </summary>
     private class Detector
     {
         public readonly HeaderFileType FType;
@@ -167,6 +206,9 @@ public static class FileHeaderReader
         }
     }
 
+    /// <summary>
+    /// Describes a byte pattern at a fixed offset within a header buffer.
+    /// </summary>
     private class Data
     {
         public readonly int Offset;

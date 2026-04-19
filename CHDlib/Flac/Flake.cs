@@ -22,6 +22,9 @@ using System;
 
 namespace CUETools.Codecs.Flake
 {
+	/// <summary>
+	/// Constants and lookup helpers for the CUETools FLAC implementation.
+	/// </summary>
 	public class FlakeConstants
 	{
 		public const int MAX_BLOCKSIZE = 65535;

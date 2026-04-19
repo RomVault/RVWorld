@@ -1,9 +1,12 @@
-﻿using System;
+using System;
 using System.Xml;
 using DATReader.DatStore;
 
 namespace DATReader.Utils
 {
+    /// <summary>
+    /// Value parsing helpers for DAT and XML fields (hex numbers, yes/no flags, hashes).
+    /// </summary>
     public static class VarFix
     {
         private const string ValidHexChar = "0123456789abcdef";

@@ -1,8 +1,10 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Reflection;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.Drawing;
 using RomVaultCore;
 using RomVaultCore.FixFile.FixAZipCore;
 using RomVaultCore.Utils;
@@ -21,11 +23,27 @@ namespace ROMVault
         [STAThread]
         private static void Main()
         {
+            AppDomain.CurrentDomain.UnhandledException += (s, e) =>
+            {
+                if (e.ExceptionObject is Exception ex)
+                    ReportError.UnhandledExceptionHandler(ex);
+                else
+                    ReportError.UnhandledExceptionHandler(e.ExceptionObject?.ToString() ?? "Unknown unhandled exception");
+            };
+
+            TaskScheduler.UnobservedTaskException += (s, e) =>
+            {
+                ReportError.UnhandledExceptionHandler(e.Exception);
+                e.SetObserved();
+            };
+
             strVersion = $"{Version.Major}.{Version.Minor}.{Version.Build}";
             if (Version.Revision > 0)
                 strVersion += $" WIP{Version.Revision}";
 
-
+            // TODO: In a perfect world we want HighDpi but this requires alot of layout changes to make it look nice, or use Avalonia as the chance :p
+            Application.SetHighDpiMode(HighDpiMode.DpiUnaware);
+            Application.SetDefaultFont(new Font(new FontFamily("Microsoft Sans Serif"), 8.25f));
             Application.SetCompatibleTextRenderingDefault(false);
 
             string appName = Assembly.GetEntryAssembly().Location;
@@ -54,10 +72,7 @@ namespace ROMVault
          
             Dark.dark.darkEnabled = Settings.rvSettings.Darkness;
 
-            if (!Settings.rvSettings.Darkness)
-            {
-                Application.EnableVisualStyles();
-            }
+            Application.EnableVisualStyles();
 #if !DEBUG
             Application.ThreadException += ReportError.UnhandledExceptionHandler;
 #endif

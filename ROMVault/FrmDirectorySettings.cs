@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Windows.Forms;
@@ -13,6 +13,9 @@ using RomVaultCore.Utils;
 
 namespace ROMVault
 {
+    /// <summary>
+    /// UI for editing per-directory scan and archive behavior rules (merge/split, compression type, CHD options).
+    /// </summary>
     public partial class FrmDirectorySettings : Form
     {
         private Color _cMagenta = Color.FromArgb(255, 214, 255);
@@ -31,6 +34,7 @@ namespace ROMVault
             cboFileType.Items.Add("Uncompressed");
             cboFileType.Items.Add("Zip");
             cboFileType.Items.Add("SevenZip");
+            cboFileType.Items.Add("CHD");
             cboFileType.Items.Add("Mixed (Archive as File)");
 
             cboMergeType.Items.Clear();
@@ -57,6 +61,16 @@ namespace ROMVault
             cboHeaderType.Items.Add("Optional");
             cboHeaderType.Items.Add("Headered");
             cboHeaderType.Items.Add("Headerless");
+
+            cboChdAudioTransform.Items.Clear();
+            cboChdAudioTransform.Items.Add("None (Strict)");
+            cboChdAudioTransform.Items.Add("Allow Swap16 (Audio CD)");
+            cboChdAudioTransform.Items.Add("Allow RAW to WAV");
+
+            cboChdLayoutStrictness.Items.Clear();
+            cboChdLayoutStrictness.Items.Add("Normal");
+            cboChdLayoutStrictness.Items.Add("Strict (No fallback)");
+            cboChdLayoutStrictness.Items.Add("Relaxed (Fuzzy)");
 
             tooltip = new ToolTip
             {
@@ -118,7 +132,12 @@ namespace ROMVault
                     return t;
             }
 
-            return new DatRule { DirKey = dLocation, IgnoreFiles = new List<string>() };
+            return new DatRule
+            {
+                DirKey = dLocation,
+                IgnoreFiles = new List<string>(),
+                ChdStrictCueGdi = Settings.rvSettings?.ChdStrictCueGdi ?? false
+            };
         }
 
         private void SetCompressionTypeFromArchive()
@@ -128,15 +147,19 @@ namespace ROMVault
             {
                 case 0:
                     chkFileTypeOverride.Enabled = true;
+                    chkSingleArchive.Enabled = true;
                     cboCompression.Enabled = false;
                     chkConvertWhenFixing.Enabled = false;
+                    cboFilterType.Enabled = true;
                     break;
                 case 1:
                     chkFileTypeOverride.Enabled = true;
+                    chkSingleArchive.Enabled = true;
                     cboCompression.Items.Add("Deflate - Trrntzip");
                     cboCompression.Items.Add("ZSTD");
                     cboCompression.Enabled = true;
                     chkConvertWhenFixing.Enabled = true;
+                    cboFilterType.Enabled = true;
                     if (_rule.CompressionSub == ZipStructure.ZipTrrnt)
                         cboCompression.SelectedIndex = 0;
                     else if (_rule.CompressionSub == ZipStructure.ZipZSTD)
@@ -146,12 +169,14 @@ namespace ROMVault
                     break;
                 case 2:
                     chkFileTypeOverride.Enabled = true;
+                    chkSingleArchive.Enabled = true;
                     cboCompression.Items.Add("LZMA Solid - rv7z");
                     cboCompression.Items.Add("LZMA Non-Solid");
                     cboCompression.Items.Add("ZSTD Solid");
                     cboCompression.Items.Add("ZSTD Non-Solid");
                     cboCompression.Enabled = true;
                     chkConvertWhenFixing.Enabled = true;
+                    cboFilterType.Enabled = true;
                     if (_rule.CompressionSub == ZipStructure.SevenZipSLZMA)
                         cboCompression.SelectedIndex = 0;
                     else if (_rule.CompressionSub == ZipStructure.SevenZipNLZMA)
@@ -164,9 +189,30 @@ namespace ROMVault
                         cboCompression.SelectedIndex = 0;
                     break;
                 case 3:
+                    chkFileTypeOverride.Enabled = true;
+                    chkSingleArchive.Enabled = false;
+                    cboCompression.Items.Add("Auto (DatVault rule)");
+                    cboCompression.Items.Add("Normal (zstd)");
+                    cboCompression.Items.Add("CD (cdzs,cdzl,cdfl)");
+                    cboCompression.Items.Add("DVD (zstd,zlib,huff,flac)");
+                    cboCompression.Items.Add("PSP (DVD + -hs 2048)");
+                    cboCompression.Items.Add("Dreamcast (gdi required)");
+                    cboCompression.Enabled = true;
+                    chkConvertWhenFixing.Enabled = true;
+                    if (cboFilterType.SelectedIndex == (int)FilterType.CHDsOnly)
+                        cboFilterType.SelectedIndex = (int)FilterType.KeepAll;
+                    cboFilterType.Enabled = true;
+                    int chdIndex = (int)_rule.ChdCompressionType;
+                    if (chdIndex < 0 || chdIndex >= cboCompression.Items.Count)
+                        chdIndex = 0;
+                    cboCompression.SelectedIndex = chdIndex;
+                    break;
+                case 4:
                     chkFileTypeOverride.Enabled = false;
+                    chkSingleArchive.Enabled = true;
                     cboCompression.Enabled = false;
                     chkConvertWhenFixing.Enabled = false;
+                    cboFilterType.Enabled = true;
                     break;
             }
         }
@@ -181,7 +227,7 @@ namespace ROMVault
         {
             txtDATLocation.Text = _rule.DirKey;
 
-            cboFileType.SelectedIndex = _rule.Compression == FileType.FileOnly ? 3 : (int)_rule.Compression - 1;
+            cboFileType.SelectedIndex = _rule.Compression == FileType.FileOnly ? 4 : _rule.Compression == FileType.CHD ? 3 : (int)_rule.Compression - 1;
             chkFileTypeOverride.Checked = _rule.CompressionOverrideDAT;
 
             SetCompressionTypeFromArchive();
@@ -191,11 +237,15 @@ namespace ROMVault
             chkMergeTypeOverride.Checked = _rule.MergeOverrideDAT;
 
             cboFilterType.SelectedIndex = (int)_rule.Filter;
+            if (_rule.DiscArchiveAsCHD && cboFilterType.SelectedIndex == (int)FilterType.CHDsOnly)
+                cboFilterType.SelectedIndex = (int)FilterType.KeepAll;
 
             chkMultiDatDirOverride.Checked = _rule.MultiDATDirOverride;
             chkUseDescription.Checked = _rule.UseDescriptionAsDirName;
             chkUseIdForName.Checked = _rule.UseIdForName;
-
+            chkChdStrict.Checked = _rule.ChdStrictCueGdi;
+            cboChdAudioTransform.SelectedIndex = (int)_rule.ChdAudioTransform;
+            cboChdLayoutStrictness.SelectedIndex = (int)_rule.ChdLayoutStrictness;
 
             chkSingleArchive.Checked = _rule.SingleArchive;
 
@@ -215,6 +265,15 @@ namespace ROMVault
             chkAddCategorySubDirs.Checked = _rule.AddCategorySubDirs;
             if (_rule.AddCategorySubDirs)
                 SetCategoryList();
+
+            bool isGlobalDatRule = string.Equals(_rule.DirKey, "RomVault", StringComparison.OrdinalIgnoreCase);
+            chkUseDescription.Visible = isGlobalDatRule;
+            chkChdStrict.Visible = isGlobalDatRule;
+
+            lblChdAudioTransform.Visible = false;
+            cboChdAudioTransform.Visible = false;
+            lblChdLayoutStrictness.Visible = false;
+            cboChdLayoutStrictness.Visible = false;
         }
 
 
@@ -233,7 +292,9 @@ namespace ROMVault
                 int row = DataGridGames.Rows.Count - 1;
                 DataGridGames.Rows[row].Tag = t;
                 DataGridGames.Rows[row].Cells[0].Value = t.DirKey;
-                DataGridGames.Rows[row].Cells[1].Value = t.CompressionSub;
+                DataGridGames.Rows[row].Cells[1].Value = t.DiscArchiveAsCHD
+                    ? (Settings.rvSettings.ChdKeepCueGdi ? $"CHD:{t.ChdCompressionType} (+cue/gdi)" : $"CHD:{t.ChdCompressionType}")
+                    : t.CompressionSub.ToString();
                 DataGridGames.Rows[row].Cells[2].Value = t.Merge;
                 DataGridGames.Rows[row].Cells[3].Value = t.SingleArchive ? rvImages1.Tick : rvImages1.unTick;
 
@@ -287,7 +348,7 @@ namespace ROMVault
                 if (cboCompression.SelectedIndex == 3)
                     return ZipStructure.SevenZipNZSTD;
             }
-            else if (cboFileType.SelectedIndex == 3)
+            else if (cboFileType.SelectedIndex == 3 || cboFileType.SelectedIndex == 4)
                 return ZipStructure.None;
 
             return ZipStructure.None;
@@ -295,69 +356,90 @@ namespace ROMVault
 
         private void BtnApplyClick(object sender, EventArgs e)
         {
-            ChangesMade = true;
-
-            _rule.Compression = cboFileType.SelectedIndex == 3 ? FileType.FileOnly : (FileType)cboFileType.SelectedIndex + 1;
-            _rule.CompressionOverrideDAT = chkFileTypeOverride.Checked;
-            _rule.CompressionSub = ReadFromCheckBoxes();
-            _rule.ConvertWhileFixing = chkConvertWhenFixing.Checked;
-            _rule.Merge = (MergeType)cboMergeType.SelectedIndex;
-            _rule.MergeOverrideDAT = chkMergeTypeOverride.Checked;
-            _rule.Filter = (FilterType)cboFilterType.SelectedIndex;
-            _rule.HeaderType = (HeaderType)cboHeaderType.SelectedIndex;
-            _rule.SingleArchive = chkSingleArchive.Checked;
-            _rule.SubDirType = (RemoveSubType)cboDirType.SelectedIndex;
-            _rule.MultiDATDirOverride = chkMultiDatDirOverride.Checked;
-            _rule.UseDescriptionAsDirName = chkUseDescription.Checked;
-            _rule.UseIdForName = chkUseIdForName.Checked;
-
-            _rule.CompleteOnly = chkCompleteOnly.Checked;
-
-            _rule.AddCategorySubDirs = chkAddCategorySubDirs.Checked;
-
-
-            string strtxt = textBox1.Text;
-            strtxt = strtxt.Replace("\r", "");
-            string[] strsplit = strtxt.Split('\n');
-
-            _rule.IgnoreFiles = new List<string>(strsplit);
-            int i;
-            for (i = 0; i < _rule.IgnoreFiles.Count; i++)
+            try
             {
-                _rule.IgnoreFiles[i] = _rule.IgnoreFiles[i].Trim();
-                if (string.IsNullOrEmpty(_rule.IgnoreFiles[i]))
-                {
-                    _rule.IgnoreFiles.RemoveAt(i);
-                    i--;
-                }
-            }
+                ChangesMade = true;
 
-            bool updatingRule = false;
-            for (i = 0; i < Settings.rvSettings.DatRules.Count; i++)
+                _rule.Compression = cboFileType.SelectedIndex == 4 ? FileType.FileOnly : cboFileType.SelectedIndex == 3 ? FileType.CHD : (FileType)cboFileType.SelectedIndex + 1;
+                _rule.CompressionOverrideDAT = chkFileTypeOverride.Checked;
+                _rule.CompressionSub = ReadFromCheckBoxes();
+                _rule.ConvertWhileFixing = chkConvertWhenFixing.Checked;
+                _rule.DiscArchiveAsCHD = cboFileType.SelectedIndex == 3;
+                if (_rule.DiscArchiveAsCHD)
+                    _rule.ChdCompressionType = (ChdCompressionType)Math.Max(0, cboCompression.SelectedIndex);
+                _rule.Merge = (MergeType)cboMergeType.SelectedIndex;
+                _rule.MergeOverrideDAT = chkMergeTypeOverride.Checked;
+                _rule.Filter = (FilterType)cboFilterType.SelectedIndex;
+                if (_rule.DiscArchiveAsCHD && _rule.Filter == FilterType.CHDsOnly)
+                    _rule.Filter = FilterType.KeepAll;
+                _rule.HeaderType = (HeaderType)cboHeaderType.SelectedIndex;
+                _rule.SingleArchive = chkSingleArchive.Checked;
+                _rule.SubDirType = (RemoveSubType)cboDirType.SelectedIndex;
+                _rule.MultiDATDirOverride = chkMultiDatDirOverride.Checked;
+                bool isGlobalDatRule = string.Equals(_rule.DirKey, "RomVault", StringComparison.OrdinalIgnoreCase);
+                if (isGlobalDatRule)
+                    _rule.UseDescriptionAsDirName = chkUseDescription.Checked;
+                _rule.UseIdForName = chkUseIdForName.Checked;
+                if (isGlobalDatRule)
+                {
+                    _rule.ChdStrictCueGdi = chkChdStrict.Checked;
+                    Settings.rvSettings.ChdStrictCueGdi = chkChdStrict.Checked;
+                }
+
+                _rule.CompleteOnly = chkCompleteOnly.Checked;
+
+                _rule.AddCategorySubDirs = chkAddCategorySubDirs.Checked;
+
+
+                string strtxt = textBox1.Text;
+                strtxt = strtxt.Replace("\r", "");
+                string[] strsplit = strtxt.Split('\n');
+
+                _rule.IgnoreFiles = new List<string>(strsplit);
+                int i;
+                for (i = 0; i < _rule.IgnoreFiles.Count; i++)
+                {
+                    _rule.IgnoreFiles[i] = _rule.IgnoreFiles[i].Trim();
+                    if (string.IsNullOrEmpty(_rule.IgnoreFiles[i]))
+                    {
+                        _rule.IgnoreFiles.RemoveAt(i);
+                        i--;
+                    }
+                }
+
+                bool updatingRule = false;
+                for (i = 0; i < Settings.rvSettings.DatRules.Count; i++)
+                {
+                    if (Settings.rvSettings.DatRules[i] == _rule)
+                    {
+                        updatingRule = true;
+                        break;
+                    }
+
+                    if (string.Compare(Settings.rvSettings.DatRules[i].DirKey, _rule.DirKey, StringComparison.Ordinal) > 0)
+                    {
+                        break;
+                    }
+                }
+
+                if (!updatingRule)
+                    Settings.rvSettings.DatRules.Insert(i, _rule);
+
+                Settings.rvSettings.SetRegExRules();
+
+                UpdateGrid();
+                Settings.WriteConfig(Settings.rvSettings);
+                DatUpdate.CheckAllDats(DB.DirRoot.Child(0), _rule.DirKey);
+
+                if (_displayType)
+                    Close();
+            }
+            catch (Exception ex)
             {
-                if (Settings.rvSettings.DatRules[i] == _rule)
-                {
-                    updatingRule = true;
-                    break;
-                }
-
-                if (string.Compare(Settings.rvSettings.DatRules[i].DirKey, _rule.DirKey, StringComparison.Ordinal) > 0)
-                {
-                    break;
-                }
+                ReportError.UnhandledExceptionHandler(ex);
+                string logPath = string.IsNullOrWhiteSpace(ReportError.LastCrashLogPath) ? "(no log written)" : ReportError.LastCrashLogPath;
+                MessageBox.Show($"Error applying directory settings.\r\n\r\n{ex.Message}\r\n\r\nLog:\r\n{logPath}", "RomVault", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
-
-            if (!updatingRule)
-                Settings.rvSettings.DatRules.Insert(i, _rule);
-
-            Settings.rvSettings.SetRegExRules();
-
-            UpdateGrid();
-            Settings.WriteConfig(Settings.rvSettings);
-            DatUpdate.CheckAllDats(DB.DirRoot.Child(0), _rule.DirKey);
-
-            if (_displayType)
-                Close();
 
         }
         private void BtnDeleteClick(object sender, EventArgs e)

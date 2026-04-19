@@ -1,4 +1,4 @@
-﻿using Compress;
+using Compress;
 using SortMethods;
 using System;
 using System.Collections.Generic;
@@ -10,6 +10,14 @@ namespace DATReader.DatStore
     // So for this reason UnSet file lists also use the _childrenNameIndex to store a sorted index.
     // So the List<DatBase> _children is still the original DAT order, but the List<int> _childrenNameIndex gives a quick way to search for the items.
 
+    /// <summary>
+    /// Directory node within a parsed DAT tree.
+    /// </summary>
+    /// <remarks>
+    /// Child ordering and lookup behavior depends on <see cref="DatBase.FileType"/>:
+    /// - <see cref="FileType.UnSet"/> preserves original DAT order while maintaining a separate name index for fast lookup
+    /// - directory/archive types maintain a sorted child list
+    /// </remarks>
     public class DatDir : DatBase
     {
 
@@ -227,6 +235,13 @@ namespace DATReader.DatStore
                 case FileType.SevenZip:
                     {
                         int res = Sorters.Trrnt7ZipStringCompare(lName.Name, dBase.Name);
+                        if (res != 0)
+                            return res;
+                        break;
+                    }
+                case FileType.CHD:
+                    {
+                        int res = Sorters.DirectoryNameCompareCase(lName.Name, dBase.Name);
                         if (res != 0)
                             return res;
                         break;

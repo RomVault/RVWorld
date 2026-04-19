@@ -1,4 +1,4 @@
-﻿/******************************************************
+/******************************************************
  *     ROMVault3 is written by Gordon J.              *
  *     Contact gordon@romvault.com                    *
  *     Copyright 2025                                 *
@@ -14,6 +14,9 @@ using System.Linq;
 
 namespace RomVaultCore.ReadDat
 {
+    /// <summary>
+    /// Converts an <see cref="RvFile"/> subtree into an external <see cref="DatHeader"/> representation with optional filtering.
+    /// </summary>
     public class ExternalDatConverterTo
     {
         public bool useHeader = true;

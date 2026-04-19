@@ -1,4 +1,4 @@
-﻿namespace ROMVault
+namespace ROMVault
 {
     partial class FrmMain
     {
@@ -848,6 +848,7 @@
             this.GameGrid.VirtualMode = true;
             this.GameGrid.CellFormatting += new System.Windows.Forms.DataGridViewCellFormattingEventHandler(this.GameGridCellFormatting);
             this.GameGrid.CellValueNeeded += new System.Windows.Forms.DataGridViewCellValueEventHandler(this.GameGridCellValueNeeded);
+            this.GameGrid.CellToolTipTextNeeded += new System.Windows.Forms.DataGridViewCellToolTipTextNeededEventHandler(this.GameGridCellToolTipTextNeeded);
             this.GameGrid.ColumnHeaderMouseClick += new System.Windows.Forms.DataGridViewCellMouseEventHandler(this.GameGridColumnHeaderMouseClick);
             this.GameGrid.SelectionChanged += new System.EventHandler(this.GameGridSelectionChanged);
             this.GameGrid.MouseDoubleClick += new System.Windows.Forms.MouseEventHandler(this.GameGridMouseDoubleClick);

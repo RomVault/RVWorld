@@ -1,0 +1,33 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="589" d:DesignHeight="583"
+        Width="589" Height="583"
+        x:Class="ROMVault.Avalonia.Views.ShowErrorWindow"
+        Title="RomVault Error report"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False"
+        SystemDecorations="Full">
+    <DockPanel Margin="16">
+        <Border DockPanel.Dock="Bottom"
+                Background="{DynamicResource SurfaceBackgroundBrush}"
+                BorderBrush="{DynamicResource SurfaceBorderBrush}"
+                BorderThickness="0,1,0,0"
+                Padding="12"
+                CornerRadius="8">
+            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                <TextBlock Grid.Column="0" Name="label1" Text="Sending Error Message to RomVault.Com" Classes="Muted" VerticalAlignment="Center"/>
+                <Button Grid.Column="1" Name="button1" Content="Exit" Width="117" Click="Button1_Click"/>
+            </Grid>
+        </Border>
+
+        <Border Classes="Card" Padding="12">
+            <TextBox Name="textBox1"
+                     AcceptsReturn="True"
+                     TextWrapping="NoWrap"
+                     ScrollViewer.VerticalScrollBarVisibility="Auto"
+                     ScrollViewer.HorizontalScrollBarVisibility="Auto"/>
+        </Border>
+    </DockPanel>
+</Window>

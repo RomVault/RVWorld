@@ -1,5 +1,4 @@
-﻿using CHDSharpLib.Utils;
-using System;
+using CHDSharpLib.Utils;
 using System.Collections.Generic;
 using System.IO;
 using System.Security.Cryptography;
@@ -7,22 +6,29 @@ using System.Text;
 
 namespace CHDSharpLib;
 
+/// <summary>
+/// CHD metadata reader and metadata-hash verification logic.
+/// </summary>
 internal static class CHDMetaData
 {
-    internal static uint CHD_MDFLAGS_CHECKSUM = 0x01;        // indicates data is checksummed
+    /// <summary>
+    /// Metadata flag indicating the entry participates in the metadata checksum chain.
+    /// </summary>
+    internal static uint CHD_MDFLAGS_CHECKSUM = 0x01;
 
+    /// <summary>
+    /// Reads CHD metadata entries and, when a metadata-aware header SHA1 is present, verifies the metadata chain.
+    /// </summary>
+    /// <param name="file">Readable CHD stream.</param>
+    /// <param name="chd">Parsed CHD header containing metadata offsets and hashes.</param>
+    /// <param name="consoleOut">Optional logger for metadata diagnostics.</param>
+    /// <returns>A <see cref="chd_error"/> indicating success or failure.</returns>
     internal static chd_error ReadMetaData(Stream file, CHDHeader chd, Message consoleOut)
     {
         using BinaryReader br = new BinaryReader(file, Encoding.UTF8, true);
 
-        // List<byte[]>metaHashes contains the byte data that is hashed below to validate the meta data
-        // each metaHash is 24 bytes:
-        // 0-3  : is the byte data for the metaTag
-        // 4-23 : is the SHA1 of the metaData
-
         List<byte[]> metaHashes = new List<byte[]>();
 
-        // loop over the metadata, until metaoffset=0
         while (chd.metaoffset != 0)
         {
             file.Seek((long)chd.metaoffset, SeekOrigin.Begin);
@@ -44,25 +50,17 @@ internal static class CHDMetaData
                     consoleOut?.Invoke($"Data: Binary Data Length {metaData.Length}");
             }
 
-            // take the 4 byte metaTag, and the metaData
-            // SHA1 the metaData to 20 byte SHA1
-            // metadata_hash return these 24 bytes in a byte[24]
             if ((metaFlags & CHD_MDFLAGS_CHECKSUM) != 0)
                 metaHashes.Add(metadata_hash(metaTag, metaData));
 
-            // set location of next meta data entry in the CHD (set to 0 if finished.)
             chd.metaoffset = metaNext;
         }
 
         if (chd.sha1 == null)
             return chd_error.CHDERR_NONE;
 
-        // binary sort the metaHashes
         metaHashes.Sort(Util.ByteArrCompare);
 
-        // build the final SHA1
-        // starting with the 20 byte rawsha1 from the main CHD data
-        // then add the 24 byte for each meta data entry
         using SHA1 sha1Total = SHA1.Create();
         sha1Total.TransformBlock(chd.rawsha1, 0, chd.rawsha1.Length, null, 0);
 
@@ -72,18 +70,20 @@ internal static class CHDMetaData
         byte[] tmp = new byte[0];
         sha1Total.TransformFinalBlock(tmp, 0, 0);
 
-        // compare the calculated metaData + rawData SHA1 with sha1 from the CHD header
         if (!Util.IsAllZeroArray(chd.sha1) && !Util.ByteArrEquals(chd.sha1, sha1Total.Hash))
             return chd_error.CHDERR_INVALID_METADATA;
 
         return chd_error.CHDERR_NONE;
     }
+
+    /// <summary>
+    /// Computes the CHD metadata hash tuple for a single metadata entry.
+    /// </summary>
+    /// <param name="metaTag">Metadata tag (FourCC as UInt32).</param>
+    /// <param name="metaData">Raw metadata payload.</param>
+    /// <returns>24-byte hash tuple: tag (4 bytes) + SHA1(payload) (20 bytes).</returns>
     private static byte[] metadata_hash(uint metaTag, byte[] metaData)
     {
-        // make 24 byte metadata hash
-        // 0-3  :  metaTag
-        // 4-23 :  sha1 of the metaData
-
         byte[] metaHash = new byte[24];
         metaHash[0] = (byte)((metaTag >> 24) & 0xff);
         metaHash[1] = (byte)((metaTag >> 16) & 0xff);

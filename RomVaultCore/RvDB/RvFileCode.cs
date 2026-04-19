@@ -1,4 +1,4 @@
-﻿/******************************************************
+/******************************************************
  *     ROMVault3 is written by Gordon J.              *
  *     Contact gordon@romvault.com                    *
  *     Copyright 2025                                 *
@@ -127,6 +127,10 @@ namespace RomVaultCore.RvDB
             AltMD5 = scannedFile.AltMD5;
             FileModTimeStamp = scannedFile.FileModTimeStamp;
             CHDVersion = scannedFile.CHDVersion;
+            ChdStatus = scannedFile.ChdStatus;
+            ChdScanMethod = scannedFile.ChdScanMethod;
+            ChdHashMatchMode = scannedFile.ChdHashMatchMode;
+            ChdDescriptorMatch = scannedFile.ChdDescriptorMatch;
 
             FileStatusSet(scannedFile.StatusFlags);
 
@@ -182,6 +186,10 @@ namespace RomVaultCore.RvDB
             if (AltSHA1 == null && file.AltSHA1 != null) AltSHA1 = file.AltSHA1;
             if (AltMD5 == null && file.AltMD5 != null) AltMD5 = file.AltMD5;
             if (HeaderFileType == HeaderFileType.Nothing && file.HeaderFileType != HeaderFileType.Nothing) HeaderFileTypeSet = file.HeaderFileType;
+            if (ChdStatus == null && file.ChdStatus != null) ChdStatus = file.ChdStatus;
+            if (ChdScanMethod == null && file.ChdScanMethod != null) ChdScanMethod = file.ChdScanMethod;
+            if (ChdHashMatchMode == null && file.ChdHashMatchMode != null) ChdHashMatchMode = file.ChdHashMatchMode;
+            if (ChdDescriptorMatch == null && file.ChdDescriptorMatch != null) ChdDescriptorMatch = file.ChdDescriptorMatch;
 
             ZipFileIndex = file.Index;
             ZipFileHeaderPosition = file.LocalHeaderOffset;
@@ -207,7 +215,11 @@ namespace RomVaultCore.RvDB
 
                 Index = ZipFileIndex,
                 HeaderFileType = HeaderFileType,
-                CHDVersion = CHDVersion
+                CHDVersion = CHDVersion,
+                ChdStatus = ChdStatus,
+                ChdScanMethod = ChdScanMethod,
+                ChdHashMatchMode = ChdHashMatchMode,
+                ChdDescriptorMatch = ChdDescriptorMatch
             };
 
             if (FileStatusIs(FileStatus.SizeFromHeader) || FileStatusIs(FileStatus.SizeVerified)) sOut.Size = Size;

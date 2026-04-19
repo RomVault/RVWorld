@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using FileScanner;
 using RomVaultCore.RvDB;
 using RomVaultCore.Utils;
@@ -41,8 +41,23 @@ namespace RomVaultCore.Scanner
 
     public static partial class FileScanning
     {
+        /// <summary>
+        /// Matching logic between DB entries (<see cref="RvFile"/>) and fresh scan entries (<see cref="ScannedFile"/>).
+        /// </summary>
+        /// <remarks>
+        /// Two-phase strategy:
+        /// - Phase 1: cheap checks (name/type/timestamp or already-available hashes)
+        /// - Phase 2: deep scan fallback for regular files when Phase 1 cannot confirm
+        ///
+        /// CHD note:
+        /// CHD containers and CHD members participate like archive containers/members:
+        /// container equality is structural in this phase, member equality is hash-based.
+        /// </remarks>
         private static class FileCompare
         {
+            /// <summary>
+            /// Fast pre-check match that avoids deep rescans where possible.
+            /// </summary>
             internal static bool Phase1Test(RvFile dbFile, ScannedFile testFile, EScanLevel eScanLevel, int indexCase, out bool MatchedAlt)
             {
                 MatchedAlt = false;
@@ -68,8 +83,8 @@ namespace RomVaultCore.Scanner
 
                 // filetypes are now know to be the same
 
-                // Dir's and Zip's are not deep scanned so matching here is done
-                if (dbfileType == FileType.Dir || dbfileType == FileType.Zip || dbfileType == FileType.SevenZip)
+                // Dir's and Archives (Zip/7z/CHD) are not matched by CRC here, matching here is done.
+                if (dbfileType == FileType.Dir || dbfileType == FileType.Zip || dbfileType == FileType.SevenZip || dbfileType == FileType.CHD)
                     return true;
 
                 // check headerTypes
@@ -106,6 +121,9 @@ namespace RomVaultCore.Scanner
                 return true;
             }
 
+            /// <summary>
+            /// Deep-scan match used when fast checks are insufficient.
+            /// </summary>
             internal static bool Phase2Test(RvFile dbFile, ScannedFile testFile, EScanLevel eScanLevel, int indexCase, string fullDir, ThreadWorker thWrk, int fileIndex, ref bool fileErrorAbort, out bool MatchedAlt)
             {
                 MatchedAlt = false;
@@ -140,6 +158,9 @@ namespace RomVaultCore.Scanner
             }
 
 
+            /// <summary>
+            /// Compares a scanned file against DAT primary hashes, then alt hashes.
+            /// </summary>
             private static bool CompareWithAlt(RvFile dbFile, ScannedFile testFile, out bool altMatch)
             {
                 if (CompareHash(dbFile, testFile))
@@ -159,6 +180,9 @@ namespace RomVaultCore.Scanner
             }
 
 
+            /// <summary>
+            /// Compares using primary DAT hashes (size/CRC/SHA1/MD5).
+            /// </summary>
             private static bool CompareHash(RvFile dbFile, ScannedFile testFile)
             {
                 //Debug.WriteLine("Comparing Dat File " + dbFile.TreeFullName);
@@ -208,6 +232,9 @@ namespace RomVaultCore.Scanner
                 return testFound;
             }
 
+            /// <summary>
+            /// Compares using alternate (header-stripped) DAT hashes.
+            /// </summary>
             private static bool CompareAltHash(RvFile dbFile, ScannedFile testFile)
             {
                 if (!FileScanner.FileHeaderReader.AltHeaderFile(testFile.HeaderFileType))

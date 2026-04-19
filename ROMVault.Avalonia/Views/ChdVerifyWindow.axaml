@@ -1,0 +1,59 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="900" d:DesignHeight="650"
+        x:Class="ROMVault.Avalonia.Views.ChdVerifyWindow"
+        Title="Verify CHD" Width="980" Height="720" MinWidth="640" MinHeight="420"
+        WindowStartupLocation="CenterOwner">
+  <DockPanel Margin="16">
+    <Border DockPanel.Dock="Bottom"
+            Background="{DynamicResource SurfaceBackgroundBrush}"
+            BorderBrush="{DynamicResource SurfaceBorderBrush}"
+            BorderThickness="0,1,0,0"
+            Padding="12"
+            CornerRadius="8">
+      <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="8">
+        <TextBlock Name="lblStatus" Classes="Muted" VerticalAlignment="Center" Text=""/>
+        <Button Grid.Column="1" Name="btnCopy" Content="Copy" MinWidth="92"/>
+        <Button Grid.Column="2" Name="btnSave" Content="Save..." MinWidth="92"/>
+        <Button Grid.Column="3" Name="btnClose" Content="Close" MinWidth="92" IsDefault="True"/>
+      </Grid>
+    </Border>
+
+    <Grid RowDefinitions="Auto,Auto,*" Margin="0,0,0,8">
+      <DataGrid Name="grid"
+                Grid.Row="0"
+                Margin="0,0,0,8"
+                IsReadOnly="True"
+                Height="360">
+        <DataGrid.Columns>
+          <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="3*"/>
+          <DataGridTextColumn Header="Size" Binding="{Binding Size}" Width="*"/>
+          <DataGridTextColumn Header="CRC" Binding="{Binding CRC}" Width="*"/>
+          <DataGridTextColumn Header="SHA1" Binding="{Binding SHA1}" Width="2*"/>
+          <DataGridTextColumn Header="MD5" Binding="{Binding MD5}" Width="2*"/>
+        </DataGrid.Columns>
+      </DataGrid>
+      <DataGrid Name="mapGrid"
+                Grid.Row="1"
+                Margin="0,0,0,8"
+                IsReadOnly="True"
+                Height="160">
+        <DataGrid.Columns>
+          <DataGridTextColumn Header="Expected" Binding="{Binding Expected}" Width="3*"/>
+          <DataGridTextColumn Header="Extracted" Binding="{Binding Extracted}" Width="3*"/>
+          <DataGridTextColumn Header="Reason" Binding="{Binding Reason}" Width="2*"/>
+        </DataGrid.Columns>
+      </DataGrid>
+      <TextBox Name="txtReport"
+               Grid.Row="2"
+               FontFamily="Consolas"
+               AcceptsReturn="True"
+               IsReadOnly="True"
+               TextWrapping="NoWrap"
+               ScrollViewer.VerticalScrollBarVisibility="Auto"
+               ScrollViewer.HorizontalScrollBarVisibility="Auto"/>
+    </Grid>
+  </DockPanel>
+</Window>

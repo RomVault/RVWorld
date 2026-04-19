@@ -1,4 +1,4 @@
-﻿/******************************************************
+/******************************************************
  *     ROMVault3 is written by Gordon J.              *
  *     Contact gordon@romvault.com                    *
  *     Copyright 2013                                *
@@ -6,6 +6,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using RomVaultCore.Storage.Dat;
 using RomVaultCore.Utils;
 using SortMethods;
@@ -18,6 +19,14 @@ namespace RomVaultCore.RvDB
         Delete
     }
 
+    /// <summary>
+    /// Shared DB helper methods used by scanning, find-fixes, and fix execution flows.
+    /// </summary>
+    /// <remarks>
+    /// CHD-specific responsibilities include:
+    /// - validating whether a set is eligible for CHD creation
+    /// - name-based CHD/disc-source compatibility shortcuts used during fix discovery
+    /// </remarks>
     public static class DBHelper
     {
         private static readonly byte[] ZeroByteMD5;
@@ -171,10 +180,21 @@ namespace RomVaultCore.RvDB
         }
 
 
-        // find fix files, if the gotFile has been fully scanned check the SHA1/MD5, if not then just return true as the CRC/Size is all we have to go on.
-        // this means that if the gotfile has not been fully scanned this will return true even with the source and destination SHA1/MD5 possibly different.
+        /// <summary>
+        /// Returns whether a collected file can be considered a valid source for a missing DAT file.
+        /// </summary>
+        /// <remarks>
+        /// If the source has not been deep-scanned, this may rely on weaker evidence (CRC/size) and allow
+        /// potential SHA1/MD5 uncertainty until deeper verification occurs.
+        /// </remarks>
         public static bool CheckIfMissingFileCanBeFixedByGotFile(RvFile missingFile, RvFile gotFile)
         {
+            if (IsChdContainerMoveMatch(missingFile, gotFile))
+                return true;
+
+            if (IsDiscChdNameMatch(missingFile, gotFile))
+                return true;
+
             // should probably be checking that the header type also match
             if (missingFile.HeaderFileType != HeaderFileType.Nothing && gotFile.HeaderFileType != HeaderFileType.Nothing)
             {
@@ -198,6 +218,123 @@ namespace RomVaultCore.RvDB
             }
 
             return true;
+        }
+
+        private static bool IsChdContainerMoveMatch(RvFile missingFile, RvFile gotFile)
+        {
+            if (missingFile == null || gotFile == null)
+                return false;
+
+            bool missingIsChdContainer = missingFile.FileType == FileType.CHD && missingFile.Name != null && missingFile.Name.EndsWith(".chd", StringComparison.OrdinalIgnoreCase);
+            if (!missingIsChdContainer)
+                return false;
+
+            if (gotFile.GotStatus != GotStatus.Got)
+                return false;
+
+            bool gotIsChdContainer = gotFile.FileType == FileType.CHD && gotFile.Name != null && gotFile.Name.EndsWith(".chd", StringComparison.OrdinalIgnoreCase);
+            bool gotIsChdFile = gotFile.IsFile && gotFile.Name != null && gotFile.Name.EndsWith(".chd", StringComparison.OrdinalIgnoreCase);
+            if (!gotIsChdContainer && !gotIsChdFile)
+                return false;
+
+            return string.Equals(missingFile.Name, gotFile.Name, StringComparison.OrdinalIgnoreCase);
+        }
+
+        public static bool IsChdCreationAllowedForSet(RvFile missingChdFile)
+        {
+            return IsChdCreationAllowedForSet(missingChdFile, out _);
+        }
+
+        /// <summary>
+        /// Determines whether a set is eligible for CHD creation during fixing.
+        /// </summary>
+        /// <remarks>
+        /// CHD creation is blocked for sets containing unresolved MIA entries, because generating a CHD from
+        /// partial content would produce misleading results.
+        /// </remarks>
+        /// <param name="missingChdFile">Missing CHD file node or CHD container node.</param>
+        /// <param name="reason">Human-readable reason when creation is not allowed.</param>
+        /// <returns>True when CHD creation is allowed; otherwise false.</returns>
+        public static bool IsChdCreationAllowedForSet(RvFile missingChdFile, out string reason)
+        {
+            reason = "";
+            if (missingChdFile == null)
+            {
+                reason = "Missing CHD file is not valid.";
+                return false;
+            }
+
+            bool isChdFile = missingChdFile.IsFile && missingChdFile.Name != null && missingChdFile.Name.EndsWith(".chd", StringComparison.OrdinalIgnoreCase);
+            bool isChdContainer = missingChdFile.FileType == FileType.CHD && missingChdFile.Name != null && missingChdFile.Name.EndsWith(".chd", StringComparison.OrdinalIgnoreCase);
+            if (!isChdFile && !isChdContainer)
+            {
+                reason = "Missing CHD file is not valid.";
+                return false;
+            }
+
+            RvFile setRoot = isChdFile ? missingChdFile.Parent : missingChdFile;
+            if (setRoot == null)
+            {
+                reason = "Missing CHD file has no parent directory.";
+                return false;
+            }
+
+            for (int i = 0; i < setRoot.ChildCount; i++)
+            {
+                RvFile child = setRoot.Child(i);
+                if (child == null)
+                    continue;
+
+                if (child == missingChdFile)
+                    continue;
+
+                if (child.DatStatus == DatStatus.InDatMIA)
+                {
+                    reason = $"Set contains MIA entry: {child.Name}";
+                    return false;
+                }
+
+                if (child.DatStatus == DatStatus.InDatCollect || child.DatStatus == DatStatus.InDatMerged)
+                    continue;
+            }
+
+            return true;
+        }
+
+        private static bool IsDiscChdNameMatch(RvFile missingFile, RvFile gotFile)
+        {
+            if (missingFile == null || gotFile == null)
+                return false;
+            if (!missingFile.IsFile || !gotFile.IsFile)
+                return false;
+            if (!missingFile.Name.EndsWith(".chd", StringComparison.OrdinalIgnoreCase))
+                return false;
+            if (gotFile.GotStatus != GotStatus.Got)
+                return false;
+
+            string ext = Path.GetExtension(gotFile.Name);
+            if (string.IsNullOrWhiteSpace(ext))
+                return false;
+
+            switch (ext.ToLowerInvariant())
+            {
+                case ".cue":
+                case ".gdi":
+                case ".iso":
+                    break;
+                default:
+                    return false;
+            }
+
+            string missingKey = Path.GetFileNameWithoutExtension(missingFile.Name);
+            string gotKey = Path.GetFileNameWithoutExtension(gotFile.Name);
+            if (string.IsNullOrWhiteSpace(missingKey) || string.IsNullOrWhiteSpace(gotKey))
+                return false;
+
+            if (!string.Equals(missingKey, gotKey, StringComparison.OrdinalIgnoreCase))
+                return false;
+
+            return IsChdCreationAllowedForSet(missingFile, out _);
         }
 
 

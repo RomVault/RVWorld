@@ -1,12 +1,25 @@
-﻿using CHDSharpLib.Utils;
+using CHDSharpLib.Utils;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
 namespace CHDSharpLib;
 
+/// <summary>
+/// CHD header readers for versions 1 through 5.
+/// </summary>
+/// <remarks>
+/// Each reader populates a <see cref="CHDHeader"/> instance with normalized fields used by the rest of the
+/// pipeline (block map, compression codecs, metadata offsets, and embedded hashes where available).
+/// </remarks>
 internal static class CHDHeaders
 {
+    /// <summary>
+    /// Reads a CHD v1 header and map.
+    /// </summary>
+    /// <param name="file">Readable stream positioned immediately after the 16-byte CHD signature/length/version.</param>
+    /// <param name="chd">Parsed header and map.</param>
+    /// <returns>A <see cref="chd_error"/> indicating success or failure.</returns>
     public static chd_error ReadHeaderV1(Stream file, out CHDHeader chd)
     {
         chd = new CHDHeader();
@@ -59,6 +72,12 @@ internal static class CHDHeaders
         return chd_error.CHDERR_NONE;
     }
 
+    /// <summary>
+    /// Reads a CHD v2 header and map.
+    /// </summary>
+    /// <param name="file">Readable stream positioned immediately after the 16-byte CHD signature/length/version.</param>
+    /// <param name="chd">Parsed header and map.</param>
+    /// <returns>A <see cref="chd_error"/> indicating success or failure.</returns>
     public static chd_error ReadHeaderV2(Stream file, out CHDHeader chd)
     {
         chd = new CHDHeader();
@@ -111,6 +130,12 @@ internal static class CHDHeaders
         return chd_error.CHDERR_NONE;
     }
 
+    /// <summary>
+    /// Reads a CHD v3 header and map.
+    /// </summary>
+    /// <param name="file">Readable stream positioned immediately after the 16-byte CHD signature/length/version.</param>
+    /// <param name="chd">Parsed header and map.</param>
+    /// <returns>A <see cref="chd_error"/> indicating success or failure.</returns>
     public static chd_error ReadHeaderV3(Stream file, out CHDHeader chd)
     {
         chd = new CHDHeader();
@@ -146,6 +171,12 @@ internal static class CHDHeaders
         return chd_error.CHDERR_NONE;
     }
 
+    /// <summary>
+    /// Reads a CHD v4 header and map.
+    /// </summary>
+    /// <param name="file">Readable stream positioned immediately after the 16-byte CHD signature/length/version.</param>
+    /// <param name="chd">Parsed header and map.</param>
+    /// <returns>A <see cref="chd_error"/> indicating success or failure.</returns>
     public static chd_error ReadHeaderV4(Stream file, out CHDHeader chd)
     {
         chd = new CHDHeader();
@@ -180,6 +211,12 @@ internal static class CHDHeaders
     }
 
 
+    /// <summary>
+    /// Reads a CHD v5 header and decodes the v5 map (compressed or uncompressed).
+    /// </summary>
+    /// <param name="file">Readable stream positioned immediately after the 16-byte CHD signature/length/version.</param>
+    /// <param name="chd">Parsed header and map.</param>
+    /// <returns>A <see cref="chd_error"/> indicating success or failure.</returns>
     public static chd_error ReadHeaderV5(Stream file, out CHDHeader chd)
     {
         chd = new CHDHeader();
@@ -211,6 +248,15 @@ internal static class CHDHeaders
     }
 
 
+    /// <summary>
+    /// Reads an uncompressed v5 map where each entry stores a 32-bit unit offset.
+    /// </summary>
+    /// <param name="br">Reader on the CHD file.</param>
+    /// <param name="mapoffset">File offset to the map.</param>
+    /// <param name="totalblocks">Total number of hunks.</param>
+    /// <param name="blocksize">Hunk size, in bytes.</param>
+    /// <param name="map">Decoded map entries.</param>
+    /// <returns>A <see cref="chd_error"/> indicating success or failure.</returns>
     private static chd_error uncompressed_v5_map(BinaryReader br, ulong mapoffset, uint totalblocks, uint blocksize, out mapentry[] map)
     {
         br.BaseStream.Seek((long)mapoffset, SeekOrigin.Begin);
@@ -226,6 +272,16 @@ internal static class CHDHeaders
         return chd_error.CHDERR_NONE;
     }
 
+    /// <summary>
+    /// Reads a compressed v5 map which uses Huffman+RLE encoding for compression types and bit-packed fields for offsets/lengths.
+    /// </summary>
+    /// <param name="br">Reader on the CHD file.</param>
+    /// <param name="mapoffset">File offset to the map.</param>
+    /// <param name="totalBlocks">Total number of hunks.</param>
+    /// <param name="blocksize">Hunk size, in bytes.</param>
+    /// <param name="unitbytes">Size, in bytes, of the CHD's unit (used for parent/self mappings).</param>
+    /// <param name="map">Decoded map entries.</param>
+    /// <returns>A <see cref="chd_error"/> indicating success or failure.</returns>
     private static chd_error compressed_v5_map(BinaryReader br, ulong mapoffset, uint totalBlocks, uint blocksize, uint unitbytes, out mapentry[] map)
     {
         map = new mapentry[totalBlocks];

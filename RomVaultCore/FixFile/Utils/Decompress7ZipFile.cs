@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using Compress;
 using Compress.SevenZip;
@@ -15,6 +15,9 @@ using System.Collections.Generic;
 
 namespace RomVaultCore.FixFile.Utils
 {
+    /// <summary>
+    /// Extraction helper for caching members from a 7z archive into the ToSort cache for Fix operations.
+    /// </summary>
     public static class Decompress7ZipFile
     {
         private const int BufferSize = 128 * 4096;
@@ -209,7 +212,7 @@ namespace RomVaultCore.FixFile.Utils
 
                     try
                     {
-                        readStream.Read(buffer, 0, sizenow);
+                        readStream.ReadExactly(buffer, 0, sizenow);
                     }
                     catch (Exception ex)
                     {

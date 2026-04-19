@@ -1,7 +1,10 @@
-﻿using CHDReaderTest.Flac.FlacDeps;
+using CHDReaderTest.Flac.FlacDeps;
 
 namespace CUETools.Codecs.Flake
 {
+    /// <summary>
+    /// FLAC frame container used during encode/decode operations.
+    /// </summary>
     unsafe public class FlacFrame
     {
         public int blocksize;

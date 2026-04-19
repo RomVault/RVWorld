@@ -1,5 +1,8 @@
-﻿namespace DATReader.Utils
+namespace DATReader.Utils
 {
+    /// <summary>
+    /// Byte array helper methods used for hash comparisons and copying.
+    /// </summary>
     public static class ArrByte
     {
 

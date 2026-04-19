@@ -1,4 +1,4 @@
-﻿/******************************************************
+/******************************************************
  *     ROMVault3 is written by Gordon J.              *
  *     Contact gordon@romvault.com                    *
  *     Copyright 2025                                 *
@@ -22,6 +22,9 @@ using FileStream = RVIO.FileStream;
 
 namespace RomVaultCore.FixFile.Utils
 {
+    /// <summary>
+    /// Result codes returned by fix/copy operations.
+    /// </summary>
     public enum ReturnCode
     {
         Good,
@@ -40,6 +43,9 @@ namespace RomVaultCore.FixFile.Utils
     }
 
 
+    /// <summary>
+    /// Shared helper methods for Fix workflows (copy/move/extract/hash) across file and archive targets.
+    /// </summary>
     public static partial class FixFileUtils
     {
         private const int BufferSize = 32 * 1024 * 1024;
@@ -167,7 +173,7 @@ namespace RomVaultCore.FixFile.Utils
 
                     try
                     {
-                        readStream.Read(_buffer, 0, sizenow);
+                        readStream.ReadExactly(_buffer, 0, sizenow);
                     }
                     catch (Exception ex)
                     {
@@ -697,6 +703,13 @@ namespace RomVaultCore.FixFile.Utils
             return ReturnCode.Good;
         }
 
+        /// <summary>
+        /// Validates and finalizes destination DB state after a copy/move operation.
+        /// </summary>
+        /// <remarks>
+        /// This enforces DAT checksum requirements when present and updates file status flags to reflect
+        /// verified hashes and header-derived metadata.
+        /// </remarks>
         private static ReturnCode ValidateFileOut(RvFile fileIn, RvFile fileOut, bool rawCopy, byte[] bCRC, byte[] bSHA1, byte[] bMD5, out string error)
         {
             if (fileOut.FileType == FileType.FileZip || fileOut.FileType == FileType.FileSevenZip)
@@ -773,6 +786,85 @@ namespace RomVaultCore.FixFile.Utils
             if (fileOut.HeaderFileType == HeaderFileType.Nothing && fileIn.HeaderFileType != HeaderFileType.Nothing)
             {
                 fileOut.HeaderFileTypeSet = fileIn.HeaderFileType; // if the fileout was Nothing, then it did not have a required flag, so it is OK to just set it to the fileInValue
+            }
+
+            fileOut.CHDVersion = fileIn.CHDVersion;
+
+            fileOut.FileStatusSet(FileStatus.HeaderFileTypeFromHeader |
+                FileStatus.AltSizeFromHeader | FileStatus.AltSizeVerified |
+                FileStatus.AltCRCFromHeader | FileStatus.AltCRCVerified |
+                FileStatus.AltSHA1FromHeader | FileStatus.AltSHA1Verified |
+                FileStatus.AltMD5FromHeader | FileStatus.AltMD5Verified, fileIn);
+
+            error = "";
+            return ReturnCode.Good;
+        }
+
+        /// <summary>
+        /// Validates and finalizes destination DB state after a copy/move operation without enforcing DAT checksums.
+        /// </summary>
+        /// <remarks>
+        /// This is used when correctness has been established outside of "file-by-file DAT hash match", such as
+        /// CHD parity moves where container hashes are not intended to match DAT track hashes.
+        /// </remarks>
+        private static ReturnCode ValidateFileOutSkipDatCheck(RvFile fileIn, RvFile fileOut, bool rawCopy, byte[] bCRC, byte[] bSHA1, byte[] bMD5, out string error)
+        {
+            if (fileOut.FileType == FileType.FileZip || fileOut.FileType == FileType.FileSevenZip)
+            {
+                fileOut.FileStatusSet(FileStatus.SizeFromHeader | FileStatus.CRCFromHeader);
+            }
+
+            if (bCRC != null)
+            {
+                fileOut.CRC = bCRC;
+                if (!rawCopy || fileIn.FileStatusIs(FileStatus.CRCVerified))
+                {
+                    fileOut.FileStatusSet(FileStatus.CRCVerified);
+                }
+            }
+
+            if (bSHA1 != null)
+            {
+                fileOut.SHA1 = bSHA1;
+                fileOut.FileStatusSet(FileStatus.SHA1Verified);
+            }
+
+            if (bMD5 != null)
+            {
+                fileOut.MD5 = bMD5;
+                fileOut.FileStatusSet(FileStatus.MD5Verified);
+            }
+
+            if (fileIn.Size != null)
+            {
+                fileOut.Size = fileIn.Size;
+                fileOut.FileStatusSet(FileStatus.SizeVerified);
+            }
+
+            fileOut.GotStatus = fileIn.GotStatus == GotStatus.Corrupt ? GotStatus.Corrupt : GotStatus.Got;
+
+            fileOut.FileStatusSet(FileStatus.SizeVerified);
+
+            if (fileOut.AltSize == null && fileIn.AltSize != null)
+            {
+                fileOut.AltSize = fileIn.AltSize;
+            }
+            if (fileOut.AltCRC == null && fileIn.AltCRC != null)
+            {
+                fileOut.AltCRC = fileIn.AltCRC;
+            }
+            if (fileOut.AltSHA1 == null && fileIn.AltSHA1 != null)
+            {
+                fileOut.AltSHA1 = fileIn.AltSHA1;
+            }
+            if (fileOut.AltMD5 == null && fileIn.AltMD5 != null)
+            {
+                fileOut.AltMD5 = fileIn.AltMD5;
+            }
+
+            if (fileOut.HeaderFileType == HeaderFileType.Nothing && fileIn.HeaderFileType != HeaderFileType.Nothing)
+            {
+                fileOut.HeaderFileTypeSet = fileIn.HeaderFileType;
             }
 
             fileOut.CHDVersion = fileIn.CHDVersion;

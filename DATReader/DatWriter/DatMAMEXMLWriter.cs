@@ -1,10 +1,13 @@
-﻿using System;
+using System;
 using Compress;
 using DATReader.DatStore;
 using RVIO;
 
 namespace DATReader.DatWriter
 {
+    /// <summary>
+    /// Writer for MAME-style DAT XML output.
+    /// </summary>
     public static class DatMAMEXMLWriter
     {
         public static void WriteDat(string strFilename, DatHeader datHeader)
@@ -180,6 +183,9 @@ namespace DATReader.DatWriter
             return b == null ? "" : BitConverter.ToString(b).ToLower().Replace("-", "");
         }
 
+        /// <summary>
+        /// Simple indentation-aware writer for DAT XML output.
+        /// </summary>
         private class DatStreamWriter : IDisposable
         {
             private int _tabDepth;

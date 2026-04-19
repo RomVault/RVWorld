@@ -1,5 +1,8 @@
 namespace CHDReaderTest.Flac.FlacDeps
 {
+    /// <summary>
+    /// CRC8 helper used by FLAC frame validation.
+    /// </summary>
     public class Crc8
     {
         private const ushort poly8 = 0x07;

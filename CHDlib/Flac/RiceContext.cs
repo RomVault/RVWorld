@@ -1,5 +1,8 @@
-﻿namespace CUETools.Codecs.Flake
+namespace CUETools.Codecs.Flake
 {
+    /// <summary>
+    /// Residual coding context for Rice partitioned encoding/decoding.
+    /// </summary>
     unsafe public class RiceContext
     {
         public RiceContext()

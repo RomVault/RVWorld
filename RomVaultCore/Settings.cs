@@ -1,4 +1,4 @@
-﻿using Compress;
+using Compress;
 using DATReader.DatClean;
 using RomVaultCore.RvDB;
 using System;
@@ -49,6 +49,33 @@ namespace RomVaultCore
         Headerless
     }
 
+    public enum ChdCompressionType
+    {
+        Auto,
+        Normal,
+        CD,
+        DVD,
+        PSP,
+        Dreamcast
+    }
+
+    public enum ChdAudioTransform
+    {
+        None,
+        AllowSwap16,
+        AllowRawToWav
+    }
+
+    public enum ChdLayoutStrictness
+    {
+        Normal,
+        Strict,
+        Relaxed
+    }
+
+    /// <summary>
+    /// Global persisted configuration (scan/fix behavior, roots, DAT rules, CHD options, UI preferences).
+    /// </summary>
     public class Settings
     {
         public static Settings rvSettings;
@@ -94,7 +121,80 @@ namespace RomVaultCore
         [XmlElement(ElementName = "Darkness", DataType = "boolean", IsNullable = false), DefaultValue(false)]
         public bool Darkness = false;
 
+        /// <summary>
+        /// Enables the CHD scan cache used to avoid repeated extraction/rehashing across rescans.
+        /// </summary>
+        [XmlElement(ElementName = "ChdScanCacheEnabled", DataType = "boolean", IsNullable = false), DefaultValue(true)]
+        public bool ChdScanCacheEnabled = true;
 
+        /// <summary>
+        /// Enables per-CHD scan debug logs (mapping decisions, expected members, and fallback reasons).
+        /// </summary>
+        [XmlElement(ElementName = "ChdScanDebugEnabled", DataType = "boolean", IsNullable = false), DefaultValue(false)]
+        public bool ChdDebug = false;
+
+        /// <summary>
+        /// When enabled, requires the original CUE/GDI descriptor to be present (do not accept synthetic descriptors).
+        /// </summary>
+        [XmlElement(ElementName = "ChdStrictCueGdi", DataType = "boolean", IsNullable = false), DefaultValue(false)]
+        public bool ChdStrictCueGdi = false;
+
+        /// <summary>
+        /// When enabled, keeps/moves sidecar .cue/.gdi files alongside CHDs during fix operations.
+        /// </summary>
+        [XmlElement(ElementName = "ChdKeepCueGdi", DataType = "boolean", IsNullable = false), DefaultValue(false)]
+        public bool ChdKeepCueGdi = false;
+
+        /// <summary>
+        /// Audio transformation mode applied when exporting or matching CHD tracks.
+        /// </summary>
+        public ChdAudioTransform ChdAudioTransform = ChdAudioTransform.None;
+
+        /// <summary>
+        /// Strictness profile used when comparing CHD disc layouts to DAT expectations.
+        /// </summary>
+        public ChdLayoutStrictness ChdLayoutStrictness = ChdLayoutStrictness.Normal;
+
+        /// <summary>
+        /// Enables exporting CHD tracks during Fix workflows (e.g., to materialize track files when required).
+        /// </summary>
+        [XmlElement(ElementName = "ChdExportTracksOnFix", DataType = "boolean", IsNullable = false), DefaultValue(false)]
+        public bool ChdExportTracksOnFix = false;
+
+        /// <summary>
+        /// Enables CHD streaming mode for scanning (hash directly from the logical stream without extraction).
+        /// </summary>
+        [XmlElement(ElementName = "ChdStreamingEnabled", DataType = "boolean", IsNullable = false), DefaultValue(false)]
+        public bool ChdStreaming = false;
+
+        /// <summary>
+        /// When enabled, prefers a synthetic CUE/GDI derived from CHD metadata when it matches DAT expectations.
+        /// </summary>
+        [XmlElement(ElementName = "ChdPreferSyntheticDescriptor", DataType = "boolean", IsNullable = false), DefaultValue(false)]
+        public bool ChdPreferSynthetic = false;
+
+        /// <summary>
+        /// When enabled, allows treating a CHD container as satisfying track-file expectations even when byte-level track hashes differ.
+        /// </summary>
+        [XmlElement(ElementName = "ChdTrustContainerForTracks", DataType = "boolean", IsNullable = false), DefaultValue(true)]
+        public bool ChdTrustContainerForTracks = true;
+
+        /// <summary>
+        /// DVD CHD hunk size used during creation (in KiB); larger hunks may improve compression ratio.
+        /// </summary>
+        [XmlElement(ElementName = "ChdDvdHunkSizeKiB", DataType = "int", IsNullable = false), DefaultValue(256)]
+        public int ChdDvdHunkSizeKiB = 256;
+
+        /// <summary>
+        /// Maximum number of concurrent processors used by chdman (`-np`) during CHD creation.
+        /// Set to 0 to let chdman choose automatically.
+        /// </summary>
+        [XmlElement(ElementName = "ChdNumProcessors", DataType = "int", IsNullable = false), DefaultValue(0)]
+        public int ChdNumProcessors = 0;
+
+        /// <summary>
+        /// Enables additional CHD validation checks during scanning and creation flows.
+        /// </summary>
         [XmlElement(ElementName = "CheckCHDVersion", DataType = "boolean", IsNullable = false), DefaultValue(false)]
         public bool CheckCHDVersion = false;
 
@@ -141,12 +241,45 @@ namespace RomVaultCore
             if (ret.IgnoreFiles == null)
                 ret.IgnoreFiles = new List<string>();
 
+            if (ret.DatRules == null || ret.DatRules.Count == 0)
+                ret.ResetDatRules();
+
+            bool hasRootRule = false;
+            foreach (DatRule r in ret.DatRules)
+            {
+                if (r.IgnoreFiles == null)
+                    r.IgnoreFiles = new List<string>();
+                if (string.Equals(r.DirKey, "RomVault", StringComparison.OrdinalIgnoreCase))
+                    hasRootRule = true;
+            }
+
+            if (!hasRootRule)
+            {
+                ret.DatRules.Insert(0, new DatRule
+                {
+                    DirKey = "RomVault",
+                    Compression = FileType.Zip,
+                    CompressionOverrideDAT = false,
+                    Merge = MergeType.None,
+                    HeaderType = HeaderType.Optional,
+                    MergeOverrideDAT = false,
+                    SingleArchive = false,
+                    MultiDATDirOverride = false,
+                    IgnoreFiles = new List<string>()
+                });
+            }
+
             // fix old DatRules by adding a dir seprator on the end of the dirpaths
             foreach (DatRule r in ret.DatRules)
             {
+                if (string.IsNullOrEmpty(r.DirKey))
+                    continue;
                 string lastchar = r.DirKey.Substring(r.DirKey.Length - 1);
                 if (lastchar == "\\")
                     r.DirKey = r.DirKey.Substring(0, r.DirKey.Length - 1);
+
+                if ((r.DiscArchiveAsCHD || r.Compression == FileType.CHD) && r.Filter == FilterType.CHDsOnly)
+                    r.Filter = FilterType.KeepAll;
             }
             ret.DatRules.Sort();
 
@@ -337,6 +470,9 @@ namespace RomVaultCore
                     rule.Merge = MergeType.Merge;
                     rule.Filter = FilterType.CHDsOnly;
                 }
+
+                if ((rule.DiscArchiveAsCHD || rule.Compression == FileType.CHD) && rule.Filter == FilterType.CHDsOnly)
+                    rule.Filter = FilterType.KeepAll;
             }
 
             return retSettings;
@@ -358,6 +494,9 @@ namespace RomVaultCore
         }
     }
 
+    /// <summary>
+    /// Maps a DAT-relative directory key to a physical on-disk directory path override.
+    /// </summary>
     public class DirMapping : IComparable<DirMapping>
     {
         public string DirKey;
@@ -369,6 +508,9 @@ namespace RomVaultCore
         }
     }
 
+    /// <summary>
+    /// Per-directory rule controlling merge/compression/header behavior and filtering during scan/fix.
+    /// </summary>
     public class DatRule : IComparable<DatRule>
     {
         public string DirKey;
@@ -382,6 +524,13 @@ namespace RomVaultCore
 
         public ZipStructure CompressionSub = ZipStructure.ZipTrrnt;
         public bool ConvertWhileFixing = true;
+
+        public bool DiscArchiveAsCHD = false;
+        public ChdCompressionType ChdCompressionType = ChdCompressionType.Normal;
+        public bool ChdStrictCueGdi = false;
+        public bool ChdKeepCueGdi = false;
+        public ChdAudioTransform ChdAudioTransform = ChdAudioTransform.None;
+        public ChdLayoutStrictness ChdLayoutStrictness = ChdLayoutStrictness.Normal;
 
 
         // Merge Type
@@ -417,6 +566,9 @@ namespace RomVaultCore
 
     }
 
+    /// <summary>
+    /// Emulator launch configuration for a specific tree directory.
+    /// </summary>
     public class EmulatorInfo
     {
         public string TreeDir;

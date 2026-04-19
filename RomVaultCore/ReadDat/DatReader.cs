@@ -1,4 +1,4 @@
-﻿/******************************************************
+/******************************************************
  *     ROMVault3 is written by Gordon J.              *
  *     Contact gordon@romvault.com                    *
  *     Copyright 2025                                 *
@@ -17,6 +17,9 @@ using RVIO;
 
 namespace RomVaultCore.ReadDat
 {
+    /// <summary>
+    /// Loads DAT files and applies DAT-driven rules to the database tree.
+    /// </summary>
     public static class DatReader
     {
         private static ThreadWorker _thWrk;
@@ -37,15 +40,27 @@ namespace RomVaultCore.ReadDat
             int datNameLength = datName.Length;
             foreach (DatRule s in Settings.rvSettings.DatRules)
             {
-                if (s.DirKey.Length < 8 || s.DirKey.Substring(0, 8) != "RomVault")
+                if (string.IsNullOrWhiteSpace(s.DirKey))
                     continue;
-                string DirKey = "DatRoot" + s.DirKey.Substring(8) + System.IO.Path.DirectorySeparatorChar;
+
+                string ruleKey = s.DirKey.Trim().Replace('/', '\\');
+                while (ruleKey.EndsWith("\\", StringComparison.Ordinal))
+                    ruleKey = ruleKey.Substring(0, ruleKey.Length - 1);
+
+                const string rvRoot = "RomVault";
+                string DirKey;
+                if (ruleKey.Equals(rvRoot, StringComparison.OrdinalIgnoreCase))
+                    DirKey = "DatRoot" + System.IO.Path.DirectorySeparatorChar;
+                else if (ruleKey.StartsWith(rvRoot + "\\", StringComparison.OrdinalIgnoreCase))
+                    DirKey = "DatRoot" + ruleKey.Substring(rvRoot.Length) + System.IO.Path.DirectorySeparatorChar;
+                else
+                    continue;
 
                 int dirKeyLen = DirKey.Length;
                 if (dirKeyLen > datNameLength)
                     continue;
 
-                if (datName.Substring(0, dirKeyLen) != DirKey)
+                if (!string.Equals(datName.Substring(0, dirKeyLen), DirKey, StringComparison.OrdinalIgnoreCase))
                     continue;
 
                 if (dirKeyLen < longest)
@@ -103,6 +118,7 @@ namespace RomVaultCore.ReadDat
                 ReportError.LogOut($"DatRule {dirNameRule}");
 
                 DatRule datRule = FindDatRule(dirNameRule);
+                DatRule globalRule = FindDatRule("DatRoot" + System.IO.Path.DirectorySeparatorChar);
 
                 // 1
                 DatClean.CleanFilenames(datHeader.BaseDir);
@@ -147,10 +163,14 @@ namespace RomVaultCore.ReadDat
                 }
 
                 // 8
-                if (datRule.SingleArchive)
+                // CHD container mode is per-set; forcing single-archive at DAT level collapses
+                // all sets into one giant CHD container and breaks expected game grouping.
+                if (datRule.SingleArchive && ft != FileType.CHD)
                     DatClean.MakeDatSingleLevel(datHeader, datRule.UseDescriptionAsDirName, datRule.SubDirType, ft == FileType.Dir, datRule.AddCategorySubDirs, datRule.CategoryOrder);
 
                 // 9: SetFileTypes / This also sorts the dirs into there type sort orders
+                DatSetCompressionType.ChdStrictCueGdi = globalRule?.ChdStrictCueGdi ?? datRule.ChdStrictCueGdi;
+                DatSetCompressionType.ChdKeepCueGdi = Settings.rvSettings.ChdKeepCueGdi;
                 DatSetCompressionType.SetType(datHeader.BaseDir, ft, zs, datRule.ConvertWhileFixing);
 
                 // 10: Remove unneeded directories from Zip's / 7Z's 
@@ -276,6 +296,12 @@ namespace RomVaultCore.ReadDat
             ft = datRule.Compression == FileType.FileOnly ? FileType.File : datRule.Compression;
 
             zs = datRule.CompressionSub;
+            if (datRule.DiscArchiveAsCHD)
+            {
+                ft = FileType.CHD;
+                zs = ZipStructure.None;
+                return;
+            }
             if (!datRule.CompressionOverrideDAT && datRule.Compression!=FileType.FileOnly)
             {
                 switch (dh.Compression?.ToLower())

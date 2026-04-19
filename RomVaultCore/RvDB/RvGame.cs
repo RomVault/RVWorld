@@ -1,4 +1,4 @@
-﻿/******************************************************
+/******************************************************
  *     ROMVault3 is written by Gordon J.              *
  *     Contact gordon@romvault.com                    *
  *     Copyright 2025                                 *
@@ -10,8 +10,14 @@ using System.IO;
 
 namespace RomVaultCore.RvDB
 {
+    /// <summary>
+    /// Cached per-game metadata record (description, relations, publisher, etc.).
+    /// </summary>
     public class RvGame
     {
+        /// <summary>
+        /// Keys for the typed metadata items stored within a game record.
+        /// </summary>
         public enum GameData
         {
             Id = 11,
@@ -161,6 +167,9 @@ namespace RomVaultCore.RvDB
         }
               
 
+        /// <summary>
+        /// Stores a single typed metadata item for a game record.
+        /// </summary>
         private class GameMetaData
         {
             public GameMetaData(GameData id, string value)

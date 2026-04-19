@@ -1,8 +1,11 @@
-﻿using System;
+using System;
 using DATReader.DatStore;
 
 namespace DATReader.Utils
 {
+    /// <summary>
+    /// Detects whether a DAT contains parent/clone relationships (RomOf/CloneOf references).
+    /// </summary>
     public static class DatHasRomOf
     {
         public static bool HasRomOf(DatDir tDat)

@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Xml;
 using Compress;
 using DATReader.DatStore;
@@ -6,6 +6,9 @@ using DATReader.Utils;
 
 namespace DATReader.DatReader
 {
+    /// <summary>
+    /// Parser for MAME-style DAT XML (including RVDat extensions when present).
+    /// </summary>
     public static class DatXmlReader
     {
         // new version of this file also reads rvdats

@@ -1,8 +1,11 @@
-﻿using RomVaultCore.RvDB;
+using RomVaultCore.RvDB;
 using RVIO;
 
 namespace RomVaultCore.Utils
 {
+    /// <summary>
+    /// Ensures required root directories (DatRoot, RomRoot, ToSort) exist on disk.
+    /// </summary>
     public static class RootDirsCreate
     {
         public static void CheckDatRoot()

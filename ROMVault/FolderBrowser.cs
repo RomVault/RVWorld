@@ -1,9 +1,12 @@
-﻿using RVIO;
+using RVIO;
 using System;
 using System.Windows.Forms;
 
 namespace ROMVault
 {
+    /// <summary>
+    /// Cross-platform folder picker wrapper that uses a WinForms dialog on Unix and an enhanced dialog on Windows.
+    /// </summary>
     public class FolderBrowser
     {
         public bool ShowNewFolderButton;

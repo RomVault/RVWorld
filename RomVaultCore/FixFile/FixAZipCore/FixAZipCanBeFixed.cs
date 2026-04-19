@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Compress;
@@ -9,6 +9,18 @@ using static RomVaultCore.FixFile.FixAZipCore.FindSourceFile;
 
 namespace RomVaultCore.FixFile.FixAZipCore
 {
+    /// <summary>
+    /// Implements the "can be fixed" pathway for a missing member inside an archive container.
+    /// </summary>
+    /// <remarks>
+    /// This selects the best available source (raw file, other archive member, cache extraction, or CHD member)
+    /// and copies it into the output archive being built.
+    ///
+    /// CHD note:
+    /// When the chosen source is a <see cref="FileType.FileCHD"/> member, the fix pipeline must first
+    /// materialize the CHD contents to ToSortCache (see <see cref="DecompressChdFile"/>), then re-run
+    /// source selection on the extracted physical files.
+    /// </remarks>
     internal static class FixAZipCanBeFixed
     {
         /// <summary>
@@ -103,10 +115,19 @@ namespace RomVaultCore.FixFile.FixAZipCore
             }
             if (fixStyle == FixStyle.ExtractToCache)
             {
-                ReturnCode returnCode1 = Decompress7ZipFile.DecompressSource7ZipFile(fixFileSource.Parent, copyOriginal, filesUsedForFix, out errorMessage);
+                ReturnCode returnCode1;
+                if (fixFileSource.FileType == FileType.FileCHD)
+                {
+                    returnCode1 = DecompressChdFile.DecompressSourceChdFile(fixFileSource.Parent, filesUsedForFix, out errorMessage);
+                }
+                else
+                {
+                    returnCode1 = Decompress7ZipFile.DecompressSource7ZipFile(fixFileSource.Parent, copyOriginal, filesUsedForFix, out errorMessage);
+                }
+
                 if (returnCode1 != ReturnCode.Good)
                 {
-                    ReportError.LogOut($"DecompressSource7Zip: {fixFileSource.Parent.FileName} return {returnCode1}");
+                    ReportError.LogOut($"DecompressSource: {fixFileSource.Parent.FileName} return {returnCode1}");
                     return returnCode1;
                 }
                 lstFixRomTable = GetFixFileList(fixZippedFile);
@@ -114,7 +135,7 @@ namespace RomVaultCore.FixFile.FixAZipCore
 
                 if (fixStyle == FixStyle.ExtractToCache)
                 {
-                    ReportError.LogOut($"DecompressSource7Zip: {fixFileSource.Parent.FileName} return {returnCode1}");
+                    ReportError.LogOut($"DecompressSource: {fixFileSource.Parent.FileName} return {returnCode1}");
                     return ReturnCode.FileSystemError;
                 }
             }

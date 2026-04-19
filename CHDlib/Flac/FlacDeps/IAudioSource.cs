@@ -1,8 +1,11 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace CHDReaderTest.Flac.FlacDeps
 {
+    /// <summary>
+    /// Abstraction for a readable audio source that can decode into PCM buffers.
+    /// </summary>
     public interface IAudioSource
     {
         IAudioDecoderSettings Settings { get; }
@@ -19,6 +22,9 @@ namespace CHDReaderTest.Flac.FlacDeps
         void Close();
     }
 
+    /// <summary>
+    /// Describes a single playable audio title within a container (e.g., disc image).
+    /// </summary>
     public interface IAudioTitle
     {
         List<TimeSpan> Chapters { get; }
@@ -29,11 +35,17 @@ namespace CHDReaderTest.Flac.FlacDeps
         //IAudioSource Open { get; }
     }
 
+    /// <summary>
+    /// Collection of <see cref="IAudioTitle"/> items.
+    /// </summary>
     public interface IAudioTitleSet
     {
         List<IAudioTitle> AudioTitles { get; }
     }
 
+    /// <summary>
+    /// Convenience helpers for formatting and duration queries on <see cref="IAudioTitle"/>.
+    /// </summary>
     public static class IAudioTitleExtensions
     {
         public static TimeSpan GetDuration(this IAudioTitle title)
@@ -62,6 +74,9 @@ namespace CHDReaderTest.Flac.FlacDeps
         }
     }
 
+    /// <summary>
+    /// Wraps a single <see cref="IAudioSource"/> as a one-title <see cref="IAudioTitle"/>.
+    /// </summary>
     public class SingleAudioTitle : IAudioTitle
     {
         public SingleAudioTitle(IAudioSource source) { this.source = source; }
@@ -73,6 +88,9 @@ namespace CHDReaderTest.Flac.FlacDeps
         IAudioSource source;
     }
 
+    /// <summary>
+    /// Wraps a single <see cref="IAudioSource"/> as a one-title set.
+    /// </summary>
     public class SingleAudioTitleSet : IAudioTitleSet
     {
         public SingleAudioTitleSet(IAudioSource source) { this.source = source; }

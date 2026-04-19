@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
@@ -69,6 +69,10 @@ namespace ROMVault
             showFileModDate = false;
 
             List<RvFile> fileList = new List<RvFile>();
+            if (tGame.FileType == FileType.CHD && tGame.SHA1 != null)
+            {
+                AddRom(tGame, "", ref fileList);
+            }
             AddDir(tGame, "", ref fileList);
             romGrid = fileList.ToArray();
 
@@ -185,6 +189,11 @@ namespace ROMVault
                         if (!string.IsNullOrEmpty(tFile.FileName))
                         {
                             fname += " (Found: " + tFile.FileName + ")";
+                        }
+
+                        if (tFile.FileType == FileType.CHD)
+                        {
+                            fname += " [Container]";
                         }
 
                         if (tFile.CHDVersion != null)
@@ -338,6 +347,9 @@ namespace ROMVault
             catch { }
         }
 
+        /// <summary>
+        /// Sort comparer for the ROM grid.
+        /// </summary>
         private class RomUiCompare : IComparer<RvFile>
         {
             private readonly int _colIndex;

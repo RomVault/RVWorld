@@ -1,9 +1,12 @@
-﻿using DATReader.DatClean;
+using DATReader.DatClean;
 using DATReader.DatStore;
 using RomVaultCore.RvDB;
 
 namespace RomVaultCore.Storage.Dat
 {
+    /// <summary>
+    /// File-level DAT import record used when scanning DatRoot directories.
+    /// </summary>
     public class DatImportDat
     {
         public string DatFullName;

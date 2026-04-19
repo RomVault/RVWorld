@@ -1,5 +1,8 @@
-﻿namespace RomVaultCore.FixFile
+namespace RomVaultCore.FixFile
 {
+    /// <summary>
+    /// Thin adapter around <see cref="ThreadWorker"/> used by fix routines to report progress and observe cancellation.
+    /// </summary>
     public static class Report
 
     {

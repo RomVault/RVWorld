@@ -1,4 +1,4 @@
-﻿/******************************************************
+/******************************************************
  *     ROMVault3 is written by Gordon J.              *
  *     Contact gordon@romvault.com                    *
  *     Copyright 2025                                 *
@@ -9,8 +9,14 @@ using System.Text;
 
 namespace RomVaultCore.RvDB
 {
+    /// <summary>
+    /// Stores per-node UI state (expanded/checked) for the directory/game tree and supports in-place cache updates.
+    /// </summary>
     public class RvTreeRow
     {
+        /// <summary>
+        /// Selection state for a tree node.
+        /// </summary>
         public enum TreeSelect
         {
             UnSelected,

@@ -4,6 +4,11 @@ using System.Collections.Generic;
 
 namespace ByteSortedList
 {
+    /// <summary>
+    /// Bucketed sorted list keyed by a single byte, with per-bucket binary search insertion.
+    /// </summary>
+    /// <typeparam name="tStore">Stored item type.</typeparam>
+    /// <typeparam name="tInput">Input item type used for lookup and merging.</typeparam>
     public class ByteSortedList<tStore, tInput> : IEnumerable
     {
         public delegate byte getByteFunc(tInput val);
@@ -18,6 +23,13 @@ namespace ByteSortedList
         private newFunc _newFunc;
         private mergeFunc _mergeFunc;
 
+        /// <summary>
+        /// Creates a new bucketed sorted list.
+        /// </summary>
+        /// <param name="getByteFunc">Function returning the bucket key (0-255) for an input item.</param>
+        /// <param name="compareFunc">Comparison between an input item and a stored item.</param>
+        /// <param name="newFunc">Factory to create a stored item from an input item.</param>
+        /// <param name="mergeFunc">Merge action applied when an existing item matches.</param>
         public ByteSortedList(getByteFunc getByteFunc, compareFunc compareFunc, newFunc newFunc, mergeFunc mergeFunc)
         {
             byteArray = new List<tStore>[256];
@@ -29,6 +41,11 @@ namespace ByteSortedList
             _mergeFunc = mergeFunc;
         }
 
+        /// <summary>
+        /// Finds a stored entry matching <paramref name="value"/> using the configured compare function.
+        /// </summary>
+        /// <param name="value">Lookup key.</param>
+        /// <returns>Matching stored item, or default when not found.</returns>
         public tStore Find(tInput value)
         {
             List<tStore> thisList = byteArray[_getByteFunc(value)];
@@ -43,6 +60,10 @@ namespace ByteSortedList
             }
         }
 
+        /// <summary>
+        /// Adds a new entry or merges into the existing entry when a match is found.
+        /// </summary>
+        /// <param name="value">Input value to add or merge.</param>
         public void AddFind(tInput value)
         {
             List<tStore> thisList = byteArray[_getByteFunc(value)];
@@ -60,6 +81,11 @@ namespace ByteSortedList
 
 
 
+        /// <summary>
+        /// Adds a new entry or merges into an existing entry, using an additional exact-match predicate within equal-key ranges.
+        /// </summary>
+        /// <param name="value">Input value to add or merge.</param>
+        /// <param name="exact">Exact match predicate applied to candidates with equal compare keys.</param>
         public void AddFindWithExact(tInput value, exactFunc exact)
         {
             List<tStore> thisList = byteArray[_getByteFunc(value)];

@@ -1,7 +1,10 @@
-﻿using System;
+using System;
 
 namespace CHDReaderTest.Flac.FlacDeps
 {
+    /// <summary>
+    /// Low-level sample and buffer helpers used by FLAC decode routines.
+    /// </summary>
     public class AudioSamples
     {
         public const uint UINT32_MAX = 0xffffffff;

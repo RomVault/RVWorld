@@ -3,6 +3,9 @@ using CUETools.Codecs;
 
 namespace CHDReaderTest.Flac.FlacDeps
 {
+    /// <summary>
+    /// Bit-level writer used by the FLAC encoder to build frames and compute CRCs.
+    /// </summary>
     public class BitWriter
     {
         private ushort crc16_m;
@@ -188,11 +191,6 @@ namespace CHDReaderTest.Flac.FlacDeps
             }
         }
 
-        /// <summary>
-        /// Assumes there's enough space, buffer != null and bits is in range 1..31
-        /// </summary>
-        /// <param name="bits"></param>
-        /// <param name="val"></param>
         //        unsafe void writebits_fast(int bits, uint val, ref byte* buf)
         //        {
         //#if DEBUG

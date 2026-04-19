@@ -1,9 +1,12 @@
-﻿using DATReader.DatStore;
+using DATReader.DatStore;
 using System;
 using System.Collections.Generic;
 
 namespace DATReader.DatClean
 {
+    /// <summary>
+    /// Normalizes DAT trees by lifting CHD/disc members to the expected parent game directory level.
+    /// </summary>
     public static class DatSetMoveCHDs
     {
 
@@ -18,10 +21,16 @@ namespace DATReader.DatClean
             {
                 if (dFile.FileType!=FileType.File && dFile.isDisk)
                 {
+                    if (parentCount <= 0)
+                        return;
+
                     //go up 2 levels to find the directory of the game
                     //if two levels are not available (this is where file/single level archive has been selected in the rules) then just replace up one level.
                     DatDir dir = parents[Math.Max(0,parentCount - 2)];
                     DatDir zipDir = parents[parentCount - 1];
+
+                    if (zipDir.FileType != FileType.Zip && zipDir.FileType != FileType.SevenZip)
+                        return;
 
                     zipDir.ChildRemove(dFile);
 

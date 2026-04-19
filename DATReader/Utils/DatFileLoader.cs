@@ -1,9 +1,12 @@
-﻿using System;
+using System;
 using System.Text;
 using RVIO;
 
 namespace DATReader.Utils
 {
+    /// <summary>
+    /// Tokenizing loader for DAT text formats, providing simple word-wise parsing over a stream.
+    /// </summary>
     internal class DatFileLoader : IDisposable
     {
         private System.IO.StreamReader _streamReader;

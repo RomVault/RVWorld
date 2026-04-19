@@ -3,6 +3,9 @@ using CHDReaderTest.Flac.FlacDeps;
 
 namespace CUETools.Codecs
 {
+    /// <summary>
+    /// Bit-level reader used by the CUETools FLAC encoder/decoder implementation.
+    /// </summary>
     unsafe public class BitReader
     {
         #region Static Methods

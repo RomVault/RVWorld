@@ -1,9 +1,12 @@
-﻿using System;
+using System;
 
 namespace DATReader.Utils
 {
 
 
+    /// <summary>
+    /// Fast alphanumeric comparator for sorting DAT names and paths in a more human-friendly order.
+    /// </summary>
     public static class AlphanumComparatorFast
     {
         public static int Compare(string s1, string s2)

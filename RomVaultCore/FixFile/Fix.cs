@@ -1,4 +1,4 @@
-﻿/******************************************************
+/******************************************************
  *     ROMVault3 is written by Gordon J.              *
  *     Contact gordon@romvault.com                    *
  *     Copyright 2025                                 *
@@ -15,8 +15,27 @@ using RVIO;
 
 namespace RomVaultCore.FixFile
 {
+    /// <summary>
+    /// Top-level fix orchestrator.
+    /// </summary>
+    /// <remarks>
+    /// Walks the selected DB tree and applies fix operations according to <see cref="RepStatus"/>.
+    ///
+    /// Container-level fixes:
+    /// - Zip/7z containers are handled by <see cref="FixAZip"/>.
+    /// - CHD containers are handled by <see cref="FixAChd"/>.
+    ///
+    /// Leaf file fixes are handled by <see cref="FixAFile"/>.
+    ///
+    /// The fix pass maintains a queue of follow-up operations (<c>fileProcessQueue</c>) so dependent operations
+    /// can be processed deterministically.
+    /// </remarks>
     public static class Fix
     {
+        /// <summary>
+        /// Executes the fix workflow for all selected sets.
+        /// </summary>
+        /// <param name="thWrk">Progress/cancellation worker.</param>
         public static void PerformFixes(ThreadWorker thWrk)
         {
             try
@@ -84,6 +103,9 @@ namespace RomVaultCore.FixFile
             }
         }
 
+        /// <summary>
+        /// Counts fixable leaf operations under a directory for progress range reporting.
+        /// </summary>
         private static int CountFixDir(RvFile dir, bool lastSelected)
         {
             int count = 0;
@@ -111,6 +133,21 @@ namespace RomVaultCore.FixFile
 
                         break;
 
+                    case FileType.CHD:
+                        if (!thisSelected)
+                        {
+                            continue;
+                        }
+                        if (child.GotStatus != GotStatus.Got &&
+                            (child.RepStatus == RepStatus.CanBeFixed ||
+                             child.RepStatus == RepStatus.CanBeFixedMIA ||
+                             child.RepStatus == RepStatus.Missing ||
+                             child.RepStatus == RepStatus.MissingMIA))
+                        {
+                            count++;
+                        }
+                        break;
+
                     case FileType.Dir:
 
                         count += CountFixDir(child, thisSelected);
@@ -132,6 +169,9 @@ namespace RomVaultCore.FixFile
         }
 
 
+        /// <summary>
+        /// Fixes all children under a directory, respecting selection state and processing queued follow-ups.
+        /// </summary>
         private static ReturnCode FixDir(RvFile dir, bool lastSelected, List<RvFile> fileProcessQueue, ref int totalFixed, ref int reportedFixed, Stopwatch cacheSaveTimer)
         {
             //Debug.WriteLine(dir.FullName);
@@ -189,6 +229,9 @@ namespace RomVaultCore.FixFile
         }
 
 
+        /// <summary>
+        /// Dispatches fixing for a single node based on its <see cref="FileType"/> and status.
+        /// </summary>
         private static ReturnCode FixBase(RvFile child, bool thisSelected, List<RvFile> fileProcessQueue, ref int totalFixed, ref int reportedFixed, Stopwatch cacheSaveTimer)
         {
             // skip any files that have already been deleted
@@ -203,6 +246,12 @@ namespace RomVaultCore.FixFile
             ReturnCode returnCode = ReturnCode.LogicError;
             switch (child.FileType)
             {
+                case FileType.FileZip:
+                case FileType.FileSevenZip:
+                case FileType.FileCHD:
+                    // Container members are fixed by their owning container (Zip/7z/CHD), not directly.
+                    return ReturnCode.Good;
+
                 case FileType.Zip:
                 case FileType.SevenZip:
                     if (!thisSelected)
@@ -211,6 +260,15 @@ namespace RomVaultCore.FixFile
                     }
 
                     returnCode = FixAZip.FixZip(child, fileProcessQueue, ref totalFixed, out errorMessage);
+                    break;
+
+                case FileType.CHD:
+                    if (!thisSelected)
+                    {
+                        return ReturnCode.Good;
+                    }
+
+                    returnCode = FixAChd.FixChd(child, thisSelected, fileProcessQueue, ref totalFixed, out errorMessage);
                     break;
 
                 case FileType.Dir:
@@ -249,7 +307,20 @@ namespace RomVaultCore.FixFile
                     ReportError.Show(errorMessage);
                     break;
                 case ReturnCode.LogicError:
-                    ReportError.UnhandledExceptionHandler(errorMessage);
+                    if (string.IsNullOrWhiteSpace(errorMessage))
+                    {
+                        string tn = "";
+                        try { tn = child?.TreeFullName ?? ""; } catch { tn = ""; }
+                        errorMessage =
+                            "LogicError with no errorMessage.\n" +
+                            $"Node: {tn}\n" +
+                            $"FileType: {child?.FileType}\n" +
+                            $"RepStatus: {child?.RepStatus}\n" +
+                            $"DatStatus: {child?.DatStatus}\n" +
+                            $"GotStatus: {child?.GotStatus}";
+                    }
+                    ReportError.Show(errorMessage);
+                    returnCode = ReturnCode.FileSystemError;
                     break;
                 case ReturnCode.FileSystemError:
                     ReportError.Show($"{errorMessage}\n{returnCode}\n");

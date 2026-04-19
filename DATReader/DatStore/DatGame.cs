@@ -1,7 +1,10 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 
 namespace DATReader.DatStore
 {
+    /// <summary>
+    /// Game metadata record associated with a DAT directory entry.
+    /// </summary>
     public class DatGame
     {
         public string Id;
@@ -42,6 +45,10 @@ namespace DATReader.DatStore
 
         public DatGame() { }
 
+        /// <summary>
+        /// Creates a copy of an existing game metadata record.
+        /// </summary>
+        /// <param name="dg">Source record.</param>
         public DatGame(DatGame dg)
         {
             Id = dg.Id;

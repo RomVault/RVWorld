@@ -1,4 +1,4 @@
-﻿/******************************************************
+/******************************************************
  *     ROMVault3 is written by Gordon J.              *
  *     Contact gordon@romvault.com                    *
  *     Copyright 2025                                 *
@@ -11,6 +11,9 @@ using RomVaultCore.RvDB;
 
 namespace ROMVault
 {
+    /// <summary>
+    /// Splash screen shown during startup while loading the database and running initial checks.
+    /// </summary>
     public partial class FrmSplashScreen : Form
     {
         private double _opacityIncrement = 0.05;

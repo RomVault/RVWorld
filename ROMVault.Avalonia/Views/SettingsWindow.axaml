@@ -1,0 +1,150 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="500" d:DesignHeight="550"
+        x:Class="ROMVault.Avalonia.Views.SettingsWindow"
+        Title="RomVault Settings" Width="680" Height="740" MinWidth="560" MinHeight="520"
+        WindowStartupLocation="CenterOwner">
+    <DockPanel Margin="16">
+        <Border DockPanel.Dock="Bottom"
+                Background="{DynamicResource SurfaceBackgroundBrush}"
+                BorderBrush="{DynamicResource SurfaceBorderBrush}"
+                BorderThickness="0,1,0,0"
+                Padding="12"
+                CornerRadius="8">
+            <Grid ColumnDefinitions="*,Auto,Auto">
+                <TextBlock Classes="Muted" VerticalAlignment="Center" Text="Changes take effect immediately unless noted."/>
+                <Button Grid.Column="1" Name="btnCancel" Content="Cancel" MinWidth="92" Margin="0,0,10,0" IsCancel="True"/>
+                <Button Grid.Column="2" Name="btnOK" Content="OK" MinWidth="92" IsDefault="True"/>
+            </Grid>
+        </Border>
+
+        <TabControl Padding="0">
+            <TabItem Header="General">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="0,0,18,12">
+                    <StackPanel Spacing="12">
+                        <StackPanel Spacing="2">
+                            <TextBlock Text="Settings" FontSize="18" FontWeight="SemiBold"/>
+                            <TextBlock Classes="Muted" Text="Configure global paths, scan and fix behavior, compression, and reporting."/>
+                        </StackPanel>
+
+                        <Border Classes="Card" Padding="12">
+                            <StackPanel Spacing="10">
+                                <TextBlock Text="Core" Classes="SectionHeader"/>
+                                <Grid ColumnDefinitions="160,*,Auto" RowDefinitions="Auto,Auto" RowSpacing="10" ColumnSpacing="10">
+                                    <TextBlock Grid.Row="0" Grid.Column="0" Text="DAT root" Classes="Muted" VerticalAlignment="Center"/>
+                                    <TextBox Grid.Row="0" Grid.Column="1" Name="lblDATRoot" IsReadOnly="True"/>
+                                    <Button Grid.Row="0" Grid.Column="2" Name="btnDAT" Content="Browse" MinWidth="92"/>
+
+                                    <TextBlock Grid.Row="1" Grid.Column="0" Text="Fixing level" Classes="Muted" VerticalAlignment="Center"/>
+                                    <ComboBox Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2" Name="cboFixLevel" HorizontalAlignment="Stretch"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Classes="Card" Padding="12">
+                            <StackPanel Spacing="10">
+                                <TextBlock Text="Compression" Classes="SectionHeader"/>
+                                <Grid ColumnDefinitions="160,*" RowDefinitions="Auto,Auto" RowSpacing="10" ColumnSpacing="10">
+                                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Max ZSTD workers" Classes="Muted" VerticalAlignment="Center"/>
+                                    <ComboBox Grid.Row="0" Grid.Column="1" Name="cboCores" HorizontalAlignment="Stretch"/>
+
+                                    <TextBlock Grid.Row="1" Grid.Column="0" Text="Default 7Z type" Classes="Muted" VerticalAlignment="Center"/>
+                                    <ComboBox Grid.Row="1" Grid.Column="1" Name="cbo7zStruct" HorizontalAlignment="Stretch"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Classes="Card" Padding="12">
+                            <StackPanel Spacing="10">
+                                <TextBlock Text="Behavior" Classes="SectionHeader"/>
+                                <CheckBox Name="chkDoubleCheckDelete" Content="Double check file exists elsewhere before deleting"/>
+                                <Grid ColumnDefinitions="Auto,Auto,Auto,*" ColumnSpacing="10">
+                                    <CheckBox Grid.Column="0" Name="chkCacheSaveTimer" Content="Save cache on timer every" VerticalAlignment="Center"/>
+                                    <NumericUpDown Grid.Column="1" Name="upTime" Minimum="5" Maximum="60" Increment="5" Value="10" Width="110" FormatString="0"/>
+                                    <TextBlock Grid.Column="2" Text="minutes" Classes="Muted" VerticalAlignment="Center"/>
+                                </Grid>
+                                <CheckBox Name="chkDarkMode" Content="Dark mode"/>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Classes="Card" Padding="12">
+                            <StackPanel Spacing="10">
+                                <TextBlock Text="DATVault" Classes="SectionHeader"/>
+                                <CheckBox Name="chkSendFoundMIA" Content="Send Found MIA notifications"/>
+                                <CheckBox Name="chkSendFoundMIAAnon" Content="Send anonymously" Margin="22,0,0,0"/>
+                                <CheckBox Name="chkDeleteOldCueFiles" Content="Delete previous Cue file zips in ToSort"/>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Classes="Card" Padding="12">
+                            <StackPanel Spacing="10">
+                                <TextBlock Text="Logging" Classes="SectionHeader"/>
+                                <CheckBox Name="chkDetailedReporting" Content="Show detailed actions in Fixing Status window"/>
+                                <CheckBox Name="chkDebugLogs" Content="Enable debug logging"/>
+                                <CheckBox Name="chkDoNotReportFeedback" Content="Do not report feedback"/>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Classes="Card" Padding="12">
+                            <StackPanel Spacing="10">
+                                <TextBlock Text="Ignore Rules" Classes="SectionHeader"/>
+                                <TextBlock Classes="Muted"
+                                           Text="One rule per line. Use * and ? wildcards. Regex rules start with 'regex:'. Scanning ignore rules start with 'ignore:'."/>
+                                <TextBox Name="textBox1"
+                                         AcceptsReturn="True"
+                                         TextWrapping="NoWrap"
+                                         Height="120"
+                                         ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                         ScrollViewer.HorizontalScrollBarVisibility="Auto"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+            <TabItem Header="CHD">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="0,0,18,12">
+                    <StackPanel Spacing="12">
+                        <StackPanel Spacing="2">
+                            <TextBlock Text="CHD Settings" FontSize="18" FontWeight="SemiBold"/>
+                            <TextBlock Classes="Muted" Text="Configure CHD scanning, verification, and extraction behaviors."/>
+                        </StackPanel>
+                        
+                        <Border Classes="Card" Padding="12">
+                            <StackPanel Spacing="10">
+                                <TextBlock Text="Scanning" Classes="SectionHeader"/>
+                                <CheckBox Name="chkChdCache" Content="Enable CHD scan cache"/>
+                                <CheckBox Name="chkChdDebug" Content="Write CHD scan debug logs"/>
+                                <CheckBox Name="chkChdStreaming" Content="Enable CHD streaming (experimental)"/>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Classes="Card" Padding="12">
+                            <StackPanel Spacing="10">
+                                <TextBlock Text="Fixing" Classes="SectionHeader"/>
+                                <CheckBox Name="chkChdExportOnFix" Content="Allow exporting tracks during Fix"/>
+                                <CheckBox Name="chkChdKeepCueGdi" Content="Default: Keep .cue / .gdi alongside CHDs"/>
+                                
+                                <Grid ColumnDefinitions="160,*" RowDefinitions="Auto,Auto" ColumnSpacing="10" RowSpacing="10" Margin="0,10,0,0">
+                                    <TextBlock Grid.Row="0" Grid.Column="0" Text="DVD hunk size (KiB)" Classes="Muted" VerticalAlignment="Center"/>
+                                    <NumericUpDown Grid.Row="0" Grid.Column="1" Name="upChdDvdHunk" Minimum="0" Maximum="1024" Increment="32" Value="0" HorizontalAlignment="Stretch" FormatString="0"/>
+
+                                    <TextBlock Grid.Row="1" Grid.Column="0" Text="chdman processors (-np)" Classes="Muted" VerticalAlignment="Center"/>
+                                    <ComboBox Grid.Row="1" Grid.Column="1" Name="cboChdNumProcessors" HorizontalAlignment="Stretch"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Classes="Card" Padding="12">
+                            <StackPanel Spacing="10">
+                                <TextBlock Text="Maintenance" Classes="SectionHeader"/>
+                                <Button Name="btnPurgeChdCache" Content="Purge CHD Scan Cache" HorizontalAlignment="Left" MinWidth="200"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+        </TabControl>
+    </DockPanel>
+</Window>

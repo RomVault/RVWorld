@@ -1,4 +1,4 @@
-﻿/******************************************************
+/******************************************************
  *     ROMVault3 is written by Gordon J.              *
  *     Contact gordon@romvault.com                    *
  *     Copyright 2025                                 *
@@ -11,6 +11,9 @@ using System.IO;
 
 namespace RomVaultCore.Utils
 {
+    /// <summary>
+    /// Helpers for computing relative paths between filesystem locations.
+    /// </summary>
     public static class RelativePath
     {
         /// <summary>

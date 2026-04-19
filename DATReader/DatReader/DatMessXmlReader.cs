@@ -1,9 +1,12 @@
-﻿using System.Xml;
+using System.Xml;
 using DATReader.DatStore;
 using DATReader.Utils;
 
 namespace DATReader.DatReader
 {
+    /// <summary>
+    /// Parser for MAME/MESS Software List XML.
+    /// </summary>
     public static class DatMessXmlReader
     {
         public static bool ReadDat(XmlDocument doc, string strFilename, out DatHeader datHeader)

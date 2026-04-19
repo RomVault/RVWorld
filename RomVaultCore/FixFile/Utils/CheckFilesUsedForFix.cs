@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Diagnostics;
 using RomVaultCore.RvDB;
 
@@ -55,6 +55,7 @@ namespace RomVaultCore.FixFile.Utils
                         break;
                     case FileType.FileZip:
                     case FileType.FileSevenZip:
+                    case FileType.FileCHD:
                         // if this is a compressed fixRom and adds its parent to the parentCheckList to see if the parent can now be reprocessed
                         RvFile checkFile = fixRom.Parent;
                         if (!parentCheckList.Contains(checkFile))

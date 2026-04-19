@@ -1,5 +1,8 @@
-﻿namespace CUETools.Codecs.Flake
+namespace CUETools.Codecs.Flake
 {
+    /// <summary>
+    /// FLAC channel coding mode.
+    /// </summary>
     public enum ChannelMode
     {
         NotStereo = 0,

@@ -1,4 +1,4 @@
-﻿using System.ComponentModel;
+using System.ComponentModel;
 using System.Text;
 using DATReader.DatStore;
 using DATReader.Utils;
@@ -6,6 +6,9 @@ using RVIO;
 
 namespace DATReader.DatReader
 {
+    /// <summary>
+    /// Parser for ClrMamePro-style DAT files.
+    /// </summary>
     public static class DatCmpReader
     {
         public static bool ReadDat(System.IO.Stream fStream, string strFilename, ReportError errorReport, out DatHeader datHeader)

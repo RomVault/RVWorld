@@ -1,4 +1,4 @@
-﻿using CHDReaderTest.Flac.FlacDeps;
+using CHDReaderTest.Flac.FlacDeps;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -8,6 +8,9 @@ using System.Text;
 namespace CUETools.Codecs.Flake
 {
     //[JsonObject(MemberSerialization.OptIn)]
+    /// <summary>
+    /// Decoder settings for the CUETools FLAC decoder.
+    /// </summary>
     public class DecoderSettings : IAudioDecoderSettings
     {
         #region IAudioDecoderSettings implementation

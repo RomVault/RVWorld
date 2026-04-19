@@ -2,6 +2,9 @@ using System;
 
 namespace CHDReaderTest.Flac.FlacDeps
 {
+    /// <summary>
+    /// CRC16 implementation used by FLAC frame verification and bitstream writing.
+    /// </summary>
     public static class Crc16
     {
         const int GF2_DIM = 16;

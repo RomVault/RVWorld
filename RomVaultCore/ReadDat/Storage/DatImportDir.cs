@@ -1,4 +1,4 @@
-﻿using RomVaultCore.ReadDat;
+using RomVaultCore.ReadDat;
 using RomVaultCore.RvDB;
 using RomVaultCore.Utils;
 using RVIO;
@@ -7,6 +7,9 @@ using Path = RVIO.Path;
 
 namespace RomVaultCore.Storage.Dat
 {
+    /// <summary>
+    /// Directory-level DAT import node representing the DatRoot tree discovered on disk.
+    /// </summary>
     public class DatImportDir
     {
         public readonly string Name;
@@ -36,13 +39,17 @@ namespace RomVaultCore.Storage.Dat
 
         private static string GetDatTreePath(string rootPath)
         {
-            if (rootPath == "")
-            {
+            if (string.IsNullOrEmpty(rootPath))
                 return "DatRoot";
-            }
-            if (rootPath.StartsWith("RomVault"))
+
+            const string rvRoot = "RomVault";
+            if (rootPath.Equals(rvRoot, System.StringComparison.OrdinalIgnoreCase))
+                return "DatRoot";
+
+            if (rootPath.StartsWith(rvRoot + "\\", System.StringComparison.OrdinalIgnoreCase) ||
+                rootPath.StartsWith(rvRoot + "/", System.StringComparison.OrdinalIgnoreCase))
             {
-                return @"DatRoot" + rootPath.Substring(8);
+                return "DatRoot" + rootPath.Substring(rvRoot.Length);
             }
 
             return "Error";
@@ -140,9 +147,10 @@ namespace RomVaultCore.Storage.Dat
                 // has a directory separator character added to the end of them,
                 // so they match up to the directory name in this full Directory Name.
                 DatRule datRule = DatReader.FindDatRule(tDat.DatFullName);
+                DatRule globalRule = DatReader.FindDatRule("DatRoot" + System.IO.Path.DirectorySeparatorChar);
 
                 tDat.SetFlag(DatFlags.MultiDatOverride, datRule.MultiDATDirOverride);
-                tDat.SetFlag(DatFlags.UseDescriptionAsDirName, datRule.UseDescriptionAsDirName);
+                tDat.SetFlag(DatFlags.UseDescriptionAsDirName, globalRule?.UseDescriptionAsDirName ?? datRule.UseDescriptionAsDirName);
                 tDat.SetFlag(DatFlags.SingleArchive, datRule.SingleArchive);
                 tDat.SetFlag(DatFlags.UseIdForName, datRule.UseIdForName);
                 tDat.SubDirType = datRule.SubDirType;

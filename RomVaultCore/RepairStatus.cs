@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading;
@@ -6,6 +6,9 @@ using RomVaultCore.RvDB;
 
 namespace RomVaultCore
 {
+    /// <summary>
+    /// Repair/scanning status values used to drive UI coloring and fix workflows.
+    /// </summary>
     public enum RepStatus
     {
         // Scanning Status:
@@ -56,6 +59,9 @@ namespace RomVaultCore
         EndValue
     }
 
+    /// <summary>
+    /// Computes and updates <see cref="RepStatus"/> values and provides status reset/initialization helpers.
+    /// </summary>
     public static class RepairStatus
     {
         public static List<RepStatus>[,,] StatusCheck;
@@ -105,6 +111,19 @@ namespace RomVaultCore
             StatusCheck[(int)FileType.SevenZip, (int)DatStatus.NotInDat, (int)GotStatus.Got] = new List<RepStatus> { RepStatus.DirUnknown };
             StatusCheck[(int)FileType.SevenZip, (int)DatStatus.NotInDat, (int)GotStatus.Corrupt] = new List<RepStatus> { RepStatus.DirCorrupt };
             StatusCheck[(int)FileType.SevenZip, (int)DatStatus.NotInDat, (int)GotStatus.FileLocked] = new List<RepStatus> { RepStatus.UnScanned };
+
+            StatusCheck[(int)FileType.CHD, (int)DatStatus.InDatCollect, (int)GotStatus.NotGot] = new List<RepStatus> { RepStatus.DirMissing };
+            StatusCheck[(int)FileType.CHD, (int)DatStatus.InDatCollect, (int)GotStatus.Got] = new List<RepStatus> { RepStatus.DirCorrect };
+            StatusCheck[(int)FileType.CHD, (int)DatStatus.InDatCollect, (int)GotStatus.Corrupt] = new List<RepStatus> { RepStatus.DirCorrupt };
+            StatusCheck[(int)FileType.CHD, (int)DatStatus.InDatCollect, (int)GotStatus.FileLocked] = new List<RepStatus> { RepStatus.UnScanned };
+            StatusCheck[(int)FileType.CHD, (int)DatStatus.InToSort, (int)GotStatus.NotGot] = new List<RepStatus> { RepStatus.Deleted };
+            StatusCheck[(int)FileType.CHD, (int)DatStatus.InToSort, (int)GotStatus.Got] = new List<RepStatus> { RepStatus.DirInToSort };
+            StatusCheck[(int)FileType.CHD, (int)DatStatus.InToSort, (int)GotStatus.Corrupt] = new List<RepStatus> { RepStatus.DirCorrupt };
+            StatusCheck[(int)FileType.CHD, (int)DatStatus.InToSort, (int)GotStatus.FileLocked] = new List<RepStatus> { RepStatus.UnScanned };
+            StatusCheck[(int)FileType.CHD, (int)DatStatus.NotInDat, (int)GotStatus.NotGot] = new List<RepStatus> { RepStatus.Deleted };
+            StatusCheck[(int)FileType.CHD, (int)DatStatus.NotInDat, (int)GotStatus.Got] = new List<RepStatus> { RepStatus.DirUnknown };
+            StatusCheck[(int)FileType.CHD, (int)DatStatus.NotInDat, (int)GotStatus.Corrupt] = new List<RepStatus> { RepStatus.DirCorrupt };
+            StatusCheck[(int)FileType.CHD, (int)DatStatus.NotInDat, (int)GotStatus.FileLocked] = new List<RepStatus> { RepStatus.UnScanned };
 
             // 3 * 6 * 4 = 72 total combinations
             //
@@ -185,6 +204,27 @@ namespace RomVaultCore
             StatusCheck[(int)FileType.FileSevenZip, (int)DatStatus.NotInDat, (int)GotStatus.Corrupt] = new List<RepStatus> { RepStatus.Corrupt, RepStatus.MoveToCorrupt, RepStatus.Delete };
             StatusCheck[(int)FileType.FileSevenZip, (int)DatStatus.NotInDat, (int)GotStatus.FileLocked] = new List<RepStatus> { RepStatus.UnScanned };
 
+            StatusCheck[(int)FileType.FileCHD, (int)DatStatus.InDatCollect, (int)GotStatus.NotGot] = new List<RepStatus> { RepStatus.Missing, RepStatus.CanBeFixed, RepStatus.Incomplete };
+            StatusCheck[(int)FileType.FileCHD, (int)DatStatus.InDatCollect, (int)GotStatus.Got] = new List<RepStatus> { RepStatus.Correct, RepStatus.IncompleteRemove, RepStatus.MoveToSort, RepStatus.NeededForFix, RepStatus.Delete };
+            StatusCheck[(int)FileType.FileCHD, (int)DatStatus.InDatCollect, (int)GotStatus.Corrupt] = new List<RepStatus> { RepStatus.Corrupt, RepStatus.MoveToCorrupt, RepStatus.CorruptCanBeFixed };
+            StatusCheck[(int)FileType.FileCHD, (int)DatStatus.InDatCollect, (int)GotStatus.FileLocked] = new List<RepStatus> { RepStatus.UnScanned };
+            StatusCheck[(int)FileType.FileCHD, (int)DatStatus.InDatMerged, (int)GotStatus.NotGot] = new List<RepStatus> { RepStatus.NotCollected };
+            StatusCheck[(int)FileType.FileCHD, (int)DatStatus.InDatMerged, (int)GotStatus.Got] = new List<RepStatus> { RepStatus.UnNeeded, RepStatus.Delete, RepStatus.MoveToSort, RepStatus.NeededForFix, RepStatus.Rename };
+            StatusCheck[(int)FileType.FileCHD, (int)DatStatus.InDatMerged, (int)GotStatus.Corrupt] = new List<RepStatus> { RepStatus.Corrupt, RepStatus.MoveToCorrupt, RepStatus.Delete };
+            StatusCheck[(int)FileType.FileCHD, (int)DatStatus.InDatMerged, (int)GotStatus.FileLocked] = new List<RepStatus> { RepStatus.UnScanned };
+            StatusCheck[(int)FileType.FileCHD, (int)DatStatus.InDatMIA, (int)GotStatus.NotGot] = new List<RepStatus> { RepStatus.MissingMIA, RepStatus.CanBeFixedMIA, RepStatus.Incomplete };
+            StatusCheck[(int)FileType.FileCHD, (int)DatStatus.InDatMIA, (int)GotStatus.Got] = new List<RepStatus> { RepStatus.CorrectMIA, RepStatus.IncompleteRemove, RepStatus.MoveToSort, RepStatus.NeededForFix, RepStatus.Delete };
+            StatusCheck[(int)FileType.FileCHD, (int)DatStatus.InDatMIA, (int)GotStatus.Corrupt] = new List<RepStatus> { RepStatus.Corrupt, RepStatus.MoveToCorrupt, RepStatus.CorruptCanBeFixed };
+            StatusCheck[(int)FileType.FileCHD, (int)DatStatus.InDatMIA, (int)GotStatus.FileLocked] = new List<RepStatus> { RepStatus.UnScanned };
+            StatusCheck[(int)FileType.FileCHD, (int)DatStatus.InToSort, (int)GotStatus.NotGot] = new List<RepStatus> { RepStatus.Deleted };
+            StatusCheck[(int)FileType.FileCHD, (int)DatStatus.InToSort, (int)GotStatus.Got] = new List<RepStatus> { RepStatus.InToSort, RepStatus.NeededForFix, RepStatus.Delete };
+            StatusCheck[(int)FileType.FileCHD, (int)DatStatus.InToSort, (int)GotStatus.Corrupt] = new List<RepStatus> { RepStatus.Corrupt, RepStatus.Delete };
+            StatusCheck[(int)FileType.FileCHD, (int)DatStatus.InToSort, (int)GotStatus.FileLocked] = new List<RepStatus> { RepStatus.UnScanned };
+            StatusCheck[(int)FileType.FileCHD, (int)DatStatus.NotInDat, (int)GotStatus.NotGot] = new List<RepStatus> { RepStatus.Deleted };
+            StatusCheck[(int)FileType.FileCHD, (int)DatStatus.NotInDat, (int)GotStatus.Got] = new List<RepStatus> { RepStatus.Unknown, RepStatus.Delete, RepStatus.MoveToSort, RepStatus.NeededForFix, RepStatus.Rename };
+            StatusCheck[(int)FileType.FileCHD, (int)DatStatus.NotInDat, (int)GotStatus.Corrupt] = new List<RepStatus> { RepStatus.Corrupt, RepStatus.MoveToCorrupt, RepStatus.Delete };
+            StatusCheck[(int)FileType.FileCHD, (int)DatStatus.NotInDat, (int)GotStatus.FileLocked] = new List<RepStatus> { RepStatus.UnScanned };
+
 
             DisplayOrder = new[]
             {
@@ -225,8 +265,7 @@ namespace RomVaultCore
             tFile.RepStatusReset();
             tFile.FileGroup = null;
 
-            FileType ftBase = tFile.FileType;
-            if (ftBase != FileType.Zip && ftBase != FileType.SevenZip && ftBase != FileType.Dir)
+            if (!tFile.IsDirectory)
             {
                 return;
             }
@@ -240,6 +279,9 @@ namespace RomVaultCore
         }
     }
 
+    /// <summary>
+    /// Accumulates per-status counts for a subtree, supporting fast aggregate UI updates.
+    /// </summary>
     public class ReportStatus
     {
         private readonly int[] _arrRepStatus = new int[(int)RepStatus.EndValue];

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Drawing;
 using System.Windows.Forms;
 using RomVaultCore;
@@ -9,6 +9,9 @@ using RVIO;
 
 namespace ROMVault
 {
+    /// <summary>
+    /// UI for viewing and editing directory mapping rules and per-path archive options.
+    /// </summary>
     public partial class FrmDirectoryMappings : Form
     {
         private Color _cMagenta = Color.FromArgb(255, 214, 255);

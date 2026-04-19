@@ -1,6 +1,9 @@
-﻿using System;
+using System;
 
 [Flags]
+/// <summary>
+/// Header signature classification used for headered ROM formats and common container magics.
+/// </summary>
 public enum HeaderFileType
 {
     Nothing = 0,

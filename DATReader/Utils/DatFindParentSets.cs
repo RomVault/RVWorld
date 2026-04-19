@@ -1,8 +1,11 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using DATReader.DatStore;
 
 namespace DATReader.Utils
 {
+    /// <summary>
+    /// Resolves parent/clone relationships between DAT game sets.
+    /// </summary>
     public static class DatFindParentSets
     {
         public static void FindParentSet(DatDir searchGame, DatDir parentDir, bool includeBios, ref List<DatDir> lstParentGames)

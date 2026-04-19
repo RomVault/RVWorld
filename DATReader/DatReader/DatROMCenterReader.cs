@@ -1,10 +1,13 @@
-﻿using System;
+using System;
 using System.Text;
 using DATReader.DatStore;
 using DATReader.Utils;
 
 namespace DATReader.DatReader
 {
+    /// <summary>
+    /// Parser for ROMCenter DAT format.
+    /// </summary>
     public static class DatROMCenterReader
     {
         public static bool ReadDat(System.IO.Stream fStream, string strFilename, ReportError errorReport, out DatHeader datHeader)

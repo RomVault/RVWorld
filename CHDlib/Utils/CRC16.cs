@@ -1,7 +1,13 @@
-﻿namespace CHDSharpLib.Utils;
+namespace CHDSharpLib.Utils;
 
+/// <summary>
+/// CRC16 implementation used by CHD v5 map and block verification.
+/// </summary>
 public static class CRC16
 {
+    /// <summary>
+    /// CRC16 lookup table.
+    /// </summary>
     static readonly ushort[] s_table = new ushort[]
     {
             0x0000, 0x1021, 0x2042, 0x3063, 0x4084, 0x50a5, 0x60c6, 0x70e7,
@@ -38,6 +44,12 @@ public static class CRC16
             0x6e17, 0x7e36, 0x4e55, 0x5e74, 0x2e93, 0x3eb2, 0x0ed1, 0x1ef0
     };
 
+    /// <summary>
+    /// Computes the CRC16 checksum of the first <paramref name="length"/> bytes of <paramref name="data"/>.
+    /// </summary>
+    /// <param name="data">Input buffer.</param>
+    /// <param name="length">Number of bytes to process.</param>
+    /// <returns>CRC16 checksum.</returns>
     public static ushort calc(byte[] data, int length)
     {
         ushort crc = 0xffff;

@@ -1,4 +1,4 @@
-﻿using System;
+﻿﻿using System;
 using System.IO;
 using System.Threading;
 
@@ -47,7 +47,15 @@ namespace Compress.ThreadReaders
                 }
                 try
                 {
-                    SizeRead = _ds.Read(_buffer, 0, _size);
+                    int total = 0;
+                    while (total < _size)
+                    {
+                        int read = _ds.Read(_buffer, total, _size - total);
+                        if (read <= 0)
+                            break;
+                        total += read;
+                    }
+                    SizeRead = total;
                 }
                 catch (Exception)
                 {

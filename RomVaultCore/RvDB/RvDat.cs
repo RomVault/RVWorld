@@ -1,4 +1,4 @@
-﻿/******************************************************
+/******************************************************
  *     ROMVault3 is written by Gordon J.              *
  *     Contact gordon@romvault.com                    *
  *     Copyright 2025                                 *
@@ -13,12 +13,18 @@ using RomVaultCore.Storage.Dat;
 
 namespace RomVaultCore.RvDB
 {
+    /// <summary>
+    /// Per-DAT update status used while reconciling DatRoot with the database cache.
+    /// </summary>
     public enum DatUpdateStatus
     {
         Delete,
         Correct
     }
     [Flags]
+    /// <summary>
+    /// Flags describing DAT configuration and behavior overrides.
+    /// </summary>
     public enum DatFlags
     {
         AutoAddedDirectory = 1,
@@ -29,6 +35,9 @@ namespace RomVaultCore.RvDB
         UseIdForName = 32
     }
 
+    /// <summary>
+    /// Cached metadata record describing a DAT and its configuration.
+    /// </summary>
     public class RvDat
     {
 
@@ -192,6 +201,9 @@ namespace RomVaultCore.RvDB
             return "";
         }
 
+        /// <summary>
+        /// Stores a single typed metadata item for a DAT record.
+        /// </summary>
         private class DatMetaData
         {
             public DatMetaData(DatData id, string value)

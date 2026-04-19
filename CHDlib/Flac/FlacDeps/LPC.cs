@@ -2,6 +2,9 @@ using System;
 
 namespace CHDReaderTest.Flac.FlacDeps
 {
+    /// <summary>
+    /// Linear predictive coding helper routines used by the FLAC encoder/decoder implementation.
+    /// </summary>
     public class lpc
     {
         public const int MAX_LPC_ORDER = 32;

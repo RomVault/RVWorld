@@ -1,5 +1,8 @@
-﻿namespace CUETools.Codecs.Flake
+namespace CUETools.Codecs.Flake
 {
+    /// <summary>
+    /// Window functions used by the LPC estimator.
+    /// </summary>
     public enum WindowFunction
     {
         None = 0,

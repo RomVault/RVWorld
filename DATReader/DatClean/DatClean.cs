@@ -1,10 +1,13 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using DATReader.DatStore;
 using SortMethods;
 
 namespace DATReader.DatClean
 {
+    /// <summary>
+    /// Policy controlling how subdirectories are removed or preserved during DAT directory normalization.
+    /// </summary>
     public enum RemoveSubType
     {
         KeepAllSubDirs,
@@ -14,8 +17,15 @@ namespace DATReader.DatClean
         RemoveSubIfNameMatches
     }
 
+    /// <summary>
+    /// Helpers for normalizing DAT directory structures (flattening, expanding, and cleanup passes).
+    /// </summary>
     public static partial class DatClean
     {
+        /// <summary>
+        /// Flattens a directory tree so each <see cref="DatGame"/> directory becomes a direct child of <paramref name="dDir"/>.
+        /// </summary>
+        /// <param name="dDir">Root directory to flatten.</param>
         public static void DirectoryFlattern(DatDir dDir)
         {
             List<DatDir> list = new List<DatDir>();
@@ -48,6 +58,10 @@ namespace DATReader.DatClean
             }
         }
 
+        /// <summary>
+        /// Flattens archive-style directory structures by rewriting member paths into single-level entries.
+        /// </summary>
+        /// <param name="dDir">Root directory to flatten.</param>
         public static void ArchiveDirectoryFlattern(DatDir dDir)
         {
 
@@ -99,6 +113,10 @@ namespace DATReader.DatClean
         }
 
 
+        /// <summary>
+        /// Sorts directory children using the current <see cref="DatDir"/> sort policy.
+        /// </summary>
+        /// <param name="dDir">Directory to sort.</param>
         public static void DirectorySort(DatDir dDir)
         {
             DatBase[] arrDir = dDir.ToArray();
@@ -110,8 +128,17 @@ namespace DATReader.DatClean
             }
         }
 
+        /// <summary>
+        /// Expands entries with embedded subpaths (e.g. "a/b/c") into nested <see cref="DatDir"/> nodes.
+        /// </summary>
+        /// <param name="dDir">Directory to expand.</param>
         public static void DirectoryExpand(DatDir dDir)
         {
+            // CHD member paths may contain "/" (single-archive style naming), but CHD containers
+            // must remain a flat list of FileCHD children in the DB model.
+            if (dDir.FileType == FileType.CHD)
+                return;
+
             DatBase[] arrDir = dDir.ToArray();
             bool foundSubDir = false;
             foreach (DatBase db in arrDir)
@@ -163,6 +190,10 @@ namespace DATReader.DatClean
             }
         }
 
+        /// <summary>
+        /// Clears device references on all games under <paramref name="dDir"/>.
+        /// </summary>
+        /// <param name="dDir">Root directory.</param>
         public static void RemoveDeviceRef(DatDir dDir)
         {
             DatBase[] arrDir = dDir.ToArray();
@@ -181,6 +212,10 @@ namespace DATReader.DatClean
             }
         }
 
+        /// <summary>
+        /// Marks any file entries whose DAT status is "deduped" as merged.
+        /// </summary>
+        /// <param name="dDir">Root directory.</param>
         public static void CheckDeDuped(DatDir dDir)
         {
             DatBase[] arrDir = dDir.ToArray();

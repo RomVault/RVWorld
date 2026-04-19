@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Security.Cryptography;
 using Compress;
 using DATReader.DatStore;
@@ -6,6 +6,9 @@ using RVIO;
 
 namespace DATReader.DatWriter
 {
+    /// <summary>
+    /// Writer for XML DAT output (classic and new-style variants).
+    /// </summary>
     public static class DatXMLWriter
     {
         public static void WriteDat(string strFilename, DatHeader datHeader, bool newStyle = false)
@@ -241,6 +244,9 @@ namespace DATReader.DatWriter
             return b == null ? "" : BitConverter.ToString(b).ToLower().Replace("-", "");
         }
 
+        /// <summary>
+        /// Simple indentation-aware writer for DAT XML output.
+        /// </summary>
         private class DatStreamWriter : IDisposable
         {
             private int _tabDepth;

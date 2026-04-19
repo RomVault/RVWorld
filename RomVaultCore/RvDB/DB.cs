@@ -1,4 +1,4 @@
-﻿/******************************************************
+/******************************************************
  *     ROMVault3 is written by Gordon J.              *
  *     Contact gordon@romvault.com                    *
  *     Copyright 2025                                 *
@@ -13,12 +13,18 @@ using FileStream = System.IO.FileStream;
 
 namespace RomVaultCore.RvDB
 {
+    /// <summary>
+    /// Database cache file versioning constants.
+    /// </summary>
     public static class DBVersion
     {
         public const int Version = 3;
         public static int VersionNow;
     }
 
+    /// <summary>
+    /// Database cache read/write entry points and the root in-memory tree.
+    /// </summary>
     public static class DB
     {
         private const ulong EndCacheMarker = 0x15a600dda7;

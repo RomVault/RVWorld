@@ -1,4 +1,4 @@
-﻿/******************************************************
+/******************************************************
  *     ROMVault3 is written by Gordon J.              *
  *     Contact gordon@romvault.com                    *
  *     Copyright 2025                                 *
@@ -10,6 +10,9 @@ using System.Windows.Forms;
 
 namespace ROMVault
 {
+    /// <summary>
+    /// Fatal error dialog displayed on unhandled exceptions.
+    /// </summary>
     public partial class FrmShowError : Form
     {
         public FrmShowError()

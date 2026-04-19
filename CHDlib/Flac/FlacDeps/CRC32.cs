@@ -2,6 +2,9 @@ using System;
 
 namespace CHDReaderTest.Flac.FlacDeps
 {
+    /// <summary>
+    /// CRC32 implementation used by FLAC metadata and frame verification.
+    /// </summary>
     public static class Crc32
     {
         public static readonly uint[] table;

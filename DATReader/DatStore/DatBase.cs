@@ -1,7 +1,10 @@
-﻿namespace DATReader.DatStore
+namespace DATReader.DatStore
 {
 
 
+    /// <summary>
+    /// Base node type for DAT directory/file trees.
+    /// </summary>
     public abstract class DatBase
     {
         public string Name;

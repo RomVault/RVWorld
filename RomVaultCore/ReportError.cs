@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -9,6 +9,9 @@ using RomVaultCore.Utils;
 
 namespace RomVaultCore
 {
+    /// <summary>
+    /// Centralized error reporting and crash handler integration (UI dialogs, logging, and optional remote reporting).
+    /// </summary>
     public static class ReportError
     {
         public delegate void ShowError(string message);
@@ -17,10 +20,14 @@ namespace RomVaultCore
         public static ShowError ErrorForm;
         public static MessageDialog Dialog;
 
+        public static string LastCrashLogPath;
+
         public static int vMajor;
         public static int vMinor;
         public static int vBuild;
         public static int vRevision;
+
+        private static readonly object _crashLogLock = new object();
 
         public static void UnhandledExceptionHandler(object sender, ThreadExceptionEventArgs e)
         {
@@ -89,7 +96,9 @@ namespace RomVaultCore
                 message += "\r\nEXCEPTION:\r\nMessage:";
                 message += e1 + "\r\n";
 
-                message += $"\r\nSTACK TRACE:\r\n{Environment.StackTrace}";
+                string st = "";
+                try { st = new System.Diagnostics.StackTrace(true).ToString(); } catch { st = ""; }
+                message += $"\r\nSTACK TRACE:\r\n{st}";
 
                 SendErrorMessage(message);
                 ErrorForm?.Invoke(message);
@@ -115,9 +124,31 @@ namespace RomVaultCore
 
         private static void SendErrorMessage(string message)
         {
+            WriteLocalCrashLog(message);
             if (Settings.rvSettings.DoNotReportFeedback)
                 return;
+        }
 
+        private static void WriteLocalCrashLog(string message)
+        {
+            try
+            {
+                string dir = Path.Combine(Environment.CurrentDirectory, "Logs");
+                if (!Directory.Exists(dir))
+                    Directory.CreateDirectory(dir);
+
+                string stamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss_ffff", CultureInfo.InvariantCulture);
+                string filename = Path.Combine(dir, $"Crash_{stamp}.txt");
+
+                lock (_crashLogLock)
+                {
+                    File.WriteAllText(filename, message ?? "");
+                    LastCrashLogPath = filename;
+                }
+            }
+            catch
+            {
+            }
         }
 
         private static string GetLogFilname()

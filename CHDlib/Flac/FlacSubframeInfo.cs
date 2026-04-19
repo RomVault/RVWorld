@@ -1,8 +1,11 @@
-﻿using System;
+using System;
 using CHDReaderTest.Flac.FlacDeps;
 
 namespace CUETools.Codecs.Flake
 {
+    /// <summary>
+    /// Per-channel subframe analysis state used by the CUETools FLAC implementation.
+    /// </summary>
     unsafe public class FlacSubframeInfo
     {
         public FlacSubframeInfo()

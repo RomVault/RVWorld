@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using Compress;
 using Compress.SevenZip;
 using Compress.ThreadReaders;
@@ -34,11 +34,30 @@ namespace FileScanner;
  * as we would not have any CRC if we did not.)
  */
 
+/// <summary>
+/// Callback used to emit progress or informational text during scanning operations.
+/// </summary>
+/// <param name="message">Message text.</param>
 public delegate void Message(string message);
 
+/// <summary>
+/// Scans containers (zip/7z/directories) and computes hashes for members.
+/// </summary>
 public class FileScan
 {
 
+    /// <summary>
+    /// Scans an archive file on disk and returns a <see cref="ScannedFile"/> containing its members.
+    /// </summary>
+    /// <param name="archiveType">Archive/container type.</param>
+    /// <param name="filename">Path to the archive file.</param>
+    /// <param name="timeStamp">Expected timestamp used to validate the archive.</param>
+    /// <param name="deepScan">If true, computes full hashes by reading member data streams.</param>
+    /// <param name="scannedArchive">Resulting scanned archive on success.</param>
+    /// <param name="useDosDateTime">If true, uses DOS timestamps when available.</param>
+    /// <param name="scanSHA256">If true, computes SHA256 as well.</param>
+    /// <param name="progress">Optional progress callback.</param>
+    /// <returns>A <see cref="ZipReturn"/> indicating success or failure.</returns>
     public ZipReturn ScanArchiveFile(FileType archiveType, string filename, long timeStamp, bool deepScan, out ScannedFile scannedArchive, bool useDosDateTime = false, bool scanSHA256 = false,  Message progress = null)
     {
         ICompress file;
@@ -77,6 +96,16 @@ public class FileScan
     }
 
 
+    /// <summary>
+    /// Scans a ZIP archive stream and returns a <see cref="ScannedFile"/> containing its members.
+    /// </summary>
+    /// <param name="inStream">ZIP stream.</param>
+    /// <param name="deepScan">If true, computes full hashes by reading member data streams.</param>
+    /// <param name="scannedArchive">Resulting scanned archive on success.</param>
+    /// <param name="useDosDateTime">If true, uses DOS timestamps when available.</param>
+    /// <param name="scanSHA256">If true, computes SHA256 as well.</param>
+    /// <param name="progress">Optional progress callback.</param>
+    /// <returns>A <see cref="ZipReturn"/> indicating success or failure.</returns>
     public ZipReturn ScanZipStream(Stream inStream, bool deepScan, out ScannedFile scannedArchive, bool useDosDateTime = false, bool scanSHA256 = false, Message progress = null)
     {
         ICompress file = new Zip();
@@ -222,6 +251,19 @@ public class FileScan
         bytebuffer.Add(buffer);
     }
 
+    private static int ReadFully(Stream s, byte[] buffer, int count)
+    {
+        int total = 0;
+        while (total < count)
+        {
+            int read = s.Read(buffer, total, count - total);
+            if (read <= 0)
+                break;
+            total += read;
+        }
+        return total;
+    }
+
     public int CheckSumRead(Stream inStream, ScannedFile scannedFile, ulong totalSize, bool fullScan, bool scanSHA256, Message progress, ulong sizetotal, ulong sizeSoFar)
     {
         byte[] _buffer0 = getbuffer();
@@ -250,7 +292,7 @@ public class FileScan
             long sizetogo = (long)totalSize;
             int sizenow = maxHeaderSize < sizetogo ? maxHeaderSize : (int)sizetogo;
             if (sizenow > 0)
-                inStream.Read(_buffer0, 0, sizenow);
+                sizenow = ReadFully(inStream, _buffer0, sizenow);
 
             scannedFile.HeaderFileType = FileHeaderReader.GetType(_buffer0, sizenow, out int actualHeaderSize);
 
@@ -360,7 +402,8 @@ public class FileScan
 
                     // now read the rest of the header.
                     sizenow = actualHeaderSize - sizenow;
-                    inStream.Read(_buffer0, 0, sizenow);
+                    if (sizenow > 0)
+                        sizenow = ReadFully(inStream, _buffer0, sizenow);
 
                     // scan the rest of the header
                     tcrc32?.Trigger(_buffer0, sizenow);
@@ -381,10 +424,10 @@ public class FileScan
             // Pre load the first buffer0
             int sizeNext = sizetogo > Buffersize ? Buffersize : (int)sizetogo;
             if (sizeNext > 0)
-                inStream.Read(_buffer0, 0, sizeNext);
+                sizeNext = ReadFully(inStream, _buffer0, sizeNext);
 
             int sizebuffer = sizeNext;
-            sizetogo -= sizeNext;
+            sizetogo -= sizebuffer;
             bool whichBuffer = true;
 
             bool doReporting = progress != null && sizetotal > 0;
@@ -442,8 +485,8 @@ public class FileScan
                 altsha1?.Wait();
                 altsha256?.Wait();
 
-                sizebuffer = sizeNext;
-                sizetogo -= sizeNext;
+                sizebuffer = sizeNext > 0 ? lbuffer.SizeRead : 0;
+                sizetogo -= sizebuffer;
                 whichBuffer = !whichBuffer;
             }
 

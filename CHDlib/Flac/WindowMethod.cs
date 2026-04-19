@@ -1,5 +1,8 @@
-﻿namespace CUETools.Codecs.Flake
+namespace CUETools.Codecs.Flake
 {
+    /// <summary>
+    /// Strategy used to select the LPC window for FLAC encoding/analysis.
+    /// </summary>
     public enum WindowMethod
     {
         Invalid,

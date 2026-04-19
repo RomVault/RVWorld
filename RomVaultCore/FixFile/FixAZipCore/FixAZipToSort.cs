@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Compress;
@@ -51,7 +51,9 @@ namespace RomVaultCore.FixFile.FixAZipCore
                 toSortFullName = toSortZipOut.ZipFilename;
 
             RvFile toSortRom = new RvFile(fixZippedFile.FileType);
+#pragma warning disable CS0618 // Type or member is obsolete
             fixZippedFile.CopyTo(toSortRom);
+#pragma warning restore CS0618 // Type or member is obsolete
             toSortRom.Dat = null;
             toSortRom.SetDatGotStatus(DatStatus.InToSort, GotStatus.Got);
 

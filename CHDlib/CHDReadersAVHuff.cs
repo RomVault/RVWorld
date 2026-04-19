@@ -1,4 +1,4 @@
-﻿using CHDReaderTest.Flac.FlacDeps;
+using CHDReaderTest.Flac.FlacDeps;
 using CHDSharpLib.Utils;
 using CUETools.Codecs.Flake;
 using System;
@@ -34,6 +34,15 @@ internal static partial class CHDReaders
 
     */
 
+    /// <summary>
+    /// Decodes an AVHuff block (audio + video) into an uncompressed CHAV layout buffer.
+    /// </summary>
+    /// <param name="buffIn">Input buffer containing the compressed AVHuff block.</param>
+    /// <param name="buffInLength">Length of compressed data in <paramref name="buffIn"/>.</param>
+    /// <param name="buffOut">Destination buffer for decoded output.</param>
+    /// <param name="buffOutLength">Expected decoded output length.</param>
+    /// <param name="codec">Reusable codec state for the current operation.</param>
+    /// <returns>A <see cref="chd_error"/> indicating success or failure.</returns>
     internal static chd_error avHuff(byte[] buffIn, int buffInLength, byte[] buffOut, int buffOutLength, CHDCodec codec)
     {
         // extract info from the header
@@ -138,6 +147,19 @@ internal static partial class CHDReaders
     }
 
 
+    /// <summary>
+    /// Decodes AVHuff audio channels into the output buffer.
+    /// </summary>
+    /// <param name="channels">Number of audio channels.</param>
+    /// <param name="samples">Number of samples per block.</param>
+    /// <param name="buffIn">Input buffer containing compressed audio payload.</param>
+    /// <param name="buffInOffset">Start offset of audio payload.</param>
+    /// <param name="treesize">Huffman tree size (0xffff indicates FLAC-coded channels).</param>
+    /// <param name="audioChannelCompressedSize">Per-channel compressed sizes.</param>
+    /// <param name="buffOut">Destination buffer for decoded audio samples.</param>
+    /// <param name="audioChannelDestStart">Per-channel destination offsets within <paramref name="buffOut"/>.</param>
+    /// <param name="codec">Reusable codec state for the current operation.</param>
+    /// <returns>A <see cref="chd_error"/> indicating success or failure.</returns>
     private static chd_error DecodeAudio(uint channels, uint samples, byte[] buffIn, uint buffInOffset, uint treesize, uint?[] audioChannelCompressedSize, byte[] buffOut, uint?[] audioChannelDestStart, CHDCodec codec)
     {
         // if the tree size is 0xffff, the streams are FLAC-encoded
@@ -274,6 +296,19 @@ internal static partial class CHDReaders
 
 
 
+    /// <summary>
+    /// Decodes AVHuff lossless video data into packed YCbCr output.
+    /// </summary>
+    /// <param name="width">Video width in pixels.</param>
+    /// <param name="height">Video height in pixels.</param>
+    /// <param name="buffIn">Input buffer containing compressed video payload.</param>
+    /// <param name="buffInOffset">Start offset of video payload.</param>
+    /// <param name="buffInLength">Length of video payload.</param>
+    /// <param name="buffOut">Destination buffer for decoded output.</param>
+    /// <param name="buffOutOffset">Offset into <paramref name="buffOut"/> where video output begins.</param>
+    /// <param name="dstride">Destination stride in bytes.</param>
+    /// <param name="codec">Reusable codec state for the current operation.</param>
+    /// <returns>A <see cref="chd_error"/> indicating success or failure.</returns>
     private static chd_error DecodeVideo(uint width, uint height, byte[] buffIn, uint buffInOffset, uint buffInLength, byte[] buffOut, uint buffOutOffset, uint dstride, CHDCodec codec)
     {
         // if the high bit of the first byte is set, we decode losslessly

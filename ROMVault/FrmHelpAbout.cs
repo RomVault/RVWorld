@@ -1,4 +1,4 @@
-﻿/******************************************************
+/******************************************************
  *     ROMVault3 is written by Gordon J.              *
  *     Contact gordon@romvault.com                    *
  *     Copyright 2025                                 *
@@ -10,6 +10,9 @@ using System.Windows.Forms;
 
 namespace ROMVault
 {
+    /// <summary>
+    /// About dialog displaying version/build info and project links.
+    /// </summary>
     public partial class FrmHelpAbout : Form
     {
         public FrmHelpAbout()

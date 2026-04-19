@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Text;
 using System.Xml;
@@ -8,10 +8,25 @@ using File = RVIO.File;
 
 namespace DATReader
 {
+    /// <summary>
+    /// Callback used to report DAT load/parse errors.
+    /// </summary>
+    /// <param name="filename">Path of the DAT that triggered the error.</param>
+    /// <param name="error">Human-readable error message.</param>
     public delegate void ReportError(string filename, string error);
 
+    /// <summary>
+    /// Entry point for reading DAT files into a <see cref="DatHeader"/> tree.
+    /// </summary>
     public static class DatRead
     {
+        /// <summary>
+        /// Reads a DAT file from disk (including .datz compressed DATs) and parses it into a <see cref="DatHeader"/>.
+        /// </summary>
+        /// <param name="fullname">DAT path.</param>
+        /// <param name="ErrorReport">Optional error reporter callback.</param>
+        /// <param name="rvDat">Parsed DAT header and tree.</param>
+        /// <returns>True when parsing succeeds; otherwise false.</returns>
         public static bool ReadDat(string fullname, ReportError ErrorReport, out DatHeader rvDat)
         {
             rvDat = null;
@@ -43,6 +58,14 @@ namespace DATReader
             }
         }
 
+        /// <summary>
+        /// Reads a DAT payload from memory and parses it into a <see cref="DatHeader"/>.
+        /// </summary>
+        /// <param name="buffer">DAT contents.</param>
+        /// <param name="fullname">Source name used for diagnostics.</param>
+        /// <param name="ErrorReport">Optional error reporter callback.</param>
+        /// <param name="rvDat">Parsed DAT header and tree.</param>
+        /// <returns>True when parsing succeeds; otherwise false.</returns>
         public static bool ReadDat(byte[] buffer, string fullname, ReportError ErrorReport, out DatHeader rvDat)
         {
             rvDat = null;
@@ -109,6 +132,14 @@ namespace DATReader
             }
         }
 
+        /// <summary>
+        /// Reads a DAT XML document from a stream and parses it into a <see cref="DatHeader"/>.
+        /// </summary>
+        /// <param name="fs">Stream positioned at the start of an XML document.</param>
+        /// <param name="fullname">Source name used for diagnostics.</param>
+        /// <param name="ErrorReport">Optional error reporter callback.</param>
+        /// <param name="rvDat">Parsed DAT header and tree.</param>
+        /// <returns>True when parsing succeeds; otherwise false.</returns>
         public static bool ReadXMLDatFromStream(Stream fs, string fullname, ReportError ErrorReport, out DatHeader rvDat)
         {
             rvDat = null;

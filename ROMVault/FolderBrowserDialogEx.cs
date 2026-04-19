@@ -1,4 +1,4 @@
-﻿// FolderBrowserDialogEx.cs
+// FolderBrowserDialogEx.cs
 //
 // A replacement for the builtin System.Windows.Forms.FolderBrowserDialog class.
 // This one includes an edit box, and also displays the full path in the edit box. 
@@ -48,6 +48,9 @@ namespace ROMVault
 {
 
     //[Designer("System.Windows.Forms.Design.FolderBrowserDialogDesigner, System.Design, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"), DefaultEvent("HelpRequest"), SRDescription("DescriptionFolderBrowserDialog"), DefaultProperty("SelectedPath")]
+    /// <summary>
+    /// Windows folder browser dialog with optional edit box and full-path display support.
+    /// </summary>
     public class FolderBrowserDialogEx : System.Windows.Forms.CommonDialog
     {
         private static readonly int MAX_PATH = 260;
@@ -126,12 +129,18 @@ namespace ROMVault
         }
 
 
+        /// <summary>
+        /// CSIDL constants for selecting special shell folders.
+        /// </summary>
         private class CSIDL
         {
             public const int PRINTERS = 4;
             public const int NETWORK = 0x12;
         }
 
+        /// <summary>
+        /// BIF_* flags used with SHBrowseForFolder.
+        /// </summary>
         private class BrowseFlags
         {
             public const int BIF_DEFAULT = 0x0000;
@@ -152,6 +161,9 @@ namespace ROMVault
             public const int BIF_NOTRANSLATETARGETS = 0x0400;
         }
 
+        /// <summary>
+        /// SHBrowseForFolder message constants (BFFM_*).
+        /// </summary>
         private static class BrowseForFolderMessages
         {
             // messages FROM the folder browser

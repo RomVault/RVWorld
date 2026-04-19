@@ -27,6 +27,9 @@ using CHDReaderTest.Flac.FlacDeps;
 
 namespace CUETools.Codecs.Flake
 {
+    /// <summary>
+    /// FLAC decoder implementing <see cref="IAudioSource"/> for reading PCM frames from FLAC streams.
+    /// </summary>
     public class AudioDecoder: IAudioSource
 	{
 		int[] samplesBuffer;

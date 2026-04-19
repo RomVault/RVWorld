@@ -1,9 +1,17 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
 
 namespace DATReader.DatStore
 {
+    /// <summary>
+    /// File entry within a parsed DAT tree, including expected hashes and metadata.
+    /// </summary>
     public class DatFile : DatBase
     {
+        /// <summary>
+        /// Creates a new DAT file entry.
+        /// </summary>
+        /// <param name="name">File name (or member path when inside an archive).</param>
+        /// <param name="type">File type.</param>
         public DatFile(string name, FileType type) : base(name, type) { }
 
         public ulong? Size;

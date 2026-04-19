@@ -1,4 +1,4 @@
-﻿namespace ROMVault
+namespace ROMVault
 {
     partial class FrmDirectorySettings
     {
@@ -61,6 +61,7 @@
             this.cboFilterType = new System.Windows.Forms.ComboBox();
             this.chkSingleArchive = new System.Windows.Forms.CheckBox();
             this.lblROMCHDFilter = new System.Windows.Forms.Label();
+            this.chkChdStrict = new System.Windows.Forms.CheckBox();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
             this.chkMultiDatDirOverride = new System.Windows.Forms.CheckBox();
             this.tabAdvanced = new System.Windows.Forms.TabPage();
@@ -72,6 +73,10 @@
             this.chkAddCategorySubDirs = new System.Windows.Forms.CheckBox();
             this.chkCompleteOnly = new System.Windows.Forms.CheckBox();
             this.chkUseIdForName = new System.Windows.Forms.CheckBox();
+            this.lblChdAudioTransform = new System.Windows.Forms.Label();
+            this.cboChdAudioTransform = new System.Windows.Forms.ComboBox();
+            this.lblChdLayoutStrictness = new System.Windows.Forms.Label();
+            this.cboChdLayoutStrictness = new System.Windows.Forms.ComboBox();
             this.tabExclude = new System.Windows.Forms.TabPage();
             this.label6 = new System.Windows.Forms.Label();
             this.label5 = new System.Windows.Forms.Label();
@@ -285,6 +290,7 @@
             this.groupBox2.Controls.Add(this.cboFilterType);
             this.groupBox2.Controls.Add(this.chkSingleArchive);
             this.groupBox2.Controls.Add(this.lblROMCHDFilter);
+            this.groupBox2.Controls.Add(this.chkChdStrict);
             this.groupBox2.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.groupBox2.Location = new System.Drawing.Point(14, 60);
             this.groupBox2.Name = "groupBox2";
@@ -455,6 +461,16 @@
             this.lblROMCHDFilter.TabIndex = 40;
             this.lblROMCHDFilter.Text = "ROM/CHD Filter:";
             // 
+            // chkChdStrict
+            // 
+            this.chkChdStrict.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.chkChdStrict.Location = new System.Drawing.Point(312, 119);
+            this.chkChdStrict.Name = "chkChdStrict";
+            this.chkChdStrict.Size = new System.Drawing.Size(255, 19);
+            this.chkChdStrict.TabIndex = 50;
+            this.chkChdStrict.Text = "Strict CHD (Keep cue/gdi required)";
+            this.chkChdStrict.UseVisualStyleBackColor = true;
+            // 
             // groupBox1
             // 
             this.groupBox1.Controls.Add(this.chkMultiDatDirOverride);
@@ -495,6 +511,10 @@
             this.groupBox3.Controls.Add(this.chkAddCategorySubDirs);
             this.groupBox3.Controls.Add(this.chkCompleteOnly);
             this.groupBox3.Controls.Add(this.chkUseIdForName);
+            this.groupBox3.Controls.Add(this.lblChdAudioTransform);
+            this.groupBox3.Controls.Add(this.cboChdAudioTransform);
+            this.groupBox3.Controls.Add(this.lblChdLayoutStrictness);
+            this.groupBox3.Controls.Add(this.cboChdLayoutStrictness);
             this.groupBox3.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.groupBox3.Location = new System.Drawing.Point(12, 13);
             this.groupBox3.Name = "groupBox3";
@@ -588,6 +608,46 @@
             this.chkUseIdForName.TabIndex = 49;
             this.chkUseIdForName.Text = "Use ID for Numbered DAT Names (No-Intro DATs)";
             this.chkUseIdForName.UseVisualStyleBackColor = true;
+            // 
+            // lblChdAudioTransform
+            // 
+            this.lblChdAudioTransform.AutoSize = true;
+            this.lblChdAudioTransform.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblChdAudioTransform.Location = new System.Drawing.Point(6, 135);
+            this.lblChdAudioTransform.Name = "lblChdAudioTransform";
+            this.lblChdAudioTransform.Size = new System.Drawing.Size(107, 13);
+            this.lblChdAudioTransform.TabIndex = 56;
+            this.lblChdAudioTransform.Text = "CHD Audio Transform:";
+            // 
+            // cboChdAudioTransform
+            // 
+            this.cboChdAudioTransform.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.cboChdAudioTransform.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.cboChdAudioTransform.FormattingEnabled = true;
+            this.cboChdAudioTransform.Location = new System.Drawing.Point(130, 132);
+            this.cboChdAudioTransform.Name = "cboChdAudioTransform";
+            this.cboChdAudioTransform.Size = new System.Drawing.Size(200, 21);
+            this.cboChdAudioTransform.TabIndex = 57;
+            // 
+            // lblChdLayoutStrictness
+            // 
+            this.lblChdLayoutStrictness.AutoSize = true;
+            this.lblChdLayoutStrictness.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblChdLayoutStrictness.Location = new System.Drawing.Point(6, 162);
+            this.lblChdLayoutStrictness.Name = "lblChdLayoutStrictness";
+            this.lblChdLayoutStrictness.Size = new System.Drawing.Size(112, 13);
+            this.lblChdLayoutStrictness.TabIndex = 58;
+            this.lblChdLayoutStrictness.Text = "CHD Layout Strictness:";
+            // 
+            // cboChdLayoutStrictness
+            // 
+            this.cboChdLayoutStrictness.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.cboChdLayoutStrictness.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.cboChdLayoutStrictness.FormattingEnabled = true;
+            this.cboChdLayoutStrictness.Location = new System.Drawing.Point(130, 159);
+            this.cboChdLayoutStrictness.Name = "cboChdLayoutStrictness";
+            this.cboChdLayoutStrictness.Size = new System.Drawing.Size(200, 21);
+            this.cboChdLayoutStrictness.TabIndex = 59;
             // 
             // tabExclude
             // 
@@ -699,6 +759,7 @@
         private System.Windows.Forms.ComboBox cboFilterType;
         private System.Windows.Forms.CheckBox chkSingleArchive;
         private System.Windows.Forms.Label lblROMCHDFilter;
+        private System.Windows.Forms.CheckBox chkChdStrict;
         private System.Windows.Forms.GroupBox groupBox1;
         private System.Windows.Forms.CheckBox chkMultiDatDirOverride;
         private System.Windows.Forms.TabPage tabExclude;
@@ -710,6 +771,10 @@
         private System.Windows.Forms.CheckBox chkCompleteOnly;
         private System.Windows.Forms.CheckBox chkUseIdForName;
         private System.Windows.Forms.CheckBox chkAddCategorySubDirs;
+        private System.Windows.Forms.Label lblChdAudioTransform;
+        private System.Windows.Forms.ComboBox cboChdAudioTransform;
+        private System.Windows.Forms.Label lblChdLayoutStrictness;
+        private System.Windows.Forms.ComboBox cboChdLayoutStrictness;
         private System.Windows.Forms.DataGridView dgCategories;
         private System.Windows.Forms.Button btnDown;
         private System.Windows.Forms.Button btnUp;

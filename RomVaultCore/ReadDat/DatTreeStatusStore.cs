@@ -1,4 +1,4 @@
-﻿/******************************************************
+/******************************************************
  *     ROMVault3 is written by Gordon J.              *
  *     Contact gordon@romvault.com                    *
  *     Copyright 2025                                 *
@@ -11,6 +11,9 @@ using System.Xml.Serialization;
 
 namespace RomVaultCore.ReadDat
 {
+    /// <summary>
+    /// Serializable snapshot of tree row selection/expand state.
+    /// </summary>
     public class Entry
     {
         public string Path;
@@ -26,6 +29,9 @@ namespace RomVaultCore.ReadDat
         }
     }
 
+    /// <summary>
+    /// Stores and restores <see cref="RvTreeRow"/> selection/expand state across DAT updates.
+    /// </summary>
     public class DatTreeStatusStore
     {
         private Dictionary<string, RvTreeRow> treeRows = new Dictionary<string, RvTreeRow>();

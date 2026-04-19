@@ -1,4 +1,4 @@
-﻿using CHDSharpLib.Utils;
+using CHDSharpLib.Utils;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -10,64 +10,200 @@ using System.Threading.Tasks;
 
 namespace CHDSharpLib;
 
+/// <summary>
+/// Internal normalized representation of a CHD header and its decoded map.
+/// </summary>
+/// <remarks>
+/// This is populated by <see cref="CHDHeaders"/> and then consumed by the decompression and metadata readers.
+/// </remarks>
 internal class CHDHeader
 {
+    /// <summary>
+    /// Codec slots declared by the CHD header.
+    /// </summary>
     public chd_codec[] compression;
+
+    /// <summary>
+    /// Resolved codec reader table corresponding to <see cref="compression"/>.
+    /// </summary>
     public CHDReader[] chdReader;
 
+    /// <summary>
+    /// Total logical byte size represented by the CHD.
+    /// </summary>
     public ulong totalbytes;
+
+    /// <summary>
+    /// Hunk size in bytes.
+    /// </summary>
     public uint blocksize;
+
+    /// <summary>
+    /// Total number of hunks.
+    /// </summary>
     public uint totalblocks;
 
+    /// <summary>
+    /// Per-hunk map entries describing storage offsets, sizes, and compression.
+    /// </summary>
     public mapentry[] map;
 
-    public byte[] md5; // just compressed data
-    public byte[] rawsha1; // just compressed data
-    public byte[] sha1; // includes the meta data
+    /// <summary>
+    /// MD5 of compressed data (when present in the header).
+    /// </summary>
+    public byte[] md5;
 
+    /// <summary>
+    /// SHA1 of compressed data (when present in the header).
+    /// </summary>
+    public byte[] rawsha1;
+
+    /// <summary>
+    /// SHA1 including metadata (when present in the header).
+    /// </summary>
+    public byte[] sha1;
+
+    /// <summary>
+    /// Parent CHD MD5 (child CHDs only).
+    /// </summary>
     public byte[] parentmd5;
+
+    /// <summary>
+    /// Parent CHD SHA1 (child CHDs only).
+    /// </summary>
     public byte[] parentsha1;
 
+    /// <summary>
+    /// File offset of the first metadata entry, or 0 when no metadata is present.
+    /// </summary>
     public ulong metaoffset;
 }
 
+/// <summary>
+/// CHD hunk map entry describing how to locate and decode a given hunk.
+/// </summary>
 internal class mapentry
 {
+    /// <summary>
+    /// Compression kind for this entry.
+    /// </summary>
     public compression_type comptype;
+
+    /// <summary>
+    /// Compressed data length, in bytes (0 for <see cref="compression_type.COMPRESSION_SELF"/> entries).
+    /// </summary>
     public uint length; // length of compressed data
+
+    /// <summary>
+    /// File offset of compressed data, or source index for <see cref="compression_type.COMPRESSION_SELF"/>.
+    /// </summary>
     public ulong offset; // offset of compressed data in file. Also index of source block for COMPRESSION_SELF 
+
+    /// <summary>
+    /// Optional CRC32 for v3/v4 entries.
+    /// </summary>
     public uint? crc = null; // V3 & V4
+
+    /// <summary>
+    /// Optional CRC16 for v5 entries.
+    /// </summary>
     public ushort? crc16 = null; // V5
 
+    /// <summary>
+    /// For <see cref="compression_type.COMPRESSION_SELF"/> entries, points to the referenced entry.
+    /// </summary>
     public mapentry selfMapEntry; // link to self mapentry data used in COMPRESSION_SELF (replaces offset index)
 
-    //Used to optimmize block reading so that any block in only decompressed once.
+    /// <summary>
+    /// Count of remaining references for caching decisions when decoding.
+    /// </summary>
     public int UseCount;
 
+    /// <summary>
+    /// Temporary input buffer for compressed data.
+    /// </summary>
     public byte[] buffIn = null;
+
+    /// <summary>
+    /// Cached decoded output used for repeated blocks.
+    /// </summary>
     public byte[] buffOutCache = null;
+
+    /// <summary>
+    /// Per-entry decoded output buffer (used by some decode paths).
+    /// </summary>
     public byte[] buffOut = null;
 
-    // Used in Parallel decompress to keep the blocks in order when hashing.
+    /// <summary>
+    /// Used by parallel decompression to keep blocks in order during hashing.
+    /// </summary>
     public bool Processed = false;
 
 
-    // Used to calculate which blocks should have buffered copies kept.
+    /// <summary>
+    /// Weight used when selecting which repeated blocks to keep cached.
+    /// </summary>
     public int UsageWeight;
+
+    /// <summary>
+    /// Indicates whether a cached decoded copy should be retained for this entry.
+    /// </summary>
     public bool KeepBufferCopy = false;
 }
 
 
+/// <summary>
+/// Callback used to emit progress or informational text during CHD operations.
+/// </summary>
+/// <param name="message">Message text.</param>
 public delegate void Message(string message);
+
+/// <summary>
+/// Callback used to emit file-scoped messages during CHD operations.
+/// </summary>
+/// <param name="filename">The file currently being processed.</param>
+/// <param name="message">Message text.</param>
 public delegate void FileMessage(string filename, string message);
 
+/// <summary>
+/// Minimal CHD reader and verifier.
+/// </summary>
+/// <remarks>
+/// RomVault uses this to validate CHD headers and to optionally compute/verify CHD hashes (including metadata).
+/// The library also provides <see cref="ChdLogicalStream"/> for streaming logical contents.
+/// </remarks>
 public static class CHD
 {
-    public static Message fileProcessInfo; // returns the name of the file being processed
-    public static Message progress; // returns the progress of the file
+    /// <summary>
+    /// Optional callback that receives the file name currently being processed.
+    /// </summary>
+    public static Message fileProcessInfo;
+
+    /// <summary>
+    /// Optional callback that receives progress updates for the current file.
+    /// </summary>
+    public static Message progress;
+
+    /// <summary>
+    /// Optional callback used for diagnostic output.
+    /// </summary>
     public static Message consoleOut;
+
+    /// <summary>
+    /// Number of parallel decode tasks to use when deep-checking CHDs.
+    /// </summary>
     public static int taskCount = 8;
 
+    /// <summary>
+    /// Validates a CHD file and optionally performs a deep data+metadata verification pass.
+    /// </summary>
+    /// <param name="s">Readable stream positioned at the start of the CHD file.</param>
+    /// <param name="filename">Filename used for diagnostics.</param>
+    /// <param name="deepCheck">If true, decompresses and verifies block checksums and metadata.</param>
+    /// <param name="chdVersion">Parsed CHD version on success.</param>
+    /// <param name="chdSHA1">CHD SHA1 (metadata-aware when available).</param>
+    /// <param name="chdMD5">CHD MD5 (compressed data hash when available).</param>
+    /// <returns>A <see cref="chd_error"/> indicating success or failure.</returns>
     public static chd_error CheckFile(Stream s, string filename, bool deepCheck, out uint? chdVersion, out byte[] chdSHA1, out byte[] chdMD5)
     {
         chdSHA1 = null;
@@ -169,9 +305,23 @@ public static class CHD
         return chd_error.CHDERR_NONE;
     }
 
+    /// <summary>
+    /// Expected header lengths indexed by CHD version.
+    /// </summary>
     private static readonly uint[] HeaderLengths = new uint[] { 0, 76, 80, 120, 108, 124 };
+
+    /// <summary>
+    /// CHD file signature bytes ("MComprHD").
+    /// </summary>
     private static readonly byte[] id = { (byte)'M', (byte)'C', (byte)'o', (byte)'m', (byte)'p', (byte)'r', (byte)'H', (byte)'D' };
 
+    /// <summary>
+    /// Reads the CHD header signature and returns the declared header length and version.
+    /// </summary>
+    /// <param name="file">Readable stream positioned at the start of the CHD file.</param>
+    /// <param name="length">Declared header length.</param>
+    /// <param name="version">Declared header version.</param>
+    /// <returns>True when the signature and header length are consistent; otherwise false.</returns>
     public static bool CheckHeader(Stream file, out uint length, out uint version)
     {
         for (int i = 0; i < id.Length; i++)
@@ -193,7 +343,12 @@ public static class CHD
         }
     }
 
-
+    /// <summary>
+    /// Decompresses the full CHD data stream sequentially and validates embedded MD5/SHA1 hashes when available.
+    /// </summary>
+    /// <param name="file">Readable stream positioned at the start of CHD content.</param>
+    /// <param name="chd">Parsed CHD header.</param>
+    /// <returns>A <see cref="chd_error"/> indicating success or failure.</returns>
     internal static chd_error DecompressData(Stream file, CHDHeader chd)
     {
         // stores the FLAC decompression classes for this instance.
@@ -266,6 +421,12 @@ public static class CHD
 
 
 
+    /// <summary>
+    /// Decompresses the full CHD data stream in parallel and validates embedded MD5/SHA1 hashes when available.
+    /// </summary>
+    /// <param name="file">Readable stream positioned at the start of CHD content.</param>
+    /// <param name="chd">Parsed CHD header.</param>
+    /// <returns>A <see cref="chd_error"/> indicating success or failure.</returns>
     internal static chd_error DecompressDataParallel(Stream file, CHDHeader chd)
     {
         using BinaryReader br = new BinaryReader(file, Encoding.UTF8, true);

@@ -1,8 +1,15 @@
-﻿namespace CHDReaderTest.Flac.FlacDeps
+namespace CHDReaderTest.Flac.FlacDeps
 {
+    /// <summary>
+    /// Describes the PCM format (bit depth, channels, sample rate, channel mask) used by the FLAC decoder output.
+    /// </summary>
     public class AudioPCMConfig
     {
         public static readonly AudioPCMConfig RedBook = new AudioPCMConfig(16, 2, 44100);
+
+        /// <summary>
+        /// Speaker/channel mask values.
+        /// </summary>
         public enum SpeakerConfig
         {
             SPEAKER_FRONT_LEFT = 0x1,

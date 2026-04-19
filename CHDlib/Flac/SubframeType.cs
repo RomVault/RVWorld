@@ -1,5 +1,8 @@
-﻿namespace CUETools.Codecs.Flake
+namespace CUETools.Codecs.Flake
 {
+    /// <summary>
+    /// FLAC subframe coding type.
+    /// </summary>
     public enum SubframeType
     {
         Constant = 0,

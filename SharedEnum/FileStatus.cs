@@ -1,6 +1,9 @@
-﻿using System;
+using System;
 
 [Flags]
+/// <summary>
+/// Bit flags describing which file attributes were sourced from DAT/header data and which were verified by scanning.
+/// </summary>
 public enum FileStatus
 {
     HeaderFileTypeFromDAT = 1 << 0,

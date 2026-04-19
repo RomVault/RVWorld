@@ -1,5 +1,8 @@
-﻿namespace CUETools.Codecs.Flake
+namespace CUETools.Codecs.Flake
 {
+    /// <summary>
+    /// Seek point entry used for FLAC stream navigation.
+    /// </summary>
     public struct SeekPoint
     {
         public long number;

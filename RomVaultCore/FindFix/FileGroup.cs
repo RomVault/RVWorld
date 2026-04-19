@@ -1,9 +1,12 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using RomVaultCore.RvDB;
 using RomVaultCore.Utils;
 
 namespace RomVaultCore.FindFix
 {
+    /// <summary>
+    /// Groups files that share the same hash identity to support fix source selection and de-duplication.
+    /// </summary>
     public class FileGroup
     {
         public ulong? Size;

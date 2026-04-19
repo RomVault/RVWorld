@@ -1,4 +1,4 @@
-﻿/******************************************************
+/******************************************************
  *     ROMVault3 is written by Gordon J.              *
  *     Contact gordon@romvault.com                    *
  *     Copyright 2025                                 *
@@ -13,6 +13,16 @@ using Directory = RVIO.Directory;
 
 namespace RomVaultCore.Scanner
 {
+    /// <summary>
+    /// Main scanning orchestrator for directories, archives, and CHD containers.
+    /// </summary>
+    /// <remarks>
+    /// This coordinates:
+    /// - selected directory traversal
+    /// - per-directory and per-archive scanning
+    /// - merge of scanned results into DB nodes
+    /// - periodic cache persistence and cancellation handling
+    /// </remarks>
     public static partial class FileScanning
     {
         private static Stopwatch _cacheSaveTimer;
@@ -21,6 +31,10 @@ namespace RomVaultCore.Scanner
         public static EScanLevel EScanLevel;
         private static bool _fileErrorAbort;
 
+        /// <summary>
+        /// Executes the full scan workflow for currently selected directories.
+        /// </summary>
+        /// <param name="thWrk">Progress worker with cancellation support.</param>
         public static void ScanFiles(ThreadWorker thWrk)
         {
 #if !DEBUG
@@ -104,10 +118,16 @@ namespace RomVaultCore.Scanner
         }
 
 
+        /// <summary>
+        /// Scans an archive-like container (ZIP/7z/CHD) and merges members into the DB node.
+        /// </summary>
+        /// <param name="dbDir">Container node to scan.</param>
+        /// <param name="report">Whether to expose member-range progress in UI.</param>
+        /// <param name="checkIndex">Optional progress index for nested scans.</param>
         public static void CheckAnArchive(RvFile dbDir, bool report, int? checkIndex)
         {
             FileType ft = dbDir.FileType;
-            if (!(ft == FileType.Zip || ft == FileType.SevenZip))
+            if (!(ft == FileType.Zip || ft == FileType.SevenZip || ft == FileType.CHD))
             {
                 ReportError.SendAndShow("Un supported file type in CheckADir " + ft);
                 return;
@@ -147,8 +167,8 @@ namespace RomVaultCore.Scanner
         /// 2: MatchFound: called when an directory is matched to an item in the DB that is not from a DAT. (This is a directory not found in the main tree, as main tree dir's are processes in top level loop
         /// 3: NewFileFound: called after a new unmatched DIR is found.
         /// </summary>
-        /// <param name="dbDir"></param>
-        /// <param name="report"></param>
+        /// <param name="dbDir">Directory node to scan.</param>
+        /// <param name="checkIndex">Optional progress index for nested scans.</param>
         private static void CheckADir(RvFile dbDir, int? checkIndex)
         {
             if (dbDir.FileType != FileType.Dir)
@@ -397,6 +417,7 @@ namespace RomVaultCore.Scanner
             {
                 case FileType.Zip:
                 case FileType.SevenZip:
+                case FileType.CHD:
                     if (dbChild.FileModTimeStamp != fileChild.FileModTimeStamp || EScanLevel == EScanLevel.Level3 || EScanLevel == EScanLevel.Level2 && !dbChild.IsDeepScanned)
                     {
                         dbChild.MarkAsMissing();
@@ -449,6 +470,7 @@ namespace RomVaultCore.Scanner
             {
                 case FileType.Zip:
                 case FileType.SevenZip:
+                case FileType.CHD:
                     {
                         RvFile newChild = dbDir.FileAdd(fileChild, dbIndex);
                         CheckAnArchive(newChild, false, fileIndex);
@@ -498,6 +520,7 @@ namespace RomVaultCore.Scanner
                 {
                     case FileType.Zip:
                     case FileType.SevenZip:
+                    case FileType.CHD:
                         dbChild.MarkAsMissing();
                         break;
                     case FileType.Dir:

@@ -1,4 +1,4 @@
-﻿/******************************************************
+/******************************************************
  *     ROMVault3 is written by Gordon J.              *
  *     Contact gordon@romvault.com                    *
  *     Copyright 2025                                 *
@@ -8,6 +8,9 @@ using System;
 
 namespace RomVaultCore.Utils
 {
+    /// <summary>
+    /// Helpers for comparing nullable unsigned 64-bit values.
+    /// </summary>
     public static class ULong
     {
         public static int iCompare(ulong? a, ulong? b)

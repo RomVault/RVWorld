@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using RomVaultCore.RvDB;
 using RomVaultCore.Utils;
 using RVIO;
@@ -71,9 +71,13 @@ namespace RomVaultCore.FixFile.Utils
 
             if (fileToCheck == null)
             {
-                ReportError.UnhandledExceptionHandler("Double Check Delete could not find the correct file. (" + fileDeleting.FullName + ")");
-                //this line of code never gets called because the above line terminates the program.
-                return ReturnCode.LogicError;
+                if (fileDeleting.IsInToSort)
+                {
+                    ReportError.LogOut("Double Check Delete could not find a confirming file, allowing delete for ToSort: " + fileDeleting.FullName);
+                    return ReturnCode.Good;
+                }
+                errorMessage = "Double Check Delete could not find a confirming file for delete. Rescan recommended for " + fileDeleting.FullName;
+                return ReturnCode.RescanNeeded;
             }
 
             //if it is a file then 
@@ -85,6 +89,7 @@ namespace RomVaultCore.FixFile.Utils
             {
                 case FileType.FileZip:
                 case FileType.FileSevenZip:
+                case FileType.FileCHD:
                     {
                         string fullPathCheckDelete = fileToCheck.Parent.FullNameCase;
                         if (!File.Exists(fullPathCheckDelete))

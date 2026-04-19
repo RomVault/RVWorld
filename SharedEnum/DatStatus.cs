@@ -1,4 +1,7 @@
-﻿public enum DatStatus
+/// <summary>
+/// Classifies how a file relates to the active DAT set and ToSort areas.
+/// </summary>
+public enum DatStatus
 {
     InDatCollect,
     InDatMerged,

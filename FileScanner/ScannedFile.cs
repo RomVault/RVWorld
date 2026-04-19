@@ -1,17 +1,40 @@
-﻿using Compress;
+using Compress;
 using RomVaultCore.Utils;
 using SortMethods;
 using System.Collections.Generic;
 
 namespace FileScanner;
 
+/// <summary>
+/// Represents the result of scanning a filesystem node or a container member.
+/// </summary>
+/// <remarks>
+/// This is the transient data model produced by the scanner and later merged into the DB tree
+/// (<see cref="RomVaultCore.RvDB.RvFile"/>).
+///
+/// For container types (directory/zip/7z/CHD), child entries are stored in <see cref="_scannedFiles"/>.
+/// For CHDs, the container node is <see cref="FileType.CHD"/> and member entries are emitted as
+/// <see cref="FileType.FileCHD"/> so the merge pipeline can treat them like archive members.
+/// </remarks>
 public class ScannedFile
 {
     // common
 
+    /// <summary>
+    /// Name of the file or container member, relative to its parent container.
+    /// </summary>
     public string Name;
+    /// <summary>
+    /// Timestamp used to validate scan results against the filesystem.
+    /// </summary>
     public long FileModTimeStamp;
+    /// <summary>
+    /// The scanned node type.
+    /// </summary>
     public FileType FileType;
+    /// <summary>
+    /// Whether the content is considered present and valid.
+    /// </summary>
     public GotStatus GotStatus;
 
     // directory or archived directory 
@@ -43,6 +66,22 @@ public class ScannedFile
     public byte[] AltSHA256;
 
     public uint? CHDVersion;
+    /// <summary>
+    /// High-level CHD scan status string intended for UI/tooltips.
+    /// </summary>
+    public string? ChdStatus;
+    /// <summary>
+    /// Scan method used (e.g. streaming vs extraction).
+    /// </summary>
+    public string? ChdScanMethod;
+    /// <summary>
+    /// Hash match mode used when mapping CHD members to DAT expectations.
+    /// </summary>
+    public string? ChdHashMatchMode;
+    /// <summary>
+    /// Descriptor matching mode (external/synthetic/true) when a CUE/GDI is involved.
+    /// </summary>
+    public string? ChdDescriptorMatch;
 
     public bool SearchFound = false;
 
@@ -71,7 +110,10 @@ public class ScannedFile
         StatusFlags |= flag;
     }
 
-    public bool IsDirectory => FileType == FileType.Dir || FileType == FileType.Zip || FileType == FileType.SevenZip;
+    /// <summary>
+    /// Returns true when this scanned node is a container (directory, archive, or CHD).
+    /// </summary>
+    public bool IsDirectory => FileType == FileType.Dir || FileType == FileType.Zip || FileType == FileType.SevenZip || FileType == FileType.CHD;
 
     public void Sort()
     {
@@ -87,6 +129,7 @@ public class ScannedFile
             case FileType.Zip:
                 cf = CompareNameTrrntZip;
                 break;
+            case FileType.CHD:
             case FileType.Dir:
                 cf = CompareNameDir;
                 break;

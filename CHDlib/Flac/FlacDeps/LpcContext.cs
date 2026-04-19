@@ -1,9 +1,12 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using CUETools.Codecs;
 
 namespace CHDReaderTest.Flac.FlacDeps
 {
+    /// <summary>
+    /// Stores per-subframe LPC analysis data and cached autocorrelation section information.
+    /// </summary>
     unsafe public class LpcSubframeInfo
     {
         public LpcSubframeInfo()
@@ -24,8 +27,14 @@ namespace CHDReaderTest.Flac.FlacDeps
         }
     }
 
+    /// <summary>
+    /// Describes a contiguous section of an LPC window, allowing faster autocorrelation calculation by section type.
+    /// </summary>
     unsafe public struct LpcWindowSection
     {
+        /// <summary>
+        /// Section classification used to select the most efficient autocorrelation routine.
+        /// </summary>
         public enum SectionType
         {
             Zero,
@@ -255,10 +264,12 @@ namespace CHDReaderTest.Flac.FlacDeps
         /// Can be used to incrementaly compute coefficients for higher orders,
         /// because it caches them.
         /// </summary>
+        /// <param name="subframe">Subframe info used for caching section autocorrelation buffers.</param>
         /// <param name="order">Maximum order</param>
         /// <param name="samples">Samples pointer</param>
         /// <param name="blocksize">Block size</param>
         /// <param name="window">Window function</param>
+        /// <param name="sections">Window sections describing how to compute autocorrelation over the window.</param>
         public void GetReflection(LpcSubframeInfo subframe, int order, int blocksize, int* samples, float* window, LpcWindowSection* sections)
         {
             if (autocorr_order > order)
@@ -344,6 +355,11 @@ namespace CHDReaderTest.Flac.FlacDeps
         /// Sorts orders based on Akaike's criteria
         /// </summary>
         /// <param name="blocksize">Frame size</param>
+        /// <param name="count">Maximum number of best orders to sort into the prefix of the list.</param>
+        /// <param name="min_order">Minimum LPC order to consider.</param>
+        /// <param name="max_order">Maximum LPC order to consider.</param>
+        /// <param name="alpha">Akaike alpha coefficient.</param>
+        /// <param name="beta">Akaike beta coefficient.</param>
         public void SortOrdersAkaike(int blocksize, int count, int min_order, int max_order, double alpha, double beta)
         {
             for (int i = min_order; i <= max_order; i++)

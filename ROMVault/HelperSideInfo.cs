@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Drawing;
 using System.IO;
 using System.Text;
@@ -13,6 +13,9 @@ using Path = RVIO.Path;
 
 namespace ROMVault
 {
+    /// <summary>
+    /// Helpers for loading sidecar artwork/text assets (from directory or ZIP members) into WinForms controls.
+    /// </summary>
     public static class HelperSideInfo
     {
         private static Regex WildcardToRegex(string pattern)

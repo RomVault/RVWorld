@@ -1,4 +1,4 @@
-﻿/******************************************************
+/******************************************************
  *     ROMVault3 is written by Gordon J.              *
  *     Contact gordon@romvault.com                    *
  *     Copyright 2025                                 *
@@ -14,10 +14,16 @@ using RomVaultCore.RvDB;
 namespace ROMVault
 {
 
+    /// <summary>
+    /// WinForms tree control for displaying the database directory/game hierarchy with status icons.
+    /// </summary>
     public partial class RvTree : UserControl
     {
         public bool Working;
 
+        /// <summary>
+        /// Cached layout rectangles for a single rendered tree row.
+        /// </summary>
         private class UiTree
         {
             public string TreeBranches;
