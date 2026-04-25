@@ -1,7 +1,7 @@
 ﻿/******************************************************
  *     ROMVault3 is written by Gordon J.              *
  *     Contact gordon@romvault.com                    *
- *     Copyright 2025                                 *
+ *     Copyright 2026                                 *
  ******************************************************/
 
 using System;

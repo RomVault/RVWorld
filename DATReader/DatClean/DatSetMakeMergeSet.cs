@@ -1,6 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using DATReader.DatStore;
 using DATReader.Utils;
+using RVUtils;
 
 namespace DATReader.DatClean
 {
@@ -10,9 +12,16 @@ namespace DATReader.DatClean
         {
             // look for merged roms, check if a rom exists in a parent set where the Name,Size and CRC all match.
 
+            DatDir[] sortThis = new DatDir[tDat.Count];
+            for (int g = 0; g < tDat.Count; g++)
+                sortThis[g] = (DatDir)tDat.ChildSorted(g);
+
+
+            Array.Sort(sortThis, new IAlphanumComparator());
+
             for (int g = 0; g < tDat.Count; g++)
             {
-                DatDir mGame = (DatDir)tDat.ChildSorted(g);
+                DatDir mGame = sortThis[g];
 
                 if (mGame.DGame == null)
                 {
@@ -100,28 +109,28 @@ namespace DATReader.DatClean
 
                     byte[] crc0 = dr0.CRC;
                     byte[] crc1 = dr1.CRC;
-                    if ((crc0 != null) && (crc1 != null) && !ArrByte.bCompare(crc0, crc1))
+                    if ((crc0 != null) && (crc1 != null) && !ByteUtils.ByteArrEqualsQuick(crc0, crc1))
                     {
                         continue;
                     }
 
                     byte[] sha0 = dr0.SHA1;
                     byte[] sha1 = dr1.SHA1;
-                    if ((sha0 != null) && (sha1 != null) && !ArrByte.bCompare(sha0, sha1))
+                    if ((sha0 != null) && (sha1 != null) && !ByteUtils.ByteArrEqualsQuick(sha0, sha1))
                     {
                         continue;
                     }
 
                     byte[] sha256_0 = dr0.SHA256;
                     byte[] sha256_1 = dr1.SHA256;
-                    if ((sha256_0 != null) && (sha256_1 != null) && !ArrByte.bCompare(sha256_0, sha256_1))
+                    if ((sha256_0 != null) && (sha256_1 != null) && !ByteUtils.ByteArrEqualsQuick(sha256_0, sha256_1))
                     {
                         continue;
                     }
 
                     byte[] md50 = dr0.MD5;
                     byte[] md51 = dr1.MD5;
-                    if ((md50 != null) && (md51 != null) && !ArrByte.bCompare(md50, md51))
+                    if ((md50 != null) && (md51 != null) && !ByteUtils.ByteArrEqualsQuick(md50, md51))
                     {
                         continue;
                     }

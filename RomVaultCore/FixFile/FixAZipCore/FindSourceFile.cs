@@ -838,7 +838,7 @@ namespace RomVaultCore.FixFile.FixAZipCore
                         {
                             return isVerified ? SourceFileFixTypes.ZipZSTD_V : SourceFileFixTypes.ZipZSTD_U;
                         }
-                        else if (file.Parent.ZipStruct == ZipStructure.None)
+                        else if (file.Parent.ZipStruct == ZipStructure.None || file.Parent.ZipStruct==ZipStructure.ZipDTD)
                         {
                             return isVerified ? SourceFileFixTypes.Zip_U : SourceFileFixTypes.Zip_V;
                         }

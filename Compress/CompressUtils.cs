@@ -24,7 +24,7 @@ namespace Compress
         {
             if (threadCount == null)
                 return Environment.ProcessorCount - 2;
-            if (threadCount <= 0) 
+            if (threadCount <= 0)
                 return Environment.ProcessorCount - 2;
 
             return (int)threadCount;
@@ -48,68 +48,33 @@ namespace Compress
             Directory.CreateDirectory(strTemp);
         }
 
-        internal static bool CompareString(string s1, string s2)
+        internal static bool CompareStringSlashToLower(string s1, string s2)
         {
-            char[] c1 = s1.ToCharArray();
-            char[] c2 = s2.ToCharArray();
+            if (s1 == null || s2 == null) return false;
+            if (s1.Length != s2.Length) return false;
 
-            if (c1.Length != c2.Length)
+            for (int i = 0; i < s1.Length; i++)
             {
-                return false;
-            }
+                char c1 = s1[i];
+                char c2 = s2[i];
 
-            for (int i = 0; i < c1.Length; i++)
-            {
-                if (c1[i] != c2[i])
-                {
-                    return false;
-                }
+                if (c1 == '/') c1 = '\\';
+                if (c2 == '/') c2 = '\\';
+
+                c1 = char.ToLowerInvariant(c1);
+                c2 = char.ToLowerInvariant(c2);
+
+                if (c1 != c2) return false;
             }
             return true;
         }
 
-        internal static bool CompareStringSlash(string s1, string s2)
+        internal static bool ByteArrEquals(byte[] b0, byte[] b1)
         {
-            char[] c1 = s1.ToCharArray();
-            char[] c2 = s2.ToCharArray();
+            if ((b0 == null) || (b1 == null)) return false;
+            if (b0.Length != b1.Length) return false;
 
-            if (c1.Length != c2.Length)
-            {
-                return false;
-            }
-
-            for (int i = 0; i < c1.Length; i++)
-            {
-                if (c1[i] == '/') c1[i] = '\\';
-                if (c2[i] == '/') c2[i] = '\\';
-                if (c1[i] != c2[i])
-                {
-                    return false;
-                }
-            }
-            return true;
-        }
-
-
-        public static bool ByteArrCompare(byte[] b0, byte[] b1)
-        {
-            if ((b0 == null) || (b1 == null))
-            {
-                return false;
-            }
-            if (b0.Length != b1.Length)
-            {
-                return false;
-            }
-
-            for (int i = 0; i < b0.Length; i++)
-            {
-                if (b0[i] != b1[i])
-                {
-                    return false;
-                }
-            }
-            return true;
+            return b0.AsSpan().SequenceEqual(b1);
         }
 
         public static ZipReturn GetFile(this ICompress zip, int index, out byte[] data)

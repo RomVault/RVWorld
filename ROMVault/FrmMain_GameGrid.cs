@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Text;
-using System.Globalization;
 using System.Windows.Forms;
 using Compress;
 using RomVaultCore;
@@ -83,6 +82,8 @@ namespace ROMVault
                 Tag = null
             };
             mnuOpenParentDir.Click += MnuOpenParentDir;
+
+
 
             mnuLaunchEmulator = new ToolStripMenuItem
             {
@@ -235,7 +236,7 @@ namespace ROMVault
                             continue;
                         }
 
-                        int len = DigitLength(tDirStat.Get(RepairStatus.DisplayOrder[l])) * 7 + 26;
+                        int len = DigitLength(tDirStat.Get(RepairStatus.DisplayOrder[l])) * 8 + 26;
                         if (len > _gameGridColumnXPositions[columnIndex])
                         {
                             _gameGridColumnXPositions[columnIndex] = len;
@@ -277,6 +278,8 @@ namespace ROMVault
 
                 GameGrid.Columns[(int)GameGridColumns.CType].Width = wideTypeColumn ? 90 : 44;
 
+                GameGrid.Refresh();
+
                 UpdateSelectedGame(onTimer);
             }
             catch { }
@@ -311,7 +314,7 @@ namespace ROMVault
             if (GameGrid.SelectedRows.Count != 1)
             {
                 UpdateGameMetaData(new RvFile(FileType.Dir));
-                UpdateRomGrid(gameGridSource);
+                UpdateRomGrid(gameGridSource, onTimer);
                 return;
             }
 
@@ -331,6 +334,8 @@ namespace ROMVault
                     if (zs == ZipStructure.ZipTrrnt) { return "ZipTrrnt"; }
                     if (zs == ZipStructure.ZipTDC) { return "ZipTDC"; }
                     if (zs == ZipStructure.ZipZSTD) { return "ZipZSTD"; }
+                    if (zs == ZipStructure.ZipDTD) { return "ZipDTD"; }
+                    if (zs == ZipStructure.ZipDTZ) { return "ZipDTZ"; }
                     return null;
                 case FileType.SevenZip:
                     if (zs == ZipStructure.None) { return "SevenZip"; }
@@ -522,7 +527,7 @@ namespace ROMVault
                                     if (tRvDir.DirStatus.Get(RepairStatus.DisplayOrder[l]) > 0)
                                     {
                                         gOff = _gameGridColumnXPositions[columnIndex];
-                                        g.DrawString(tRvDir.DirStatus.Get(RepairStatus.DisplayOrder[l]).ToString(CultureInfo.InvariantCulture), drawFont, Dark.dark.fgBrush(Brushes.Black), new PointF(gOff + 20, 3));
+                                        g.DrawString(tRvDir.DirStatus.Get(RepairStatus.DisplayOrder[l]).ToRvString(), drawFont, Dark.dark.fgBrush(Brushes.Black), new PointF(gOff + 20, 3));
                                         columnIndex++;
                                     }
                                 }
@@ -740,6 +745,7 @@ namespace ROMVault
                     bool found = false;
                     if (thisGame.FileType == FileType.Dir)
                     {
+
                         string folderPath = thisGame.FullNameCase;
                         if (Directory.Exists(folderPath))
                         {
@@ -835,16 +841,7 @@ namespace ROMVault
             RvFile thisFile = (RvFile)_mnuGameGrid.Tag;
             if (thisFile.FileType == FileType.Dir)
             {
-                string folderPath = thisFile.FullNameCase;
-                if (Directory.Exists(folderPath))
-                {
-                    ProcessStartInfo startInfo = new ProcessStartInfo
-                    {
-                        Arguments = folderPath,
-                        FileName = "explorer.exe"
-                    };
-                    try { Process.Start(startInfo); } catch { }
-                }
+                RVProcess.StartDIR(thisFile.FullNameCase);
                 return;
             }
             if (thisFile.FileType == FileType.Zip || thisFile.FileType == FileType.SevenZip)
@@ -852,7 +849,7 @@ namespace ROMVault
                 string zipPath = thisFile.FullNameCase;
                 if (File.Exists(zipPath))
                 {
-                    try { Process.Start(zipPath); } catch { }
+                    RVProcess.StartURL(zipPath);
                 }
                 return;
             }
@@ -866,22 +863,10 @@ namespace ROMVault
                 return;
             if (thisFile.FileType == FileType.Dir)
             {
-                string folderPath = thisFile.FullNameCase;
-                if (Directory.Exists(folderPath))
-                {
-                    ProcessStartInfo startInfo = new ProcessStartInfo
-                    {
-                        Arguments = folderPath,
-                        FileName = "explorer.exe"
-                    };
-                    try { Process.Start(startInfo); } catch { }
-                }
+                RVProcess.StartDIR(thisFile.FullNameCase);
                 return;
             }
         }
-
-
-
 
 
         private void LaunchEmulator(object sender, EventArgs e)
@@ -925,13 +910,13 @@ namespace ROMVault
                 string gameId = thisGame.Game.GetData(RvGame.GameData.Id);
                 string datId = thisGame.Dat.GetData(RvDat.DatData.Id);
                 if (!string.IsNullOrWhiteSpace(gameId) && !string.IsNullOrWhiteSpace(datId))
-                    try { Process.Start($"https://datomatic.no-intro.org/index.php?page=show_record&s={datId}&n={gameId}"); } catch { }
+                    RVProcess.StartURL($"https://datomatic.no-intro.org/index.php?page=show_record&s={datId}&n={gameId}");
             }
             if (thisGame.Game != null && thisGame.Dat?.GetData(RvDat.DatData.HomePage) == "redump.org")
             {
                 string gameId = thisGame.Game.GetData(RvGame.GameData.Id);
                 if (!string.IsNullOrWhiteSpace(gameId))
-                    try { Process.Start($"http://redump.org/disc/{gameId}/"); } catch { }
+                    RVProcess.StartURL($"http://redump.org/disc/{gameId}/");
             }
         }
 
@@ -1006,5 +991,9 @@ namespace ROMVault
             }
         }
 
+        private void GameGrid_DataError(object sender, DataGridViewDataErrorEventArgs e)
+        {
+
+        }
     }
 }

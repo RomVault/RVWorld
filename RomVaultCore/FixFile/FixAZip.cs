@@ -149,7 +149,7 @@ namespace RomVaultCore.FixFile
             for (int iRom = 0; iRom < fixZip.ChildCount; iRom++)
             {
                 var getChild = fixZip.Child(iRom);
-                if (getChild.RepStatus == RepStatus.Missing || getChild.RepStatus == RepStatus.MissingMIA  || getChild.RepStatus == RepStatus.NotCollected)
+                if (getChild.RepStatus == RepStatus.Missing || getChild.RepStatus == RepStatus.NotCollected)
                     continue;
                 if (getChild.FileGroup == null)
                     return ReturnCode.FindFixesMissingFileGroups;
@@ -186,7 +186,6 @@ namespace RomVaultCore.FixFile
                     {
                         // any file we do not have or do not want in the destination zip
                         case RepStatus.Missing:
-                        case RepStatus.MissingMIA:
                         case RepStatus.NotCollected:
                         case RepStatus.Rename:
                         case RepStatus.Delete:
@@ -202,8 +201,6 @@ namespace RomVaultCore.FixFile
 
                                     // do not have this file and cannot fix it here
                                     fixZippedFile.DatStatus == DatStatus.InDatCollect && fixZippedFile.GotStatus == GotStatus.NotGot ||
-                                    fixZippedFile.DatStatus == DatStatus.InDatMIA && fixZippedFile.GotStatus == GotStatus.NotGot ||
-                                    fixZippedFile.DatStatus == DatStatus.InDatMIA && fixZippedFile.GotStatus == GotStatus.Got ||  // this can happen if an MIA is in a incomplete keep only complete zip, and you have another copy of the MIA rom else where.
                                     fixZippedFile.DatStatus == DatStatus.InDatNoDump && fixZippedFile.GotStatus == GotStatus.NotGot ||
                                     fixZippedFile.DatStatus == DatStatus.InDatMerged && fixZippedFile.GotStatus == GotStatus.NotGot ||
 
@@ -241,7 +238,6 @@ namespace RomVaultCore.FixFile
 
                         // any files we are just moving from the original zip to the destination zip
                         case RepStatus.Correct:
-                        case RepStatus.CorrectMIA:
                         case RepStatus.InToSort:
                         case RepStatus.NeededForFix:
                         case RepStatus.Corrupt:
@@ -269,7 +265,6 @@ namespace RomVaultCore.FixFile
                             }
 
                         case RepStatus.CanBeFixed:
-                        case RepStatus.CanBeFixedMIA:
                         case RepStatus.CorruptCanBeFixed:
                             {
                                 ReportError.procLog($"FixAZip: Calling Can Be fixed, Fixing");
@@ -395,6 +390,49 @@ namespace RomVaultCore.FixFile
                         ReportError.procLog($"FixAZip: returning from failed to delete");
                         return ReturnCode.RescanNeeded;
                     }
+
+                    // do secondary check to see that file has been removed
+                    try
+                    {
+                        int tryCount = 0;
+                        while (File.Exists(filename) && tryCount<10)
+                        {
+                            tryCount++;
+                            Thread.Sleep(100);
+                            try
+                            {
+                                ReportError.procLog($"FixAZip: {filename} secondary deleting");
+                                File.Delete(filename);
+                            }
+                            catch { }
+                        }
+                        if (tryCount==10)
+                        {
+                            if (tempFixZip != null && tempFixZip.ZipOpen != ZipOpenType.Closed)
+                            {
+                                tempFixZip.ZipFileClose();
+                                tempFixZip = null;
+                            }
+
+                            errorMessage = $"Error trying to delete file {filename}";
+                            return ReturnCode.FileSystemError;
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        ReportError.procLog($"FixAZip: {filename} failed secondary delete test");
+                        errorMessage = $"Error While trying to delete file {filename}. {e.Message}";
+
+                        if (tempFixZip != null && tempFixZip.ZipOpen != ZipOpenType.Closed)
+                        {
+                            tempFixZip.ZipFileClose();
+                            tempFixZip = null;
+                        }
+
+                        ReportError.procLog($"FixAZip: returning from failed secondary delete test");
+                        return ReturnCode.RescanNeeded;
+                    }
+
                 }
 
                 #endregion
@@ -509,6 +547,13 @@ namespace RomVaultCore.FixFile
                 ReportError.procLog($"FixAZip: Error Exception, nulling out.");
 
                 errorMessage = "In Fix Zip:\n" + ex.Message + "\nat\n:" + ex.StackTrace;
+                Exception checkEx = ex;
+                while (checkEx != null)
+                {
+                    if (checkEx is System.IO.IOException)
+                        return ReturnCode.FileSystemError;
+                    checkEx = checkEx.InnerException;
+                }
                 return ReturnCode.LogicError;
             }
             finally

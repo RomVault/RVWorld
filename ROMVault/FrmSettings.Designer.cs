@@ -163,7 +163,7 @@
             this.chkDebugLogs.AutoSize = true;
             this.chkDebugLogs.Location = new System.Drawing.Point(131, 485);
             this.chkDebugLogs.Name = "chkDebugLogs";
-            this.chkDebugLogs.Size = new System.Drawing.Size(138, 21);
+            this.chkDebugLogs.Size = new System.Drawing.Size(131, 17);
             this.chkDebugLogs.TabIndex = 18;
             this.chkDebugLogs.Text = "Enable Debug logging";
             this.chkDebugLogs.UseVisualStyleBackColor = true;
@@ -173,7 +173,7 @@
             this.chkCacheSaveTimer.AutoSize = true;
             this.chkCacheSaveTimer.Location = new System.Drawing.Point(131, 282);
             this.chkCacheSaveTimer.Name = "chkCacheSaveTimer";
-            this.chkCacheSaveTimer.Size = new System.Drawing.Size(161, 21);
+            this.chkCacheSaveTimer.Size = new System.Drawing.Size(154, 17);
             this.chkCacheSaveTimer.TabIndex = 19;
             this.chkCacheSaveTimer.Text = "Save Cache on timer every";
             this.chkCacheSaveTimer.UseVisualStyleBackColor = true;
@@ -219,7 +219,7 @@
             this.chkDoubleCheckDelete.AutoSize = true;
             this.chkDoubleCheckDelete.Location = new System.Drawing.Point(131, 263);
             this.chkDoubleCheckDelete.Name = "chkDoubleCheckDelete";
-            this.chkDoubleCheckDelete.Size = new System.Drawing.Size(269, 21);
+            this.chkDoubleCheckDelete.Size = new System.Drawing.Size(262, 17);
             this.chkDoubleCheckDelete.TabIndex = 22;
             this.chkDoubleCheckDelete.Text = "Double check file exists elsewhere before deleting";
             this.chkDoubleCheckDelete.UseVisualStyleBackColor = true;
@@ -229,7 +229,7 @@
             this.chkDetailedReporting.AutoSize = true;
             this.chkDetailedReporting.Location = new System.Drawing.Point(131, 465);
             this.chkDetailedReporting.Name = "chkDetailedReporting";
-            this.chkDetailedReporting.Size = new System.Drawing.Size(250, 21);
+            this.chkDetailedReporting.Size = new System.Drawing.Size(243, 17);
             this.chkDetailedReporting.TabIndex = 25;
             this.chkDetailedReporting.Text = "Show detailed actions in Fixing Status window";
             this.chkDetailedReporting.UseVisualStyleBackColor = true;
@@ -239,7 +239,7 @@
             this.chkSendFoundMIA.AutoSize = true;
             this.chkSendFoundMIA.Location = new System.Drawing.Point(131, 403);
             this.chkSendFoundMIA.Name = "chkSendFoundMIA";
-            this.chkSendFoundMIA.Size = new System.Drawing.Size(172, 21);
+            this.chkSendFoundMIA.Size = new System.Drawing.Size(165, 17);
             this.chkSendFoundMIA.TabIndex = 27;
             this.chkSendFoundMIA.Text = "Send Found MIA notifications";
             this.chkSendFoundMIA.UseVisualStyleBackColor = true;
@@ -250,7 +250,7 @@
             this.chkSendFoundMIAAnon.AutoSize = true;
             this.chkSendFoundMIAAnon.Location = new System.Drawing.Point(147, 421);
             this.chkSendFoundMIAAnon.Name = "chkSendFoundMIAAnon";
-            this.chkSendFoundMIAAnon.Size = new System.Drawing.Size(122, 21);
+            this.chkSendFoundMIAAnon.Size = new System.Drawing.Size(115, 17);
             this.chkSendFoundMIAAnon.TabIndex = 28;
             this.chkSendFoundMIAAnon.Text = "Send anonymously";
             this.chkSendFoundMIAAnon.UseVisualStyleBackColor = true;
@@ -260,7 +260,7 @@
             this.chkDeleteOldCueFiles.AutoSize = true;
             this.chkDeleteOldCueFiles.Location = new System.Drawing.Point(131, 439);
             this.chkDeleteOldCueFiles.Name = "chkDeleteOldCueFiles";
-            this.chkDeleteOldCueFiles.Size = new System.Drawing.Size(215, 21);
+            this.chkDeleteOldCueFiles.Size = new System.Drawing.Size(208, 17);
             this.chkDeleteOldCueFiles.TabIndex = 30;
             this.chkDeleteOldCueFiles.Text = "Delete previous Cue file zips in ToSort ";
             this.chkDeleteOldCueFiles.UseVisualStyleBackColor = true;
@@ -342,7 +342,7 @@
             this.chkDarkMode.AutoSize = true;
             this.chkDarkMode.Location = new System.Drawing.Point(131, 303);
             this.chkDarkMode.Name = "chkDarkMode";
-            this.chkDarkMode.Size = new System.Drawing.Size(173, 21);
+            this.chkDarkMode.Size = new System.Drawing.Size(166, 17);
             this.chkDarkMode.TabIndex = 42;
             this.chkDarkMode.Text = "Dark Mode (Restart required.)";
             this.chkDarkMode.UseVisualStyleBackColor = true;
@@ -352,10 +352,11 @@
             this.chkDoNotReportFeedback.AutoSize = true;
             this.chkDoNotReportFeedback.Location = new System.Drawing.Point(131, 505);
             this.chkDoNotReportFeedback.Name = "chkDoNotReportFeedback";
-            this.chkDoNotReportFeedback.Size = new System.Drawing.Size(143, 21);
+            this.chkDoNotReportFeedback.Size = new System.Drawing.Size(136, 17);
             this.chkDoNotReportFeedback.TabIndex = 43;
             this.chkDoNotReportFeedback.Text = "Do not report feedback";
             this.chkDoNotReportFeedback.UseVisualStyleBackColor = true;
+          
             // 
             // FrmSettings
             // 

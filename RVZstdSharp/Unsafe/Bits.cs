@@ -1,7 +1,7 @@
 using System.Runtime.CompilerServices;
 using static RVZstdSharp.UnsafeHelper;
 using System;
-using System.Numerics;
+using RV.Numerics;
 
 namespace RVZstdSharp.Unsafe
 {

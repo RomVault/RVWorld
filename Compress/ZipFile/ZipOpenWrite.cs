@@ -95,32 +95,5 @@ namespace Compress.ZipFile
 
         }
 
-
-        public void ZipFileCloseFailed()
-        {
-            switch (ZipOpen)
-            {
-                case ZipOpenType.Closed:
-                    return;
-                case ZipOpenType.OpenRead:
-                    if (_zipFs != null)
-                    {
-                        _zipFs.Close();
-                        _zipFs.Dispose();
-                    }
-                    break;
-                case ZipOpenType.OpenWrite:
-                    _zipFs.Flush();
-                    _zipFs.Close();
-                    _zipFs.Dispose();
-                    if (_zipFileInfo != null)
-                        RVIO.File.Delete(_zipFileInfo.FullName);
-                    _zipFileInfo = null;
-                    break;
-            }
-
-            ZipOpen = ZipOpenType.Closed;
-        }
-
     }
 }

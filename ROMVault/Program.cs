@@ -1,11 +1,13 @@
-﻿using System;
-using System.IO;
-using System.Reflection;
-using System.Threading;
-using System.Windows.Forms;
-using RomVaultCore;
+﻿using RomVaultCore;
 using RomVaultCore.FixFile.FixAZipCore;
 using RomVaultCore.Utils;
+using System;
+using System.Drawing;
+using System.IO;
+using System.Reflection;
+using System.ServiceModel;
+using System.Threading;
+using System.Windows.Forms;
 
 namespace ROMVault
 {
@@ -25,10 +27,14 @@ namespace ROMVault
             if (Version.Revision > 0)
                 strVersion += $" WIP{Version.Revision}";
 
-
             Application.SetCompatibleTextRenderingDefault(false);
-
+#if NET10_0
+            Application.SetHighDpiMode(HighDpiMode.DpiUnaware);
+            Application.SetDefaultFont(new Font(new FontFamily("Microsoft Sans Serif"), 8.25f));
+            string appName = Environment.ProcessPath;
+#else
             string appName = Assembly.GetEntryAssembly().Location;
+#endif
             appName = Path.GetDirectoryName(appName);
             appName = appName.Replace("\\", "_");
             appName = appName.Replace("/", "_");
@@ -41,7 +47,7 @@ namespace ROMVault
                 DialogResult res = MessageBox.Show($"You cannot run two copies of the same instance of RomVault.", $"You are already running RomVault", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
                 return;
             }
-
+            Settings.checkdirs();
             Settings.rvSettings = new Settings();
             Settings.rvSettings = Settings.SetDefaults(out string errorReadingSettings);
 
@@ -51,7 +57,6 @@ namespace ROMVault
             ReportError.ErrorForm += ShowErrorForm;
             ReportError.Dialog += ShowDialog;
 
-         
             Dark.dark.darkEnabled = Settings.rvSettings.Darkness;
 
             if (!Settings.rvSettings.Darkness)

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using RomVaultCore.RvDB;
 
@@ -46,12 +45,16 @@ namespace RomVaultCore
         Deleted, // this is a temporary value used while fixing sets, this value should never been seen.
 
 
+        IncompleteRemove,
+        Incomplete,
+
+
+        // Reporting Only Status
+
         MissingMIA,
         CorrectMIA,
         CanBeFixedMIA,
 
-        IncompleteRemove,
-        Incomplete,
 
         EndValue
     }
@@ -122,10 +125,6 @@ namespace RomVaultCore
             StatusCheck[(int)FileType.File, (int)DatStatus.InDatMerged, (int)GotStatus.Got] = new List<RepStatus> { RepStatus.UnNeeded, RepStatus.Delete, RepStatus.MoveToSort, RepStatus.NeededForFix };
             StatusCheck[(int)FileType.File, (int)DatStatus.InDatMerged, (int)GotStatus.Corrupt] = new List<RepStatus> { RepStatus.Corrupt, RepStatus.MoveToCorrupt, RepStatus.Delete };
             StatusCheck[(int)FileType.File, (int)DatStatus.InDatMerged, (int)GotStatus.FileLocked] = new List<RepStatus> { RepStatus.UnScanned };
-            StatusCheck[(int)FileType.File, (int)DatStatus.InDatMIA, (int)GotStatus.NotGot] = new List<RepStatus> { RepStatus.MissingMIA, RepStatus.CanBeFixedMIA, RepStatus.Incomplete };
-            StatusCheck[(int)FileType.File, (int)DatStatus.InDatMIA, (int)GotStatus.Got] = new List<RepStatus> { RepStatus.CorrectMIA, RepStatus.IncompleteRemove, RepStatus.MoveToSort, RepStatus.NeededForFix, RepStatus.Delete };
-            StatusCheck[(int)FileType.File, (int)DatStatus.InDatMIA, (int)GotStatus.Corrupt] = new List<RepStatus> { RepStatus.Corrupt, RepStatus.MoveToCorrupt, RepStatus.CanBeFixedMIA };
-            StatusCheck[(int)FileType.File, (int)DatStatus.InDatMIA, (int)GotStatus.FileLocked] = new List<RepStatus> { RepStatus.UnScanned };
             StatusCheck[(int)FileType.File, (int)DatStatus.InToSort, (int)GotStatus.NotGot] = new List<RepStatus> { RepStatus.Deleted };
             StatusCheck[(int)FileType.File, (int)DatStatus.InToSort, (int)GotStatus.Got] = new List<RepStatus> { RepStatus.InToSort, RepStatus.Ignore, RepStatus.NeededForFix, RepStatus.Delete };
             StatusCheck[(int)FileType.File, (int)DatStatus.InToSort, (int)GotStatus.Corrupt] = new List<RepStatus> { RepStatus.Corrupt, RepStatus.Delete };
@@ -147,10 +146,6 @@ namespace RomVaultCore
             StatusCheck[(int)FileType.FileZip, (int)DatStatus.InDatMerged, (int)GotStatus.Got] = new List<RepStatus> { RepStatus.UnNeeded, RepStatus.Delete, RepStatus.MoveToSort, RepStatus.NeededForFix, RepStatus.Rename };
             StatusCheck[(int)FileType.FileZip, (int)DatStatus.InDatMerged, (int)GotStatus.Corrupt] = new List<RepStatus> { RepStatus.Corrupt, RepStatus.MoveToCorrupt, RepStatus.Delete };
             StatusCheck[(int)FileType.FileZip, (int)DatStatus.InDatMerged, (int)GotStatus.FileLocked] = new List<RepStatus> { RepStatus.UnScanned };
-            StatusCheck[(int)FileType.FileZip, (int)DatStatus.InDatMIA, (int)GotStatus.NotGot] = new List<RepStatus> { RepStatus.MissingMIA, RepStatus.CanBeFixedMIA, RepStatus.Incomplete };
-            StatusCheck[(int)FileType.FileZip, (int)DatStatus.InDatMIA, (int)GotStatus.Got] = new List<RepStatus> { RepStatus.CorrectMIA, RepStatus.IncompleteRemove, RepStatus.MoveToSort, RepStatus.NeededForFix, RepStatus.Delete };
-            StatusCheck[(int)FileType.FileZip, (int)DatStatus.InDatMIA, (int)GotStatus.Corrupt] = new List<RepStatus> { RepStatus.Corrupt, RepStatus.MoveToCorrupt, RepStatus.CorruptCanBeFixed };
-            StatusCheck[(int)FileType.FileZip, (int)DatStatus.InDatMIA, (int)GotStatus.FileLocked] = new List<RepStatus> { RepStatus.UnScanned };
             StatusCheck[(int)FileType.FileZip, (int)DatStatus.InToSort, (int)GotStatus.NotGot] = new List<RepStatus> { RepStatus.Deleted };
             StatusCheck[(int)FileType.FileZip, (int)DatStatus.InToSort, (int)GotStatus.Got] = new List<RepStatus> { RepStatus.InToSort, RepStatus.NeededForFix, RepStatus.Delete };
             StatusCheck[(int)FileType.FileZip, (int)DatStatus.InToSort, (int)GotStatus.Corrupt] = new List<RepStatus> { RepStatus.Corrupt, RepStatus.Delete };
@@ -172,10 +167,6 @@ namespace RomVaultCore
             StatusCheck[(int)FileType.FileSevenZip, (int)DatStatus.InDatMerged, (int)GotStatus.Got] = new List<RepStatus> { RepStatus.UnNeeded, RepStatus.Delete, RepStatus.MoveToSort, RepStatus.NeededForFix, RepStatus.Rename };
             StatusCheck[(int)FileType.FileSevenZip, (int)DatStatus.InDatMerged, (int)GotStatus.Corrupt] = new List<RepStatus> { RepStatus.Corrupt, RepStatus.MoveToCorrupt, RepStatus.Delete };
             StatusCheck[(int)FileType.FileSevenZip, (int)DatStatus.InDatMerged, (int)GotStatus.FileLocked] = new List<RepStatus> { RepStatus.UnScanned };
-            StatusCheck[(int)FileType.FileSevenZip, (int)DatStatus.InDatMIA, (int)GotStatus.NotGot] = new List<RepStatus> { RepStatus.MissingMIA, RepStatus.CanBeFixedMIA, RepStatus.Incomplete };
-            StatusCheck[(int)FileType.FileSevenZip, (int)DatStatus.InDatMIA, (int)GotStatus.Got] = new List<RepStatus> { RepStatus.CorrectMIA, RepStatus.IncompleteRemove, RepStatus.MoveToSort, RepStatus.NeededForFix, RepStatus.Delete };
-            StatusCheck[(int)FileType.FileSevenZip, (int)DatStatus.InDatMIA, (int)GotStatus.Corrupt] = new List<RepStatus> { RepStatus.Corrupt, RepStatus.MoveToCorrupt, RepStatus.CorruptCanBeFixed };
-            StatusCheck[(int)FileType.FileSevenZip, (int)DatStatus.InDatMIA, (int)GotStatus.FileLocked] = new List<RepStatus> { RepStatus.UnScanned };
             StatusCheck[(int)FileType.FileSevenZip, (int)DatStatus.InToSort, (int)GotStatus.NotGot] = new List<RepStatus> { RepStatus.Deleted };
             StatusCheck[(int)FileType.FileSevenZip, (int)DatStatus.InToSort, (int)GotStatus.Got] = new List<RepStatus> { RepStatus.InToSort, RepStatus.NeededForFix, RepStatus.Delete };
             StatusCheck[(int)FileType.FileSevenZip, (int)DatStatus.InToSort, (int)GotStatus.Corrupt] = new List<RepStatus> { RepStatus.Corrupt, RepStatus.Delete };
@@ -244,7 +235,7 @@ namespace RomVaultCore
     {
         private readonly int[] _arrRepStatus = new int[(int)RepStatus.EndValue];
 
-        public void RepStatusArrayAddRemove(ReportStatus rs, int direction )
+        public void RepStatusArrayAddRemove(ReportStatus rs, int direction)
         {
             for (int i = 0; i < _arrRepStatus.Length; i++)
             {
@@ -252,15 +243,54 @@ namespace RomVaultCore
             }
         }
 
-        public void RepStatusAddRemove(RepStatus rs, int dir)
+
+        public static RepStatus UIStatus(MIAStatus mStat, RepStatus rStat)
         {
-            _arrRepStatus[(int)rs] += dir;
+            if ((mStat & MIAStatus.MIAFromDat) > 0)
+            {
+                switch (rStat)
+                {
+                    case RepStatus.Missing: return RepStatus.MissingMIA;
+                    case RepStatus.CanBeFixed: return RepStatus.CanBeFixedMIA;
+                    case RepStatus.Correct: return RepStatus.CorrectMIA;
+                }
+            }
+
+            if ((mStat & MIAStatus.MIA) > 0)
+            {
+                switch (rStat)
+                {
+                    case RepStatus.Missing: return RepStatus.MissingMIA;
+                    case RepStatus.CanBeFixed: return RepStatus.CanBeFixedMIA;
+                    case RepStatus.Correct:
+                        return RepStatus.CorrectMIA;
+                }
+            }
+            return rStat;
         }
 
-        public void RepStatusUpdate(RepStatus rsOld, RepStatus rsNew)
+        public void RepStatusAddRemove(RepStatus rs, int dir, MIAStatus mStat)
         {
-            Interlocked.Decrement(ref _arrRepStatus[(int)rsOld]);
-            Interlocked.Increment(ref _arrRepStatus[(int)rsNew]);
+            RepStatus trsNew = UIStatus(mStat, rs);
+            _arrRepStatus[(int)trsNew] += dir;
+        }
+
+        public void RepStatusUpdate(MIAStatus mStatOld, MIAStatus mStatNew, RepStatus rsStat)
+        {
+            RepStatus trsOld = UIStatus(mStatOld, rsStat);
+            RepStatus trsNew = UIStatus(mStatNew, rsStat);
+
+            Interlocked.Decrement(ref _arrRepStatus[(int)trsOld]);
+            Interlocked.Increment(ref _arrRepStatus[(int)trsNew]);
+        }
+
+        public void RepStatusUpdate(RepStatus rsOld, RepStatus rsNew, MIAStatus mStat)
+        {
+            RepStatus trsOld = UIStatus(mStat, rsOld);
+            RepStatus trsNew = UIStatus(mStat, rsNew);
+
+            Interlocked.Decrement(ref _arrRepStatus[(int)trsOld]);
+            Interlocked.Increment(ref _arrRepStatus[(int)trsNew]);
         }
 
         #region "arrGotStatus Processing"

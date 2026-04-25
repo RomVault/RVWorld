@@ -2,10 +2,9 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
-using System.ServiceModel;
 using System.Threading;
 using RomVaultCore.RvDB;
-using RomVaultCore.Utils;
+using RVUtils;
 
 namespace RomVaultCore
 {
@@ -34,7 +33,6 @@ namespace RomVaultCore
                 }
                 message += $"\r\nSTACK TRACE:\r\n{e.Exception.StackTrace}";
 
-                SendErrorMessage(message);
                 ErrorForm?.Invoke(message);
 
                 Close();
@@ -59,7 +57,6 @@ namespace RomVaultCore
                 }
                 message += $"\r\nSTACK TRACE:\r\n{e.StackTrace}";
 
-                SendErrorMessage(message);
                 ErrorForm?.Invoke(message);
             }
             catch
@@ -91,7 +88,6 @@ namespace RomVaultCore
 
                 message += $"\r\nSTACK TRACE:\r\n{Environment.StackTrace}";
 
-                SendErrorMessage(message);
                 ErrorForm?.Invoke(message);
 
                 Environment.Exit(0);
@@ -104,20 +100,12 @@ namespace RomVaultCore
 
         public static void SendAndShow(string message)
         {
-            SendErrorMessage(message);
             Show(message);
         }
 
         public static void Show(string text, string caption = "RomVault")
         {
             Dialog?.Invoke(text, caption);
-        }
-
-        private static void SendErrorMessage(string message)
-        {
-            if (Settings.rvSettings.DoNotReportFeedback)
-                return;
-
         }
 
         private static string GetLogFilname()

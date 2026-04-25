@@ -4,8 +4,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using ByteSortedList;
 using RomVaultCore.RvDB;
-using RomVaultCore.Utils;
 using StorageList;
+using RVUtils;
 
 namespace RomVaultCore.FindFix
 {
@@ -135,6 +135,9 @@ namespace RomVaultCore.FindFix
                 ClearPartial.checkGroups.Clear();
                 ClearPartial.CheckRemovePartial(DB.DirRoot.Child(0));
                 ClearPartial.checkAllGroups();
+
+                //remove zero byte files from ToSort Fixes.
+                ToSortZeroByteFilesDontFix.Clear(fileGroupsCRCSorted[0]);
 
                 _thWrk.Report(new bgwText("Complete (Unique Files " + totalAfterMerge + ")"));
                 _thWrk.Finished = true;
@@ -515,27 +518,27 @@ namespace RomVaultCore.FindFix
 
         private static int CompareCRC(RvFile file, FileGroup fileGroup)
         {
-            return ArrByte.ICompare(file.CRC, fileGroup.CRC);
+            return ByteUtils.ByteArrCompare(file.CRC, fileGroup.CRC);
         }
         private static int CompareSHA1(RvFile file, FileGroup fileGroup)
         {
-            return ArrByte.ICompare(file.SHA1, fileGroup.SHA1);
+            return ByteUtils.ByteArrCompare(file.SHA1, fileGroup.SHA1);
         }
         private static int CompareMD5(RvFile file, FileGroup fileGroup)
         {
-            return ArrByte.ICompare(file.MD5, fileGroup.MD5);
+            return ByteUtils.ByteArrCompare(file.MD5, fileGroup.MD5);
         }
         private static int CompareAltCRC(RvFile file, FileGroup fileGroup)
         {
-            return ArrByte.ICompare(file.CRC, fileGroup.AltCRC);
+            return ByteUtils.ByteArrCompare(file.CRC, fileGroup.AltCRC);
         }
         private static int CompareAltSHA1(RvFile file, FileGroup fileGroup)
         {
-            return ArrByte.ICompare(file.SHA1, fileGroup.AltSHA1);
+            return ByteUtils.ByteArrCompare(file.SHA1, fileGroup.AltSHA1);
         }
         private static int CompareAltMD5(RvFile file, FileGroup fileGroup)
         {
-            return ArrByte.ICompare(file.MD5, fileGroup.AltMD5);
+            return ByteUtils.ByteArrCompare(file.MD5, fileGroup.AltMD5);
         }
 
 
@@ -563,23 +566,23 @@ namespace RomVaultCore.FindFix
 
         public static int FamilySortSHA1(FileGroup fileGroup1, FileGroup fileGroup2)
         {
-            return ArrByte.ICompare(fileGroup1.SHA1, fileGroup2.SHA1);
+            return ByteUtils.ByteArrCompare(fileGroup1.SHA1, fileGroup2.SHA1);
         }
         public static int FamilySortMD5(FileGroup fileGroup1, FileGroup fileGroup2)
         {
-            return ArrByte.ICompare(fileGroup1.MD5, fileGroup2.MD5);
+            return ByteUtils.ByteArrCompare(fileGroup1.MD5, fileGroup2.MD5);
         }
         public static int FamilySortAltCRC(FileGroup fileGroup1, FileGroup fileGroup2)
         {
-            return ArrByte.ICompare(fileGroup1.AltCRC, fileGroup2.AltCRC);
+            return ByteUtils.ByteArrCompare(fileGroup1.AltCRC, fileGroup2.AltCRC);
         }
         public static int FamilySortAltSHA1(FileGroup fileGroup1, FileGroup fileGroup2)
         {
-            return ArrByte.ICompare(fileGroup1.AltSHA1, fileGroup2.AltSHA1);
+            return ByteUtils.ByteArrCompare(fileGroup1.AltSHA1, fileGroup2.AltSHA1);
         }
         public static int FamilySortAltMD5(FileGroup fileGroup1, FileGroup fileGroup2)
         {
-            return ArrByte.ICompare(fileGroup1.AltMD5, fileGroup2.AltMD5);
+            return ByteUtils.ByteArrCompare(fileGroup1.AltMD5, fileGroup2.AltMD5);
         }
 
 

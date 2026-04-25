@@ -50,7 +50,6 @@ namespace RomVaultCore.FixFile.Utils
                         break;
                     case RepStatus.Unknown:
                     case RepStatus.Correct:
-                    case RepStatus.CorrectMIA:
                     case RepStatus.InToSort:
                     case RepStatus.Rename:
                     case RepStatus.NeededForFix:

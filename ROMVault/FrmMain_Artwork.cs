@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Drawing;
 using System.IO;
 using RomVaultCore.RvDB;
 
@@ -74,12 +75,27 @@ namespace ROMVault
 
         }
 
+        private void trbFontSize_ValueChanged(object sender, EventArgs e)
+        {
+            txtInfo.Font = new Font(txtInfo.Font.FontFamily, trbFontSize.Value, txtInfo.Font.Style);
+            if (trbFontSize2.Value != trbFontSize.Value)
+                trbFontSize2.Value = trbFontSize.Value;
+        }
+
+        private void trbFontSize2_ValueChanged(object sender, EventArgs e)
+        {
+            txtInfo2.Font = new Font(txtInfo.Font.FontFamily, trbFontSize.Value, txtInfo.Font.Style);
+            if (trbFontSize.Value != trbFontSize2.Value)
+                trbFontSize.Value = trbFontSize2.Value;
+        }
+
+
         private void LoadMamePannels(RvFile tGame, string extraPath)
         {
-            TabEmuArc.TabPages.Remove(tabArtWork);
-            TabEmuArc.TabPages.Remove(tabMedium);
-            TabEmuArc.TabPages.Remove(tabScreens);
-            TabEmuArc.TabPages.Remove(tabInfo);
+            tabSideArtwork.TabPages.Remove(tabArtWork);
+            tabSideArtwork.TabPages.Remove(tabMedium);
+            tabSideArtwork.TabPages.Remove(tabScreens);
+            tabSideArtwork.TabPages.Remove(tabInfo);
 
             string[] path = extraPath.Split('\\');
 
@@ -140,9 +156,9 @@ namespace ROMVault
             }
 
 
-            if (artLoaded || logoLoaded) TabEmuArc.TabPages.Add(tabArtWork);
-            if (titleLoaded || screenLoaded) TabEmuArc.TabPages.Add(tabScreens);
-            if (storyLoaded) TabEmuArc.TabPages.Add(tabInfo);
+            if (artLoaded || logoLoaded) tabSideArtwork.TabPages.Add(tabArtWork);
+            if (titleLoaded || screenLoaded) tabSideArtwork.TabPages.Add(tabScreens);
+            if (storyLoaded) tabSideArtwork.TabPages.Add(tabInfo);
 
             if (artLoaded || logoLoaded || titleLoaded || screenLoaded || storyLoaded)
             {
@@ -159,11 +175,11 @@ namespace ROMVault
 
         private void LoadMameSLPannels(RvFile tGame, string extraPath)
         {
-            TabEmuArc.TabPages.Remove(tabArtWork);
-            TabEmuArc.TabPages.Remove(tabMedium);
-            TabEmuArc.TabPages.Remove(tabScreens);
-            TabEmuArc.TabPages.Remove(tabInfo);
-            TabEmuArc.TabPages.Remove(tabInfo2);
+            tabSideArtwork.TabPages.Remove(tabArtWork);
+            tabSideArtwork.TabPages.Remove(tabMedium);
+            tabSideArtwork.TabPages.Remove(tabScreens);
+            tabSideArtwork.TabPages.Remove(tabInfo);
+            tabSideArtwork.TabPages.Remove(tabInfo2);
 
             string[] path = extraPath.Split('\\');
 
@@ -205,9 +221,9 @@ namespace ROMVault
                 screenLoaded = picScreenShot.TryLoadImage(fExtra.Child(index), fname);
             }
 
-            if (artLoaded || logoLoaded) TabEmuArc.TabPages.Add(tabArtWork);
-            if (titleLoaded || screenLoaded) TabEmuArc.TabPages.Add(tabScreens);
-            if (storyLoaded) TabEmuArc.TabPages.Add(tabInfo);
+            if (artLoaded || logoLoaded) tabSideArtwork.TabPages.Add(tabArtWork);
+            if (titleLoaded || screenLoaded) tabSideArtwork.TabPages.Add(tabScreens);
+            if (storyLoaded) tabSideArtwork.TabPages.Add(tabInfo);
 
             if (artLoaded || logoLoaded || titleLoaded || screenLoaded || storyLoaded)
             {
@@ -226,11 +242,11 @@ namespace ROMVault
         // to stop flickering on screen while system is processing
         private void LoadPannelFromRom(RvFile tRom)
         {
-            TabEmuArc.TabPages.Remove(tabArtWork);
-            TabEmuArc.TabPages.Remove(tabMedium);
-            TabEmuArc.TabPages.Remove(tabScreens);
-            TabEmuArc.TabPages.Remove(tabInfo);
-            TabEmuArc.TabPages.Remove(tabInfo2);
+            tabSideArtwork.TabPages.Remove(tabArtWork);
+            tabSideArtwork.TabPages.Remove(tabMedium);
+            tabSideArtwork.TabPages.Remove(tabScreens);
+            tabSideArtwork.TabPages.Remove(tabInfo);
+            tabSideArtwork.TabPages.Remove(tabInfo2);
 
             string ext = Path.GetExtension(tRom.Name).ToLower();
             if (ext != ".png" && ext != ".jpg")
@@ -242,7 +258,7 @@ namespace ROMVault
             bool loaded = picArtwork.LoadImage(tRom.Parent, tRom.Name);
             if (loaded)
             {
-                TabEmuArc.TabPages.Add(tabArtWork);
+                tabSideArtwork.TabPages.Add(tabArtWork);
                 splitListArt.Panel2Collapsed = false;
                 splitListArt.Panel2.Show();
             }
@@ -255,11 +271,11 @@ namespace ROMVault
 
         private bool LoadC64Pannel(RvFile tGame)
         {
-            TabEmuArc.TabPages.Remove(tabArtWork);
-            TabEmuArc.TabPages.Remove(tabMedium);
-            TabEmuArc.TabPages.Remove(tabScreens);
-            TabEmuArc.TabPages.Remove(tabInfo);
-            TabEmuArc.TabPages.Remove(tabInfo2);
+            tabSideArtwork.TabPages.Remove(tabArtWork);
+            tabSideArtwork.TabPages.Remove(tabMedium);
+            tabSideArtwork.TabPages.Remove(tabScreens);
+            tabSideArtwork.TabPages.Remove(tabInfo);
+            tabSideArtwork.TabPages.Remove(tabInfo2);
 
             bool artLoaded = picArtwork.TryLoadImage(tGame, "Front");
             bool logoLoaded = picLogo.TryLoadImage(tGame, "Extras/Cassette");
@@ -269,8 +285,8 @@ namespace ROMVault
             bool screenLoaded = picScreenShot.TryLoadImage(tGame, "Extras/Inlay_back");
 
 
-            if (artLoaded || logoLoaded) TabEmuArc.TabPages.Add(tabArtWork);
-            if (titleLoaded || screenLoaded) TabEmuArc.TabPages.Add(tabScreens);
+            if (artLoaded || logoLoaded) tabSideArtwork.TabPages.Add(tabArtWork);
+            if (titleLoaded || screenLoaded) tabSideArtwork.TabPages.Add(tabScreens);
 
             if (artLoaded || logoLoaded || titleLoaded || screenLoaded)
             {
@@ -289,24 +305,24 @@ namespace ROMVault
 
         private bool LoadNFOPannel(RvFile tGame)
         {
-            TabEmuArc.TabPages.Remove(tabArtWork);
-            TabEmuArc.TabPages.Remove(tabMedium);
-            TabEmuArc.TabPages.Remove(tabScreens);
-            TabEmuArc.TabPages.Remove(tabInfo);
-            TabEmuArc.TabPages.Remove(tabInfo2);
+            tabSideArtwork.TabPages.Remove(tabArtWork);
+            tabSideArtwork.TabPages.Remove(tabMedium);
+            tabSideArtwork.TabPages.Remove(tabScreens);
+            tabSideArtwork.TabPages.Remove(tabInfo);
+            tabSideArtwork.TabPages.Remove(tabInfo2);
 
             bool storyLoaded = txtInfo.LoadNFO(tGame, "*.nfo");
             if (storyLoaded)
             {
                 tabInfo.Text = "NFO";
-                TabEmuArc.TabPages.Add(tabInfo);
+                tabSideArtwork.TabPages.Add(tabInfo);
             }
 
             bool storyLoaded2 = txtInfo2.LoadNFO(tGame, "*.diz");
             if (storyLoaded2)
             {
                 tabInfo2.Text = "DIZ";
-                TabEmuArc.TabPages.Add(tabInfo2);
+                tabSideArtwork.TabPages.Add(tabInfo2);
             }
             if (storyLoaded || storyLoaded2)
             {
@@ -326,11 +342,11 @@ namespace ROMVault
 
         private void LoadTruRipPannel(RvFile tGame)
         {
-            TabEmuArc.TabPages.Remove(tabArtWork);
-            TabEmuArc.TabPages.Remove(tabMedium);
-            TabEmuArc.TabPages.Remove(tabScreens);
-            TabEmuArc.TabPages.Remove(tabInfo);
-            TabEmuArc.TabPages.Remove(tabInfo2);
+            tabSideArtwork.TabPages.Remove(tabArtWork);
+            tabSideArtwork.TabPages.Remove(tabMedium);
+            tabSideArtwork.TabPages.Remove(tabScreens);
+            tabSideArtwork.TabPages.Remove(tabInfo);
+            tabSideArtwork.TabPages.Remove(tabInfo2);
 
             /*
              * artwork_front.png
@@ -366,10 +382,10 @@ namespace ROMVault
             }
 
 
-            if (artLoaded || logoLoaded) TabEmuArc.TabPages.Add(tabArtWork);
-            if (medium1Loaded || medium2Loaded) TabEmuArc.TabPages.Add(tabMedium);
-            if (titleLoaded || screenLoaded) TabEmuArc.TabPages.Add(tabScreens);
-            if (storyLoaded) TabEmuArc.TabPages.Add(tabInfo);
+            if (artLoaded || logoLoaded) tabSideArtwork.TabPages.Add(tabArtWork);
+            if (medium1Loaded || medium2Loaded) tabSideArtwork.TabPages.Add(tabMedium);
+            if (titleLoaded || screenLoaded) tabSideArtwork.TabPages.Add(tabScreens);
+            if (storyLoaded) tabSideArtwork.TabPages.Add(tabInfo);
 
             if (artLoaded || logoLoaded || titleLoaded || screenLoaded || storyLoaded || medium1Loaded || medium2Loaded)
             {

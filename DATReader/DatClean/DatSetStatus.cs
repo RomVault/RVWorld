@@ -1,5 +1,6 @@
 ﻿using DATReader.DatStore;
 using DATReader.Utils;
+using RVUtils;
 
 namespace DATReader.DatClean
 {
@@ -33,8 +34,11 @@ namespace DATReader.DatClean
 
         internal static void RomCheckCollect(DatFile tRom)
         {
+            tRom.MIAStatus = MIAStatus.None;
             if (tRom.DatStatus == DatStatus.InDatMerged)
                 return;
+            if (tRom.MIA?.ToLower() == "yes" && tRom.Size != 0)
+                tRom.MIAStatus = MIAStatus.MIAFromDat;
 
             if (!string.IsNullOrEmpty(tRom.Merge))
             {
@@ -46,13 +50,8 @@ namespace DATReader.DatClean
                 tRom.DatStatus = DatStatus.InDatNoDump;
                 return;
             }
-            if (tRom.MIA?.ToLower() == "yes" && tRom.Size!=0)
-            {
-                tRom.DatStatus = DatStatus.InDatMIA;
-                return;
-            }
 
-            if (ArrByte.bCompare(tRom.CRC, new byte[] { 0, 0, 0, 0 }) && (tRom.Size == 0))
+            if (ByteUtils.ByteArrEquals(tRom.CRC, new byte[] { 0, 0, 0, 0 }) && (tRom.Size == 0))
             {
                 tRom.DatStatus = DatStatus.InDatCollect;
                 return;

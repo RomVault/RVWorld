@@ -395,6 +395,23 @@ namespace RVIO
                 return e.HResult;
             }
         }
+        public static int OpenFileReadWrite(string path, int bufferSize, out Stream stream)
+        {
+            try
+            {
+                Error.ErrorMessage = "";
+                Error.ErrorCode = 0;
+                stream = new System.IO.FileStream(NameFix.AddLongPathPrefix(path), FileMode.Open, FileAccess.ReadWrite, FileShare.None, bufferSize);
+                return 0;
+            }
+            catch (Exception e)
+            {
+                Error.ErrorMessage = e.Message;
+                Error.ErrorCode = e.HResult;
+                stream = null;
+                return e.HResult;
+            }
+        }
 
         public static int BufSizeMax = 128 * 4096;
 

@@ -1,12 +1,14 @@
-﻿using System.Collections.Generic;
-using Compress;
+﻿using Compress;
+using Compress.File;
 using Compress.SevenZip;
+using Compress.StructuredZip;
 using Compress.ThreadReaders;
 using Compress.ZipFile;
-using Compress.File;
-using Stream = System.IO.Stream;
-using Compress.StructuredZip;
+using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
+using RVUtils;
+using Stream = System.IO.Stream;
 
 namespace FileScanner;
 
@@ -38,8 +40,12 @@ public delegate void Message(string message);
 
 public class FileScan
 {
+    private static readonly byte[] ZeroByteCRC = [0, 0, 0, 0];
+    private static readonly byte[] ZeroByteSHA1 = [0xda, 0x39, 0xa3, 0xee, 0x5e, 0x6b, 0x4b, 0x0d, 0x32, 0x55, 0xbf, 0xef, 0x95, 0x60, 0x18, 0x90, 0xaf, 0xd8, 0x07, 0x09];
+    private static readonly byte[] ZeroByteSHA256 = [0xe3, 0xb0, 0xc4, 0x42, 0x98, 0xfc, 0x1c, 0x14, 0x9a, 0xfb, 0xf4, 0xc8, 0x99, 0x6f, 0xb9, 0x24, 0x27, 0xae, 0x41, 0xe4, 0x64, 0x9b, 0x93, 0x4c, 0xa4, 0x95, 0x99, 0x1b, 0x78, 0x52, 0xb8, 0x55];
+    private static readonly byte[] ZeroByteMD5 = [0xd4, 0x1d, 0x8c, 0xd9, 0x8f, 0x00, 0xb2, 0x04, 0xe9, 0x80, 0x09, 0x98, 0xec, 0xf8, 0x42, 0x7e];
 
-    public ZipReturn ScanArchiveFile(FileType archiveType, string filename, long timeStamp, bool deepScan, out ScannedFile scannedArchive, bool useDosDateTime = false, bool scanSHA256 = false,  Message progress = null)
+    public ZipReturn ScanArchiveFile(FileType archiveType, string filename, long timeStamp, bool deepScan, out ScannedFile scannedArchive, bool useDosDateTime = false, bool scanSHA256 = false, Message progress = null)
     {
         ICompress file;
         switch (archiveType)
@@ -123,7 +129,7 @@ public class FileScan
             sizeSoFar += file.GetFileHeader(i).UncompressedSize;
         }
 
-        if (progress!=null && sizeTotal!=0)
+        if (progress != null && sizeTotal != 0)
             progress?.Invoke("");
 
         file.ZipFileCloseReadStream();
@@ -148,10 +154,10 @@ public class FileScan
             scannedFile.HeaderFileType = HeaderFileType.Nothing;
             scannedFile.GotStatus = GotStatus.Got;
             scannedFile.Size = 0;
-            scannedFile.CRC = new byte[] { 0, 0, 0, 0 };
-            scannedFile.SHA1 = new byte[] { 0xda, 0x39, 0xa3, 0xee, 0x5e, 0x6b, 0x4b, 0x0d, 0x32, 0x55, 0xbf, 0xef, 0x95, 0x60, 0x18, 0x90, 0xaf, 0xd8, 0x07, 0x09 };
-            scannedFile.SHA256 = new byte[] { 0xe3, 0xb0, 0xc4, 0x42, 0x98, 0xfc, 0x1c, 0x14, 0x9a, 0xfb, 0xf4, 0xc8, 0x99, 0x6f, 0xb9, 0x24, 0x27, 0xae, 0x41, 0xe4, 0x64, 0x9b, 0x93, 0x4c, 0xa4, 0x95, 0x99, 0x1b, 0x78, 0x52, 0xb8, 0x55 };
-            scannedFile.MD5 = new byte[] { 0xd4, 0x1d, 0x8c, 0xd9, 0x8f, 0x00, 0xb2, 0x04, 0xe9, 0x80, 0x09, 0x98, 0xec, 0xf8, 0x42, 0x7e };
+            scannedFile.CRC = ZeroByteCRC;
+            scannedFile.SHA1 = ZeroByteSHA1;
+            scannedFile.SHA256 = ZeroByteSHA256;
+            scannedFile.MD5 = ZeroByteMD5;
 
             scannedFile.StatusFlags |= FileStatus.CRCFromHeader | FileStatus.SizeVerified | FileStatus.CRCVerified | FileStatus.SHA1Verified | FileStatus.MD5Verified | FileStatus.SHA256Verified;
             return scannedFile;
@@ -191,7 +197,7 @@ public class FileScan
                     scannedFile.StatusFlags |= FileStatus.SizeVerified;
                     scannedFile.GotStatus = GotStatus.Got;
                 }
-                else if (ByteArrCompare(lf.CRC, scannedFile.CRC))
+                else if (ByteUtils.ByteArrEquals(lf.CRC, scannedFile.CRC))
                 {
                     scannedFile.StatusFlags |= FileStatus.SizeVerified;
                     scannedFile.StatusFlags |= FileStatus.CRCFromHeader;
@@ -309,7 +315,7 @@ public class FileScan
                     tcrc32?.Trigger(_buffer0, actualHeaderSize);
                     tmd5?.Trigger(_buffer0, actualHeaderSize);
                     tsha1?.Trigger(_buffer0, actualHeaderSize);
-                    tsha256?.Trigger(_buffer0, sizenow);
+                    tsha256?.Trigger(_buffer0, actualHeaderSize);
                     tcrc32?.Wait();
                     tmd5?.Wait();
                     tsha1?.Wait();
@@ -324,7 +330,7 @@ public class FileScan
                     tcrc32?.Trigger(_buffer1, restSize);
                     tmd5?.Trigger(_buffer1, restSize);
                     tsha1?.Trigger(_buffer1, restSize);
-                    tsha256?.Trigger(_buffer1, sizenow);
+                    tsha256?.Trigger(_buffer1, restSize);
                     altcrc32.Trigger(_buffer1, restSize);
                     atlmd5?.Trigger(_buffer1, restSize);
                     altsha1?.Trigger(_buffer1, restSize);
@@ -525,29 +531,5 @@ public class FileScan
         putbuffer(_buffer1);
 
         return 0;
-    }
-
-
-
-
-    private static bool ByteArrCompare(byte[] b0, byte[] b1)
-    {
-        if (b0 == null || b1 == null)
-        {
-            return false;
-        }
-        if (b0.Length != b1.Length)
-        {
-            return false;
-        }
-
-        for (int i = 0; i < b0.Length; i++)
-        {
-            if (b0[i] != b1[i])
-            {
-                return false;
-            }
-        }
-        return true;
     }
 }

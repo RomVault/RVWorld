@@ -1,5 +1,4 @@
 ﻿using RomVaultCore;
-using RomVaultCore.RvDB;
 using System.Windows.Forms;
 
 namespace ROMVault
@@ -18,17 +17,9 @@ namespace ROMVault
         private static AutoStat fixStat;
 
 
-
-
         public static void AutoScanFix()
         {
             fixStat = AutoStat.Start_Scanning;
-            AutoNext();
-        }
-
-
-        private static void FinishedFC()
-        {
             AutoNext();
         }
 
@@ -36,11 +27,6 @@ namespace ROMVault
         {
             AutoNext();
         }
-
-        // 2: Find Fix / Fix
-        // 3: PreScan
-        // 4: FC
-        // Post FC is just first ToSort
 
         public static void AutoNext()
         {

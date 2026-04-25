@@ -10,7 +10,7 @@ namespace RomVaultCore.FixFile.FixAZipCore
     {
         public static ReturnCode MoveToCorrupt(RvFile fixZip, RvFile fixZippedFile, ref RvFile toSortCorruptGame, ref ICompress toSortCorruptOut, int iRom)
         {
-            if (!((fixZippedFile.DatStatus == DatStatus.InDatCollect || fixZippedFile.DatStatus == DatStatus.NotInDat || fixZippedFile.DatStatus == DatStatus.InDatMIA) && fixZippedFile.GotStatus == GotStatus.Corrupt))
+            if (!((fixZippedFile.DatStatus == DatStatus.InDatCollect || fixZippedFile.DatStatus == DatStatus.NotInDat) && fixZippedFile.GotStatus == GotStatus.Corrupt))
             {
                 ReportError.SendAndShow("Error in Fix Rom Status " + fixZippedFile.RepStatus + " : " + fixZippedFile.DatStatus + " : " + fixZippedFile.GotStatus);
             }

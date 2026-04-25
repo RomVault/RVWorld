@@ -2,6 +2,7 @@
 using Compress.ZipFile;
 using SortMethods;
 using System;
+using System.Collections.Generic;
 using System.IO;
 
 namespace Compress.StructuredZip
@@ -9,6 +10,11 @@ namespace Compress.StructuredZip
     public class StructuredZip : Zip, ICompress
     {
         public new ZipStructure ZipStruct { get; private set; }
+
+        // zstdCheckOnlyZeroBytes = false   then ZipStruct will be none if an incorrect zstd zero byte stream is found.
+        // zstdCheckOnlyZeroBytes = true    then zstdChechZeroBytesValid will be false if an incorrect zstd zero byte stream is found.
+        public bool zstdCheckOnlyZeroBytes = false;  // <--- input setting
+        public bool zstdCheckZeroBytesValid = true; // <--- output result
 
         public new ZipReturn ZipFileOpen(string newFilename, long timestamp, bool readHeaders, int buffer = 4096)
         {
@@ -36,7 +42,7 @@ namespace Compress.StructuredZip
         }
 
 
-        public new ZipReturn ZipFileCreate(string newFilename, ZipStructure zipType)
+        public ZipReturn ZipFileCreate(string newFilename, ZipStructure zipType)
         {
             ZipStruct = zipType;
             ZipReturn zr = base.ZipFileCreate(newFilename);
@@ -44,7 +50,7 @@ namespace Compress.StructuredZip
             return zr;
         }
 
-        public new ZipReturn ZipFileCreate(Stream zipFs, ZipStructure zipType)
+        public ZipReturn ZipFileCreate(Stream zipFs, ZipStructure zipType)
         {
             ZipStruct = zipType;
             ZipReturn zr = base.ZipFileCreate(zipFs);
@@ -140,7 +146,7 @@ namespace Compress.StructuredZip
             {
                 // check that filenames are in trrntzip order
                 string lastFilename = GetFileHeader(localFilesCount - 1).Filename;
-                if (Sorters.TrrntZipStringCompare(lastFilename, filename) > 0)
+                if (Sorters.TrrntZipStringCompareCase(lastFilename, filename) > 0)
                     zipValid = ZipReturn.ZipTrrntzipIncorrectFileOrder;
 
                 // this should be move out to a fuction
@@ -149,7 +155,7 @@ namespace Compress.StructuredZip
                     // check that no un-needed directory entries are added
                     if (GetFileHeader(localFilesCount - 1).IsDirectory && filename.Length > lastFilename.Length)
                     {
-                        if (Sorters.TrrntZipStringCompare(lastFilename, filename.Substring(0, lastFilename.Length)) == 0)
+                        if (Sorters.TrrntZipStringCompareCase(lastFilename, filename.Substring(0, lastFilename.Length)) == 0)
                         {
                             zipValid = ZipReturn.ZipTrrntzipIncorrectDirectoryAddedToZip;
                         }
@@ -164,7 +170,7 @@ namespace Compress.StructuredZip
                 modTime = 0;
 
             // if we are requirering a trrrntzp file and it is not a trrntzip formated supplied stream then error out
-            if (ZipStruct == ZipStructure.ZipTrrnt || ZipStruct == ZipStructure.ZipTDC || ZipStruct == ZipStructure.ZipZSTD)
+            if (ZipStruct == ZipStructure.ZipTrrnt || ZipStruct == ZipStructure.ZipTDC || ZipStruct == ZipStructure.ZipDTD || ZipStruct == ZipStructure.ZipZSTD || ZipStruct == ZipStructure.ZipDTZ)
             {
                 if (zipValid != ZipReturn.ZipGood)
                     return zipValid;
@@ -214,7 +220,7 @@ namespace Compress.StructuredZip
                     return ZipStructure.None;
             }
 
-            // this should be move out to a fuction
+            // this should be move out to a function
             if (zipStructure == ZipStructure.ZipTrrnt || zipStructure == ZipStructure.ZipZSTD)
             {
                 for (int i = 0; i < _localFilesCount - 1; i++)
@@ -237,9 +243,84 @@ namespace Compress.StructuredZip
                     return ZipStructure.None;
                 }
             }
+
+            // this should be move out to a function
+            if (zipStructure == ZipStructure.ZipZSTD)
+            {
+                zstdCheckZeroBytesValid = true;
+                for (int i = 0; i < _localFilesCount; i++)
+                {
+                    ZipFileData fh = (ZipFileData)GetFileHeader(i);
+                    if (fh.UncompressedSize != 0)
+                        continue;
+                    if (fh.CompressedSize != 9)
+                        return ZipStructure.None;
+
+                    ZipFileOpenReadStream(i, true, out Stream stream, out ulong streamSize, out ushort compressionMethod);
+                    byte[] testZero = new byte[9];
+                    stream.Read(testZero, 0, 9);
+                    ZipFileCloseReadStream();
+
+                    for (int j = 0; j < 9; j++)
+                        if (testZero[j] != zstdZero[j])
+                        {
+                            if (zstdCheckOnlyZeroBytes)
+                            {
+                                zstdCheckZeroBytesValid = false;
+                                i = _localFilesCount;
+                                j = 10;
+                            }
+                            else
+                                return ZipStructure.None;
+                        }
+                }
+            }
             return zipStructure;
         }
+        // should maybe also check that ever zstd stream ends with 01,00,00
 
+        private readonly static byte[] zstdZero = [0x28, 0xb5, 0x2f, 0xfd, 0x20, 0x00, 0x01, 0x00, 0x00];
+
+        public List<long> zSTDFixZeroBytes()
+        {
+            List<long> fixPos = new List<long>();
+            int _localFilesCount = LocalFilesCount;
+            for (int i = 0; i < _localFilesCount; i++)
+            {
+                ZipFileData fh = (ZipFileData)GetFileHeader(i);
+                if (fh.UncompressedSize != 0)
+                    continue;
+                if (fh.CompressedSize != 9)
+                    continue;
+
+                ZipFileOpenReadStream(i, true, out Stream stream, out ulong streamSize, out ushort compressionMethod);
+                byte[] testZero = new byte[9];
+                stream.Read(testZero, 0, 9);
+                ZipFileCloseReadStream();
+
+                for (int j = 0; j < 9; j++)
+                {
+                    if (testZero[j] != zstdZero[j])
+                    {
+                        fixPos.Add((long)fh.DataLocation);
+                        j = 10;
+                    }
+                }
+            }
+            return fixPos;
+        }
+
+        public void zSTDFixZeroBytesWrite(List<long>fixPos,string filename)
+        {
+            RVIO.FileStream.OpenFileReadWrite(filename, 4096, out Stream stream);
+            foreach (long pos in fixPos)
+            {
+                stream.Position = pos;
+                stream.Write(zstdZero, 0, 9);
+            }
+            stream.Close();
+            stream.Dispose();
+        }
 
         internal static bool ValidateFileHeader(ZipStructure zipStructure, ZipFileData localFiles)
         {

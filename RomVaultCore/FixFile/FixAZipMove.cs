@@ -3,11 +3,11 @@ using FileScanner;
 using RomVaultCore.FixFile.FixAZipCore;
 using RomVaultCore.FixFile.Utils;
 using RomVaultCore.RvDB;
-using RomVaultCore.Utils;
 using RVIO;
 using System;
 using System.Collections.Generic;
 using System.Threading;
+using RVUtils;
 
 namespace RomVaultCore.FixFile
 {
@@ -43,7 +43,7 @@ namespace RomVaultCore.FixFile
             for (int fixZipIndex = 0; fixZipIndex < fixZip.ChildCount; fixZipIndex++)
             {
                 RvFile fixFile = fixZip.Child(fixZipIndex);
-                if (fixFile.RepStatus == RepStatus.CanBeFixed || fixFile.RepStatus == RepStatus.CanBeFixedMIA || fixFile.RepStatus == RepStatus.CorruptCanBeFixed)
+                if (fixFile.RepStatus == RepStatus.CanBeFixed || fixFile.RepStatus == RepStatus.CorruptCanBeFixed)
                 {
                     totalToFix++;
                     totalToMove++;
@@ -51,12 +51,12 @@ namespace RomVaultCore.FixFile
                         indexOfCanBeFixed = fixZipIndex;
                     continue;
                 }
-                if (fixFile.RepStatus == RepStatus.Correct || fixFile.RepStatus == RepStatus.CorrectMIA)
+                if (fixFile.RepStatus == RepStatus.Correct)
                 {
                     totalToMove++;
                     continue;
                 }
-                if (fixFile.RepStatus == RepStatus.Missing || fixFile.RepStatus == RepStatus.MissingMIA || fixFile.RepStatus == RepStatus.NotCollected)
+                if (fixFile.RepStatus == RepStatus.Missing || fixFile.RepStatus == RepStatus.NotCollected)
                     continue;
 
                 return ReturnCode.Cancel;
@@ -103,7 +103,7 @@ namespace RomVaultCore.FixFile
                 for (int fixZipIndex = 0; fixZipIndex < fixZip.ChildCount; fixZipIndex++)
                 {
                     RvFile fixFile = fixZip.Child(fixZipIndex);
-                    if (fixFile.RepStatus == RepStatus.Missing || fixFile.RepStatus == RepStatus.MissingMIA || fixFile.RepStatus == RepStatus.NotCollected)
+                    if (fixFile.RepStatus == RepStatus.Missing || fixFile.RepStatus == RepStatus.NotCollected)
                         continue;
 
                     RvFile usingFile = sourceZip.Child(sourceZipIndexTest);
@@ -127,12 +127,13 @@ namespace RomVaultCore.FixFile
             string fixZipTreeFullName = fixZip.TreeFullName;
             string sourceZipFullName = sourceZip.FullNameCase;
             string sourceZipTreeFullName = sourceZip.TreeFullName;
-            Report.ReportProgress(new bgwShowFix(Path.GetDirectoryName(fixZipTreeFullName), Path.GetFileName(fixZipTreeFullName), "", null, fixZip.FileType == FileType.Zip ? "<--ZipMove" : "<--7ZMove", Path.GetDirectoryName(sourceZipTreeFullName), Path.GetFileName(sourceZipTreeFullName), ""));
 
             // check the source file timestamp
             long modTimeStamp;
             try
             {
+                Report.ReportProgress(new bgwShowFix(Path.GetDirectoryName(fixZipTreeFullName), Path.GetFileName(fixZipTreeFullName), "", sourceZip.Size, fixZip.FileType == FileType.Zip ? "<--ZipMove" : "<--7ZMove", Path.GetDirectoryName(sourceZipTreeFullName), Path.GetFileName(sourceZipTreeFullName), ""));
+
                 if (File.Exists(fixZipFullName))
                 {
                     string strPath = Path.GetDirectoryName(fixZipFullName);
@@ -165,21 +166,10 @@ namespace RomVaultCore.FixFile
 
             // update the fixed file
 
-
-            //ScannedItem zipMoving = sourceZip.fileOut();
-
-            //fixZip.GotStatus = GotStatus.Got;
-            //fixZip.ZipStruct = sourceZip.ZipStruct;
-            //fixZip.FileModTimeStamp = modTimeStamp;
-            //fixZip.MergeInArchive(zipMoving);
-
-            //sourceZip.MarkAsMissing();
-
-
             int sourceZipIndex = 0;
             for (int fixZipIndex = 0; fixZipIndex < fixZip.ChildCount; fixZipIndex++)
             {
-                if (fixZip.Child(fixZipIndex).RepStatus == RepStatus.Missing || fixZip.Child(fixZipIndex).RepStatus == RepStatus.MissingMIA || fixZip.Child(fixZipIndex).RepStatus == RepStatus.NotCollected)
+                if (fixZip.Child(fixZipIndex).RepStatus == RepStatus.Missing || fixZip.Child(fixZipIndex).RepStatus == RepStatus.NotCollected)
                     continue;
 
                 fixZip.Child(fixZipIndex).FileMergeIn(sourceZip.Child(sourceZipIndex), false);
@@ -220,7 +210,7 @@ namespace RomVaultCore.FixFile
             for (int iRom = 0; iRom < fixZip.ChildCount; iRom++)
             {
                 RepStatus rs = fixZip.Child(iRom).RepStatus;
-                if (rs != RepStatus.MoveToSort && rs != RepStatus.Missing && rs != RepStatus.MissingMIA && rs != RepStatus.NotCollected)
+                if (rs != RepStatus.MoveToSort && rs != RepStatus.Missing && rs != RepStatus.NotCollected)
                     return ReturnCode.Cancel;
             }
 
@@ -291,11 +281,11 @@ namespace RomVaultCore.FixFile
                 return false;
             if (!usingFile.FileStatusIs(FileStatus.MD5Verified))
                 return false;
-            if (fixFile.CRC != null && !ArrByte.BCompare(fixFile.CRC, usingFile.CRC))
+            if (fixFile.CRC != null && !ByteUtils.ByteArrEquals(fixFile.CRC, usingFile.CRC))
                 return false;
-            if (fixFile.MD5 != null && !ArrByte.BCompare(fixFile.MD5, usingFile.MD5))
+            if (fixFile.MD5 != null && !ByteUtils.ByteArrEquals(fixFile.MD5, usingFile.MD5))
                 return false;
-            if (fixFile.SHA1 != null && !ArrByte.BCompare(fixFile.SHA1, usingFile.SHA1))
+            if (fixFile.SHA1 != null && !ByteUtils.ByteArrEquals(fixFile.SHA1, usingFile.SHA1))
                 return false;
 
             return true;

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
 
 namespace SortMethods
 {
@@ -26,18 +27,13 @@ namespace SortMethods
 
     public static class Sorters
     {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int StringCompare(string string1, string string2)
         {
             return Math.Sign(string.Compare(string1, string2, StringComparison.Ordinal));
         }
 
 
-        /// <summary>
-        /// I Dont think this should be seen public ever!!
-        /// </summary>
-        /// <param name="string1">trrntzip filename 1</param>
-        /// <param name="string2">trrntzip filename 2</param>
-        /// <returns></returns>
         public static int TrrntZipStringCompare(string string1, string string2)
         {
             int pos1 = 0;
@@ -64,6 +60,7 @@ namespace SortMethods
                     return 1;
             }
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int TrrntZipStringCompareCase(string string1, string string2)
         {
             int res = TrrntZipStringCompare(string1, string2);
@@ -73,10 +70,12 @@ namespace SortMethods
 
 
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int DirectoryNameCompare(string string1, string string2)
         {
             return Math.Sign(string.Compare(string1.ToLower(), string2.ToLower(), StringComparison.Ordinal));
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int DirectoryNameCompareCase(string string1, string string2)
         {
             int res = DirectoryNameCompare(string1, string2);

@@ -1,7 +1,7 @@
 ﻿/******************************************************
  *     ROMVault3 is written by Gordon J.              *
  *     Contact gordon@romvault.com                    *
- *     Copyright 2025                                 *
+ *     Copyright 2026                                 *
  ******************************************************/
 
 using System;
@@ -32,7 +32,7 @@ namespace RomVaultCore.Scanner
 
             string filename = dbDir.FullNameCase;
             FileType sType = dbDir.FileType;
-            ZipReturn zr = _fileScans.ScanArchiveFile(sType, filename, dbDir.FileModTimeStamp, eScanLevel == EScanLevel.Level2 || eScanLevel == EScanLevel.Level3, out ScannedFile ar, progress: FileProgress);
+            ZipReturn zr = _fileScans.ScanArchiveFile(sType, filename, dbDir.FileModTimeStamp, eScanLevel == EScanLevel.Level2 || eScanLevel == EScanLevel.Level3, out ScannedFile ar, progress: FileProgress);//, parallelScanZip: Settings.rvSettings.ParallelZipScan);
 
             if (zr == ZipReturn.ZipGood)
             {

@@ -1,5 +1,4 @@
-﻿using DATReader.DatStore;
-using RomVaultCore.RvDB;
+﻿using RomVaultCore.RvDB;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading.Tasks;
@@ -55,15 +54,12 @@ namespace RomVaultCore.FindFix
             switch (gs)
             {
                 case RepStatus.Missing:
-                case RepStatus.MissingMIA:
                     foundMissing = true;
                     break;
                 case RepStatus.Correct:
-                case RepStatus.CorrectMIA:
                     foundGotOrFixable = true;
                     break;
                 case RepStatus.CanBeFixed:
-                case RepStatus.CanBeFixedMIA:
                     foundGotOrFixable = true;
                     break;
                 case RepStatus.MoveToSort:
@@ -82,7 +78,6 @@ namespace RomVaultCore.FindFix
             switch (gs)
             {
                 case RepStatus.Missing:
-                case RepStatus.MissingMIA:
                 case RepStatus.NotCollected:
                     break;
 
@@ -91,14 +86,8 @@ namespace RomVaultCore.FindFix
                     if (!checkGroups.ContainsKey(f.FileGroup))
                         checkGroups.Add(f.FileGroup, f.FileGroup);
                     break;
-                case RepStatus.CanBeFixedMIA:
-                    f.RepStatus = RepStatus.Incomplete;
-                    if (!checkGroups.ContainsKey(f.FileGroup))
-                        checkGroups.Add(f.FileGroup, f.FileGroup);
-                    break;
 
                 case RepStatus.Correct:
-                case RepStatus.CorrectMIA:
                     f.RepStatus = RepStatus.IncompleteRemove;
                     if (!checkGroups.ContainsKey(f.FileGroup))
                         checkGroups.Add(f.FileGroup, f.FileGroup);

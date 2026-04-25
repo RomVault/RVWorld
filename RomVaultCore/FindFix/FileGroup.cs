@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using RomVaultCore.RvDB;
-using RomVaultCore.Utils;
+using DATReader.Utils;
+using RVUtils;
 
 namespace RomVaultCore.FindFix
 {
@@ -69,16 +70,16 @@ namespace RomVaultCore.FindFix
         public bool FindExactMatch(RvFile file)
         {
             if (!Equal(file.Size, Size)) return false;
-            if (!ArrByte.ECompare(file.CRC, CRC)) return false;
-            if (!ArrByte.ECompare(file.SHA1, SHA1)) return false;
-            if (!ArrByte.ECompare(file.MD5, MD5)) return false;
+            if (!ByteUtils.ByteArrEqualsNull(file.CRC, CRC)) return false;
+            if (!ByteUtils.ByteArrEqualsNull(file.SHA1, SHA1)) return false;
+            if (!ByteUtils.ByteArrEqualsNull(file.MD5, MD5)) return false;
 
             // should check header file type also.
 
             if (!Equal(file.AltSize, AltSize)) return false;
-            if (!ArrByte.ECompare(file.AltCRC, AltCRC)) return false;
-            if (!ArrByte.ECompare(file.AltSHA1, AltSHA1)) return false;
-            if (!ArrByte.ECompare(file.AltMD5, AltMD5)) return false;
+            if (!ByteUtils.ByteArrEqualsNull(file.AltCRC, AltCRC)) return false;
+            if (!ByteUtils.ByteArrEqualsNull(file.AltSHA1, AltSHA1)) return false;
+            if (!ByteUtils.ByteArrEqualsNull(file.AltMD5, AltMD5)) return false;
 
             return true;
         }
@@ -88,9 +89,9 @@ namespace RomVaultCore.FindFix
             // should check header file type also.
 
             if (!Equal(file.Size, AltSize)) return false;
-            if (!ArrByte.ECompare(file.CRC, AltCRC)) return false;
-            if (!ArrByte.ECompare(file.SHA1, AltSHA1)) return false;
-            if (!ArrByte.ECompare(file.MD5, AltMD5)) return false;
+            if (!ByteUtils.ByteArrEqualsNull(file.CRC, AltCRC)) return false;
+            if (!ByteUtils.ByteArrEqualsNull(file.SHA1, AltSHA1)) return false;
+            if (!ByteUtils.ByteArrEqualsNull(file.MD5, AltMD5)) return false;
 
             return true;
         }

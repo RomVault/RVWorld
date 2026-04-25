@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Text;
 
 namespace Compress.SevenZip
@@ -77,27 +78,12 @@ namespace Compress.SevenZip
         }
 
 
-        public static bool Compare(this byte[] b1, byte[] b2)
+        internal static bool Compare(this byte[] b0, byte[] b1)
         {
-            if ((b1 == null) || (b2 == null))
-            {
-                return false;
-            }
+            if ((b0 == null) || (b1 == null)) return false;
+            if (b0.Length != b1.Length) return false;
 
-            if (b1.Length != b2.Length)
-            {
-                return false;
-            }
-
-            for (int i = 0; i < b1.Length; i++)
-            {
-                if (b1[i] != b2[i])
-                {
-                    return false;
-                }
-            }
-
-            return true;
+            return b0.AsSpan().SequenceEqual(b1);
         }
 
 
@@ -358,27 +344,6 @@ namespace Compress.SevenZip
             }
 
             return (uint?)((crc[0] << 24) | (crc[1] << 16) | (crc[2] << 8) | (crc[3] << 0));
-        }
-
-        public static bool ByteArrCompare(byte[] b0, byte[] b1)
-        {
-            if ((b0 == null) || (b1 == null))
-            {
-                return false;
-            }
-            if (b0.Length != b1.Length)
-            {
-                return false;
-            }
-
-            for (int i = 0; i < b0.Length; i++)
-            {
-                if (b0[i] != b1[i])
-                {
-                    return false;
-                }
-            }
-            return true;
         }
     }
 }

@@ -3,7 +3,7 @@ using System.Collections.Specialized;
 using System.Configuration;
 using System.Windows.Forms;
 
-namespace TrrntZipUI
+namespace TrrntZipUICore
 {
     public static class AppSettings
     {

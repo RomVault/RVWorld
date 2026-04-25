@@ -5,11 +5,11 @@ using System.Threading;
 
 namespace StorageList
 {
+    public delegate bool FindOn<T>(T fileGroup);
+    public delegate int SortOn<T>(T fileGroup1, T fileGroup2);
+
     public class FastArraySort
     {
-        public delegate bool FindOn<T>(T fileGroup);
-        public delegate int SortOn<T>(T fileGroup1, T fileGroup2);
-
         public static void SortWithFilter<T>(T[] arrToSort, FindOn<T> find, SortOn<T> sort, out T[] outArray)
         {
             List<T> outList = new List<T>();
@@ -30,9 +30,11 @@ namespace StorageList
             SortArray(0, sortedCRC.Length, sortedCRC, sortFunction, 0);
             return sortedCRC;
         }
+
+
         public static List<T> SortList<T>(List<T> arrToSort, SortOn<T> sortFunction)
         {
-            T[] sortedCRC = arrToSort.ToArray();
+            T[] sortedCRC = new T[arrToSort.Count];
             arrToSort.CopyTo(sortedCRC, 0);
             SortArray(0, sortedCRC.Length, sortedCRC, sortFunction, 0);
             return sortedCRC.ToList();

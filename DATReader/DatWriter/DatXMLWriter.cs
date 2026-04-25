@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Security.Cryptography;
 using Compress;
 using DATReader.DatStore;
 using RVIO;

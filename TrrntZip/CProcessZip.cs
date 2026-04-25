@@ -27,9 +27,11 @@ namespace TrrntZip
 
         public int workerCount;
 
+        public TorrentZip tz;
+
         public void MigrateZip()
         {
-            TorrentZip tz = new TorrentZip
+            tz = new TorrentZip()
             {
                 StatusCallBack = StatusCallBack,
                 ErrorCallBack = ErrorCallBack,

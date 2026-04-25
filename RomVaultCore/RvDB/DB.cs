@@ -1,7 +1,7 @@
 ﻿/******************************************************
  *     ROMVault3 is written by Gordon J.              *
  *     Contact gordon@romvault.com                    *
- *     Copyright 2025                                 *
+ *     Copyright 2026                                 *
  ******************************************************/
 
 using System;
@@ -165,7 +165,7 @@ namespace RomVaultCore.RvDB
                         DirRoot = new RvFile(br);
                         Settings.rvSettings.CacheFile = Settings.rvSettings.CacheFile.Replace("3_2.Cache", "3_3.Cache");
                         Write();
-                        Settings.WriteConfig(Settings.rvSettings);
+                        Settings.WriteConfig();
                     }
                     else
                         DirRoot = new RvFile(br);

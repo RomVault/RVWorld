@@ -1,12 +1,12 @@
 ﻿/******************************************************
  *     ROMVault3 is written by Gordon J.              *
  *     Contact gordon@romvault.com                    *
- *     Copyright 2025                                 *
+ *     Copyright 2026                                 *
  ******************************************************/
 
 using Compress;
 using DATReader.DatStore;
-using RomVaultCore.Utils;
+using StorageList;
 using System.Collections.Generic;
 
 namespace RomVaultCore.RvDB
@@ -73,6 +73,9 @@ namespace RomVaultCore.RvDB
                     Status = datFile.Status;
                     Dat = rvDat;
                     DatStatus = datFile.DatStatus;
+                    if (datFile.MIAStatus == MIAStatus.MIAFromDat)
+                        MIAStatusSet(MIAStatus.MIAFromDat);
+
                     HeaderFileTypeSet = datFile.HeaderFileType; // this could have the Required flag set on it
 
                     if (datFile.DateModified != null)
@@ -149,6 +152,10 @@ namespace RomVaultCore.RvDB
                         FileModTimeStamp = (long)datFile.DateModified;
                         FileStatusSet(FileStatus.DateFromDAT);
                     }
+
+                    if (datFile.MIAStatus == MIAStatus.MIAFromDat)
+                        MIAStatusSet(datFile.MIAStatus);
+
                     break;
 
                 case DatDir datDir:
@@ -208,6 +215,7 @@ namespace RomVaultCore.RvDB
             if (!FileStatusIs(FileStatus.AltMD5FromHeader) && !FileStatusIs(FileStatus.AltMD5Verified)) AltMD5 = null;
             if (FileStatusIs(FileStatus.DateFromDAT) && IsFile && !(GotStatus == GotStatus.Got || GotStatus == GotStatus.Corrupt)) FileModTimeStamp = long.MinValue;
 
+            MIAStatusClear(MIAStatus.MIAFromDat);
             FileStatusClear(FileStatus.DatFlags);
 
             Merge = "";
@@ -227,9 +235,7 @@ namespace RomVaultCore.RvDB
                 FileName = null;
             }
             DatStatus = DatStatus.NotInDat;
-#if dt
-            DatModTimeStamp = null;
-#endif
+
             return EFile.Keep;
         }
     }

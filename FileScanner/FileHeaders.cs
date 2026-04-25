@@ -116,7 +116,7 @@ public static class FileHeaderReader
     {
         foreach (Detector detector in Detectors)
         {
-            if (headerSize < detector.Data.Value.Length + detector.Data.Offset)
+            if (headerSize<=detector.HeaderLength)
             {
                 continue;
             }

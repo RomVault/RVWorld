@@ -1,6 +1,5 @@
-﻿using RomVaultCore.FindFix;
-using RomVaultCore.RvDB;
-using RomVaultCore.Utils;
+﻿using RomVaultCore.RvDB;
+using RVUtils;
 using File = RVIO.File;
 using FileInfo = RVIO.FileInfo;
 

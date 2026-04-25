@@ -1,12 +1,15 @@
-﻿using System;
+﻿using Compress;
+using DATReader.Utils;
+using RomVaultCore;
+using RomVaultCore.RvDB;
+using RomVaultCore.Utils;
+using RVUtils;
+using StorageList;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.Windows.Forms;
-using Compress;
-using RomVaultCore;
-using RomVaultCore.RvDB;
-using RomVaultCore.Utils;
 
 namespace ROMVault
 {
@@ -32,62 +35,68 @@ namespace ROMVault
 
     public partial class FrmMain
     {
-        private bool altFound = false;
         private RvFile[] romGrid;
         private int romSortIndex = -1;
         private SortOrder romSortDir = SortOrder.None;
 
+        private bool showAlt;
+        private bool showMerge;
         private bool showStatus;
         private bool showFileModDate;
 
-
         private void UpdateRomGrid(RvFile tGame, bool onTimer = false)
         {
-            int scrollPosition = -1;
-            try
+            if (!onTimer)
             {
-                scrollPosition = RomGrid.FirstDisplayedScrollingRowIndex;
+                if (Settings.IsMono && RomGrid.RowCount > 0)
+                {
+                    RomGrid.CurrentCell = RomGrid[0, 0];
+                }
+
+                if (romSortIndex != -1)
+                    RomGrid.Columns[romSortIndex].HeaderCell.SortGlyphDirection = SortOrder.None;
+
+                romSortIndex = -1;
+                romSortDir = SortOrder.None;
+
+                RomGrid.Rows.Clear();
             }
-            catch { }
 
-
-            if (Settings.IsMono && RomGrid.RowCount > 0)
-            {
-                RomGrid.CurrentCell = RomGrid[0, 0];
-            }
-
-            if (romSortIndex != -1)
-                RomGrid.Columns[romSortIndex].HeaderCell.SortGlyphDirection = SortOrder.None;
-
-            romSortIndex = -1;
-            romSortDir = SortOrder.None;
-
-            RomGrid.Rows.Clear();
-
-            altFound = false;
+            showMerge = false;
+            showAlt = false;
             showStatus = false;
             showFileModDate = false;
 
             List<RvFile> fileList = new List<RvFile>();
             AddDir(tGame, "", ref fileList);
             romGrid = fileList.ToArray();
+            if (RomGrid.RowCount != romGrid.Length)
+                RomGrid.RowCount = romGrid.Length;
+          
+            RomGrid.Columns[(int)eRomGrid.Merge].Visible = showMerge;
 
-            RomGrid.Columns[(int)eRomGrid.AltSize].Visible = altFound;
-            RomGrid.Columns[(int)eRomGrid.AltCRC32].Visible = altFound;
-            RomGrid.Columns[(int)eRomGrid.AltSHA1].Visible = altFound;
-            RomGrid.Columns[(int)eRomGrid.AltMD5].Visible = altFound;
+            RomGrid.Columns[(int)eRomGrid.AltSize].Visible = showAlt;
+            RomGrid.Columns[(int)eRomGrid.AltCRC32].Visible = showAlt;
+            RomGrid.Columns[(int)eRomGrid.AltSHA1].Visible = showAlt;
+            RomGrid.Columns[(int)eRomGrid.AltMD5].Visible = showAlt;
 
             RomGrid.Columns[(int)eRomGrid.Status].Visible = showStatus;
             RomGrid.Columns[(int)eRomGrid.DateModFile].Visible = showFileModDate;
 
-            RomGrid.RowCount = romGrid.Length;
-
             try
             {
-                if (onTimer && scrollPosition >= 0 && scrollPosition <= RomGrid.RowCount)
-                    RomGrid.FirstDisplayedScrollingRowIndex = scrollPosition;
+                if (onTimer)
+                {
+                    if (romSortDir != SortOrder.None && romSortIndex >= 0)
+                    {
+                        IComparer<RvFile> tSort = new RomUiCompare(romSortIndex, romSortDir);
+                        romGrid = FastArraySort.SortArray(romGrid, tSort.Compare);
+                    }
+                }
             }
             catch { }
+
+            RomGrid.Refresh();
         }
 
         private void AddDir(RvFile tGame, string pathAdd, ref List<RvFile> fileList)
@@ -133,16 +142,19 @@ namespace ROMVault
             try
             {
 
-                if (tFile.DatStatus != DatStatus.InDatMerged || tFile.RepStatus != RepStatus.NotCollected ||
-                chkBoxShowMerged.Checked)
+                if (tFile.DatStatus != DatStatus.InDatMerged || tFile.RepStatus != RepStatus.NotCollected || chkBoxShowMerged.Checked)
                 {
                     tFile.UiDisplayName = pathAdd + tFile.Name;
                     fileList.Add(tFile);
-                    if (!altFound)
-                    {
-                        altFound = (tFile.AltSize != null) || (tFile.AltCRC != null) || (tFile.AltSHA1 != null) || (tFile.AltMD5 != null);
-                    }
-                    showStatus |= !string.IsNullOrWhiteSpace(tFile.Status);
+
+                    if (!showMerge)
+                        showMerge = !string.IsNullOrWhiteSpace(tFile.Merge);
+
+                    if (!showAlt)
+                        showAlt = (tFile.AltSize != null) || (tFile.AltCRC != null) || (tFile.AltSHA1 != null) || (tFile.AltMD5 != null);
+
+                    if (!showStatus)
+                        showStatus = !string.IsNullOrWhiteSpace(tFile.Status);
 
                     showFileModDate |=
                         (tFile.FileModTimeStamp != 0) &&
@@ -167,7 +179,13 @@ namespace ROMVault
                         {
                             g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
 
-                            string bitmapName = "R_" + tFile.DatStatus + "_" + tFile.RepStatus;
+                            string bitPlusMIA = "";
+                            if (tFile.MIAStatusIs(MIAStatus.MIA)) bitPlusMIA = "_MIA";
+                            else if (tFile.MIAStatusIs(MIAStatus.MIAFromDat)) bitPlusMIA = "_MIA";
+                            else if (tFile.MIAStatusIs(MIAStatus.New)) bitPlusMIA = "_NEW";
+
+
+                            string bitmapName = "R_" + tFile.DatStatus + "_" + tFile.RepStatus + bitPlusMIA;
                             Bitmap romIcon = rvImages.GetBitmap(bitmapName, false);
                             if (romIcon != null)
                             {
@@ -176,7 +194,7 @@ namespace ROMVault
                             }
                             else
                             {
-                                Debug.WriteLine($"Missing image for {bitmapName}");
+                                ReportError.LogOut($"Missing image for {bitmapName}");
                             }
                         }
                         break;
@@ -207,7 +225,7 @@ namespace ROMVault
                         e.Value = tFile.Merge;
                         break;
                     case eRomGrid.Size:
-                        e.Value = SetCell(tFile.Size == null ? "" : ((ulong)tFile.Size).ToString("N0"), tFile, FileStatus.SizeFromDAT, FileStatus.SizeFromHeader, FileStatus.SizeVerified);
+                        e.Value = SetCell(tFile.Size == null ? "" : ((ulong)tFile.Size).ToRvString(), tFile, FileStatus.SizeFromDAT, FileStatus.SizeFromHeader, FileStatus.SizeVerified);
                         break;
                     case eRomGrid.CRC32:
                         e.Value = SetCell(tFile.CRC.ToHexString(), tFile, FileStatus.CRCFromDAT, FileStatus.CRCFromHeader, FileStatus.CRCVerified);
@@ -296,7 +314,7 @@ namespace ROMVault
             try
             {
                 RvFile tFile = romGrid[e.RowIndex];
-                e.CellStyle.BackColor = Dark.dark.Down(_displayColor[(int)tFile.RepStatus]);
+                e.CellStyle.BackColor = Dark.dark.Down(_displayColor[(int)ReportStatus.UIStatus(tFile.MIAStatus, tFile.RepStatus)]);
                 e.CellStyle.ForeColor = _fontColor[(int)tFile.RepStatus];
             }
             catch { }
@@ -374,28 +392,28 @@ namespace ROMVault
                             retVal = string.Compare(x.Merge ?? "", y.Merge ?? "", StringComparison.Ordinal);
                             break;
                         case eRomGrid.Size:
-                            retVal = ULong.iCompareNull(x.Size, y.Size);
+                            retVal = ULongUtils.ULongCompareNull(x.Size, y.Size);
                             break;
                         case eRomGrid.CRC32:
-                            retVal = ArrByte.ICompare(x.CRC, y.CRC);
+                            retVal = ByteUtils.ByteArrCompare(x.CRC, y.CRC);
                             break;
                         case eRomGrid.SHA1:
-                            retVal = ArrByte.ICompare(x.SHA1, y.SHA1);
+                            retVal = ByteUtils.ByteArrCompare(x.SHA1, y.SHA1);
                             break;
                         case eRomGrid.MD5:
-                            retVal = ArrByte.ICompare(x.MD5, y.MD5);
+                            retVal = ByteUtils.ByteArrCompare(x.MD5, y.MD5);
                             break;
                         case eRomGrid.AltSize:
-                            retVal = ULong.iCompareNull(x.AltSize, y.AltSize);
+                            retVal = ULongUtils.ULongCompareNull(x.AltSize, y.AltSize);
                             break;
                         case eRomGrid.AltCRC32:
-                            retVal = ArrByte.ICompare(x.AltCRC, y.AltCRC);
+                            retVal = ByteUtils.ByteArrCompare(x.AltCRC, y.AltCRC);
                             break;
                         case eRomGrid.AltSHA1:
-                            retVal = ArrByte.ICompare(x.AltSHA1, y.AltSHA1);
+                            retVal = ByteUtils.ByteArrCompare(x.AltSHA1, y.AltSHA1);
                             break;
                         case eRomGrid.AltMD5:
-                            retVal = ArrByte.ICompare(x.AltMD5, y.AltMD5);
+                            retVal = ByteUtils.ByteArrCompare(x.AltMD5, y.AltMD5);
                             break;
                         case eRomGrid.Status:
                             retVal = string.Compare(x.Status ?? "", y.Status ?? "", StringComparison.Ordinal);
@@ -555,5 +573,9 @@ namespace ROMVault
             RomGrid.ClearSelection();
         }
 
+        private void RomGrid_DataError(object sender, DataGridViewDataErrorEventArgs e)
+        {
+
+        }
     }
 }

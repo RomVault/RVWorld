@@ -6,9 +6,9 @@
 
 using System;
 using System.Collections.Generic;
+using DATReader.Utils;
 using RomVaultCore.Storage.Dat;
-using RomVaultCore.Utils;
-using SortMethods;
+using RVUtils;
 
 namespace RomVaultCore.RvDB
 {
@@ -185,15 +185,15 @@ namespace RomVaultCore.RvDB
                 return false;
 
 
-            if (missingFile.FileStatusIs(FileStatus.SHA1FromDAT) && gotFile.FileStatusIs(FileStatus.SHA1Verified) && !ArrByte.BCompare(missingFile.SHA1, gotFile.SHA1))
+            if (missingFile.FileStatusIs(FileStatus.SHA1FromDAT) && gotFile.FileStatusIs(FileStatus.SHA1Verified) && !ByteUtils.ByteArrEquals(missingFile.SHA1, gotFile.SHA1))
             {
-                if (missingFile.FileStatusIs(FileStatus.SHA1FromDAT) && gotFile.FileStatusIs(FileStatus.AltSHA1Verified) && !ArrByte.BCompare(missingFile.SHA1, gotFile.AltSHA1))
+                if (missingFile.FileStatusIs(FileStatus.SHA1FromDAT) && gotFile.FileStatusIs(FileStatus.AltSHA1Verified) && !ByteUtils.ByteArrEquals(missingFile.SHA1, gotFile.AltSHA1))
                     return false;
             }
 
-            if (missingFile.FileStatusIs(FileStatus.MD5FromDAT) && gotFile.FileStatusIs(FileStatus.MD5Verified) && !ArrByte.BCompare(missingFile.MD5, gotFile.MD5))
+            if (missingFile.FileStatusIs(FileStatus.MD5FromDAT) && gotFile.FileStatusIs(FileStatus.MD5Verified) && !ByteUtils.ByteArrEquals(missingFile.MD5, gotFile.MD5))
             {
-                if (missingFile.FileStatusIs(FileStatus.MD5FromDAT) && gotFile.FileStatusIs(FileStatus.AltMD5Verified) && !ArrByte.BCompare(missingFile.MD5, gotFile.AltMD5))
+                if (missingFile.FileStatusIs(FileStatus.MD5FromDAT) && gotFile.FileStatusIs(FileStatus.AltMD5Verified) && !ByteUtils.ByteArrEquals(missingFile.MD5, gotFile.AltMD5))
                     return false;
             }
 
@@ -203,9 +203,9 @@ namespace RomVaultCore.RvDB
 
         public static bool CheckIfGotfileAndMatchingFileAreFullMatches(RvFile gotFile, RvFile matchingFile)
         {
-            if (gotFile.FileStatusIs(FileStatus.SHA1Verified) && matchingFile.FileStatusIs(FileStatus.SHA1Verified) && !ArrByte.BCompare(gotFile.SHA1, matchingFile.SHA1))
+            if (gotFile.FileStatusIs(FileStatus.SHA1Verified) && matchingFile.FileStatusIs(FileStatus.SHA1Verified) && !ByteUtils.ByteArrEquals(gotFile.SHA1, matchingFile.SHA1))
                 return false;
-            if (gotFile.FileStatusIs(FileStatus.MD5Verified) && matchingFile.FileStatusIs(FileStatus.MD5Verified) && !ArrByte.BCompare(gotFile.MD5, matchingFile.MD5))
+            if (gotFile.FileStatusIs(FileStatus.MD5Verified) && matchingFile.FileStatusIs(FileStatus.MD5Verified) && !ByteUtils.ByteArrEquals(gotFile.MD5, matchingFile.MD5))
                 return false;
 
             return true;
@@ -219,7 +219,7 @@ namespace RomVaultCore.RvDB
             bool foundOneMatching = false;
             if (tFile.MD5 != null)
             {
-                if (!ArrByte.BCompare(tFile.MD5, ZeroByteMD5))
+                if (!ByteUtils.ByteArrEquals(tFile.MD5, ZeroByteMD5))
                 {
                     return false;
                 }
@@ -228,7 +228,7 @@ namespace RomVaultCore.RvDB
 
             if (tFile.SHA1 != null)
             {
-                if (!ArrByte.BCompare(tFile.SHA1, ZeroByteSHA1))
+                if (!ByteUtils.ByteArrEquals(tFile.SHA1, ZeroByteSHA1))
                 {
                     return false;
                 }
@@ -237,7 +237,7 @@ namespace RomVaultCore.RvDB
 
             if (tFile.CRC != null)
             {
-                if (!ArrByte.BCompare(tFile.CRC, ZeroByteCRC))
+                if (!ByteUtils.ByteArrEquals(tFile.CRC, ZeroByteCRC))
                 {
                     return false;
                 }

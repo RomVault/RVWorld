@@ -9,14 +9,17 @@ using System.Windows.Forms;
 using Compress;
 using RVIO;
 using TrrntZip;
+using TrrntZipUICore;
 
-namespace TrrntZipUI
+namespace TrrntZipUICore
 {
     public partial class FrmTrrntzip : Form
     {
         private int _fileIndex;
         private int FileCount;
         private int FileCountProcessed;
+
+        private TzipSettings tZipSettings;
 
         private BlockingCollection<cFile> bccFile;
 
@@ -64,30 +67,21 @@ namespace TrrntZipUI
             DropBox.DragEnter += PDragEnter;
             DropBox.DragDrop += PDragDrop;
 
-            string sval = AppSettings.ReadSetting("InZip");
-            if (!int.TryParse(sval, out int intVal))
-            {
-                intVal = 2;
-            }
-            cboInType.SelectedIndex = intVal;
+            tZipSettings = TzipSettings.ReadConfig();
 
-            sval = AppSettings.ReadSetting("OutZip");
-            if (!int.TryParse(sval, out intVal))
-            {
-                intVal = 0;
-            }
-            cboOutType.SelectedIndex = UIIndexFromZipStructure((ZipStructure)intVal);
+            cboInType.SelectedIndex = tZipSettings.InZip;
 
-            sval = AppSettings.ReadSetting("Force");
-            chkForce.Checked = sval == "True";
+            cboOutType.SelectedIndex = UIIndexFromZipStructure((ZipStructure)tZipSettings.OutZip);
 
-            sval = AppSettings.ReadSetting("Fix");
-            chkFix.Checked = sval != "False";
+            chkForce.Checked = tZipSettings.Force;
+
+            chkFix.Checked = tZipSettings.Fix;
 
             tbProccessors.Minimum = 1;
             tbProccessors.Maximum = Environment.ProcessorCount;
-            sval = AppSettings.ReadSetting("ProcCount");
-            if (!int.TryParse(sval, out int procc))
+
+            int procc = tZipSettings.ProcCount;
+            if (procc <= 0)
             {
                 procc = tbProccessors.Maximum;
             }
@@ -213,11 +207,16 @@ namespace TrrntZipUI
             dataGrid.Columns[0].SortMode = DataGridViewColumnSortMode.NotSortable;
             dataGrid.Columns[1].SortMode = DataGridViewColumnSortMode.NotSortable;
 
-            Program.ForceReZip = chkForce.Checked;
-            Program.CheckOnly = !chkFix.Checked;
-            Program.InZip = (zipType)cboInType.SelectedIndex;
-            Program.OutZip = ZipStructureFromUIIndex(cboOutType.SelectedIndex);
+            Settings settings = new Settings
+            {
+                ForceReZip = chkForce.Checked,
+                CheckOnly = !chkFix.Checked,
+                InZip = (zipType)cboInType.SelectedIndex,
+                OutZip = ZipStructureFromUIIndex(cboOutType.SelectedIndex)
+            };
 
+            for (int i = 0; i < _threads.Count; i++)
+                _threads[i].cProcessZip.tz.settings = settings;
 
             tGrid.Clear();
             tGridMax = 0;
@@ -227,7 +226,7 @@ namespace TrrntZipUI
 
             FileCountProcessed = 0;
             scanningForFiles = true;
-            FileAdder pm = new FileAdder(bccFile, file, UpdateFileCount, ProcessFileEndCallback);
+            FileAdder pm = new FileAdder(bccFile, file, UpdateFileCount, ProcessFileEndCallback, settings);
             Thread procT = new Thread(pm.ProcFiles);
             procT.Start();
 
@@ -301,24 +300,32 @@ namespace TrrntZipUI
 
         private void picTitle_Click(object sender, EventArgs e)
         {
-            clickDonate();
+            StartURL("http://www.romvault.com");
         }
 
         private void picDonate_Click(object sender, EventArgs e)
         {
-            clickDonate();
-        }
-        private void clickDonate()
-        {
-            Process.Start("http://paypal.me/romvault");
+            StartURL("http://paypal.me/romvault");
         }
 
         private void picRomVault_Click(object sender, EventArgs e)
         {
-            Process.Start("http://www.romvault.com");
+            StartURL("http://www.romvault.com");
         }
 
 
+        public static void StartURL(string url)
+        {
+            try
+            {
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = url,
+                    UseShellExecute = true
+                });
+            }
+            catch { }
+        }
 
 
         private void tbProccessors_ValueChanged(object sender, EventArgs e)
@@ -326,7 +333,8 @@ namespace TrrntZipUI
             if (UiUpdate)
                 return;
 
-            AppSettings.AddUpdateAppSettings("ProcCount", tbProccessors.Value.ToString());
+            tZipSettings.ProcCount = tbProccessors.Value;
+            TzipSettings.WriteConfig(tZipSettings);
             SetUpWorkerThreads();
         }
 
@@ -334,34 +342,38 @@ namespace TrrntZipUI
         {
             if (UiUpdate)
                 return;
-            AppSettings.AddUpdateAppSettings("Fix", chkFix.Checked.ToString());
+            tZipSettings.Fix = chkFix.Checked;
+            TzipSettings.WriteConfig(tZipSettings);
         }
 
         private void chkForce_CheckedChanged(object sender, EventArgs e)
         {
             if (UiUpdate)
                 return;
-            AppSettings.AddUpdateAppSettings("Force", chkForce.Checked.ToString());
+            tZipSettings.Force = chkForce.Checked;
+            TzipSettings.WriteConfig(tZipSettings);
         }
 
         private void cboInType_TextChanged(object sender, EventArgs e)
         {
             if (UiUpdate)
                 return;
-            AppSettings.AddUpdateAppSettings("InZip", cboInType.SelectedIndex.ToString());
+            tZipSettings.InZip = cboInType.SelectedIndex;
+            TzipSettings.WriteConfig(tZipSettings);
         }
 
         private void cboOutType_TextChanged(object sender, EventArgs e)
         {
             if (UiUpdate)
                 return;
-            AppSettings.AddUpdateAppSettings("OutZip", ((int)ZipStructureFromUIIndex(cboOutType.SelectedIndex)).ToString());
+            tZipSettings.OutZip = (int)ZipStructureFromUIIndex(cboOutType.SelectedIndex);
+            TzipSettings.WriteConfig(tZipSettings);
         }
 
 
         private static Bitmap GetBitmap(string bitmapName)
         {
-            object bmObj = TrrntZipUICore.rvImages1.ResourceManager.GetObject(bitmapName);
+            object bmObj = rvImages1.ResourceManager.GetObject(bitmapName);
 
             Bitmap bm = null;
             if (bmObj != null)

@@ -38,12 +38,12 @@ namespace DATReader.DatClean
                 if (lDB.DGame != null)
                 {
 
-                    lDB.Name = (string.IsNullOrWhiteSpace(subDir) ? "" : subDir + "\\") + db.Name;
+                    lDB.Name = (string.IsNullOrWhiteSpace(subDir) ? "" : subDir + "/") + db.Name;
                     newDir.Add(lDB);
                 }
                 else
                 {
-                    DirectoryFlat(lDB, newDir, (string.IsNullOrWhiteSpace(subDir) ? "" : subDir + "\\") + db.Name);
+                    DirectoryFlat(lDB, newDir, (string.IsNullOrWhiteSpace(subDir) ? "" : subDir + "/") + db.Name);
                 }
             }
         }

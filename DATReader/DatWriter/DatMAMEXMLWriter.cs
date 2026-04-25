@@ -33,6 +33,8 @@ namespace DATReader.DatWriter
 @"<!DOCTYPE mame [
 <!ELEMENT mame (machine+)>
 	<!ATTLIST mame build CDATA #IMPLIED>
+	<!ATTLIST mame version CDATA #IMPLIED>
+	<!ATTLIST mame date CDATA #IMPLIED>
 	<!ATTLIST mame debug (yes|no) ""no"">
 	<!ELEMENT machine (description, year?, manufacturer?, biosset*, rom*, disk*, device_ref*, sample*, chip*, display*, sound?, input?, dipswitch*, configuration*, port*, adjuster*, driver?, feature*, device*, slot*, softwarelist*, ramoption*)>
 		<!ATTLIST machine name CDATA #REQUIRED>
@@ -70,7 +72,14 @@ namespace DATReader.DatWriter
 
 ");
 
-            sw.WriteLine($@"<mame build=""{datHeader.Name}"">");
+            string mameLine = $@"<mame build=""{datHeader.Name}""";
+            if (!string.IsNullOrWhiteSpace(datHeader.Version))
+                mameLine += $@" version=""{datHeader.Version}""";
+            if (!string.IsNullOrWhiteSpace(datHeader.Date))
+                mameLine += $@" date=""{datHeader.Date}""";
+            mameLine += ">";
+
+            sw.WriteLine(mameLine);
 
             writeBase(sw, datHeader.BaseDir);
 

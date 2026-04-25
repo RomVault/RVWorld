@@ -12,14 +12,14 @@ namespace TrrntZip
 {
     public static class TorrentZipMake
     {
-        public static TrrntZipStatus ZipFiles(List<ZippedFile> zippedFiles, string filename, byte[] buffer, StatusCallback statusCallBack, LogCallback logCallback, ErrorCallback errorCallback, int threadId, int threadCount, PauseCancel pc)
+        public static TrrntZipStatus ZipFiles(List<ZippedFile> zippedFiles, string filename, byte[] buffer, StatusCallback statusCallBack, LogCallback logCallback, ErrorCallback errorCallback, int threadId, int threadCount, PauseCancel pc,Settings settings)
         {
 
             int bufferSize = buffer.Length;
             Compress.File.File originalZipFile = null;
 
 
-            ZipStructure outputType = Program.OutZip;
+            ZipStructure outputType = settings.OutZip;
 
             // if the source file is a file (not an archive) use the full source name, if the source is an archive remove the original extention
             string fileNameOutputPart = Path.GetFileName(filename);
@@ -73,7 +73,7 @@ namespace TrrntZip
                 // by now the zippedFiles have been sorted so just loop over them
                 foreach (ZippedFile t in zippedFiles)
                 {
-                    if (Program.VerboseLogging)
+                    if (settings.VerboseLogging)
                     {
                         logCallback?.Invoke(threadId, $"{t.Size,15}  {t.StringCRC}   {t.Name}");
                     }
@@ -198,7 +198,7 @@ namespace TrrntZip
                 zipFileOut?.ZipFileCloseFailed();
                 originalZipFile?.ZipFileClose();
 
-                lock (Program.lockObj)
+                lock (settings.lockObj)
                 {
                     string content = $"Error in TorrentZipMake - {filename}\n";
                     content += $"{e.Message}\n";

@@ -1,7 +1,7 @@
 ﻿/******************************************************
  *     ROMVault3 is written by Gordon J.              *
  *     Contact gordon@romvault.com                    *
- *     Copyright 2025                                 *
+ *     Copyright 2026                                 *
  ******************************************************/
 
 using System;
@@ -59,7 +59,6 @@ namespace ROMVault
             cbo7zStruct.SelectedIndex = Settings.rvSettings.sevenZDefaultStruct;
             chkDarkMode.Checked = Settings.rvSettings.Darkness;
             chkDoNotReportFeedback.Checked = Settings.rvSettings.DoNotReportFeedback;
-
         }
 
         private void BtnCancelClick(object sender, EventArgs e)
@@ -104,7 +103,7 @@ namespace ROMVault
 
             Settings.rvSettings.DoNotReportFeedback = chkDoNotReportFeedback.Checked;
 
-            Settings.WriteConfig(Settings.rvSettings);
+            Settings.WriteConfig();
             Close();
         }
 

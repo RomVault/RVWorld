@@ -31,7 +31,6 @@ namespace Compress.ZipFile
         {
             ZipFileCloseReadStream();
 
-
             ZipFileData CentralFile = new ZipFileData
             {
                 RelativeOffsetOfLocalHeader = localIndexOffset,

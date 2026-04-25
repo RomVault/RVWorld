@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 using DATReader.DatStore;
-using DATReader.Utils;
+using RVUtils;
 
 namespace DATReader.DatClean
 {
@@ -42,7 +42,7 @@ namespace DATReader.DatClean
                             for (int j = 0; j < mGame.Count; j++)
                             {
                                 DatFile df1 = (DatFile)mGame[j];
-                                if (ArrByte.bCompare(df0.SHA1, df1.SHA1) && df0.Name == df1.Name)
+                                if (ByteUtils.ByteArrEquals(df0.SHA1, df1.SHA1) && df0.Name == df1.Name)
                                 {
                                     crcFound = true;
                                     break;

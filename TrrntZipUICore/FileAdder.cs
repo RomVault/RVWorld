@@ -4,8 +4,9 @@ using System.Collections.Generic;
 using System.Linq;
 using RVIO;
 using TrrntZip;
+using TrrntZipUICore;
 
-namespace TrrntZipUI
+namespace TrrntZipUICore
 {
     public delegate void UpdateFileCount(int fileCount);
 
@@ -15,15 +16,17 @@ namespace TrrntZipUI
         private readonly UpdateFileCount _updateFileCount;
         private readonly BlockingCollection<cFile> _fileCollection;
         private readonly ProcessFileEndCallback _processFileEndCallBack;
+        private readonly Settings _settings;
 
         private int fileCount;
 
-        public FileAdder(BlockingCollection<cFile> fileCollectionIn, string[] file, UpdateFileCount updateFileCount, ProcessFileEndCallback ProcessFileEndCallBack)
+        public FileAdder(BlockingCollection<cFile> fileCollectionIn, string[] file, UpdateFileCount updateFileCount, ProcessFileEndCallback ProcessFileEndCallBack,Settings settings)
         {
             _fileCollection = fileCollectionIn;
             _file = file;
             _updateFileCount = updateFileCount;
             _processFileEndCallBack = ProcessFileEndCallBack;
+            _settings = settings;
         }
 
         public void ProcFiles()
@@ -44,7 +47,7 @@ namespace TrrntZipUI
             {
                 if (Directory.Exists(t))
                 {
-                    if (Program.InZip == zipType.dir)
+                    if (_settings.InZip == zipType.dir)
                     {
 
                         cFile cf = new cFile() { fileId = fileCount++, filename = t, isDir = true };
@@ -70,7 +73,7 @@ namespace TrrntZipUI
 
             if (extn == ".zip")
             {
-                if (Program.InZip == zipType.zip || Program.InZip == zipType.archive || Program.InZip == zipType.all)
+                if (_settings.InZip == zipType.zip || _settings.InZip == zipType.archive || _settings.InZip == zipType.all)
                 {
                     return true;
                 }
@@ -78,13 +81,13 @@ namespace TrrntZipUI
 
             if (extn == ".7z")
             {
-                if (Program.InZip == zipType.sevenzip || Program.InZip == zipType.archive || Program.InZip == zipType.all)
+                if (_settings.InZip == zipType.sevenzip || _settings.InZip == zipType.archive || _settings.InZip == zipType.all)
                 {
                     return true;
                 }
             }
 
-            if (Program.InZip == zipType.file || Program.InZip == zipType.all)
+            if (_settings.InZip == zipType.file || _settings.InZip == zipType.all)
             {
                 return true;
             }

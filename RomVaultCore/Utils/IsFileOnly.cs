@@ -58,12 +58,12 @@ namespace RomVaultCore.Utils
 
 
             // if a Dat Rule is found and the Dat Rule overrides the DAT then return true.
-            if (datRule.Compression == FileType.FileOnly)
-                return true;
+            if (datRule.CompressionOverrideDAT)
+                return (datRule.Compression == FileType.FileOnly);
 
             // if there is a dat header value and the dat header contains fileonly then return true.
-            if (datHeaderType != null)
-                return datHeaderType.ToLower() == "fileonly";
+            if (datHeaderType != null && datHeaderType.ToLower() == "fileonly")
+                return true;
 
             // the datheader was null so use the dat rule,
             // if the Dat Rule is fileonly return true.

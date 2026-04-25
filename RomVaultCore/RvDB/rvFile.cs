@@ -4,9 +4,11 @@ using System.Diagnostics;
 using System.IO;
 using System.Text.RegularExpressions;
 using Compress;
+using DATReader.Utils;
 using RomVaultCore.FindFix;
 using RomVaultCore.Utils;
 using Path = RVIO.Path;
+using RVUtils;
 
 namespace RomVaultCore.RvDB
 {
@@ -49,6 +51,7 @@ namespace RomVaultCore.RvDB
         private DatStatus _datStatus = DatStatus.NotInDat;
         private GotStatus _gotStatus = GotStatus.NotGot;
         private RepStatus _repStatus = RepStatus.UnSet;
+        private MIAStatus _MIAStatus = MIAStatus.None;
 
         /******************* RvDir ***********************/
         private readonly List<RvFile> _children; // children items of this dir
@@ -281,27 +284,54 @@ namespace RomVaultCore.RvDB
             return treeType(tfile.Parent);
         }
 
+        public MIAStatus MIAStatus
+        {
+            get => _MIAStatus;
+            private set
+            {
+                if (_MIAStatus == value)
+                    return;
+                Parent?.RepStatusUpTreeUpdate(_MIAStatus, value, _repStatus);
+                _MIAStatus = value;
+
+            }
+        }
+
+        public bool MIAStatusIs(MIAStatus testValue)
+        {
+            return (_MIAStatus & testValue) > 0;
+        }
+
+        public void MIAStatusSet(MIAStatus value)
+        {
+            if ((_MIAStatus & value) == value)
+                return;
+
+            MIAStatus = (int)_MIAStatus + value;
+        }
+        public void MIAStatusClear(MIAStatus value)
+        {
+            if ((_MIAStatus & value) == 0)
+                return;
+            MIAStatus = (int)_MIAStatus - value;
+        }
+
         public DatStatus DatStatus
         {
+            get => _datStatus;
             set
             {
                 _datStatus = value;
                 RepStatusReset();
             }
-            get => _datStatus;
         }
-
+        public DatStatus DatStatusReal => _datStatus;
 
         public GotStatus GotStatus
         {
             get => _gotStatus;
             set
             {
-                if (DatStatus == DatStatus.InDatMIA && value == GotStatus.Got)
-                {
-                    Debug.WriteLine("GotMIA");
-                }
-
                 _gotStatus = value;
                 RepStatusReset();
             }
@@ -315,7 +345,7 @@ namespace RomVaultCore.RvDB
             {
                 RepStatus OldRepStatus = _repStatus;
 
-                List<RepStatus> rs = RepairStatus.StatusCheck[(int)FileType, (int)_datStatus, (int)_gotStatus];
+                List<RepStatus> rs = RepairStatus.StatusCheck[(int)FileType, (int)DatStatus, (int)GotStatus];
                 if (rs == null || !rs.Contains(value))
                 {
                     ReportError.SendAndShow(FullName + " , " + FileType + " , " + _datStatus + " , " + _gotStatus + " from: " + _repStatus + " to: " + value);
@@ -329,7 +359,7 @@ namespace RomVaultCore.RvDB
                 if (OldRepStatus == _repStatus)
                     return;
 
-                Parent?.RepStatusUpTreeUpdate(OldRepStatus, _repStatus);
+                Parent?.RepStatusUpTreeUpdate(OldRepStatus, _repStatus, _MIAStatus);
             }
         }
 
@@ -356,11 +386,7 @@ namespace RomVaultCore.RvDB
             HasDirDat = 1 << 17, //0x20000,
             HasChildren = 1 << 18, //0x40000,
             ToSortStatus = 1 << 19, //0x80000,
-
-            //    FileModTimeStamp = 1 << 20, //0x100000, // not used always stored
-            //    DatModTimeStamp = 1 << 21, //0x200000,
-            //    FileCreatedTimeStamp = 1 << 22, //0x400000,
-            //    DatCreatedTimeStamp = 1 << 23, //0x800000,
+            MIAStatus = 1 << 20, //0x100000
         }
 
 
@@ -397,6 +423,8 @@ namespace RomVaultCore.RvDB
             if (CHDVersion != null) fFlags |= FileFlags.CHDVersion;
 
             if (_toSortType != ToSortDirType.None) fFlags |= FileFlags.ToSortStatus;
+
+            if (_MIAStatus != MIAStatus.None) fFlags |= FileFlags.MIAStatus;
 
             bw.Write((uint)fFlags);
 
@@ -463,6 +491,8 @@ namespace RomVaultCore.RvDB
 
             if (_toSortType != ToSortDirType.None) bw.Write((byte)_toSortType);
 
+            if (_MIAStatus != MIAStatus.None) bw.Write((byte)_MIAStatus);
+
             bw.Write((uint)_fileStatus);
         }
 
@@ -510,9 +540,13 @@ namespace RomVaultCore.RvDB
             _datStatus = (DatStatus)br.ReadByte();
             if (parent != null && parent._datStatus == DatStatus.InToSort)
                 _datStatus = DatStatus.InToSort;
-
+            // 2025/06/20 - removing MIA Status
+            if ((int)_datStatus == 5)
+            {
+                _datStatus = DatStatus.InDatCollect;
+                _MIAStatus = MIAStatus.MIAFromDat;
+            }
             _gotStatus = (GotStatus)br.ReadByte();
-            RepStatusReset();
 
             if (DBTypeGet.isCompressedDir(FileType))
             {
@@ -629,11 +663,17 @@ namespace RomVaultCore.RvDB
 
             _toSortType = (fFlags & FileFlags.ToSortStatus) > 0 ? (ToSortDirType)br.ReadByte() : ToSortDirType.None;
 
+            if ((fFlags & FileFlags.MIAStatus) > 0)
+                _MIAStatus = (MIAStatus)br.ReadByte();
+
             _fileStatus = (FileStatus)br.ReadUInt32();
 
             // fixing missing flag
             if (HeaderFileType != HeaderFileType.Nothing && (AltSize != null || AltCRC != null || AltSHA1 != null || AltMD5 != null))
                 FileStatusSet(FileStatus.HeaderFileTypeFromHeader);
+
+
+            RepStatusReset();
         }
 
 
@@ -673,13 +713,10 @@ namespace RomVaultCore.RvDB
 
             c._datStatus = _datStatus;
             c._gotStatus = _gotStatus;
+            c._MIAStatus = _MIAStatus;
             c.RepStatus = RepStatus;
             c.FileGroup = FileGroup;
 
-            if (c._datStatus == DatStatus.InDatMIA && c._gotStatus == GotStatus.Got)
-            {
-                Debug.WriteLine("Found MIA");
-            }
         }
 
 
@@ -697,9 +734,7 @@ namespace RomVaultCore.RvDB
         {
             _datStatus = dt;
             _gotStatus = flag;
-            if (_datStatus == DatStatus.InDatMIA && _gotStatus == GotStatus.Got)
-            {
-            }
+
             RepStatusReset();
         }
 
@@ -724,7 +759,7 @@ namespace RomVaultCore.RvDB
                 }
             }
 
-            List<RepStatus> rs = RepairStatus.StatusCheck[(int)FileType, (int)_datStatus, (int)_gotStatus];
+            List<RepStatus> rs = RepairStatus.StatusCheck[(int)FileType, (int)DatStatus, (int)GotStatus];
             RepStatus = rs?[0] ?? RepStatus.Error;
         }
 
@@ -779,12 +814,12 @@ namespace RomVaultCore.RvDB
 
         public int ChildNameSearch(FileType type, string name, out int index)
         {
-            return BinarySearch.ListSearch(_children, new RvFile(type) { Name = name }, RVSorters.CompareName, out index);
+            return StorageList.BinarySearch.ListSearch(_children, new RvFile(type) { Name = name }, RVSorters.CompareName, out index);
         }
 
         public int ChildNameSearch(RvFile lName, out int index)
         {
-            return BinarySearch.ListSearch(_children, lName, RVSorters.CompareName, out index);
+            return StorageList.BinarySearch.ListSearch(_children, lName, RVSorters.CompareName, out index);
         }
 
 
@@ -808,11 +843,17 @@ namespace RomVaultCore.RvDB
             return false;
         }
 
-
-        private void RepStatusUpTreeUpdate(RepStatus rStatOld, RepStatus rStatNew)
+        private void RepStatusUpTreeUpdate(MIAStatus mStatOld, MIAStatus mStatNew, RepStatus rStat)
         {
-            DirStatus.RepStatusUpdate(rStatOld, rStatNew);
-            Parent?.RepStatusUpTreeUpdate(rStatOld, rStatNew);
+            DirStatus.RepStatusUpdate(mStatOld, mStatNew, rStat);
+            Parent?.RepStatusUpTreeUpdate(mStatOld, mStatNew, rStat);
+        }
+
+
+        private void RepStatusUpTreeUpdate(RepStatus rStatOld, RepStatus rStatNew, MIAStatus mStat)
+        {
+            DirStatus.RepStatusUpdate(rStatOld, rStatNew, mStat);
+            Parent?.RepStatusUpTreeUpdate(rStatOld, rStatNew, mStat);
         }
 
 
@@ -820,7 +861,7 @@ namespace RomVaultCore.RvDB
         private void RepStatusUpTreeAddRemove(RvFile addRemoveItem, int addRemove)
         {
             // add the status of this child item.
-            DirStatus.RepStatusAddRemove(addRemoveItem.RepStatus, addRemove);
+            DirStatus.RepStatusAddRemove(addRemoveItem.RepStatus, addRemove, addRemoveItem.MIAStatus);
             if (addRemoveItem.IsDirectory)
             {
                 // if this is a directory then also add in (or subtract out) the array of status's of the new child item

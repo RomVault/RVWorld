@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
+using RVUtils;
 
 namespace CHDSharpLib;
 
@@ -38,7 +39,7 @@ internal static class CHDMetaData
             if (consoleOut != null)
             {
                 consoleOut?.Invoke($"{(char)((metaTag >> 24) & 0xFF)}{(char)((metaTag >> 16) & 0xFF)}{(char)((metaTag >> 8) & 0xFF)}{(char)((metaTag >> 0) & 0xFF)}  Length: {metaLength}");
-                if (Util.isAscii(metaData))
+                if (ByteUtils.isAscii(metaData))
                     consoleOut?.Invoke($"Data: {Encoding.ASCII.GetString(metaData)}");
                 else
                     consoleOut?.Invoke($"Data: Binary Data Length {metaData.Length}");
@@ -58,7 +59,7 @@ internal static class CHDMetaData
             return chd_error.CHDERR_NONE;
 
         // binary sort the metaHashes
-        metaHashes.Sort(Util.ByteArrCompare);
+        metaHashes.Sort(ByteUtils.ByteArrCompareSort);
 
         // build the final SHA1
         // starting with the 20 byte rawsha1 from the main CHD data
@@ -73,7 +74,7 @@ internal static class CHDMetaData
         sha1Total.TransformFinalBlock(tmp, 0, 0);
 
         // compare the calculated metaData + rawData SHA1 with sha1 from the CHD header
-        if (!Util.IsAllZeroArray(chd.sha1) && !Util.ByteArrEquals(chd.sha1, sha1Total.Hash))
+        if (!ByteUtils.IsAllZeroArray(chd.sha1) && !ByteUtils.ByteArrEquals(chd.sha1, sha1Total.Hash))
             return chd_error.CHDERR_INVALID_METADATA;
 
         return chd_error.CHDERR_NONE;

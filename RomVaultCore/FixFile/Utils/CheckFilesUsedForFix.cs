@@ -27,9 +27,7 @@ namespace RomVaultCore.FixFile.Utils
                 bool foundCanBeFixed = false;
                 foreach (RvFile gFile in fixRom.FileGroup.Files)
                 {
-                    if (gFile.RepStatus == RepStatus.CanBeFixed ||
-                        gFile.RepStatus==RepStatus.CanBeFixedMIA
-                        )
+                    if (gFile.RepStatus == RepStatus.CanBeFixed)
                     {
                         foundCanBeFixed = true;
                         break;

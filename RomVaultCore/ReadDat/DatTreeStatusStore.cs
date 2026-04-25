@@ -1,7 +1,7 @@
 ﻿/******************************************************
  *     ROMVault3 is written by Gordon J.              *
  *     Contact gordon@romvault.com                    *
- *     Copyright 2025                                 *
+ *     Copyright 2026                                 *
  ******************************************************/
 
 using RomVaultCore.RvDB;
@@ -41,7 +41,8 @@ namespace RomVaultCore.ReadDat
                 if (rvTreeRow != null)
                     entries.Add(new Entry(row.Key, rvTreeRow.Checked, rvTreeRow.TreeExpanded));
             }
-            using (FileStream writer = File.Create($"treeDefault{ind}.xml"))
+            string filename = Path.Combine("config", $"treeDefault{ind}.xml");
+            using (FileStream writer = File.Create(filename))
             {
                 XmlSerializer serializer = new XmlSerializer(typeof(List<Entry>));
                 serializer.Serialize(writer, entries);
@@ -50,7 +51,7 @@ namespace RomVaultCore.ReadDat
 
         public void read(int ind)
         {
-            string filename = $"treeDefault{ind}.xml";
+            string filename = Path.Combine("config", $"treeDefault{ind}.xml");
             if (!File.Exists(filename))
                 return;
             using (FileStream reader = new FileStream(filename, FileMode.Open))

@@ -7,8 +7,10 @@ namespace Compress
         None = 0,    // No structure
         ZipTrrnt = 1, // Original Trrntzip
         ZipTDC = 2,   // Total DOS Collection, Date Time Deflate
+        ZipDTD = 3,   // Date Time Deflate
         SevenZipTrrnt = 4, // this is the original t7z format
         ZipZSTD = 5,       // ZSTD Compression
+        ZipDTZ = 6,     // Date Time ZSTD
         SevenZipSLZMA = 8, // Solid-LZMA this is rv7zip today
         SevenZipNLZMA = 9, // NonSolid-LZMA
         SevenZipSZSTD = 10, // Solid-zSTD
@@ -35,10 +37,12 @@ namespace Compress
 
                 case ZipStructure.ZipTrrnt:
                 case ZipStructure.ZipTDC:
+                case ZipStructure.ZipDTD:
                     return 8;
                 case ZipStructure.SevenZipTrrnt:
                     return ushort.MaxValue;
                 case ZipStructure.ZipZSTD:
+                case ZipStructure.ZipDTZ:
                     return 93;
                 case ZipStructure.SevenZipSLZMA:
                 case ZipStructure.SevenZipNLZMA:
@@ -60,6 +64,10 @@ namespace Compress
                     return "TDC-";
                 case ZipStructure.ZipZSTD:
                     return "RVZSTD-";
+                case ZipStructure.ZipDTD:
+                    return "DTD-";
+                case ZipStructure.ZipDTZ:
+                    return "DTZ-";
                 default:
                     return "";
             }
@@ -74,6 +82,8 @@ namespace Compress
                     return zipDateType.TrrntZip;
 
                 case ZipStructure.ZipTDC:
+                case ZipStructure.ZipDTD:
+                case ZipStructure.ZipDTZ:
                     return zipDateType.DateTime;
 
                 case ZipStructure.ZipZSTD:

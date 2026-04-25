@@ -184,12 +184,16 @@ namespace DATReader.DatReader
 
             if (head?.Attributes == null)
             {
-                return false;
+                head = doc.SelectSingleNode("mess");
+                if (head?.Attributes == null)
+                    return false;
             }
 
             datHeader.Filename = filename;
             datHeader.Name = VarFix.String(head.Attributes.GetNamedItem("build"));
             datHeader.Description = VarFix.String(head.Attributes.GetNamedItem("build"));
+            datHeader.Version = VarFix.String(head.Attributes.GetNamedItem("version"));
+            datHeader.Date = VarFix.String(head.Attributes.GetNamedItem("date"));
 
             return true;
         }

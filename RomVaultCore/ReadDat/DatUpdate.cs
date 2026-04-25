@@ -1,7 +1,7 @@
 ﻿/******************************************************
  *     ROMVault3 is written by Gordon J.              *
  *     Contact gordon@romvault.com                    *
- *     Copyright 2025                                 *
+ *     Copyright 2026                                 *
  ******************************************************/
 
 using System;
@@ -264,6 +264,7 @@ namespace RomVaultCore.ReadDat
 
             // remove all DATStatus's here they will get set back correctly when adding dats back in below.
             dbDir.DatStatus = DatStatus.NotInDat;
+            dbDir.MIAStatusClear(MIAStatus.MIAFromDat);
 
             for (int i = 0; i < tDir.ChildCount; i++)
             {
@@ -703,12 +704,12 @@ namespace RomVaultCore.ReadDat
         }
 
 
-        public static void CheckAllDats(RvFile dbFile, string romVaultPath)
+        public static void InvalidateAllDATs(RvFile dbFile, string romVaultPath)
         {
-            CheckAllDatsInternal(dbFile, "DatRoot" + romVaultPath.Substring(8));
+            InvalidateAllDATsInternal(dbFile, "DatRoot" + romVaultPath.Substring(8));
         }
 
-        private static void CheckAllDatsInternal(RvFile dbFile, string datPath)
+        private static void InvalidateAllDATsInternal(RvFile dbFile, string datPath)
         {
             RvFile dbDir = dbFile;
             if (!dbDir.IsDirectory)
@@ -738,7 +739,7 @@ namespace RomVaultCore.ReadDat
             }
 
             for (int i = 0; i < dbDir.ChildCount; i++)
-                CheckAllDatsInternal(dbDir.Child(i), datPath);
+                InvalidateAllDATsInternal(dbDir.Child(i), datPath);
         }
     }
 }

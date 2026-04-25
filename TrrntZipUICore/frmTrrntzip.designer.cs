@@ -1,4 +1,4 @@
-﻿namespace TrrntZipUI
+﻿namespace TrrntZipUICore
 {
     partial class FrmTrrntzip
     {

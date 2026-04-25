@@ -4,7 +4,7 @@ using System.Linq;
 using System.Windows.Forms;
 using RomVaultCore;
 using RomVaultCore.RvDB;
-using RomVaultCore.Utils;
+using RVUtils;
 
 namespace ROMVault
 {
@@ -22,14 +22,14 @@ namespace ROMVault
             RepStatus.Missing,
             RepStatus.Corrupt,
             RepStatus.CanBeFixed,
-            RepStatus.CanBeFixedMIA,
+            //RepStatus.CanBeFixedMIA,
             RepStatus.CorruptCanBeFixed
         };
 
         private static readonly RepStatus[] Fixing =
         {
             RepStatus.CanBeFixed,
-            RepStatus.CanBeFixedMIA,
+            //RepStatus.CanBeFixedMIA,
             RepStatus.MoveToSort,
             RepStatus.Delete,
             RepStatus.NeededForFix,

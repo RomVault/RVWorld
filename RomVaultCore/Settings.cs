@@ -71,6 +71,8 @@ namespace RomVaultCore
 
         public List<EmulatorInfo> EInfo;
 
+        public DatVaultSettings DatVault;
+
         public bool DoubleCheckDelete = true;
         public bool DebugLogsEnabled;
         public bool DetailedFixReporting = true;
@@ -86,6 +88,7 @@ namespace RomVaultCore
 
         public string FixDatOutPath = null;
 
+        public string DATUpdateKey;
         public bool MIAAnon = false;
         public bool MIACallback = true;
         public bool DoNotReportFeedback = false;
@@ -101,7 +104,6 @@ namespace RomVaultCore
         public int zstdCompCount = 0;
         public int sevenZDefaultStruct = 3;
 
-
         public static bool isLinux
         {
             get
@@ -112,6 +114,26 @@ namespace RomVaultCore
         }
 
         public static bool IsMono => Type.GetType("Mono.Runtime") != null;
+
+
+        public static void checkdirs()
+        {
+            if (!Directory.Exists("config"))
+                Directory.CreateDirectory("config");
+
+            string cfg = "RomVault3cfg.xml";
+            string cfgPath = Path.Combine("config", cfg);
+            if (!File.Exists(cfgPath) && File.Exists(cfg))
+                File.Move(cfg, cfgPath);
+
+            for (int ind = 1; ind <= 5; ind++)
+            {
+                string tfile = $"treeDefault{ind}.xml";
+                string tfilePath = Path.Combine("config", tfile);
+                if (!File.Exists(tfilePath) && File.Exists(tfile))
+                    File.Move(tfile, tfilePath);
+            }
+        }
 
         public static Settings SetDefaults(out string errorMessage)
         {
@@ -137,11 +159,11 @@ namespace RomVaultCore
                 ret.ResetDirMappings();
             }
 
-            // check this incase no ignorefiles list was read from the file
+            // check this incase no ignorefiles list was read from the settings file
             if (ret.IgnoreFiles == null)
                 ret.IgnoreFiles = new List<string>();
 
-            // fix old DatRules by adding a dir seprator on the end of the dirpaths
+            // fix old DatRules by adding a dir separator on the end of the dirpaths
             foreach (DatRule r in ret.DatRules)
             {
                 string lastchar = r.DirKey.Substring(r.DirKey.Length - 1);
@@ -151,17 +173,17 @@ namespace RomVaultCore
             ret.DatRules.Sort();
 
             string repeatDatRules = "";
-                for (int i = 0; i < ret.DatRules.Count - 1; i++)
+            for (int i = 0; i < ret.DatRules.Count - 1; i++)
+            {
+                if (i + 1 >= ret.DatRules.Count)
+                    break;
+                if (ret.DatRules[i].DirKey == ret.DatRules[i + 1].DirKey)
                 {
-                    if (i + 1 >= ret.DatRules.Count)
-                        break;
-                    if (ret.DatRules[i].DirKey == ret.DatRules[i + 1].DirKey)
-                    {
-                        repeatDatRules += ret.DatRules[i].DirKey + "\n";
-                        ret.DatRules.RemoveAt(i + 1);
-                        i--;
-                    }
+                    repeatDatRules += ret.DatRules[i].DirKey + "\n";
+                    ret.DatRules.RemoveAt(i + 1);
+                    i--;
                 }
+            }
 
             ret.SetRegExRules();
 
@@ -199,7 +221,7 @@ namespace RomVaultCore
             if (!string.IsNullOrWhiteSpace(repeatDatRules))
             {
                 errorMessage += "DAT Rules:\n";
-                errorMessage += repeatDatRules+"\n\n";
+                errorMessage += repeatDatRules + "\n\n";
             }
             if (!string.IsNullOrWhiteSpace(repeatDirMappings))
             {
@@ -281,11 +303,11 @@ namespace RomVaultCore
             };
         }
 
-        public static void WriteConfig(Settings settings)
+        public static void WriteConfig()
         {
-            string configPath = "RomVault3cfg.xml";
-            string configPathTemp = "RomVault3cfg.xml.temp";
-            string configPathBackup = "RomVault3cfg.xmlbackup";
+            string configPath = Path.Combine("config", "RomVault3cfg.xml");
+            string configPathTemp = Path.Combine("config", "RomVault3cfg.xml.temp");
+            string configPathBackup = Path.Combine("config", "RomVault3cfg.xmlbackup");
 
             if (File.Exists(configPathTemp))
             {
@@ -295,7 +317,7 @@ namespace RomVaultCore
             using (StreamWriter sw = new StreamWriter(configPathTemp))
             {
                 XmlSerializer x = new XmlSerializer(typeof(Settings));
-                x.Serialize(sw, settings);
+                x.Serialize(sw, Settings.rvSettings);
                 sw.Flush();
             }
 
@@ -313,7 +335,7 @@ namespace RomVaultCore
 
         private static Settings ReadConfig()
         {
-            string configPath = "RomVault3cfg.xml";
+            string configPath = Path.Combine("config", "RomVault3cfg.xml");
             if (!File.Exists(configPath))
             {
                 return null;
@@ -356,8 +378,20 @@ namespace RomVaultCore
                 }
             }
         }
+
     }
 
+    public static class StringConv
+    {
+        public static string ToRvString(this int val)
+        {
+            return val.ToString("N0");
+        }
+        public static string ToRvString(this ulong val)
+        {
+            return val.ToString("N0");
+        }
+    }
     public class DirMapping : IComparable<DirMapping>
     {
         public string DirKey;
@@ -426,4 +460,11 @@ namespace RomVaultCore
         public string ExtraPath;
     }
 
+    public class DatVaultSettings
+    {
+        public string sTree;
+        public bool bUseDefaultMasterDirectories;
+        public bool bUseDefaultSubDirectories;
+        public bool bImportNewDATsWithJsonSeeds;
+    }
 }

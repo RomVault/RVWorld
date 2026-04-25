@@ -73,27 +73,6 @@ namespace Compress.ZipFile
             return ZipFileReadHeaders();
         }
 
-        internal void zipFileCloseRead()
-        {
-            if (_zipFs != null)
-            {
-                _zipFs.Close();
-                _zipFs.Dispose();
-            }
-            ZipOpen = ZipOpenType.Closed;
-        }
-
-        internal void zipFileCloseWrite()
-        {
-            _zipFs.SetLength(_zipFs.Position);
-            _zipFs.Flush();
-            _zipFs.Close();
-            _zipFs.Dispose();
-            _zipFileInfo = _zipFileInfo == null ? null : new FileInfo(_zipFileInfo.FullName);
-
-            ZipOpen = ZipOpenType.Closed;
-        }
-
 
         private ZipReturn ZipFileReadHeaders()
         {
@@ -203,10 +182,10 @@ namespace Compress.ZipFile
             if (HeaderCentral.HeaderLastModified != HeaderLocal.HeaderLastModified)
                 HeaderCentral.SetStatus(LocalFileStatus.DateTimeMisMatch);
 
-            if (!CompressUtils.CompareStringSlash(HeaderCentral.Filename.ToLower(), HeaderLocal.Filename.ToLower()))
+            if (!CompressUtils.CompareStringSlashToLower(HeaderCentral.Filename, HeaderLocal.Filename))
                 HeaderCentral.SetStatus(LocalFileStatus.FilenameMisMatch);
 
-            if (!CompressUtils.ByteArrCompare(HeaderCentral.CRC, HeaderLocal.CRC))
+            if (!CompressUtils.ByteArrEquals(HeaderCentral.CRC, HeaderLocal.CRC))
                 return ZipReturn.ZipLocalFileHeaderError;
 
             if (HeaderCentral.CompressedSize != HeaderLocal.CompressedSize)

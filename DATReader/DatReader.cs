@@ -137,6 +137,11 @@ namespace DATReader
             {
                 return DatXmlReader.ReadMameDat(doc, fullname, out rvDat);
             }
+            XmlNode mess = doc.SelectSingleNode("mess");
+            if (mess != null)
+            {
+                return DatXmlReader.ReadMameDat(doc, fullname, out rvDat);
+            }
 
             XmlNode head = doc.DocumentElement?.SelectSingleNode("header");
             if (head != null)

@@ -13,7 +13,7 @@ namespace TrrntZip
 {
     public static class TorrentZipRebuild
     {
-        public static TrrntZipStatus ReZipFiles(List<ZippedFile> zippedFiles, ICompress originalZipFile, byte[] buffer, StatusCallback statusCallBack, LogCallback logCallback, ErrorCallback errorCallback, int threadId, int threadCount, PauseCancel pc)
+        public static TrrntZipStatus ReZipFiles(List<ZippedFile> zippedFiles, ICompress originalZipFile, byte[] buffer, StatusCallback statusCallBack, LogCallback logCallback, ErrorCallback errorCallback, int threadId, int threadCount, PauseCancel pc,Settings settings)
         {
             zipType inputType;
 
@@ -35,7 +35,7 @@ namespace TrrntZip
                     return TrrntZipStatus.Unknown;
             }
 
-            ZipStructure outputType = Program.OutZip;
+            ZipStructure outputType = settings.OutZip;
 
             int bufferSize = buffer.Length;
 
@@ -116,7 +116,7 @@ namespace TrrntZip
                 // by now the zippedFiles have been sorted so just loop over them
                 foreach (ZippedFile t in zippedFiles)
                 {
-                    if (Program.VerboseLogging)
+                    if (settings.VerboseLogging)
                     {
                         logCallback?.Invoke(threadId, $"{t.Size,15}  {t.StringCRC}   {t.Name}");
                     }
@@ -189,8 +189,7 @@ namespace TrrntZip
                         writeStream.Write(buffer, 0, sizenow);
                         sizetogo = sizetogo - (ulong)sizenow;
                     }
-                    writeStream?.Flush();
-
+                    
                     crcCs.Close();
                     if (inputType != zipType.sevenzip)
                     {
@@ -282,7 +281,7 @@ namespace TrrntZip
                 zipFileOut?.ZipFileCloseFailed();
                 originalZipFile?.ZipFileClose();
 
-                lock (Program.lockObj)
+                lock (settings.lockObj)
                 {
                     string content = $"Error In TorrentZipRebuid - {filename}\n";
                     content += $"{e.Message}";

@@ -7,6 +7,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using RVUtils;
 
 namespace CHDSharpLib;
 
@@ -121,7 +122,7 @@ public static class CHD
         chdMD5 = chd.md5;
         chdVersion = version;
 
-        if (!Util.IsAllZeroArray(chd.parentmd5) || !Util.IsAllZeroArray(chd.parentsha1))
+        if (!ByteUtils.IsAllZeroArray(chd.parentmd5) || !ByteUtils.IsAllZeroArray(chd.parentsha1))
         {
             consoleOut?.Invoke($"Child CHD found, cannot be processed");
             return chd_error.CHDERR_REQUIRES_PARENT;
@@ -252,11 +253,11 @@ public static class CHD
         sha1Check?.TransformFinalBlock(tmp, 0, 0);
 
         // here it is now using the rawsha1 value from the header to validate the raw binary data.
-        if (chd.md5 != null && !Util.IsAllZeroArray(chd.md5) && !Util.ByteArrEquals(chd.md5, md5Check.Hash))
+        if (chd.md5 != null && !ByteUtils.IsAllZeroArray(chd.md5) && !ByteUtils.ByteArrEquals(chd.md5, md5Check.Hash))
         {
             return chd_error.CHDERR_DECOMPRESSION_ERROR;
         }
-        if (chd.rawsha1 != null && !Util.IsAllZeroArray(chd.rawsha1) && !Util.ByteArrEquals(chd.rawsha1, sha1Check.Hash))
+        if (chd.rawsha1 != null && !ByteUtils.IsAllZeroArray(chd.rawsha1) && !ByteUtils.ByteArrEquals(chd.rawsha1, sha1Check.Hash))
         {
             return chd_error.CHDERR_DECOMPRESSION_ERROR;
         }
@@ -462,11 +463,11 @@ public static class CHD
         sha1Check?.TransformFinalBlock(tmp, 0, 0);
 
         // here it is now using the rawsha1 value from the header to validate the raw binary data.
-        if (chd.md5 != null && !Util.IsAllZeroArray(chd.md5) && !Util.ByteArrEquals(chd.md5, md5Check.Hash))
+        if (chd.md5 != null && !ByteUtils.IsAllZeroArray(chd.md5) && !ByteUtils.ByteArrEquals(chd.md5, md5Check.Hash))
         {
             return chd_error.CHDERR_DECOMPRESSION_ERROR;
         }
-        if (chd.rawsha1 != null && !Util.IsAllZeroArray(chd.rawsha1) && !Util.ByteArrEquals(chd.rawsha1, sha1Check.Hash))
+        if (chd.rawsha1 != null && !ByteUtils.IsAllZeroArray(chd.rawsha1) && !ByteUtils.ByteArrEquals(chd.rawsha1, sha1Check.Hash))
         {
             return chd_error.CHDERR_DECOMPRESSION_ERROR;
         }

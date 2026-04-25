@@ -1,12 +1,12 @@
 ﻿/******************************************************
  *     ROMVault3 is written by Gordon J.              *
  *     Contact gordon@romvault.com                    *
- *     Copyright 2025                                 *
+ *     Copyright 2026                                 *
  ******************************************************/
 
 using DATReader.DatStore;
+using RVUtils;
 using RomVaultCore.RvDB;
-using RomVaultCore.Utils;
 using System;
 
 namespace RomVaultCore.ReadDat
@@ -88,11 +88,9 @@ namespace RomVaultCore.ReadDat
                 //Debug.WriteLine("Comparing File     " + testFile.TreeFullName);
 
                 bool testFound = false;
-                int retv;
                 if (dbFile.Size != null && testFile.Size != null)
                 {
-                    retv = ULong.iCompare(dbFile.Size, testFile.Size);
-                    if (retv != 0)
+                    if (dbFile.Size!= testFile.Size)
                         return false;
 
                     //special zero size test case, if the dat size is 0 and the testfile size is 0
@@ -107,24 +105,21 @@ namespace RomVaultCore.ReadDat
                 if (dbFile.CRC != null && testFile.CRC != null)
                 {
                     testFound = true;
-                    retv = ArrByte.ICompare(dbFile.CRC, testFile.CRC);
-                    if (retv != 0)
+                    if (!ByteUtils.ByteArrEqualsQuick(dbFile.CRC, testFile.CRC))
                         return false;
                 }
 
                 if (dbFile.SHA1 != null && testFile.SHA1 != null)
                 {
                     testFound = true;
-                    retv = ArrByte.ICompare(dbFile.SHA1, testFile.SHA1);
-                    if (retv != 0)
+                    if (!ByteUtils.ByteArrEqualsQuick(dbFile.SHA1, testFile.SHA1))
                         return false;
                 }
 
                 if (dbFile.MD5 != null && testFile.MD5 != null)
                 {
                     testFound = true;
-                    retv = ArrByte.ICompare(dbFile.MD5, testFile.MD5);
-                    if (retv != 0)
+                    if (!ByteUtils.ByteArrEqualsQuick(dbFile.MD5, testFile.MD5))
                         return false;
                 }
 
@@ -142,35 +137,30 @@ namespace RomVaultCore.ReadDat
 
 
                 bool testFound = false;
-                int retv;
                 if (dbFile.Size != null && testFile.AltSize != null)
                 {
-                    retv = ULong.iCompare(dbFile.Size, testFile.AltSize);
-                    if (retv != 0)
+                    if (dbFile.Size!= testFile.AltSize)
                         return false;
                 }
 
                 if (dbFile.CRC != null && testFile.AltCRC != null)
                 {
                     testFound = true;
-                    retv = ArrByte.ICompare(dbFile.CRC, testFile.AltCRC);
-                    if (retv != 0)
+                    if (!ByteUtils.ByteArrEqualsQuick(dbFile.CRC, testFile.AltCRC))
                         return false;
                 }
 
                 if (dbFile.SHA1 != null && testFile.AltSHA1 != null)
                 {
                     testFound = true;
-                    retv = ArrByte.ICompare(dbFile.SHA1, testFile.AltSHA1);
-                    if (retv != 0)
+                    if (!ByteUtils.ByteArrEqualsQuick(dbFile.SHA1, testFile.AltSHA1))
                         return false;
                 }
 
                 if (dbFile.MD5 != null && testFile.AltMD5 != null)
                 {
                     testFound = true;
-                    retv = ArrByte.ICompare(dbFile.MD5, testFile.AltMD5);
-                    if (retv != 0)
+                    if (!ByteUtils.ByteArrEqualsQuick(dbFile.MD5, testFile.AltMD5))
                         return false;
                 }
 

@@ -1,7 +1,7 @@
 ﻿/******************************************************
  *     ROMVault3 is written by Gordon J.              *
  *     Contact gordon@romvault.com                    *
- *     Copyright 2025                                 *
+ *     Copyright 2026                                 *
  ******************************************************/
 
 using System;
@@ -11,6 +11,7 @@ using System.Reflection;
 using System.Windows.Forms;
 using RomVaultCore;
 using RomVaultCore.FixFile;
+using MethodInvoker = System.Windows.Forms.MethodInvoker;
 
 namespace ROMVault
 {

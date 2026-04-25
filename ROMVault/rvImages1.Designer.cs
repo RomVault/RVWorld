@@ -19,7 +19,7 @@ namespace ROMVault {
     // class via a tool like ResGen or Visual Studio.
     // To add or remove a member, edit your .ResX file then rerun ResGen
     // with the /str option, or rebuild your VS project.
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "17.0.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "18.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     internal class rvImages1 {
@@ -593,9 +593,29 @@ namespace ROMVault {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
+        internal static System.Drawing.Bitmap R_InDatCollect_CanBeFixed_MIA {
+            get {
+                object obj = ResourceManager.GetObject("R_InDatCollect_CanBeFixed_MIA", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
         internal static System.Drawing.Bitmap R_InDatCollect_Correct {
             get {
                 object obj = ResourceManager.GetObject("R_InDatCollect_Correct", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap R_InDatCollect_Correct_MIA {
+            get {
+                object obj = ResourceManager.GetObject("R_InDatCollect_Correct_MIA", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
@@ -646,6 +666,16 @@ namespace ROMVault {
         internal static System.Drawing.Bitmap R_InDatCollect_Missing {
             get {
                 object obj = ResourceManager.GetObject("R_InDatCollect_Missing", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap R_InDatCollect_Missing_MIA {
+            get {
+                object obj = ResourceManager.GetObject("R_InDatCollect_Missing_MIA", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
@@ -783,26 +813,6 @@ namespace ROMVault {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
-        internal static System.Drawing.Bitmap R_InDatMIA_CanBeFixedMIA {
-            get {
-                object obj = ResourceManager.GetObject("R_InDatMIA_CanBeFixedMIA", resourceCulture);
-                return ((System.Drawing.Bitmap)(obj));
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized resource of type System.Drawing.Bitmap.
-        /// </summary>
-        internal static System.Drawing.Bitmap R_InDatMIA_CorrectMIA {
-            get {
-                object obj = ResourceManager.GetObject("R_InDatMIA_CorrectMIA", resourceCulture);
-                return ((System.Drawing.Bitmap)(obj));
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized resource of type System.Drawing.Bitmap.
-        /// </summary>
         internal static System.Drawing.Bitmap R_InDatMIA_Corrupt {
             get {
                 object obj = ResourceManager.GetObject("R_InDatMIA_Corrupt", resourceCulture);
@@ -836,16 +846,6 @@ namespace ROMVault {
         internal static System.Drawing.Bitmap R_InDatMIA_Incomplete {
             get {
                 object obj = ResourceManager.GetObject("R_InDatMIA_Incomplete", resourceCulture);
-                return ((System.Drawing.Bitmap)(obj));
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized resource of type System.Drawing.Bitmap.
-        /// </summary>
-        internal static System.Drawing.Bitmap R_InDatMIA_MissingMIA {
-            get {
-                object obj = ResourceManager.GetObject("R_InDatMIA_MissingMIA", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }

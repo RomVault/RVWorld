@@ -1,17 +1,16 @@
 /******************************************************
  *     ROMVault3 is written by Gordon J.              *
  *     Contact gordon@romvault.com                    *
- *     Copyright 2025                                 *
+ *     Copyright 2026                                 *
  ******************************************************/
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Drawing;
-using System.Globalization;
 using System.Reflection;
 using System.Windows.Forms;
 using RomVaultCore;
+using RomVaultCore.FindFix;
 using RomVaultCore.ReadDat;
 using RomVaultCore.RvDB;
 using RomVaultCore.Scanner;
@@ -19,7 +18,7 @@ using RVIO;
 
 using DATReader.DatStore;
 using DATReader.DatWriter;
-using TrrntZipUI;
+using TrrntZipUICore;
 using RomVaultCore.Utils;
 using System.Threading;
 
@@ -80,6 +79,8 @@ namespace ROMVault
         public FrmMain()
         {
             InitializeComponent();
+
+            ReadDefaults();
 
             btnUpdateDats.BackgroundImage = rvImages.GetBitmap("btnUpdateDats_Enabled");
             btnScanRoms.BackgroundImage = rvImages.GetBitmap("btnScanRoms_Enabled");
@@ -203,8 +204,6 @@ namespace ROMVault
                 Tag = null
             };
 
-
-
             _mnuContext.Items.Add(mnuScan2);
             _mnuContext.Items.Add(mnuScan1);
             _mnuContext.Items.Add(mnuScan3);
@@ -215,7 +214,7 @@ namespace ROMVault
             _mnuContext.Items.Add(mnuFixDat);
             _mnuContext.Items.Add(mnuMakeDat);
 
-          
+
             mnuScan1.Click += MnuScan;
             mnuScan2.Click += MnuScan;
             mnuScan3.Click += MnuScan;
@@ -278,7 +277,7 @@ namespace ROMVault
                 Text = @"Clear File Only ToSort",
                 Tag = null
             };
-
+             
             _mnuToSortUp = new ToolStripMenuItem
             {
                 Text = @"Move Up",
@@ -316,9 +315,10 @@ namespace ROMVault
             _mnuToSortClearFileOnly.Click += MnuToSortClearFileOnly;
             _mnuToSortUp.Click += MnuToSortUp;
             _mnuToSortDown.Click += MnuToSortDown;
-                       
+
             chkBoxShowComplete.Checked = Settings.rvSettings.chkBoxShowComplete;
             chkBoxShowPartial.Checked = Settings.rvSettings.chkBoxShowPartial;
+            chkBoxShowEmpty.Checked = Settings.rvSettings.chkBoxShowEmpty;
             chkBoxShowFixes.Checked = Settings.rvSettings.chkBoxShowFixes;
             chkBoxShowMIA.Checked = Settings.rvSettings.chkBoxShowMIA;
             chkBoxShowMerged.Checked = Settings.rvSettings.chkBoxShowMerged;
@@ -352,6 +352,11 @@ namespace ROMVault
             }
         }
 
+        private void MnuResetCorruptClick(object sender, EventArgs e)
+        {
+            ClearPartial.ResetCorrupt(_clickedTree);
+            DatSetSelected(ctrRvTree.Selected);
+        }
 
         private void SetTextBoxHeight(Control c)
         {
@@ -431,6 +436,7 @@ namespace ROMVault
                 e.Cancel = true;
                 return;
             }
+            WriteDefaults();
         }
         #endregion
 
@@ -550,9 +556,7 @@ namespace ROMVault
 
         private void MnuOpenClick(object sender, EventArgs e)
         {
-            string tDir = _clickedTree.FullName;
-            if (Directory.Exists(tDir))
-                try { Process.Start(tDir); } catch { }
+            RVProcess.StartDIR(_clickedTree.FullName);
         }
         private void MnuMakeFixDatClick(object sender, EventArgs e)
         {
@@ -583,7 +587,7 @@ namespace ROMVault
             if (browse.SelectedPath != Settings.rvSettings.FixDatOutPath)
             {
                 Settings.rvSettings.FixDatOutPath = browse.SelectedPath;
-                Settings.WriteConfig(Settings.rvSettings);
+                Settings.WriteConfig();
             }
 
             FixDatReport.RecursiveDatTree(Settings.rvSettings.FixDatOutPath, baseDir, redOnly);
@@ -615,9 +619,7 @@ namespace ROMVault
 
         private void MnuToSortOpen(object sender, EventArgs e)
         {
-            string tDir = _clickedTree.FullName;
-            if (Directory.Exists(tDir))
-                try { Process.Start(tDir); } catch { }
+            RVProcess.StartDIR(_clickedTree.FullName);
         }
 
         private void MnuToSortDelete(object sender, EventArgs e)
@@ -738,7 +740,7 @@ namespace ROMVault
         private void updateAllDATsToolStripMenuItem_Click(object sender, EventArgs e)
         {
             if (_working) return;
-            DatUpdate.CheckAllDats(DB.DirRoot.Child(0), @"DatRoot\");
+            DatUpdate.InvalidateAllDATs(DB.DirRoot.Child(0), @"DatRoot\");
             UpdateDats();
         }
 
@@ -882,6 +884,9 @@ namespace ROMVault
             FrmHelpAbout fha = new FrmHelpAbout();
             fha.ShowDialog(this);
             fha.Dispose();
+#if webUI
+            WebUI();
+#endif
         }
 
 
@@ -891,11 +896,11 @@ namespace ROMVault
         #region sideButtons
         private void BtnUpdateDatsMouseUp(object sender, MouseEventArgs e)
         {
+            RootDirsCreate.CheckDatRoot();
             if (Control.ModifierKeys == Keys.Shift)
             {
-                DatUpdate.CheckAllDats(DB.DirRoot.Child(0), @"DatRoot\");
+                DatUpdate.InvalidateAllDATs(DB.DirRoot.Child(0), @"DatRoot\");
             }
-            RootDirsCreate.CheckDatRoot();
             Start();
             UpdateDats();
             Finish();
@@ -934,7 +939,7 @@ namespace ROMVault
             if (Settings.rvSettings.chkBoxShowComplete != this.chkBoxShowComplete.Checked)
             {
                 Settings.rvSettings.chkBoxShowComplete = this.chkBoxShowComplete.Checked;
-                Settings.WriteConfig(Settings.rvSettings);
+                Settings.WriteConfig();
                 DatSetSelected(ctrRvTree.Selected);
             }
         }
@@ -944,7 +949,7 @@ namespace ROMVault
             if (Settings.rvSettings.chkBoxShowPartial != this.chkBoxShowPartial.Checked)
             {
                 Settings.rvSettings.chkBoxShowPartial = this.chkBoxShowPartial.Checked;
-                Settings.WriteConfig(Settings.rvSettings);
+                Settings.WriteConfig();
                 DatSetSelected(ctrRvTree.Selected);
             }
         }
@@ -953,7 +958,7 @@ namespace ROMVault
             if (Settings.rvSettings.chkBoxShowEmpty != this.chkBoxShowEmpty.Checked)
             {
                 Settings.rvSettings.chkBoxShowEmpty = this.chkBoxShowEmpty.Checked;
-                Settings.WriteConfig(Settings.rvSettings);
+                Settings.WriteConfig();
                 DatSetSelected(ctrRvTree.Selected);
             }
         }
@@ -963,7 +968,7 @@ namespace ROMVault
             if (Settings.rvSettings.chkBoxShowFixes != this.chkBoxShowFixes.Checked)
             {
                 Settings.rvSettings.chkBoxShowFixes = this.chkBoxShowFixes.Checked;
-                Settings.WriteConfig(Settings.rvSettings);
+                Settings.WriteConfig();
                 DatSetSelected(ctrRvTree.Selected);
             }
         }
@@ -974,7 +979,7 @@ namespace ROMVault
             if (Settings.rvSettings.chkBoxShowMIA != this.chkBoxShowMIA.Checked)
             {
                 Settings.rvSettings.chkBoxShowMIA = this.chkBoxShowMIA.Checked;
-                Settings.WriteConfig(Settings.rvSettings);
+                Settings.WriteConfig();
                 DatSetSelected(ctrRvTree.Selected);
             }
         }
@@ -984,7 +989,7 @@ namespace ROMVault
             if (Settings.rvSettings.chkBoxShowMerged != this.chkBoxShowMerged.Checked)
             {
                 Settings.rvSettings.chkBoxShowMerged = this.chkBoxShowMerged.Checked;
-                Settings.WriteConfig(Settings.rvSettings);
+                Settings.WriteConfig();
                 DatSetSelected(ctrRvTree.Selected);
             }
         }
@@ -1007,12 +1012,12 @@ namespace ROMVault
 
         private void picPayPal_Click(object sender, EventArgs e)
         {
-            try { Process.Start("http://paypal.me/romvault"); } catch { }
+            RVProcess.StartURL("http://paypal.me/romvault");
         }
 
         private void picPatreon_Click(object sender, EventArgs e)
         {
-            try { Process.Start("https://www.patreon.com/romvault"); } catch { }
+            RVProcess.StartURL("https://www.patreon.com/romvault");
         }
 
         #endregion
@@ -1110,7 +1115,7 @@ namespace ROMVault
         {
             _working = true;
             timer1.Enabled = true;
-            ctrRvTree.Working = true;
+            ctrRvTree.CoreActive = true;
             //menuStrip1.Enabled = false;
             foreach (var item in menuStrip1.Items)
             {
@@ -1140,7 +1145,7 @@ namespace ROMVault
         private void Finish()
         {
             _working = false;
-            ctrRvTree.Working = false;
+            ctrRvTree.CoreActive = false;
             //menuStrip1.Enabled = true;
             foreach (var item in menuStrip1.Items)
             {
@@ -1241,12 +1246,12 @@ namespace ROMVault
 
             lblDITPath.Text = tDir.FullName;
 
-            lblDITRomsGot.Text = tDir.DirStatus.CountCorrect().ToString(CultureInfo.InvariantCulture);
-            if (tDir.DirStatus.CountFoundMIA() > 0) { lblDITRomsGot.Text += $"  -  {tDir.DirStatus.CountFoundMIA()} Found MIA"; }
-            lblDITRomsMissing.Text = tDir.DirStatus.CountMissing().ToString(CultureInfo.InvariantCulture);
-            if (tDir.DirStatus.CountMIA() > 0) { lblDITRomsMissing.Text += $"  -  {tDir.DirStatus.CountMIA()} MIA"; }
-            lblDITRomsFixable.Text = tDir.DirStatus.CountFixesNeeded().ToString(CultureInfo.InvariantCulture);
-            lblDITRomsUnknown.Text = (tDir.DirStatus.CountUnknown() + tDir.DirStatus.CountInToSort()).ToString(CultureInfo.InvariantCulture);
+            lblDITRomsGot.Text = tDir.DirStatus.CountCorrect().ToRvString();
+            if (tDir.DirStatus.CountFoundMIA() > 0) { lblDITRomsGot.Text += $"  -  {tDir.DirStatus.CountFoundMIA().ToRvString()} Found MIA"; }
+            lblDITRomsMissing.Text = tDir.DirStatus.CountMissing().ToRvString();
+            if (tDir.DirStatus.CountMIA() > 0) { lblDITRomsMissing.Text += $"  -  {tDir.DirStatus.CountMIA().ToRvString()} MIA"; }
+            lblDITRomsFixable.Text = tDir.DirStatus.CountFixesNeeded().ToRvString();
+            lblDITRomsUnknown.Text = (tDir.DirStatus.CountUnknown() + tDir.DirStatus.CountInToSort()).ToRvString();
         }
 
 
@@ -1301,7 +1306,6 @@ namespace ROMVault
         #endregion
 
 
-
         private void btnDefault1_MouseDown(object sender, MouseEventArgs e)
         {
             treeDefault(e.Button == MouseButtons.Right, 1);
@@ -1353,12 +1357,12 @@ namespace ROMVault
 
         private void visitHelpWikiToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            try { Process.Start("https://wiki.romvault.com/doku.php?id=help"); } catch { }
+            RVProcess.StartURL("https://wiki.romvault.com/doku.php?id=help");
         }
 
         private void whatsNewToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            try { Process.Start("https://wiki.romvault.com/doku.php?id=whats_new"); } catch { }
+            RVProcess.StartURL("https://wiki.romvault.com/doku.php?id=whats_new");
         }
 
         private void FrmMain_FormClosed(object sender, FormClosedEventArgs e)
@@ -1376,6 +1380,7 @@ namespace ROMVault
         private List<Thread> frmTrrntzips = new List<Thread>();
         private void torrentZipToolStripMenuItem_Click(object sender, EventArgs e)
         {
+            TrrntZipUICore.TzipSettings.outDir = "config";
             Thread tStart = new Thread(() =>
             {
                 FrmTrrntzip frmTrrntzip = new FrmTrrntzip();
@@ -1392,6 +1397,5 @@ namespace ROMVault
         {
             GC.Collect();
         }
-
     }
 }

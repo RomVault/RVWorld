@@ -2,6 +2,7 @@
 using Compress;
 using DATReader.DatStore;
 using DATReader.Utils;
+using RVUtils;
 
 namespace DATReader.DatClean
 {
@@ -35,16 +36,16 @@ namespace DATReader.DatClean
                                 if (testName && df0.Name != df1.Name)
                                     continue;
                                 bool hasCRC = df0.CRC != null && df1.CRC != null;
-                                if (hasCRC && !ArrByte.bCompare(df0.CRC, df1.CRC))
+                                if (hasCRC && !ByteUtils.ByteArrEqualsQuick(df0.CRC, df1.CRC))
                                     continue;
                                 bool hasSHA1 = df0.SHA1 != null && df1.SHA1 != null;
-                                if (hasSHA1 && !ArrByte.bCompare(df0.SHA1, df1.SHA1))
+                                if (hasSHA1 && !ByteUtils.ByteArrEqualsQuick(df0.SHA1, df1.SHA1))
                                     continue;
                                 bool hasSHA256 = df0.SHA256 != null && df1.SHA256 != null;
-                                if (hasSHA256 && !ArrByte.bCompare(df0.SHA256, df1.SHA256))
+                                if (hasSHA256 && !ByteUtils.ByteArrEqualsQuick(df0.SHA256, df1.SHA256))
                                     continue;
                                 bool hasMD5 = df0.MD5 != null && df1.MD5 != null;
-                                if (hasMD5 && !ArrByte.bCompare(df0.MD5, df1.MD5))
+                                if (hasMD5 && !ByteUtils.ByteArrEqualsQuick(df0.MD5, df1.MD5))
                                     continue;
                                 if (!hasCRC && !hasSHA1 && !hasMD5)
                                     continue;
@@ -73,7 +74,7 @@ namespace DATReader.DatClean
                                         mGame.ChildRemove(df1);
                                     else
                                     {
-                                        int res = AlphanumComparatorFast.Compare(name0, name1);
+                                        int res = AlphanumComparator.CompareWithDirs(name0, name1);
                                         mGame.ChildRemove(res >= 0 ? df0 : df1);
                                     }
                                 }
@@ -240,7 +241,7 @@ namespace DATReader.DatClean
                 tDat[g].DateModified = null;
                 if (tDat[g] is DatDir mGame)
                 {
-                    if (mGame.DatStruct == ZipStructure.ZipTDC)
+                    if (mGame.DatStruct == ZipStructure.ZipTDC || mGame.DatStruct == ZipStructure.ZipDTD || mGame.DatStruct == ZipStructure.ZipDTZ)
                         continue;
                     RemoveAllDateTime(mGame);
                 }
@@ -258,7 +259,7 @@ namespace DATReader.DatClean
                     RemoveUnNeededDirectories(mGame);
                 else
                 {
-                    if (mGame.DatStruct == ZipStructure.ZipTDC)
+                    if (mGame.DatStruct == ZipStructure.ZipTDC || mGame.DatStruct == ZipStructure.ZipDTD || mGame.DatStruct == ZipStructure.ZipDTZ)
                         continue;
                     RemoveUnNeededDirectoriesFromZip(mGame);
                 }

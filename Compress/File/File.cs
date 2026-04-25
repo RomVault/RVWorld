@@ -91,7 +91,7 @@ namespace Compress.File
             }
         }
 
-        public ZipReturn ZipFileOpen(string newFilename, long timestamp, bool readHeaders, int bufferSize = 4096)
+        public ZipReturn ZipFileOpen(string newFilename, long timestamp, bool readHeaders, int bufferSize = 4096 * 10)
         {
             ZipFileClose();
             _fileInfo = null;

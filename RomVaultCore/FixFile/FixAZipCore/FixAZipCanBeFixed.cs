@@ -28,7 +28,6 @@ namespace RomVaultCore.FixFile.FixAZipCore
             {
                 if (!(
                 fixZippedFile.DatStatus == DatStatus.InDatCollect && fixZippedFile.GotStatus == GotStatus.Got ||
-                fixZippedFile.DatStatus == DatStatus.InDatMIA && fixZippedFile.GotStatus == GotStatus.Got ||
                 fixZippedFile.DatStatus == DatStatus.InDatMerged && fixZippedFile.GotStatus == GotStatus.Got ||
                 fixZippedFile.DatStatus == DatStatus.NotInDat && fixZippedFile.GotStatus == GotStatus.Got ||
                 fixZippedFile.DatStatus == DatStatus.InToSort && fixZippedFile.GotStatus == GotStatus.Got ||
@@ -38,7 +37,7 @@ namespace RomVaultCore.FixFile.FixAZipCore
             else
             {
                 if (!(
-                    (fixZippedFile.DatStatus == DatStatus.InDatCollect || fixZippedFile.DatStatus == DatStatus.InDatMIA) &&
+                    (fixZippedFile.DatStatus == DatStatus.InDatCollect) &&
                     (fixZippedFile.GotStatus == GotStatus.NotGot || fixZippedFile.GotStatus == GotStatus.Corrupt)))
                 { ReportError.SendAndShow("Error in Fix Rom Status " + fixZippedFile.RepStatus + " : " + fixZippedFile.DatStatus + " : " + fixZippedFile.GotStatus); }
 

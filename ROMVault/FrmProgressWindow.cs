@@ -1,7 +1,7 @@
 ﻿/******************************************************
  *     ROMVault3 is written by Gordon J.              *
  *     Contact gordon@romvault.com                    *
- *     Copyright 2025                                 *
+ *     Copyright 2026                                 *
  ******************************************************/
 
 using System;
@@ -9,6 +9,7 @@ using System.Drawing;
 using System.Reflection;
 using System.Windows.Forms;
 using RomVaultCore;
+using MethodInvoker = System.Windows.Forms.MethodInvoker;
 
 namespace ROMVault
 {
@@ -185,6 +186,14 @@ namespace ROMVault
                 return;
             }
 
+            if (obj is bgwTextError bgwTW)
+            {
+                _errorOpen = true;
+                label.Text = bgwTW.Text;
+                if (ShowTimeLog)
+                    TimeLogShow(bgwTW.Text);
+                return;
+            }
 
             if (obj is bgwShowError bgwSE)
             {

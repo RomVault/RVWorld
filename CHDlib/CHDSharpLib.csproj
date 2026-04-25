@@ -9,6 +9,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Compress\Compress.csproj" />
     <ProjectReference Include="..\RVIO\RVIO.csproj" />
+    <ProjectReference Include="..\RVUtils\RVUtils.csproj" />
   </ItemGroup>
 
 </Project>

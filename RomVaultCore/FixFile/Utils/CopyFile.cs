@@ -1,7 +1,7 @@
 ﻿/******************************************************
  *     ROMVault3 is written by Gordon J.              *
  *     Contact gordon@romvault.com                    *
- *     Copyright 2025                                 *
+ *     Copyright 2026                                 *
  ******************************************************/
 
 using System;
@@ -13,8 +13,10 @@ using Compress.Support.Compression.Deflate;
 using Compress.Support.Compression.LZMA;
 using Compress.ThreadReaders;
 using Compress.ZipFile;
+using DATReader.Utils;
 using RomVaultCore.RvDB;
 using RomVaultCore.Utils;
+using RVUtils;
 using static RomVaultCore.FixFile.FixAZipCore.FindSourceFile;
 using File = RVIO.File;
 using FileInfo = RVIO.FileInfo;
@@ -403,7 +405,7 @@ namespace RomVaultCore.FixFile.Utils
                 return ReturnCode.LogicError;
             }
 
-            if (fileOut.FileStatusIs(FileStatus.CRCFromDAT) && fileOut.CRC != null && !ArrByte.BCompare(fileIn.CRC, fileOut.CRC))
+            if (fileOut.FileStatusIs(FileStatus.CRCFromDAT) && fileOut.CRC != null && !ByteUtils.ByteArrEqualsQuick(fileIn.CRC, fileOut.CRC))
             {
                 error = "Source and destination CRC does not match. Logic Error.";
                 return ReturnCode.LogicError;
@@ -411,7 +413,7 @@ namespace RomVaultCore.FixFile.Utils
 
             if (fileOut.FileStatusIs(FileStatus.SHA1FromDAT) && fileIn.FileStatusIs(FileStatus.SHA1Verified))
             {
-                if (fileIn.SHA1 != null && fileOut.SHA1 != null && !ArrByte.BCompare(fileIn.SHA1, fileOut.SHA1))
+                if (fileIn.SHA1 != null && fileOut.SHA1 != null && !ByteUtils.ByteArrEqualsQuick(fileIn.SHA1, fileOut.SHA1))
                 {
                     error = "Source and destination SHA1 does not match. Logic Error.";
                     return ReturnCode.LogicError;
@@ -419,7 +421,7 @@ namespace RomVaultCore.FixFile.Utils
             }
             if (fileOut.FileStatusIs(FileStatus.MD5FromDAT) && fileIn.FileStatusIs(FileStatus.MD5Verified))
             {
-                if (fileIn.MD5 != null && fileOut.MD5 != null && !ArrByte.BCompare(fileIn.MD5, fileOut.MD5))
+                if (fileIn.MD5 != null && fileOut.MD5 != null && !ByteUtils.ByteArrEqualsQuick(fileIn.MD5, fileOut.MD5))
                 {
                     error = "Source and destination SHA1 does not match. Logic Error.";
                     return ReturnCode.LogicError;
@@ -612,7 +614,7 @@ namespace RomVaultCore.FixFile.Utils
 
         private static ReturnCode ValidateFileIn(RvFile fileIn, byte[] bCRC, byte[] bSHA1, byte[] bMD5, out string error)
         {
-            if (!ArrByte.BCompare(bCRC, fileIn.CRC))
+            if (!ByteUtils.ByteArrEquals(bCRC, fileIn.CRC))
             {
                 fileIn.GotStatus = GotStatus.Corrupt;
                 error = "Source CRC does not match Source Data stream, corrupt Zip";
@@ -632,7 +634,7 @@ namespace RomVaultCore.FixFile.Utils
                         return ReturnCode.LogicError;
                     }
 
-                    if (!ArrByte.BCompare(fileIn.MD5, bMD5))
+                    if (!ByteUtils.ByteArrEquals(fileIn.MD5, bMD5))
                     {
                         error = "Source file did not match MD5";
                         return ReturnCode.SourceCheckSumMismatch;
@@ -643,7 +645,7 @@ namespace RomVaultCore.FixFile.Utils
                 // check to see if we have an MD5 (not from the DAT) so must be from previously scanning this file.
                 else if (fileIn.MD5 != null)
                 {
-                    if (!ArrByte.BCompare(fileIn.MD5, bMD5))
+                    if (!ByteUtils.ByteArrEquals(fileIn.MD5, bMD5))
                     {
                         // if we had an MD5 from a preview scan and it now does not match, something has gone really bad.
                         error = "The MD5 found does not match a previously scanned MD5, this should not happen, unless something got corrupt.";
@@ -668,7 +670,7 @@ namespace RomVaultCore.FixFile.Utils
                         return ReturnCode.LogicError;
                     }
 
-                    if (!ArrByte.BCompare(fileIn.SHA1, bSHA1))
+                    if (!ByteUtils.ByteArrEquals(fileIn.SHA1, bSHA1))
                     {
                         error = "Source file did not match SHA1";
                         return ReturnCode.SourceCheckSumMismatch;
@@ -679,7 +681,7 @@ namespace RomVaultCore.FixFile.Utils
                 // check to see if we have an SHA1 (not from the DAT) so must be from previously scanning this file.
                 else if (fileIn.SHA1 != null)
                 {
-                    if (!ArrByte.BCompare(fileIn.SHA1, bSHA1))
+                    if (!ByteUtils.ByteArrEquals(fileIn.SHA1, bSHA1))
                     {
                         // if we had an SHA1 from a preview scan and it now does not match, something has gone really bad.
                         error = "The SHA1 found does not match a previously scanned SHA1, this should not happen, unless something got corrupt.";
@@ -704,7 +706,7 @@ namespace RomVaultCore.FixFile.Utils
                 fileOut.FileStatusSet(FileStatus.SizeFromHeader | FileStatus.CRCFromHeader);
             }
 
-            if (fileOut.FileStatusIs(FileStatus.CRCFromDAT) && fileOut.CRC != null && !ArrByte.BCompare(fileOut.CRC, bCRC))
+            if (fileOut.FileStatusIs(FileStatus.CRCFromDAT) && fileOut.CRC != null && !ByteUtils.ByteArrEquals(fileOut.CRC, bCRC))
             {
                 error = "CRC checksum error. Level 2 scan your files";
                 return ReturnCode.DestinationCheckSumMismatch;
@@ -719,7 +721,7 @@ namespace RomVaultCore.FixFile.Utils
 
             if (bSHA1 != null)
             {
-                if (fileOut.FileStatusIs(FileStatus.SHA1FromDAT) && fileOut.SHA1 != null && !ArrByte.BCompare(fileOut.SHA1, bSHA1))
+                if (fileOut.FileStatusIs(FileStatus.SHA1FromDAT) && fileOut.SHA1 != null && !ByteUtils.ByteArrEquals(fileOut.SHA1, bSHA1))
                 {
 
                     error = "SHA1 checksum error. Level 2 scan your files";
@@ -732,7 +734,7 @@ namespace RomVaultCore.FixFile.Utils
 
             if (bMD5 != null)
             {
-                if (fileOut.FileStatusIs(FileStatus.MD5FromDAT) && fileOut.MD5 != null && !ArrByte.BCompare(fileOut.MD5, bMD5))
+                if (fileOut.FileStatusIs(FileStatus.MD5FromDAT) && fileOut.MD5 != null && !ByteUtils.ByteArrEquals(fileOut.MD5, bMD5))
                 {
                     error = "MD5 checksum error. Level 2 scan your files";
                     return ReturnCode.DestinationCheckSumMismatch;

@@ -19,6 +19,8 @@ namespace DATReader.DatStore
 
         public HeaderFileType HeaderFileType;
 
+        public MIAStatus MIAStatus = MIAStatus.None;
+
         public DatFile(DatFile df) : base(df)
         {
             Size = df.Size;
@@ -34,6 +36,8 @@ namespace DATReader.DatStore
             isDisk= df.isDisk;
 
             HeaderFileType = df.HeaderFileType;
+
+            MIAStatus = df.MIAStatus;
         }
     }
 }

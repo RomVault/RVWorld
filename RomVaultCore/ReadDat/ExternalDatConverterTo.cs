@@ -1,7 +1,7 @@
 ﻿/******************************************************
  *     ROMVault3 is written by Gordon J.              *
  *     Contact gordon@romvault.com                    *
- *     Copyright 2025                                 *
+ *     Copyright 2026                                 *
  ******************************************************/
 
 using DATReader.DatStore;
@@ -81,7 +81,6 @@ namespace RomVaultCore.ReadDat
                 switch (rvfile.RepStatus)
                 {
                     case RepStatus.Correct:
-                    case RepStatus.CorrectMIA:
                     case RepStatus.UnNeeded:
                     case RepStatus.Unknown:
                     case RepStatus.MoveToSort:
@@ -92,8 +91,6 @@ namespace RomVaultCore.ReadDat
                     case RepStatus.Missing:
                     case RepStatus.Incomplete:
                         if (!filterMissing) return; break;
-                    case RepStatus.MissingMIA:
-                        if (!filterMIA) return; break;
                     case RepStatus.NotCollected:
                         if (!filterMerged) return; break;
                     case RepStatus.CanBeFixed:
@@ -115,7 +112,7 @@ namespace RomVaultCore.ReadDat
                     Status = rvfile.Status
                 };
 
-                if (rvfile.DatStatus == DatStatus.InDatMIA)
+                if (rvfile.MIAStatusIs(MIAStatus.MIAFromDat))
                 {
                     extFile.MIA = "yes";
                 }

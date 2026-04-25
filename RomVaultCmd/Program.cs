@@ -93,7 +93,7 @@ namespace RomVaultCmd
         {
             Console.WriteLine($"RomVault v{Assembly.GetEntryAssembly().GetName().Version.ToString(3)} Commandline");
             Console.WriteLine("");
-            Console.WriteLine("Copyright (C) 2023 GordonJ");
+            Console.WriteLine("Copyright (C) 2026 GordonJ");
             Console.WriteLine("Homepage : https://www.romvault.com/");
             Console.WriteLine("");
             Console.WriteLine("Options:");
@@ -150,6 +150,7 @@ namespace RomVaultCmd
                 Console.WriteLine("");
                 Console.WriteLine("");
             }
+
         }
 
 

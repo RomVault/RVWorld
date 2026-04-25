@@ -22,7 +22,7 @@ namespace TrrntZip
 {
     public static class TorrentZipCheck
     {
-        public static TrrntZipStatus CheckZipFiles(ref List<ZippedFile> zippedFiles, int threadId, LogCallback statusLogCallBack)
+        public static TrrntZipStatus CheckZipFiles(ref List<ZippedFile> zippedFiles, int threadId, LogCallback statusLogCallBack, Settings settings)
         {
             TrrntZipStatus tzStatus = TrrntZipStatus.Unknown;
 
@@ -46,7 +46,7 @@ namespace TrrntZip
                     fixDir = true;
                     bytes[j] = (char)47;
                     tzStatus |= TrrntZipStatus.BadDirectorySeparator;
-                    if (!error1 && Program.VerboseLogging)
+                    if (!error1 && settings.VerboseLogging)
                     {
                         error1 = true;
                         statusLogCallBack?.Invoke(threadId, "Incorrect directory separator found");
@@ -70,7 +70,7 @@ namespace TrrntZip
                 {
                     tzStatus |= TrrntZipStatus.Unsorted;
                     error2 = true;
-                    if (Program.VerboseLogging)
+                    if (settings.VerboseLogging)
                         statusLogCallBack?.Invoke(threadId, "Incorrect file order found");
 
                     break;
@@ -118,7 +118,7 @@ namespace TrrntZip
                 {
                     zippedFiles.RemoveAt(i);
                     tzStatus |= TrrntZipStatus.ExtraDirectoryEnteries;
-                    if (!error3 && Program.VerboseLogging)
+                    if (!error3 && settings.VerboseLogging)
                     {
                         error3 = true;
                         statusLogCallBack?.Invoke(threadId, "Un-needed directory records found");
@@ -136,7 +136,7 @@ namespace TrrntZip
                 if (zippedFiles[i].Name == zippedFiles[i + 1].Name)
                 {
                     tzStatus |= TrrntZipStatus.RepeatFilesFound;
-                    if (!error4 && Program.VerboseLogging)
+                    if (!error4 && settings.VerboseLogging)
                     {
                         error4 = true;
                         statusLogCallBack?.Invoke(threadId, "Duplcate file enteries found");
@@ -152,7 +152,7 @@ namespace TrrntZip
 
 
 
-        public static TrrntZipStatus CheckSevenZipFiles(ref List<ZippedFile> zippedFiles, int threadId, LogCallback statusLogCallBack)
+        public static TrrntZipStatus CheckSevenZipFiles(ref List<ZippedFile> zippedFiles, int threadId, LogCallback statusLogCallBack, Settings settings)
         {
             TrrntZipStatus tzStatus = TrrntZipStatus.Unknown;
 
@@ -175,7 +175,7 @@ namespace TrrntZip
                     fixDir = true;
                     bytes[j] = (char)47;
                     tzStatus |= TrrntZipStatus.BadDirectorySeparator;
-                    if (!error1 && Program.VerboseLogging)
+                    if (!error1 && settings.VerboseLogging)
                     {
                         error1 = true;
                         statusLogCallBack?.Invoke(threadId, "Incorrect directory separator found");
@@ -236,7 +236,7 @@ namespace TrrntZip
                     }
                     dirSortTest.RemoveAt(i);
                     tzStatus |= TrrntZipStatus.ExtraDirectoryEnteries;
-                    if (!error3 && Program.VerboseLogging)
+                    if (!error3 && settings.VerboseLogging)
                     {
                         error3 = true;
                         statusLogCallBack?.Invoke(threadId, "Un-needed directory records found");
@@ -261,7 +261,7 @@ namespace TrrntZip
 
                     tzStatus |= TrrntZipStatus.Unsorted;
                     error2 = true;
-                    if (Program.VerboseLogging)
+                    if (settings.VerboseLogging)
                         statusLogCallBack?.Invoke(threadId, "Incorrect file order found");
 
                     break;
@@ -279,7 +279,7 @@ namespace TrrntZip
                 if (zippedFiles[i].Name == zippedFiles[i + 1].Name)
                 {
                     tzStatus |= TrrntZipStatus.RepeatFilesFound;
-                    if (!error4 && Program.VerboseLogging)
+                    if (!error4 && settings.VerboseLogging)
                     {
                         error4 = true;
                         statusLogCallBack?.Invoke(threadId, "Duplcate file enteries found");

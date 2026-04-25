@@ -1,7 +1,7 @@
 ﻿/******************************************************
  *     ROMVault3 is written by Gordon J.              *
  *     Contact gordon@romvault.com                    *
- *     Copyright 2025                                 *
+ *     Copyright 2026                                 *
  ******************************************************/
 
 using System;
@@ -10,6 +10,7 @@ using Compress;
 using DATReader;
 using DATReader.DatClean;
 using DATReader.DatStore;
+using DATReader.DatWriter;
 using DATReader.Utils;
 using RomVaultCore.RvDB;
 using RomVaultCore.Storage.Dat;
@@ -100,12 +101,19 @@ namespace RomVaultCore.ReadDat
                     dirNameRule += VarFix.CleanFileName(extraDirName) + Path.DirSeparatorChar;
                 }
 
+                bool outputTestDATs = false;
+                string outDirName=datFile.DatFullName.Substring(8).Replace("\\","-");
+
                 ReportError.LogOut($"DatRule {dirNameRule}");
 
                 DatRule datRule = FindDatRule(dirNameRule);
 
                 // 1
                 DatClean.CleanFilenames(datHeader.BaseDir);
+
+                if (outputTestDATs)
+                    DatXMLWriter.WriteDat($"D:\\outPath\\{outDirName}-01.dat", datHeader);
+
 
                 // 2
                 switch (datRule.Filter)
@@ -118,26 +126,54 @@ namespace RomVaultCore.ReadDat
                         break;
                 }
 
+                if (outputTestDATs)
+                    DatXMLWriter.WriteDat($"D:\\outPath\\{outDirName}-02.dat", datHeader);
+
                 // 3
                 DatClean.RemoveNoDumps(datHeader.BaseDir);
+
+                if (outputTestDATs)
+                    DatXMLWriter.WriteDat($"D:\\outPath\\{outDirName}-03.dat", datHeader);
 
                 // 4
                 if (datRule.UseIdForName)
                     DatClean.DatSetAddIdNumbers(datHeader.BaseDir, "");
 
+                if (outputTestDATs)
+                    DatXMLWriter.WriteDat($"D:\\outPath\\{outDirName}-04.dat", datHeader);
+
+
                 // 5
                 if (datRule.AddCategorySubDirs)
                     DatClean.AddCategory(datHeader.BaseDir, datRule.CategoryOrder);
 
+                if (outputTestDATs)
+                    DatXMLWriter.WriteDat($"D:\\outPath\\{outDirName}-05.dat", datHeader);
+
                 // 6
                 SetMergeType(datRule, datHeader);
 
+                if (outputTestDATs)
+                    DatXMLWriter.WriteDat($"D:\\outPath\\{outDirName}-06.dat", datHeader);
+
                 // 7
+                DatSetStatus.SetStatus(datHeader.BaseDir);
+
+                if (outputTestDATs)
+                    DatXMLWriter.WriteDat($"D:\\outPath\\{outDirName}-07.dat", datHeader);
+
+                // 8
                 if (datRule.Merge != MergeType.NonMerged)
                     DatClean.CheckDeDuped(datHeader.BaseDir);
 
+                if (outputTestDATs)
+                    DatXMLWriter.WriteDat($"D:\\outPath\\{outDirName}-08.dat", datHeader);
 
+                // 9
                 GetCompressionMethod(datRule, datHeader, out FileType ft, out ZipStructure zs);
+
+                if (outputTestDATs)
+                    DatXMLWriter.WriteDat($"D:\\outPath\\{outDirName}-09.dat", datHeader);
 
                 // Set the compression methods.
                 if (datRule.Compression == FileType.FileOnly)
@@ -146,33 +182,67 @@ namespace RomVaultCore.ReadDat
                     zs = ZipStructure.None;
                 }
 
-                // 8
+                // 10
                 if (datRule.SingleArchive)
-                    DatClean.MakeDatSingleLevel(datHeader, datRule.UseDescriptionAsDirName, datRule.SubDirType, ft == FileType.Dir, datRule.AddCategorySubDirs, datRule.CategoryOrder);
+                {
 
-                // 9: SetFileTypes / This also sorts the dirs into there type sort orders
+                    DatClean.DirectoryFlattern(datHeader.BaseDir);
+                    if (outputTestDATs)
+                        DatXMLWriter.WriteDat($"D:\\outPath\\{outDirName}-10a.dat", datHeader);
+
+                    DatClean.MakeDatSingleLevel(datHeader, datRule.UseDescriptionAsDirName, datRule.SubDirType, ft == FileType.Dir, datRule.AddCategorySubDirs, datRule.CategoryOrder);
+                }
+
+                if (outputTestDATs)
+                    DatXMLWriter.WriteDat($"D:\\outPath\\{outDirName}-10.dat", datHeader);
+
+                // 11: SetFileTypes / This also sorts the dirs into there type sort orders
                 DatSetCompressionType.SetType(datHeader.BaseDir, ft, zs, datRule.ConvertWhileFixing);
 
-                // 10: Remove unneeded directories from Zip's / 7Z's 
+                if (outputTestDATs)
+                    DatXMLWriter.WriteDat($"D:\\outPath\\{outDirName}-11.dat", datHeader);
+
+                // 12: Remove unneeded directories from Zip's / 7Z's 
                 DatClean.RemoveUnNeededDirectories(datHeader.BaseDir);
 
-                // 11: Remove DateTime from anything not TDC or EXO
+                if (outputTestDATs)
+                    DatXMLWriter.WriteDat($"D:\\outPath\\{outDirName}-12.dat", datHeader);
+
+                // 13: Remove DateTime from anything not TDC or EXO
                 DatClean.RemoveAllDateTime(datHeader.BaseDir);
 
-                // 12: Remove CHD's from Zip's / 7Z's
+                if (outputTestDATs)
+                    DatXMLWriter.WriteDat($"D:\\outPath\\{outDirName}-13.dat", datHeader);
+
+                // 14: Remove CHD's from Zip's / 7Z's
                 DatSetMoveCHDs.MoveUpCHDs(datHeader.BaseDir);
 
-                // 13: Directory expand the items not in Zip's / 7Z's
+                if (outputTestDATs)
+                    DatXMLWriter.WriteDat($"D:\\outPath\\{outDirName}-14.dat", datHeader);
+
+                // 15: Directory expand the items not in Zip's / 7Z's
                 DatClean.DirectoryExpand(datHeader.BaseDir);
 
-                // 14: Clean Filenames
+                if (outputTestDATs)
+                    DatXMLWriter.WriteDat($"D:\\outPath\\{outDirName}-15.dat", datHeader);
+
+                // 16: Clean Filenames
                 DatClean.CleanFileNamesFull(datHeader.BaseDir);
 
-                // 15: FixDupes
+                if (outputTestDATs)
+                    DatXMLWriter.WriteDat($"D:\\outPath\\{outDirName}-16.dat", datHeader);
+
+                // 17: FixDupes
                 DatClean.FixDupes(datHeader.BaseDir);
 
-                // 16: Remove empty directories
+                if (outputTestDATs)
+                    DatXMLWriter.WriteDat($"D:\\outPath\\{outDirName}-17.dat", datHeader);
+
+                // 18: Remove empty directories
                 DatClean.RemoveEmptyDirectories(datHeader.BaseDir);
+
+                if (outputTestDATs)
+                    DatXMLWriter.WriteDat($"D:\\outPath\\{outDirName}-18.dat", datHeader);
 
 
 
@@ -267,7 +337,6 @@ namespace RomVaultCore.ReadDat
                 DatClean.RemoveEmptySets(dh.BaseDir);
             }
 
-            DatSetStatus.SetStatus(dh.BaseDir);
         }
 
 
@@ -276,7 +345,7 @@ namespace RomVaultCore.ReadDat
             ft = datRule.Compression == FileType.FileOnly ? FileType.File : datRule.Compression;
 
             zs = datRule.CompressionSub;
-            if (!datRule.CompressionOverrideDAT && datRule.Compression!=FileType.FileOnly)
+            if (!datRule.CompressionOverrideDAT && datRule.Compression != FileType.FileOnly)
             {
                 switch (dh.Compression?.ToLower())
                 {

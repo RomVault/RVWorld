@@ -1,13 +1,15 @@
 ﻿/******************************************************
  *     ROMVault3 is written by Gordon J.              *
  *     Contact gordon@romvault.com                    *
- *     Copyright 2025                                 *
+ *     Copyright 2026                                 *
  ******************************************************/
 using Compress;
+using DATReader.Utils;
 using FileScanner;
 using RomVaultCore.Utils;
 using System;
 using System.Collections.Generic;
+using RVUtils;
 
 namespace RomVaultCore.RvDB
 {
@@ -377,7 +379,6 @@ namespace RomVaultCore.RvDB
                 case DatStatus.InDatCollect:
                 case DatStatus.InDatMerged:
                 case DatStatus.InDatNoDump:
-                case DatStatus.InDatMIA:
                     return EFile.Keep;
 
                 case DatStatus.NotInDat:
@@ -422,11 +423,9 @@ namespace RomVaultCore.RvDB
             //Debug.WriteLine("Comparing File     " + testFile.TreeFullName);
 
             bool testFound = false;
-            int retv;
             if (Size != null && testFile.Size != null)
             {
-                retv = ULong.iCompare(Size, testFile.Size);
-                if (retv != 0)
+                if (Size!= testFile.Size)
                     return false;
 
                 //special zero size test case, if the dat size is 0 and the testfile size is 0
@@ -439,24 +438,21 @@ namespace RomVaultCore.RvDB
             if (CRC != null && testFile.CRC != null)
             {
                 testFound = true;
-                retv = ArrByte.ICompare(CRC, testFile.CRC);
-                if (retv != 0)
+                if (!ByteUtils.ByteArrEqualsQuick(CRC, testFile.CRC))
                     return false;
             }
 
             if (SHA1 != null && testFile.SHA1 != null)
             {
                 testFound = true;
-                retv = ArrByte.ICompare(SHA1, testFile.SHA1);
-                if (retv != 0)
+                if (!ByteUtils.ByteArrEqualsQuick(SHA1, testFile.SHA1))
                     return false;
             }
 
             if (MD5 != null && testFile.MD5 != null)
             {
                 testFound = true;
-                retv = ArrByte.ICompare(MD5, testFile.MD5);
-                if (retv != 0)
+                if (!ByteUtils.ByteArrEqualsQuick(MD5, testFile.MD5))
                     return false;
             }
 
@@ -464,7 +460,7 @@ namespace RomVaultCore.RvDB
         }
         private bool CompareAltHash(ScannedFile testFile)
         {
-            if (!FileScanner.FileHeaderReader.AltHeaderFile(testFile.HeaderFileType))
+            if (!FileHeaderReader.AltHeaderFile(testFile.HeaderFileType))
                 return false;
 
             if (HeaderFileType != testFile.HeaderFileType)
@@ -472,35 +468,30 @@ namespace RomVaultCore.RvDB
 
 
             bool testFound = false;
-            int retv;
             if (Size != null && testFile.AltSize != null)
             {
-                retv = ULong.iCompare(Size, testFile.AltSize);
-                if (retv != 0)
+                if (Size!= testFile.AltSize)
                     return false;
             }
 
             if (CRC != null && testFile.AltCRC != null)
             {
                 testFound = true;
-                retv = ArrByte.ICompare(CRC, testFile.AltCRC);
-                if (retv != 0)
+                if (!ByteUtils.ByteArrEqualsQuick(CRC, testFile.AltCRC))
                     return false;
             }
 
             if (SHA1 != null && testFile.AltSHA1 != null)
             {
                 testFound = true;
-                retv = ArrByte.ICompare(SHA1, testFile.AltSHA1);
-                if (retv != 0)
+                if (!ByteUtils.ByteArrEqualsQuick(SHA1, testFile.AltSHA1))
                     return false;
             }
 
             if (MD5 != null && testFile.AltMD5 != null)
             {
                 testFound = true;
-                retv = ArrByte.ICompare(MD5, testFile.AltMD5);
-                if (retv != 0)
+                if (!ByteUtils.ByteArrEqualsQuick(MD5, testFile.AltMD5))
                     return false;
             }
 
@@ -615,21 +606,21 @@ namespace RomVaultCore.RvDB
             if (CRC != null && file.CRC != null)
             {
                 foundATest = true;
-                if (!ArrByte.BCompare(CRC, file.CRC))
+                if (!ByteUtils.ByteArrEqualsQuick(CRC, file.CRC))
                     return false;
             }
 
             if (SHA1 != null && file.SHA1 != null)
             {
                 foundATest = true;
-                if (!ArrByte.BCompare(SHA1, file.SHA1))
+                if (!ByteUtils.ByteArrEqualsQuick(SHA1, file.SHA1))
                     return false;
             }
 
             if (MD5 != null && file.MD5 != null)
             {
                 foundATest = true;
-                if (!ArrByte.BCompare(MD5, file.MD5))
+                if (!ByteUtils.ByteArrEqualsQuick(MD5, file.MD5))
                     return false;
             }
 
@@ -648,21 +639,21 @@ namespace RomVaultCore.RvDB
             if (CRC != null && file.AltCRC != null)
             {
                 foundATest = true;
-                if (!ArrByte.BCompare(CRC, file.AltCRC))
+                if (!ByteUtils.ByteArrEqualsQuick(CRC, file.AltCRC))
                     return false;
             }
 
             if (SHA1 != null && file.AltSHA1 != null)
             {
                 foundATest = true;
-                if (!ArrByte.BCompare(SHA1, file.AltSHA1))
+                if (!ByteUtils.ByteArrEquals(SHA1, file.AltSHA1))
                     return false;
 
             }
             if (MD5 != null && file.AltMD5 != null)
             {
                 foundATest = true;
-                if (!ArrByte.BCompare(MD5, file.AltMD5))
+                if (!ByteUtils.ByteArrEqualsQuick(MD5, file.AltMD5))
                     return false;
             }
 

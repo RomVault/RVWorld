@@ -24,7 +24,6 @@ namespace RomVaultCore.FixFile
                     return ReturnCode.Good;
 
                 case RepStatus.Missing:
-                case RepStatus.MissingMIA:
                     // nothing can be done so moving right along
                     return ReturnCode.Good;
 
@@ -33,10 +32,8 @@ namespace RomVaultCore.FixFile
                     return ReturnCode.Good;
 
                 case RepStatus.Correct:
-                case RepStatus.CorrectMIA:
                     // this is correct nothing to be done here
-                    FixFileCheckName(fixFile);
-                    return ReturnCode.Good;
+                    return FixFileCheckName(fixFile);
 
 
                 case RepStatus.NotCollected:
@@ -66,7 +63,6 @@ namespace RomVaultCore.FixFile
                     return FixFileMoveToCorrupt(fixFile, out errorMessage);
 
                 case RepStatus.CanBeFixed:
-                case RepStatus.CanBeFixedMIA:
                 case RepStatus.CorruptCanBeFixed:
                     return FixFileCanBeFixed(fixFile, fileProcessQueue, ref totalFixed, out errorMessage);
 
@@ -90,19 +86,28 @@ namespace RomVaultCore.FixFile
             }
         }
 
-        private static void FixFileCheckName(RvFile fixFile)
+        private static ReturnCode FixFileCheckName(RvFile fixFile)
         {
-            if (!string.IsNullOrEmpty(fixFile.FileName))
-            {
-                string sourceFullName = Path.Combine(fixFile.Parent.FullName, fixFile.FileName);
-                if (!File.SetAttributes(sourceFullName, FileAttributes.Normal))
-                {
-                    Report.ReportProgress(new bgwShowError(sourceFullName, $"Error Setting File Attributes to Normal. Before Case correction Rename. {Error.ErrorMessage}"));
-                }
+            if (string.IsNullOrEmpty(fixFile.FileName))
+                return ReturnCode.Good;
 
-                File.Move(sourceFullName, fixFile.FullName);
-                fixFile.FileName = null;
+            string sourceFullName = Path.Combine(fixFile.Parent.FullName, fixFile.FileName);
+            if (!File.SetAttributes(sourceFullName, FileAttributes.Normal))
+            {
+                Report.ReportProgress(new bgwShowError(sourceFullName, $"Error Setting File Attributes to Normal. Before Case correction Rename. {Error.ErrorMessage}"));
             }
+
+            try
+            {
+                File.Move(sourceFullName, fixFile.FullName);
+            }
+            catch (System.Exception ex)
+            {
+                Report.ReportProgress(new bgwShowError(sourceFullName, $"Error Renaming file to correct case. {ex.Message}"));
+                return ReturnCode.FileSystemError;
+            }
+            fixFile.FileName = null;
+            return ReturnCode.Good;
         }
 
         private static ReturnCode FixFileDelete(RvFile fixFile, out string errorMessage)
@@ -125,7 +130,15 @@ namespace RomVaultCore.FixFile
                 {
                     Report.ReportProgress(new bgwShowError(filename, $"Error Setting File Attributes to Normal. Before Delete. {Error.ErrorMessage}"));
                 }
-                File.Delete(filename);
+                try
+                {
+                    File.Delete(filename);
+                }
+                catch (System.Exception ex)
+                {
+                    Report.ReportProgress(new bgwShowError(filename, $"Error Deleting File. {ex.Message}"));
+                    return ReturnCode.FileSystemError;
+                }
             }
             // here we just deleted a file so also delete it from the DB,
             // and recurse up deleting unnedded DIR's
@@ -183,7 +196,7 @@ namespace RomVaultCore.FixFile
             {
                 Directory.CreateDirectory(corruptDir);
             }
-                        
+
             string toSortCorruptFullName = Path.Combine(corruptDir, fixFile.NameCase);
             string toSortCorruptFileName = fixFile.Name;
             int fileC = 0;
@@ -320,8 +333,20 @@ namespace RomVaultCore.FixFile
                             {
                                 // so now we have found the file with the same case insensative name and can rename it to something else to get it out of the way for now.
                                 // need to check that the .tmp filename does not already exists.
-                                File.SetAttributes(testChild.FullName, FileAttributes.Normal);
-                                File.Move(testChild.FullName, testChild.FullName + ".tmp");
+                                if (!File.SetAttributes(testChild.FullName, FileAttributes.Normal))
+                                {
+                                    Report.ReportProgress(new bgwShowError(testChild.FullName, $"Error Setting File Attributes to Normal. Before Rename. {Error.ErrorMessage}"));
+                                }
+
+                                try
+                                {
+                                    File.Move(testChild.FullName, testChild.FullName + ".tmp");
+                                }
+                                catch (System.Exception ex)
+                                {
+                                    Report.ReportProgress(new bgwShowError(testChild.FullName, $"Error Movingfile to .tmp location. {ex.Message}"));
+                                    return ReturnCode.FileSystemError;
+                                }
 
                                 if (!parent.FindChild(testChild, out index))
                                 {
@@ -451,6 +476,11 @@ namespace RomVaultCore.FixFile
                 case ReturnCode.Cancel:
                     Report.ReportProgress(new bgwShowFixError("Cancelled"));
                     return returnCode;
+                case ReturnCode.RescanNeeded:
+                    // if the altHash Values are set move them back.
+                    fixFile.FileRemove();
+                    return returnCode;
+
                 default:
                     Report.ReportProgress(new bgwShowFixError("Failed"));
                     return returnCode;

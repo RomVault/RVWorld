@@ -1,6 +1,6 @@
 ﻿using Compress;
-using RomVaultCore.Utils;
 using SortMethods;
+using StorageList;
 using System.Collections.Generic;
 
 namespace FileScanner;
@@ -78,7 +78,7 @@ public class ScannedFile
         ScannedFile[] files = _scannedFiles.ToArray();
         _scannedFiles.Clear();
 
-        compareFunc<ScannedFile> cf;
+        SortOn<ScannedFile> cf;
         switch (FileType)
         {
             case FileType.SevenZip:

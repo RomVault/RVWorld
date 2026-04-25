@@ -6,12 +6,12 @@ using Compress.Support.Compression.Deflate;
 using Compress.Support.Compression.LZMA;
 using Compress.ThreadReaders;
 using RomVaultCore.RvDB;
-using RomVaultCore.Utils;
 using FileStream = RVIO.FileStream;
 using Path = RVIO.Path;
 using FileInfo = RVIO.FileInfo;
 using Directory = RVIO.Directory;
 using System.Collections.Generic;
+using RVUtils;
 
 namespace RomVaultCore.FixFile.Utils
 {
@@ -53,12 +53,21 @@ namespace RomVaultCore.FixFile.Utils
                 nameDirIndex++;
                 outDir.Name = db7zFile.Name + ".cache (" + nameDirIndex + ")";
             }
-            cacheDir.ChildAdd(outDir);
+            try
+            {
             Directory.CreateDirectory(outDir.FullName);
+            }
+            catch (Exception ex)
+            {
+                error = $"Error creating directory ({outDir.FullName}) for caching: {ex.Message}";
+                return ReturnCode.FileSystemError;
+            }
+
+            cacheDir.ChildAdd(outDir);
 
             for (int i = 0; i < sevenZipFileCaching.LocalFilesCount; i++)
             {
-                var fileHeader=sevenZipFileCaching.GetFileHeader(i);
+                var fileHeader = sevenZipFileCaching.GetFileHeader(i);
                 if (fileHeader.IsDirectory)
                     continue;
                 if (fileHeader.UncompressedSize == 0)
@@ -101,7 +110,6 @@ namespace RomVaultCore.FixFile.Utils
                 {
                     // if this is the file we are fixing then pull out the correct files.
                     if (thisFile.RepStatus == RepStatus.Correct ||
-                        thisFile.RepStatus == RepStatus.CorrectMIA ||
                         thisFile.RepStatus == RepStatus.InToSort ||
                         thisFile.RepStatus == RepStatus.MoveToSort)
                         extract = true;
@@ -112,9 +120,7 @@ namespace RomVaultCore.FixFile.Utils
                 {
                     foreach (RvFile f in thisFile.FileGroup.Files)
                     {
-                        if (f.RepStatus == RepStatus.CanBeFixed ||
-                            f.RepStatus == RepStatus.CanBeFixedMIA
-                            )
+                        if (f.RepStatus == RepStatus.CanBeFixed)
                         {
                             extract = true;
                             break;
@@ -276,19 +282,19 @@ namespace RomVaultCore.FixFile.Utils
                 FileInfo fi = new FileInfo(filenameOut);
                 outFile.FileModTimeStamp = fi.LastWriteTime;
 
-                if (bCRC != null && thisFile.CRC != null && !ArrByte.BCompare(bCRC, thisFile.CRC))
+                if (bCRC != null && thisFile.CRC != null && !ByteUtils.ByteArrEquals(bCRC, thisFile.CRC))
                 {
                     // error in file.
                     error = "Error found in cache extract CRC";
                     return ReturnCode.SourceCheckSumMismatch;
                 }
-                if (bMD5 != null && thisFile.MD5 != null && !ArrByte.BCompare(bMD5, thisFile.MD5))
+                if (bMD5 != null && thisFile.MD5 != null && !ByteUtils.ByteArrEquals(bMD5, thisFile.MD5))
                 {
                     // error in file.
                     error = "Error found in cache extract MD5";
                     return ReturnCode.SourceCheckSumMismatch;
                 }
-                if (bSHA1 != null && thisFile.SHA1 != null && !ArrByte.BCompare(bSHA1, thisFile.SHA1))
+                if (bSHA1 != null && thisFile.SHA1 != null && !ByteUtils.ByteArrEquals(bSHA1, thisFile.SHA1))
                 {
                     // error in file.
                     error = "Error found in cache extract SHA1";

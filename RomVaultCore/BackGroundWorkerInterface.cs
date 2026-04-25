@@ -1,7 +1,7 @@
 ﻿/******************************************************
  *     ROMVault3 is written by Gordon J.              *
  *     Contact gordon@romvault.com                    *
- *     Copyright 2025                                 *
+ *     Copyright 2026                                 *
  ******************************************************/
 
 using Compress;
@@ -22,6 +22,15 @@ namespace RomVaultCore
     public class bgwText
     {
         public bgwText(string Text)
+        {
+            this.Text = Text;
+        }
+
+        public string Text { get; }
+    }
+    public class bgwTextError
+    {
+        public bgwTextError(string Text)
         {
             this.Text = Text;
         }
