@@ -18,7 +18,7 @@ namespace unzip
             string outDir = "";
             if (args.Length == 3)
             {
-                if (args[1].ToLower() != "-d")
+                if (!string.Equals(args[1], "-d", StringComparison.OrdinalIgnoreCase))
                 {
                     Console.WriteLine("Unknown command line option.");
                     return;

@@ -56,7 +56,7 @@ namespace RomVaultCore.RvDB
                     case 0:
                         // on the crazy off chance that there are 2 files in a zip with the exact same name...
                         // need to do the double name check.
-                        List<ScannedFile> scannedFiles = new List<ScannedFile>();
+                        List<ScannedFile> scannedFiles = new List<ScannedFile>(1);
                         int filesCount = 1;
                         scannedFiles.Add(scannedFile);
 
@@ -135,8 +135,6 @@ namespace RomVaultCore.RvDB
             if (!IsDirectory)
                 return;
 
-            _dirDats = new List<RvDat>(); // DAT's stored in this dir in DatRoot
-            _children = new List<RvFile>(); // children items of this dir
             DirStatus = new ReportStatus(); // Counts the status of all children for reporting in the UI
         }
 

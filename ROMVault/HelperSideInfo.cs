@@ -17,7 +17,7 @@ namespace ROMVault
     {
         private static Regex WildcardToRegex(string pattern)
         {
-            if (pattern.ToLower().StartsWith("regex:"))
+            if (pattern.StartsWith("regex:", StringComparison.OrdinalIgnoreCase))
                 return new Regex(pattern.Substring(6), RegexOptions.IgnoreCase);
 
             return new Regex("^" + Regex.Escape(pattern).

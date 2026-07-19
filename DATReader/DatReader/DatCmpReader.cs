@@ -25,7 +25,8 @@ namespace DATReader.DatReader
                 {
                     return false;
                 }
-                if (dfl.Next.ToLower() == "clrmamepro" || dfl.Next.ToLower() == "clrmame")
+                if (string.Equals(dfl.Next, "clrmamepro", System.StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(dfl.Next, "clrmame", System.StringComparison.OrdinalIgnoreCase))
                 {
                     if (!LoadHeaderFromDat(dfl, strFilename, datHeader, errorReport))
                     {
@@ -33,9 +34,9 @@ namespace DATReader.DatReader
                     }
                     dfl.Gn();
                 }
-                if (dfl.Next.ToLower() == "raine")
+                if (string.Equals(dfl.Next, "raine", System.StringComparison.OrdinalIgnoreCase))
                 {
-                    while (dfl.Next.ToLower() != "emulator")
+                    while (!string.Equals(dfl.Next, "emulator", System.StringComparison.OrdinalIgnoreCase))
                         dfl.Gn();
                     if (!LoadHeaderFromDat(dfl, strFilename, datHeader, errorReport))
                     {
@@ -43,7 +44,7 @@ namespace DATReader.DatReader
                     }
                     dfl.Gn();
                 }
-                if (dfl.Next.ToLower() == "romvault")
+                if (string.Equals(dfl.Next, "romvault", System.StringComparison.OrdinalIgnoreCase))
                 {
                     if (!LoadHeaderFromDat(dfl, strFilename, datHeader, errorReport))
                     {
@@ -227,7 +228,7 @@ namespace DATReader.DatReader
             }
 
             dfl.Gn();
-            if (dfl.Next.ToLower() != "name")
+            if (!string.Equals(dfl.Next, "name", System.StringComparison.OrdinalIgnoreCase))
             {
                 errorReport?.Invoke(dfl.Filename, "Name not found as first object in ( ), on line " + dfl.LineNumber);
                 return false;
@@ -412,7 +413,7 @@ namespace DATReader.DatReader
             }
 
             dfl.Gn();
-            if (dfl.Next.ToLower() != "name")
+            if (!string.Equals(dfl.Next, "name", System.StringComparison.OrdinalIgnoreCase))
             {
                 errorReport?.Invoke(dfl.Filename, "Name not found as first object in ( ), on line " + dfl.LineNumber);
                 return false;
@@ -499,7 +500,7 @@ namespace DATReader.DatReader
             }
 
             dfl.Gn();
-            if (dfl.Next.ToLower() != "name")
+            if (!string.Equals(dfl.Next, "name", System.StringComparison.OrdinalIgnoreCase))
             {
                 errorReport?.Invoke(dfl.Filename, "Name not found as first object in ( ), on line " + dfl.LineNumber);
                 return false;

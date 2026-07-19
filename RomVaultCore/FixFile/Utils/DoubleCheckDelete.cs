@@ -18,7 +18,8 @@ namespace RomVaultCore.FixFile.Utils
                 return ReturnCode.Good;
             }
 
-            if (fileDeleting.IsInToSort && Path.GetExtension(fileDeleting.Name).ToLower() == ".cue")
+            if (fileDeleting.IsInToSort &&
+                string.Equals(Path.GetExtension(fileDeleting.Name), ".cue", System.StringComparison.OrdinalIgnoreCase))
             {
                 return ReturnCode.Good;
             }

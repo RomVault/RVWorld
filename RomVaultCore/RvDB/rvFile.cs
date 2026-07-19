@@ -54,7 +54,7 @@ namespace RomVaultCore.RvDB
         private MIAStatus _MIAStatus = MIAStatus.None;
 
         /******************* RvDir ***********************/
-        private readonly List<RvFile> _children; // children items of this dir
+        private List<RvFile> _children; // children items of this dir
         public readonly ReportStatus DirStatus; // Counts the status of all children for reporting in the UI
 
         private byte _ZipDatStruct;
@@ -120,8 +120,6 @@ namespace RomVaultCore.RvDB
             if (!IsDirectory)
                 return;
 
-            _dirDats = new List<RvDat>(); // DAT's stored in this dir in DatRoot
-            _children = new List<RvFile>(); // children items of this dir
             DirStatus = new ReportStatus(); // Counts the status of all children for reporting in the UI
         }
 
@@ -152,7 +150,7 @@ namespace RomVaultCore.RvDB
                 string pName = Parent.TreeBarName;
                 if (string.IsNullOrEmpty(pName))
                     return Name;
-                return Parent.TreeBarName + "|" + Name;
+                return pName + "|" + Name;
             }
         }
         public string TreeFullNameCase
@@ -205,7 +203,9 @@ namespace RomVaultCore.RvDB
                     }
                 }
 
-                if (dirTree.Length > dirKeyLen && string.Compare(dirTree.Substring(0, dirKeyLen + 1), dirKey + System.IO.Path.DirectorySeparatorChar, StringComparison.Ordinal) == 0)
+                if (dirTree.Length > dirKeyLen &&
+                    dirTree[dirKeyLen] == System.IO.Path.DirectorySeparatorChar &&
+                    string.Compare(dirTree, 0, dirKey, 0, dirKeyLen, StringComparison.Ordinal) == 0)
                 {
                     if (lenFound < dirKeyLen)
                     {
@@ -507,8 +507,6 @@ namespace RomVaultCore.RvDB
 
             if (IsDirectory)
             {
-                _dirDats = new List<RvDat>(); // DAT's stored in this dir in DatRoot
-                _children = new List<RvFile>(); // children items of this dir
                 DirStatus = new ReportStatus(); // Counts the status of all children for reporting in the UI
             }
             Parent = parent;
@@ -598,12 +596,13 @@ namespace RomVaultCore.RvDB
             }
 
             int count = (fFlags & FileFlags.HasDirDat) > 0 ? br.ReadInt32() : 0;
-            _dirDats?.Clear();
+            if (count > 0)
+                _dirDats = new List<RvDat>(count);
             int progress = -1;
             for (int i = 0; i < count; i++)
             {
                 RvDat dat = new RvDat(br) { DatIndex = i };
-                _dirDats?.Add(dat);
+                _dirDats.Add(dat);
 
                 string datname = TreeFullName + @"\" + dat.GetData(RvDat.DatData.DatName);
                 if (datname.Length >= 9 && datname.Substring(0, 9) == @"RomVault\")
@@ -626,7 +625,8 @@ namespace RomVaultCore.RvDB
             }
 
             count = (fFlags & FileFlags.HasChildren) > 0 ? br.ReadInt32() : 0;
-            _children?.Clear();
+            if (count > 0)
+                _children = new List<RvFile>(count);
 
             // 2024/08/03 - any item in ToSort should have a datStatus of InToSort
             // So force all root ToSort items to be InToSort, and then all there child items will now 
@@ -638,7 +638,7 @@ namespace RomVaultCore.RvDB
                     _datStatus = DatStatus.InToSort;
 
                 RvFile tChild = new RvFile(br, parentDirDats, this);
-                _children?.Add(tChild);
+                _children.Add(tChild);
             }
             if (baseDir)
                 _datStatus = DatStatus.InDatCollect;
@@ -767,7 +767,7 @@ namespace RomVaultCore.RvDB
         /****************** RvDir ***********************/
         public bool IsDirectory => FileType == FileType.Dir || FileType == FileType.Zip || FileType == FileType.SevenZip;
 
-        public int DirDatCount => _dirDats.Count;
+        public int DirDatCount => _dirDats?.Count ?? 0;
         public int ChildCount => _children?.Count ?? 0;
 
 
@@ -795,6 +795,8 @@ namespace RomVaultCore.RvDB
                 ReportError.SendAndShow("Trying to add a " + child.FileType + " to a " + FileType);
             }
 
+            if (_children == null)
+                _children = new List<RvFile>(1);
             _children.Insert(index, child);
             child.Parent = this;
             RepStatusUpTreeAddRemove(child, 1);
@@ -809,16 +811,28 @@ namespace RomVaultCore.RvDB
                 _children[index].Parent = null;
             }
             _children.RemoveAt(index);
+            if (_children.Count == 0)
+                _children = null;
         }
 
 
         public int ChildNameSearch(FileType type, string name, out int index)
         {
+            if (_children == null)
+            {
+                index = 0;
+                return -1;
+            }
             return StorageList.BinarySearch.ListSearch(_children, new RvFile(type) { Name = name }, RVSorters.CompareName, out index);
         }
 
         public int ChildNameSearch(RvFile lName, out int index)
         {
+            if (_children == null)
+            {
+                index = 0;
+                return -1;
+            }
             return StorageList.BinarySearch.ListSearch(_children, lName, RVSorters.CompareName, out index);
         }
 

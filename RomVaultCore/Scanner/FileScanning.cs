@@ -239,8 +239,8 @@ namespace RomVaultCore.Scanner
                         }
 
                         //Complete MultiName Compare
-                        List<RvFile> dbs = new List<RvFile>();
-                        List<ScannedFile> files = new List<ScannedFile>();
+                        List<RvFile> dbs = new List<RvFile>(1);
+                        List<ScannedFile> files = new List<ScannedFile>(1);
                         int dbsCount = 1;
                         int filesCount = 1;
 

@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
 
 namespace StorageList
 {
@@ -12,22 +10,31 @@ namespace StorageList
     {
         public static void SortWithFilter<T>(T[] arrToSort, FindOn<T> find, SortOn<T> sort, out T[] outArray)
         {
-            List<T> outList = new List<T>();
-            foreach (T fm in arrToSort)
+            bool[] matches = new bool[arrToSort.Length];
+            int matchCount = 0;
+            for (int i = 0; i < arrToSort.Length; i++)
             {
-                if (find(fm))
-                    outList.Add(fm);
+                bool match = find(arrToSort[i]);
+                matches[i] = match;
+                if (match)
+                    matchCount++;
             }
 
-            outArray = outList.ToArray();
+            outArray = new T[matchCount];
+            int outputIndex = 0;
+            for (int i = 0; i < arrToSort.Length; i++)
+            {
+                if (matches[i])
+                    outArray[outputIndex++] = arrToSort[i];
+            }
 
-            SortArray(0, outArray.Length, outArray, sort, 0);
+            SortArrayInPlace(outArray, sort);
         }
         public static T[] SortArray<T>(T[] arrToSort, SortOn<T> sortFunction)
         {
             T[] sortedCRC = new T[arrToSort.Length];
             arrToSort.CopyTo(sortedCRC, 0);
-            SortArray(0, sortedCRC.Length, sortedCRC, sortFunction, 0);
+            SortArrayInPlace(sortedCRC, sortFunction);
             return sortedCRC;
         }
 
@@ -36,92 +43,57 @@ namespace StorageList
         {
             T[] sortedCRC = new T[arrToSort.Count];
             arrToSort.CopyTo(sortedCRC, 0);
-            SortArray(0, sortedCRC.Length, sortedCRC, sortFunction, 0);
-            return sortedCRC.ToList();
+            SortArrayInPlace(sortedCRC, sortFunction);
+            return new List<T>(sortedCRC);
         }
 
 
-        private static void SortArray<T>(int intBase, int intTop, T[] arrToSort, SortOn<T> sortFunction, int depth)
+        private static void SortArrayInPlace<T>(T[] arrToSort, SortOn<T> sortFunction)
+        {
+            if (arrToSort.Length <= 1)
+                return;
+
+            T[] scratch = new T[arrToSort.Length];
+            SortArray(0, arrToSort.Length, arrToSort, scratch, sortFunction);
+        }
+
+        private static void SortArray<T>(int intBase, int intTop, T[] arrToSort, T[] scratch, SortOn<T> sortFunction)
         {
             int sortSize = intTop - intBase;
             if (sortSize <= 1) return;
 
-            // if just 2 tests 
-            if (sortSize == 2)
-            {
-                // compare the 2 files
-                T t0 = arrToSort[intBase];
-                T t1 = arrToSort[intBase + 1];
-                if (sortFunction(t0, t1) < 1)
-                    return;
-                // swap them
-                arrToSort[intBase] = t1;
-                arrToSort[intBase + 1] = t0;
-                return;
-            }
-
             int intMiddle = (intTop + intBase) / 2;
+            SortArray(intBase, intMiddle, arrToSort, scratch, sortFunction);
+            SortArray(intMiddle, intTop, arrToSort, scratch, sortFunction);
 
-            if (depth < 2)
-            {
-                Thread t0 = new Thread(() => SortArray(intBase, intMiddle, arrToSort, sortFunction, depth + 1));
-                Thread t1 = new Thread(() => SortArray(intMiddle, intTop, arrToSort, sortFunction, depth + 1));
-                t0.Start();
-                t1.Start();
-                t0.Join();
-                t1.Join();
-            }
-            else
-            {
-                SortArray(intBase, intMiddle, arrToSort, sortFunction, depth + 1);
-                SortArray(intMiddle, intTop, arrToSort, sortFunction, depth + 1);
-            }
+            if (sortFunction(arrToSort[intMiddle - 1], arrToSort[intMiddle]) <= 0)
+                return;
 
-            int intBottomSize = intMiddle - intBase;
-            int intTopSize = intTop - intMiddle;
-
-            T[] arrBottom = new T[intBottomSize];
-            T[] arrTop = new T[intTopSize];
-
-            if (depth == 0)
-            {
-                Thread t0 = new Thread(() => Array.Copy(arrToSort, intBase, arrBottom, 0, intBottomSize));
-                Thread t1 = new Thread(() => Array.Copy(arrToSort, intMiddle, arrTop, 0, intTopSize));
-                t0.Start();
-                t1.Start();
-                t0.Join();
-                t1.Join();
-            }
-            else
-            {
-                Array.Copy(arrToSort, intBase, arrBottom, 0, intBottomSize);
-                Array.Copy(arrToSort, intMiddle, arrTop, 0, intTopSize);
-            }
-
-            int intBottomCount = 0;
-            int intTopCount = 0;
+            Array.Copy(arrToSort, intBase, scratch, intBase, sortSize);
+            int intBottomCount = intBase;
+            int intTopCount = intMiddle;
             int intCount = intBase;
 
-            while (intBottomCount < intBottomSize && intTopCount < intTopSize)
+            while (intBottomCount < intMiddle && intTopCount < intTop)
             {
-                if (sortFunction(arrBottom[intBottomCount], arrTop[intTopCount]) < 1)
+                if (sortFunction(scratch[intBottomCount], scratch[intTopCount]) <= 0)
                 {
-                    arrToSort[intCount++] = arrBottom[intBottomCount++];
+                    arrToSort[intCount++] = scratch[intBottomCount++];
                 }
                 else
                 {
-                    arrToSort[intCount++] = arrTop[intTopCount++];
+                    arrToSort[intCount++] = scratch[intTopCount++];
                 }
             }
 
-            while (intBottomCount < intBottomSize)
+            while (intBottomCount < intMiddle)
             {
-                arrToSort[intCount++] = arrBottom[intBottomCount++];
+                arrToSort[intCount++] = scratch[intBottomCount++];
             }
 
-            while (intTopCount < intTopSize)
+            while (intTopCount < intTop)
             {
-                arrToSort[intCount++] = arrTop[intTopCount++];
+                arrToSort[intCount++] = scratch[intTopCount++];
             }
         }
     }

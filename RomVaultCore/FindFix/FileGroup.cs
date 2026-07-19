@@ -17,7 +17,7 @@ namespace RomVaultCore.FindFix
         public byte[] AltSHA1;
         public byte[] AltMD5;
 
-        public readonly List<RvFile> Files = new List<RvFile>();
+        public readonly List<RvFile> Files = new List<RvFile>(1);
 
         public FileGroup(RvFile sourceFile)
         {

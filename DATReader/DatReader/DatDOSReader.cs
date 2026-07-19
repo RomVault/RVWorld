@@ -25,7 +25,7 @@ namespace DATReader.DatReader
                 {
                     return false;
                 }
-                if (dfl.Next.ToLower() == "doscenter")
+                if (string.Equals(dfl.Next, "doscenter", StringComparison.OrdinalIgnoreCase))
                 {
                     dfl.Gn();
                     if (!LoadHeaderFromDat(dfl, strFilename, datHeader, errorReport))
@@ -150,7 +150,7 @@ namespace DATReader.DatReader
 
             string name = dfl.GnRest();
             int nameLength = name.Length;
-            if (nameLength > 4 && name.ToLower().Substring(nameLength - 4, 4) == ".zip")
+            if (nameLength > 4 && name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
                 name = name.Substring(0, nameLength - 4);
 
             dfl.Gn();
@@ -196,7 +196,7 @@ namespace DATReader.DatReader
             }
             dfl.Gn();
 
-            if (dfl.Next.ToLower() != "name")
+            if (!string.Equals(dfl.Next, "name", StringComparison.OrdinalIgnoreCase))
             {
                 errorReport?.Invoke(dfl.Filename, "Name not found as first object in ( ), on line " + dfl.LineNumber);
                 return false;

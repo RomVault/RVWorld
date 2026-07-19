@@ -28,9 +28,10 @@ namespace DATReader.DatClean
         }
         private static void DirectoryFlat(DatDir dDir, List<DatDir> newDir, string subDir)
         {
-            DatBase[] arrDir = dDir.ToArray();
-            foreach (DatBase db in arrDir)
+            int childCount = dDir.Count;
+            for (int childIndex = 0; childIndex < childCount; childIndex++)
             {
+                DatBase db = dDir[childIndex];
                 if (db is DatFile)
                     continue;
 
@@ -64,9 +65,10 @@ namespace DATReader.DatClean
             }
 
 
-            DatBase[] arrDir = dDir.ToArray();
-            foreach (DatBase db in arrDir)
+            int childCount = dDir.Count;
+            for (int childIndex = 0; childIndex < childCount; childIndex++)
             {
+                DatBase db = dDir[childIndex];
                 if (!(db is DatDir datDir))
                     continue;
 
@@ -77,9 +79,10 @@ namespace DATReader.DatClean
 
         private static void ArchiveFlat(DatDir dDir, List<DatBase> newDir, string subDir)
         {
-            DatBase[] arrDir = dDir.ToArray();
-            foreach (DatBase db in arrDir)
+            int childCount = dDir.Count;
+            for (int childIndex = 0; childIndex < childCount; childIndex++)
             {
+                DatBase db = dDir[childIndex];
                 string thisName = (string.IsNullOrWhiteSpace(subDir) ? "" : subDir + "/") + db.Name;
                 if (db is DatFile)
                 {
@@ -165,12 +168,10 @@ namespace DATReader.DatClean
 
         public static void RemoveDeviceRef(DatDir dDir)
         {
-            DatBase[] arrDir = dDir.ToArray();
-            if (arrDir == null)
-                return;
-
-            foreach (DatBase db in arrDir)
+            int childCount = dDir.Count;
+            for (int childIndex = 0; childIndex < childCount; childIndex++)
             {
+                DatBase db = dDir[childIndex];
                 if (db is DatDir ddir)
                 {
                     if (ddir.DGame != null)
@@ -183,15 +184,13 @@ namespace DATReader.DatClean
 
         public static void CheckDeDuped(DatDir dDir)
         {
-            DatBase[] arrDir = dDir.ToArray();
-            if (arrDir == null)
-                return;
-
-            foreach (DatBase db in arrDir)
+            int childCount = dDir.Count;
+            for (int childIndex = 0; childIndex < childCount; childIndex++)
             {
+                DatBase db = dDir[childIndex];
                 if (db is DatFile dbFile)
                 {
-                    if (dbFile.Status?.ToLower() == "deduped")
+                    if (string.Equals(dbFile.Status, "deduped", StringComparison.OrdinalIgnoreCase))
                         dbFile.DatStatus = DatStatus.InDatMerged;
                 }
                 if (db is DatDir ddir)

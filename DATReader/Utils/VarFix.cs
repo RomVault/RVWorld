@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Xml;
 using DATReader.DatStore;
+using RVUtils;
 
 namespace DATReader.Utils
 {
@@ -10,7 +11,8 @@ namespace DATReader.Utils
 
         public static bool StringYesNo(string b)
         {
-            return (b != null) && ((b.ToLower() == "yes") || (b.ToLower() == "true"));
+            return string.Equals(b, "yes", StringComparison.OrdinalIgnoreCase) ||
+                   string.Equals(b, "true", StringComparison.OrdinalIgnoreCase);
         }
 
         public static ulong? ULong(XmlNode n)
@@ -32,7 +34,7 @@ namespace DATReader.Utils
 
             try
             {
-                if ((n.Length >= 2) && (n.Substring(0, 2).ToLower() == "0x"))
+                if (n.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
                 {
                     return Convert.ToUInt64(n.Substring(2), 16);
                 }
@@ -56,7 +58,7 @@ namespace DATReader.Utils
         public static string CleanCHD(string n)
         {
             string diskName = n ?? "";
-            if (diskName.ToLower().EndsWith(".chd"))
+            if (diskName.EndsWith(".chd", StringComparison.OrdinalIgnoreCase))
                 diskName = diskName.Substring(0, diskName.Length - 4);
             return diskName;
 
@@ -120,54 +122,50 @@ namespace DATReader.Utils
                 return null;
             }
 
-            checksum = checksum.ToLower().Trim();
-
-            if (checksum.Length >= 2)
-            {
-                if (checksum.Substring(0, 2) == "0x")
-                {
-                    checksum = checksum.Substring(2);
-                }
-            }
-
-
-            if (string.IsNullOrEmpty(checksum))
+            checksum = checksum.Trim();
+            int checksumStart = checksum.StartsWith("0x", StringComparison.OrdinalIgnoreCase) ? 2 : 0;
+            int checksumLength = checksum.Length - checksumStart;
+            if (checksumLength == 0)
             {
                 return null;
             }
 
-            if (checksum == "-")
+            if (checksumLength == 1 && checksum[checksumStart] == '-')
             {
                 return null;
             }
 
-            //if (checksum.Length % 2 == 1)
-            //    checksum = "0" + checksum;
-
-            //if (checksum.Length != length)
-            //    return null;
-
-            while (checksum.Length < length)
-            {
-                checksum = "0" + checksum;
-            }
-
-            int retL = checksum.Length / 2;
+            int paddedLength = Math.Max(checksumLength, length);
+            int padding = paddedLength - checksumLength;
+            int retL = paddedLength / 2;
             byte[] retB = new byte[retL];
 
-            try
+            for (int i = 0; i < retL; i++)
             {
-                for (int i = 0; i < retL; i++)
-                {
-                    retB[i] = Convert.ToByte(checksum.Substring(i * 2, 2), 16);
-                }
+                int high = HexValue(GetPaddedChar(checksum, checksumStart, padding, i * 2));
+                int low = HexValue(GetPaddedChar(checksum, checksumStart, padding, i * 2 + 1));
+                if (high < 0 || low < 0)
+                    return null;
+                retB[i] = (byte)((high << 4) | low);
+            }
 
-                return retB;
-            }
-            catch
-            {
-                return null;
-            }
+            return retB;
+        }
+
+        private static char GetPaddedChar(string checksum, int checksumStart, int padding, int index)
+        {
+            return index < padding ? '0' : checksum[checksumStart + index - padding];
+        }
+
+        private static int HexValue(char value)
+        {
+            if (value >= '0' && value <= '9')
+                return value - '0';
+            if (value >= 'a' && value <= 'f')
+                return value - 'a' + 10;
+            if (value >= 'A' && value <= 'F')
+                return value - 'A' + 10;
+            return -1;
         }
 
 
@@ -206,7 +204,7 @@ namespace DATReader.Utils
 
         public static string ToString(byte[] b)
         {
-            return b == null ? "" : BitConverter.ToString(b).ToLower().Replace("-", "");
+            return b.ToHexString();
         }
 
 

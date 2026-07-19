@@ -169,7 +169,7 @@ namespace DATReader.DatReader
 
             // Look for: <notzipped>true</notzipped>
             string notzipped = VarFix.String(head.SelectSingleNode("notzipped"));
-            datHeader.NotZipped = ((notzipped.ToLower() == "true") || (notzipped.ToLower() == "yes"));
+            datHeader.NotZipped = VarFix.StringYesNo(notzipped);
 
             return true;
         }

@@ -7,6 +7,7 @@ using Compress.ZipFile;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Threading;
 using RVUtils;
 using Stream = System.IO.Stream;
 
@@ -121,7 +122,7 @@ public class FileScan
         if (sizeTotal < 400000000)
             sizeTotal = 0;
 
-        List<ScannedFile> lstFileResults = new List<ScannedFile>();
+        List<ScannedFile> lstFileResults = new List<ScannedFile>(fileCount);
         for (int i = 0; i < fileCount; i++)
         {
             ScannedFile scannedFile = scanAFileInAnArchive(file, i, scannedFileType, deepScan, useDosDateTime, scanSHA256, progress, sizeTotal, sizeSoFar);
@@ -214,18 +215,36 @@ public class FileScan
     }
 
 
-    private const int Buffersize = 4096 * 1024;
-    private static BlockingCollection<byte[]> bytebuffer = new BlockingCollection<byte[]>();
+    private const int Buffersize = 1024 * 1024;
+    private const int MaxRetainedBuffers = 2;
+    private static readonly ConcurrentBag<byte[]> bytebuffer = new ConcurrentBag<byte[]>();
+    private static int retainedBufferCount;
+
     static byte[] getbuffer()
     {
         if (bytebuffer.TryTake(out byte[] buffer))
+        {
+            Interlocked.Decrement(ref retainedBufferCount);
             return buffer;
+        }
 
         return new byte[Buffersize];
     }
+
     static void putbuffer(byte[] buffer)
     {
-        bytebuffer.Add(buffer);
+        while (true)
+        {
+            int count = Volatile.Read(ref retainedBufferCount);
+            if (count >= MaxRetainedBuffers)
+                return;
+
+            if (Interlocked.CompareExchange(ref retainedBufferCount, count + 1, count) != count)
+                continue;
+
+            bytebuffer.Add(buffer);
+            return;
+        }
     }
 
     public int CheckSumRead(Stream inStream, ScannedFile scannedFile, ulong totalSize, bool fullScan, bool scanSHA256, Message progress, ulong sizetotal, ulong sizeSoFar)

@@ -41,7 +41,7 @@ namespace DATReader.DatClean
                 List<DatDir> pBios = new List<DatDir>();
                 foreach (DatDir dd in lstParentGames)
                 {
-                    if (dd.DGame.IsBios?.ToLower() == "yes")
+                    if (string.Equals(dd.DGame.IsBios, "yes", StringComparison.OrdinalIgnoreCase))
                         pBios.Add(dd);
                     else
                         pGames.Add(dd);

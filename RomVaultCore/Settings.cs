@@ -241,7 +241,7 @@ namespace RomVaultCore
             IgnoreFilesScanRegex = new List<Regex>();
             foreach (string str in IgnoreFiles)
             {
-                bool mIgnore = str.ToLower().StartsWith("ignore:");
+                bool mIgnore = str.StartsWith("ignore:", StringComparison.OrdinalIgnoreCase);
                 if (mIgnore)
                     IgnoreFilesScanRegex.Add(WildcardToRegex(str.Substring(7)));
                 else
@@ -254,7 +254,7 @@ namespace RomVaultCore
                 r.IgnoreFilesScanRegex = new List<Regex>();
                 foreach (string str in r.IgnoreFiles)
                 {
-                    bool mIgnore = str.ToLower().StartsWith("ignore:");
+                    bool mIgnore = str.StartsWith("ignore:", StringComparison.OrdinalIgnoreCase);
                     if (mIgnore)
                         r.IgnoreFilesScanRegex.Add(WildcardToRegex(str.Substring(7)));
                     else
@@ -265,7 +265,7 @@ namespace RomVaultCore
 
         private static Regex WildcardToRegex(string pattern)
         {
-            if (pattern.ToLower().StartsWith("regex:"))
+            if (pattern.StartsWith("regex:", StringComparison.OrdinalIgnoreCase))
                 return new Regex(pattern.Substring(6), RegexOptions.IgnoreCase);
 
             return new Regex("^" + Regex.Escape(pattern).

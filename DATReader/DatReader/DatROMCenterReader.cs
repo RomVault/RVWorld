@@ -68,7 +68,7 @@ namespace DATReader.DatReader
 
         private static bool LoadCredits(DatFileLoader dfl, DatHeader datHeader, ReportError errorReport)
         {
-            if (dfl.Next.ToLower() != "[credits]")
+            if (!string.Equals(dfl.Next, "[credits]", StringComparison.OrdinalIgnoreCase))
             {
                 errorReport?.Invoke(dfl.Filename, "Looking for [CREDITS] but found " + dfl.Next + " , " + dfl.LineNumber);
                 return false;
@@ -118,7 +118,7 @@ namespace DATReader.DatReader
 
         private static bool LoadDat(DatFileLoader dfl, DatHeader datHeader, ReportError errorReport)
         {
-            if (dfl.Next.ToLower() != "[dat]")
+            if (!string.Equals(dfl.Next, "[dat]", StringComparison.OrdinalIgnoreCase))
             {
                 errorReport?.Invoke(dfl.Filename, "Looking for [DAT] but found " + dfl.Next + " , " + dfl.LineNumber);
                 return false;
@@ -160,7 +160,7 @@ namespace DATReader.DatReader
 
         private static bool LoadEmulator(DatFileLoader dfl, DatHeader datHeader, ReportError errorReport)
         {
-            if (dfl.Next.ToLower() != "[emulator]")
+            if (!string.Equals(dfl.Next, "[emulator]", StringComparison.OrdinalIgnoreCase))
             {
                 errorReport?.Invoke(dfl.Filename, "Looking for [EMULATOR] but found " + dfl.Next + " , " + dfl.LineNumber);
                 return false;
@@ -204,7 +204,8 @@ namespace DATReader.DatReader
 
         private static bool LoadGame(DatFileLoader dfl, DatDir parentDir, ReportError errorReport)
         {
-            if (dfl.Next.ToLower() != "[games]" && dfl.Next.ToLower() != "[resources]")
+            if (!string.Equals(dfl.Next, "[games]", StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(dfl.Next, "[resources]", StringComparison.OrdinalIgnoreCase))
             {
                 errorReport?.Invoke(dfl.Filename, "Looking for [GAMES] but found " + dfl.Next + " , " + dfl.LineNumber);
                 return false;
@@ -276,7 +277,7 @@ namespace DATReader.DatReader
 
         private static bool LoadDisks(DatFileLoader dfl, DatDir parentDir, ReportError errorReport)
         {
-            if (dfl.Next.ToLower() != "[disks]")
+            if (!string.Equals(dfl.Next, "[disks]", StringComparison.OrdinalIgnoreCase))
             {
                 errorReport?.Invoke(dfl.Filename, "Looking for [DISKS] but found " + dfl.Next + " , " + dfl.LineNumber);
                 return false;

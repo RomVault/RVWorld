@@ -49,7 +49,7 @@ namespace Compress.ThreadReaders
                 _outEvent.Set();
             }
 
-            byte[] tmp = new byte[0];
+            byte[] tmp = Array.Empty<byte>();
             _sha256.TransformFinalBlock(tmp, 0, 0);
         }
 

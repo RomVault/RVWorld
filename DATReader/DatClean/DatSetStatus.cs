@@ -6,6 +6,7 @@ namespace DATReader.DatClean
 {
     public static class DatSetStatus
     {
+        private static readonly byte[] ZeroCrc = new byte[4];
 
         public static void SetStatus(DatDir tDat)
         {
@@ -37,7 +38,7 @@ namespace DATReader.DatClean
             tRom.MIAStatus = MIAStatus.None;
             if (tRom.DatStatus == DatStatus.InDatMerged)
                 return;
-            if (tRom.MIA?.ToLower() == "yes" && tRom.Size != 0)
+            if (string.Equals(tRom.MIA, "yes", System.StringComparison.OrdinalIgnoreCase) && tRom.Size != 0)
                 tRom.MIAStatus = MIAStatus.MIAFromDat;
 
             if (!string.IsNullOrEmpty(tRom.Merge))
@@ -51,7 +52,7 @@ namespace DATReader.DatClean
                 return;
             }
 
-            if (ByteUtils.ByteArrEquals(tRom.CRC, new byte[] { 0, 0, 0, 0 }) && (tRom.Size == 0))
+            if (ByteUtils.ByteArrEquals(tRom.CRC, ZeroCrc) && (tRom.Size == 0))
             {
                 tRom.DatStatus = DatStatus.InDatCollect;
                 return;

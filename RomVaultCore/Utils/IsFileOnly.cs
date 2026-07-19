@@ -62,7 +62,7 @@ namespace RomVaultCore.Utils
                 return (datRule.Compression == FileType.FileOnly);
 
             // if there is a dat header value and the dat header contains fileonly then return true.
-            if (datHeaderType != null && datHeaderType.ToLower() == "fileonly")
+            if (string.Equals(datHeaderType, "fileonly", System.StringComparison.OrdinalIgnoreCase))
                 return true;
 
             // the datheader was null so use the dat rule,

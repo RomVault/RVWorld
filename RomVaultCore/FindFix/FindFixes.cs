@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Threading;
 using System.Threading.Tasks;
 using ByteSortedList;
 using RomVaultCore.RvDB;
@@ -70,23 +69,11 @@ namespace RomVaultCore.FindFix
                 FileGroup[] fileGroupsAltSHA1Sorted = null;
                 FileGroup[] fileGroupsAltMD5Sorted = null;
 
-                Thread t1 = new Thread(() => FastArraySort.SortWithFilter(fileGroupsCRCSorted, FindSHA1, FamilySortSHA1, out fileGroupsSHA1Sorted));
-                Thread t2 = new Thread(() => FastArraySort.SortWithFilter(fileGroupsCRCSorted, FindMD5, FamilySortMD5, out fileGroupsMD5Sorted));
-                Thread t3 = new Thread(() => FastArraySort.SortWithFilter(fileGroupsCRCSorted, FindAltCRC, FamilySortAltCRC, out fileGroupsAltCRCSorted));
-                Thread t4 = new Thread(() => FastArraySort.SortWithFilter(fileGroupsCRCSorted, FindAltSHA1, FamilySortAltSHA1, out fileGroupsAltSHA1Sorted));
-                Thread t5 = new Thread(() => FastArraySort.SortWithFilter(fileGroupsCRCSorted, FindAltMD5, FamilySortAltMD5, out fileGroupsAltMD5Sorted));
-
-                t1.Start();
-                t2.Start();
-                t3.Start();
-                t4.Start();
-                t5.Start();
-
-                t1.Join();
-                t2.Join();
-                t3.Join();
-                t4.Join();
-                t5.Join();
+                FastArraySort.SortWithFilter(fileGroupsCRCSorted, FindSHA1, FamilySortSHA1, out fileGroupsSHA1Sorted);
+                FastArraySort.SortWithFilter(fileGroupsCRCSorted, FindMD5, FamilySortMD5, out fileGroupsMD5Sorted);
+                FastArraySort.SortWithFilter(fileGroupsCRCSorted, FindAltCRC, FamilySortAltCRC, out fileGroupsAltCRCSorted);
+                FastArraySort.SortWithFilter(fileGroupsCRCSorted, FindAltSHA1, FamilySortAltSHA1, out fileGroupsAltSHA1Sorted);
+                FastArraySort.SortWithFilter(fileGroupsCRCSorted, FindAltMD5, FamilySortAltMD5, out fileGroupsAltMD5Sorted);
 
                 /*
                 _thWrk.Report(new bgwText("Index creation on got SHA1"));
@@ -132,7 +119,7 @@ namespace RomVaultCore.FindFix
                 _thWrk.Report(_progressCounter++);
                 FindFixesListCheck.GroupListCheck(fileGroupsCRCSorted);
 
-                ClearPartial.checkGroups.Clear();
+                ClearPartial.ResetCheckGroups();
                 ClearPartial.CheckRemovePartial(DB.DirRoot.Child(0));
                 ClearPartial.checkAllGroups();
 
@@ -386,7 +373,7 @@ namespace RomVaultCore.FindFix
             }
             int index = intMid;
 
-            listIndex = new List<int>();
+            listIndex = new List<int>(1);
 
             // if match was found check up the list for the first match
             if (intRes == 0)
@@ -463,7 +450,7 @@ namespace RomVaultCore.FindFix
             }
             int index = intMid;
 
-            listIndex = new List<int>();
+            listIndex = new List<int>(1);
 
             // if match was found check up the list for the first match
             if (intRes == 0)

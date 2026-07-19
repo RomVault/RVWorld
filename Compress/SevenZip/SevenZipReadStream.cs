@@ -299,6 +299,13 @@ namespace Compress.SevenZip
                     return errorCode != 0 ? null : streamOut;
 
                 case MemoryStream memStream:
+                    if (memStream.TryGetBuffer(out ArraySegment<byte> buffer))
+                    {
+                        MemoryStream shared = new(buffer.Array, buffer.Offset, buffer.Count, false, true);
+                        shared.Position = 0;
+                        return shared;
+                    }
+
                     long pos = memStream.Position;
                     memStream.Position = 0;
                     byte[] newStream = new byte[memStream.Length];

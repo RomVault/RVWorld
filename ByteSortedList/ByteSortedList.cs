@@ -12,26 +12,33 @@ namespace ByteSortedList
         public delegate void mergeFunc(tInput val1, tStore val2);
         public delegate bool exactFunc(tInput val1, tStore val2);
 
-        private List<tStore>[] byteArray;
-        private getByteFunc _getByteFunc;
-        private compareFunc _compareFunc;
-        private newFunc _newFunc;
-        private mergeFunc _mergeFunc;
+        private readonly List<tStore>[] byteArray;
+        private readonly getByteFunc _getByteFunc;
+        private readonly compareFunc _compareFunc;
+        private readonly newFunc _newFunc;
+        private readonly mergeFunc _mergeFunc;
 
         public ByteSortedList(getByteFunc getByteFunc, compareFunc compareFunc, newFunc newFunc, mergeFunc mergeFunc)
         {
             byteArray = new List<tStore>[256];
-            for (int i = 0; i < 256; i++)
-                byteArray[i] = new List<tStore>();
             _getByteFunc = getByteFunc;
             _compareFunc = compareFunc;
             _newFunc = newFunc;
             _mergeFunc = mergeFunc;
         }
 
+        private List<tStore> GetBucket(tInput value)
+        {
+            int bucketIndex = _getByteFunc(value);
+            return System.Threading.LazyInitializer.EnsureInitialized(ref byteArray[bucketIndex]);
+        }
+
         public tStore Find(tInput value)
         {
-            List<tStore> thisList = byteArray[_getByteFunc(value)];
+            List<tStore> thisList = System.Threading.Volatile.Read(ref byteArray[_getByteFunc(value)]);
+            if (thisList == null)
+                return default;
+
             lock (thisList)
             {
                 int found = searchOn(value, thisList, out int index);
@@ -45,7 +52,7 @@ namespace ByteSortedList
 
         public void AddFind(tInput value)
         {
-            List<tStore> thisList = byteArray[_getByteFunc(value)];
+            List<tStore> thisList = GetBucket(value);
             lock (thisList)
             {
                 int found = searchOn(value, thisList, out int index);
@@ -62,7 +69,7 @@ namespace ByteSortedList
 
         public void AddFindWithExact(tInput value, exactFunc exact)
         {
-            List<tStore> thisList = byteArray[_getByteFunc(value)];
+            List<tStore> thisList = GetBucket(value);
             lock (thisList)
             {
                 int found = searchOn(value, thisList, out int index);
@@ -138,7 +145,7 @@ namespace ByteSortedList
             {
                 int count = 0;
                 foreach (List<tStore> v in byteArray)
-                    count += v.Count;
+                    count += v?.Count ?? 0;
                 return count;
             }
         }
@@ -146,8 +153,12 @@ namespace ByteSortedList
         public IEnumerator GetEnumerator()
         {
             foreach (List<tStore> v in byteArray)
+            {
+                if (v == null)
+                    continue;
                 foreach (tStore t in v)
                     yield return t;
+            }
         }
 
         public tStore[] ToArray()
@@ -158,9 +169,10 @@ namespace ByteSortedList
             CountAll = 0;
             foreach (List<tStore> v in byteArray)
             {
-                tStore[] tStores = v.ToArray();
-                Array.Copy(tStores, 0, outArray, CountAll, tStores.Length);
-                CountAll += tStores.Length;
+                if (v == null)
+                    continue;
+                v.CopyTo(outArray, CountAll);
+                CountAll += v.Count;
             }
             return outArray;
         }

@@ -152,11 +152,14 @@ namespace ROMVault
 
                 List<RvFile> gameList = new List<RvFile>();
 
-                _gameGridColumnXPositions = new int[(int)RepStatus.EndValue];
+                if (_gameGridColumnXPositions == null || _gameGridColumnXPositions.Length != (int)RepStatus.EndValue)
+                    _gameGridColumnXPositions = new int[(int)RepStatus.EndValue];
+                else
+                    Array.Clear(_gameGridColumnXPositions, 0, _gameGridColumnXPositions.Length);
 
                 bool wideTypeColumn = false;
 
-                string searchLowerCase = txtFilter.Text.ToLower();
+                string searchText = txtFilter.Text;
                 for (int j = 0; j < gameGridSource.ChildCount; j++)
                 {
                     RvFile tChildDir = gameGridSource.Child(j);
@@ -165,7 +168,7 @@ namespace ROMVault
                         continue;
                     }
 
-                    if (txtFilter.Text.Length > 0 && !tChildDir.Name.ToLower().Contains(searchLowerCase))
+                    if (searchText.Length > 0 && tChildDir.Name.IndexOf(searchText, StringComparison.OrdinalIgnoreCase) < 0)
                     {
                         continue;
                     }

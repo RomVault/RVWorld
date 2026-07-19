@@ -24,24 +24,29 @@ namespace DATReader.DatStore
         }
 
         public DatGame DGame;
-        private readonly List<DatBase> _children = new List<DatBase>();
-        private readonly List<int> _childrenNameIndex = new List<int>();
+        private List<DatBase> _children;
+        private List<int> _childrenNameIndex;
 
         public DatDir(string name, FileType type) : base(name, type) { }
 
         public DatDir(DatDir dd) : base(dd)
         {
             DGame = dd.DGame != null ? new DatGame(dd.DGame) : null;
-            foreach (DatBase child in dd._children)
+            int childCount = dd._children?.Count ?? 0;
+            if (childCount > 0)
             {
-                if (child is DatDir ddChild) _children.Add(new DatDir(ddChild));
-                if (child is DatFile ddFile) _children.Add(new DatFile(ddFile));
+                _children = new List<DatBase>(childCount);
+                foreach (DatBase child in dd._children)
+                {
+                    if (child is DatDir ddChild) _children.Add(new DatDir(ddChild));
+                    if (child is DatFile ddFile) _children.Add(new DatFile(ddFile));
+                }
             }
-            foreach (int childIndex in dd._childrenNameIndex)
-                _childrenNameIndex.Add(childIndex);
+            if (dd._childrenNameIndex != null)
+                _childrenNameIndex = new List<int>(dd._childrenNameIndex);
         }
 
-        public int Count => _children.Count;
+        public int Count => _children?.Count ?? 0;
 
         public DatBase this[int index] => _children[index];
 
@@ -54,14 +59,19 @@ namespace DATReader.DatStore
 
         public DatBase[] ToArray()
         {
-            return _children.ToArray();
+            return _children?.ToArray() ?? Array.Empty<DatBase>();
         }
 
         public int ChildAdd(DatBase datItem)
         {
+            if (_children == null)
+                _children = new List<DatBase>(1);
+
             int index;
             if (FileType == FileType.UnSet)
             {
+                if (_childrenNameIndex == null)
+                    _childrenNameIndex = new List<int>(1);
                 ChildNameBinarySearch(datItem, true, false, out int indexSearch);
                 _children.Add(datItem);
                 index = _children.Count - 1;
@@ -85,7 +95,11 @@ namespace DATReader.DatStore
                 _children.RemoveAt(i);
 
                 if (FileType != FileType.UnSet)
+                {
+                    if (_children.Count == 0)
+                        _children = null;
                     return;
+                }
 
                 for (int j = 0; j < count; j++)
                 {
@@ -98,18 +112,29 @@ namespace DATReader.DatStore
                     else if (_childrenNameIndex[j] > i)
                         _childrenNameIndex[j]--;
                 }
+                if (_children.Count == 0)
+                {
+                    _children = null;
+                    _childrenNameIndex = null;
+                }
                 return;
             }
         }
 
         public void ChildrenClear()
         {
-            _children.Clear();
-            _childrenNameIndex.Clear();
+            _children = null;
+            _childrenNameIndex = null;
         }
 
         public int ChildNameSearch(DatBase lName, out int index)
         {
+            if (_children == null)
+            {
+                index = 0;
+                return -1;
+            }
+
             if (FileType != FileType.UnSet)
                 return ChildNameBinarySearch(lName, false, true, out index);
 
@@ -129,7 +154,7 @@ namespace DATReader.DatStore
         private int ChildNameBinarySearch(DatBase lName, bool useIndex, bool findFirst, out int index)
         {
             int intBottom = 0;
-            int intTop = _children.Count;
+            int intTop = _children?.Count ?? 0;
             int intMid = 0;
             int intRes = -1;
 

@@ -66,7 +66,6 @@ public static class FileHeaderReader
         if (string.IsNullOrWhiteSpace(header))
             return HeaderFileType.Nothing;
 
-        string theader = header.ToLower();
         foreach (Detector d in Detectors)
         {
             if (string.IsNullOrEmpty(d.HeaderId))
@@ -74,7 +73,7 @@ public static class FileHeaderReader
                 continue;
             }
 
-            if (theader == d.HeaderId.ToLower())
+            if (string.Equals(header, d.HeaderId, System.StringComparison.OrdinalIgnoreCase))
             {
                 return d.FType;
             }
@@ -162,7 +161,7 @@ public static class FileHeaderReader
             FType = fType;
             HeaderLength = headerLength;
             FileOffset = fileOffset;
-            HeaderId = headerId.ToLower();
+            HeaderId = headerId;
             Data = data;
         }
     }
