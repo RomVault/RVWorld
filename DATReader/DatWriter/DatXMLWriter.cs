@@ -1,7 +1,9 @@
 ﻿using System;
 using Compress;
+using System.Text;
 using DATReader.DatStore;
 using RVIO;
+using RVUtils;
 
 namespace DATReader.DatWriter
 {
@@ -69,12 +71,13 @@ namespace DATReader.DatWriter
 
         private static void writeBase(DatStreamWriter sw, DatDir baseDirIn, bool newStyle)
         {
-            DatBase[] dirChildren = baseDirIn?.ToArray();
-
-            if (dirChildren == null)
+            if (baseDirIn == null)
                 return;
-            foreach (DatBase baseObj in dirChildren)
+
+            int childCount = baseDirIn.Count;
+            for (int childIndex = 0; childIndex < childCount; childIndex++)
             {
+                DatBase baseObj = baseDirIn[childIndex];
                 if (baseObj is DatDir baseDir)
                 {
 
@@ -202,7 +205,7 @@ namespace DATReader.DatWriter
                         sw.WriteItem("md5", baseRom.MD5);
                         if (baseObj.DateModified != null && baseObj.DateModified != Compress.StructuredZip.StructuredZip.TrrntzipDateTime)
                             sw.WriteItem("date", CompressUtils.zipDateTimeToString(baseObj.DateModified));
-                        if (baseRom.Status != null && baseRom.Status.ToLower() != "good")
+                        if (baseRom.Status != null && !string.Equals(baseRom.Status, "good", StringComparison.OrdinalIgnoreCase))
                             sw.WriteItem("status", baseRom.Status);
                         if (baseRom.MIA == "yes")
                             sw.WriteItem("mia", "yes");
@@ -215,35 +218,58 @@ namespace DATReader.DatWriter
 
         private static string Etxt(string e)
         {
-            string ret = "";
-            foreach (char c in e)
+            int firstEscape = -1;
+            for (int i = 0; i < e.Length; i++)
             {
-                if (c == '&') { ret += "&amp;"; continue; }
-                if (c == '\"') { ret += "&quot;"; continue; }
-                if (c == '\'') { ret += "&apos;"; continue; }
-                if (c == '<') { ret += "&lt;"; continue; }
-                if (c == '>') { ret += "&gt;"; continue; }
-                //if (c == 127) { ret += "&#7f;"; continue; }
-                if (c < ' ')
+                char c = e[i];
+                if (c == '&' || c == '\"' || c == '\'' || c == '<' || c == '>' || c < ' ')
                 {
-                    ret += $"&#{((int)c).ToString("X2")};";
-                    continue;
+                    firstEscape = i;
+                    break;
                 }
-                ret += c;
             }
 
-            return ret;
+            if (firstEscape < 0)
+                return e;
+
+            StringBuilder ret = new StringBuilder(e.Length + 8);
+            ret.Append(e, 0, firstEscape);
+            for (int i = firstEscape; i < e.Length; i++)
+            {
+                char c = e[i];
+                switch (c)
+                {
+                    case '&': ret.Append("&amp;"); break;
+                    case '\"': ret.Append("&quot;"); break;
+                    case '\'': ret.Append("&apos;"); break;
+                    case '<': ret.Append("&lt;"); break;
+                    case '>': ret.Append("&gt;"); break;
+                    default:
+                        if (c < ' ')
+                        {
+                            ret.Append("&#");
+                            ret.Append(((int)c).ToString("X2"));
+                            ret.Append(';');
+                        }
+                        else
+                        {
+                            ret.Append(c);
+                        }
+                        break;
+                }
+            }
+
+            return ret.ToString();
         }
 
         private static string ByteToStr(byte[] b)
         {
-            return b == null ? "" : BitConverter.ToString(b).ToLower().Replace("-", "");
+            return b.ToHexString();
         }
 
         private class DatStreamWriter : IDisposable
         {
             private int _tabDepth;
-            private string _tabString = "";
             private readonly System.IO.StreamWriter _sw;
             public DatStreamWriter(string path)
             {
@@ -262,11 +288,13 @@ namespace DATReader.DatWriter
 
             public void WriteLine(string value)
             {
-                _sw.WriteLine(_tabString + value);
+                WriteIndent();
+                _sw.WriteLine(value);
             }
             public void Write(string value)
             {
-                _sw.Write(_tabString + value);
+                WriteIndent();
+                _sw.Write(value);
             }
 
             public void WriteLine(string value, int tabDir)
@@ -275,14 +303,10 @@ namespace DATReader.DatWriter
                 {
                     if (_tabDepth > 0)
                         _tabDepth -= 1;
-                    _tabString = new string('\t', _tabDepth);
                 }
-                _sw.WriteLine(_tabString + value);
+                WriteLine(value);
                 if (tabDir == 1)
-                {
                     _tabDepth += 1;
-                    _tabString = new string('\t', _tabDepth);
-                }
             }
             public void WriteEnd(string value)
             {
@@ -295,42 +319,62 @@ namespace DATReader.DatWriter
                 {
                     if (_tabDepth > 0)
                         _tabDepth -= 1;
-                    _tabString = new string('\t', _tabDepth);
                 }
                 _sw.WriteLine(value);
                 if (tabDir == 1)
-                {
                     _tabDepth += 1;
-                    _tabString = new string('\t', _tabDepth);
-                }
             }
 
-
+            private void WriteIndent()
+            {
+                for (int i = 0; i < _tabDepth; i++)
+                    _sw.Write('\t');
+            }
 
             public void WriteNode(string name, string value)
             {
                 if (string.IsNullOrWhiteSpace(value))
                     return;
-                WriteLine("<" + name + ">" + Etxt(value) + "</" + name + ">");
+
+                WriteIndent();
+                _sw.Write('<');
+                _sw.Write(name);
+                _sw.Write('>');
+                _sw.Write(Etxt(value));
+                _sw.Write("</");
+                _sw.Write(name);
+                _sw.WriteLine('>');
             }
 
             public void WriteItem(string name, string value)
             {
                 if (string.IsNullOrWhiteSpace(value))
                     return;
-                _sw.Write(@" " + name + @"=""" + Etxt(value) + @"""");
+                _sw.Write(' ');
+                _sw.Write(name);
+                _sw.Write("=\"");
+                _sw.Write(Etxt(value));
+                _sw.Write('"');
             }
             public void WriteItem(string name, ulong? value)
             {
                 if (value == null)
                     return;
-                _sw.Write(@" " + name + @"=""" + value + @"""");
+                _sw.Write(' ');
+                _sw.Write(name);
+                _sw.Write("=\"");
+                _sw.Write(value.Value);
+                _sw.Write('"');
             }
             public void WriteItem(string name, byte[] value)
             {
                 if (value == null)
                     return;
-                _sw.Write(@" " + name + @"=""" + ByteToStr(value) + @"""");
+                _sw.Write(' ');
+                _sw.Write(name);
+                _sw.Write("=\"");
+                _sw.Write(ByteToStr(value));
+                _sw.Write('"');
             }
 
 

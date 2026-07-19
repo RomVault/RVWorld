@@ -77,9 +77,10 @@ namespace DATReader.DatClean
             if (dDir.FileType != FileType.Zip || zs != ZipStructure.ZipTDC)
                 return false;
 
-            DatBase[] children = dDir.ToArray();
-            foreach (DatBase child in children)
+            int childCount = dDir.Count;
+            for (int childIndex = 0; childIndex < childCount; childIndex++)
             {
+                DatBase child = dDir[childIndex];
                 if (child is DatFile)
                 {
                     if (child.DateModified != Compress.StructuredZip.StructuredZip.TrrntzipDosDateTime)

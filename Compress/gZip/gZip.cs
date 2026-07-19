@@ -196,27 +196,13 @@ namespace Compress.gZip
             //if FLG.FNAME set
             if ((FLG & 0x8) == 0x8)
             {
-                List<byte> bName = new List<byte>();
-                while (true)
-                {
-                    byte bIn = zipBr.ReadByte();
-                    if (bIn == 0)
-                        break;
-                    bName.Add(bIn);
-                }
+                while (zipBr.ReadByte() != 0) { }
             }
 
             //if FLG.FComment set
             if ((FLG & 0x10) == 0x10)
             {
-                List<byte> bComments = new List<byte>();
-                while (true)
-                {
-                    byte bIn = zipBr.ReadByte();
-                    if (bIn == 0)
-                        break;
-                    bComments.Add(bIn);
-                }
+                while (zipBr.ReadByte() != 0) { }
             }
 
             //if FLG.FHCRC set

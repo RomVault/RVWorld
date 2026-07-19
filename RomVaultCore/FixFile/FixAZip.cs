@@ -164,7 +164,7 @@ namespace RomVaultCore.FixFile
                 RvFile toSortGame = null;
                 RvFile toSortCorruptGame = null;
 
-                List<RvFile> fixZipTemp = new List<RvFile>();
+                List<RvFile> fixZipTemp = new List<RvFile>(fixZip.ChildCount);
 
                 FileType fixFileType = fixZip.FileType;
 

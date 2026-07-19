@@ -248,8 +248,9 @@ namespace ROMVault
             tabSideArtwork.TabPages.Remove(tabInfo);
             tabSideArtwork.TabPages.Remove(tabInfo2);
 
-            string ext = Path.GetExtension(tRom.Name).ToLower();
-            if (ext != ".png" && ext != ".jpg")
+            string ext = Path.GetExtension(tRom.Name);
+            if (!string.Equals(ext, ".png", StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(ext, ".jpg", StringComparison.OrdinalIgnoreCase))
             {
                 splitListArt.Panel2Collapsed = true;
                 splitListArt.Panel2.Hide();

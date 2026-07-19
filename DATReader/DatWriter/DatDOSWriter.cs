@@ -3,6 +3,7 @@ using Compress;
 using Compress.StructuredZip;
 using DATReader.DatStore;
 using RVIO;
+using RVUtils;
 
 namespace DATReader.DatWriter
 {
@@ -50,12 +51,13 @@ namespace DATReader.DatWriter
 
         private static void writeBase(DatStreamWriter sw, DatDir baseDirIn)
         {
-            DatBase[] dirChildren = baseDirIn?.ToArray();
-
-            if (dirChildren == null)
+            if (baseDirIn == null)
                 return;
-            foreach (DatBase baseObj in dirChildren)
+
+            int childCount = baseDirIn.Count;
+            for (int childIndex = 0; childIndex < childCount; childIndex++)
             {
+                DatBase baseObj = baseDirIn[childIndex];
                 if (baseObj is DatDir baseDir)
                 {
                     if (baseDir.DGame != null)
@@ -105,13 +107,12 @@ namespace DATReader.DatWriter
 
         private static string ByteToStr(byte[] b)
         {
-            return b == null ? "" : BitConverter.ToString(b).ToLower().Replace("-", "");
+            return b.ToHexString();
         }
 
         private class DatStreamWriter : IDisposable
         {
             private int _tabDepth;
-            private string _tabString = "";
             private readonly System.IO.StreamWriter _sw;
             public DatStreamWriter(string path)
             {
@@ -130,11 +131,13 @@ namespace DATReader.DatWriter
 
             public void WriteLine(string value)
             {
-                _sw.WriteLine(_tabString + value);
+                WriteIndent();
+                _sw.WriteLine(value);
             }
             public void Write(string value)
             {
-                _sw.Write(_tabString + value);
+                WriteIndent();
+                _sw.Write(value);
             }
 
             public void WriteLine(string value, int tabDir)
@@ -143,14 +146,10 @@ namespace DATReader.DatWriter
                 {
                     if (_tabDepth > 0)
                         _tabDepth -= 1;
-                    _tabString = new string('\t', _tabDepth);
                 }
-                _sw.WriteLine(_tabString + value);
+                WriteLine(value);
                 if (tabDir == 1)
-                {
                     _tabDepth += 1;
-                    _tabString = new string('\t', _tabDepth);
-                }
             }
             public void WriteEnd(string value)
             {
@@ -163,48 +162,66 @@ namespace DATReader.DatWriter
                 {
                     if (_tabDepth > 0)
                         _tabDepth -= 1;
-                    _tabString = new string('\t', _tabDepth);
                 }
                 _sw.WriteLine(value);
                 if (tabDir == 1)
-                {
                     _tabDepth += 1;
-                    _tabString = new string('\t', _tabDepth);
-                }
             }
 
-
+            private void WriteIndent()
+            {
+                for (int i = 0; i < _tabDepth; i++)
+                    _sw.Write('\t');
+            }
 
             public void WriteNode(string name, string value)
             {
                 if (string.IsNullOrWhiteSpace(value))
                     return;
-                WriteLine(name + ": " + value);
+
+                WriteIndent();
+                _sw.Write(name);
+                _sw.Write(": ");
+                _sw.WriteLine(value);
             }
             public void WriteName(string name, string value)
             {
                 if (string.IsNullOrWhiteSpace(value))
                     return;
-                WriteLine(name + @" """ + value + @".zip""");
+
+                WriteIndent();
+                _sw.Write(name);
+                _sw.Write(" \"");
+                _sw.Write(value);
+                _sw.WriteLine(".zip\"");
             }
 
             public void WriteItem(string name, string value,bool force=false)
             {
                 if (string.IsNullOrWhiteSpace(value) && !force)
                     return;
-                _sw.Write(@" " + name + @" " + value);
+                _sw.Write(' ');
+                _sw.Write(name);
+                _sw.Write(' ');
+                _sw.Write(value);
             }
             public void WriteItem(string name, ulong? value)
             {
                 if (value == null)
                     return;
-                _sw.Write(@" " + name + @" " + value);
+                _sw.Write(' ');
+                _sw.Write(name);
+                _sw.Write(' ');
+                _sw.Write(value.Value);
             }
             public void WriteItem(string name, byte[] value)
             {
                 if (value == null)
                     return;
-                _sw.Write(@" " + name + @" " + ByteToStr(value));
+                _sw.Write(' ');
+                _sw.Write(name);
+                _sw.Write(' ');
+                _sw.Write(ByteToStr(value));
             }
         }
     }

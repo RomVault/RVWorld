@@ -5,24 +5,20 @@ namespace Compress.ZipFile
 {
     internal class ZipExtraFieldWrite
     {
-        private readonly List<byte> _extraField;
+        private List<byte> _extraField;
 
-        public ZipExtraFieldWrite()
-        {
-            _extraField = new List<byte>();
-        }
-
-        public byte[] ExtraField => _extraField.ToArray();
+        public byte[] ExtraField => _extraField?.ToArray() ?? Array.Empty<byte>();
 
         public bool Zip64(ulong unCompressedSize, ulong compressedSize, ulong relativeOffsetOfLocalHeader, bool centralDir,
             out uint headerUnCompressedSize, out uint headerCompressedSize, out uint headerRelativeOffsetOfLocalHeader)
         {
-            List<byte> eZip64 = new();
+            List<byte> eZip64 = null;
 
             if (!centralDir)
             {
                 if (unCompressedSize >= 0xffffffff || compressedSize >= 0xffffffff)
                 {
+                    eZip64 = new List<byte>(16);
                     eZip64.AddRange(BitConverter.GetBytes(unCompressedSize));
                     eZip64.AddRange(BitConverter.GetBytes(compressedSize));
                     headerUnCompressedSize = 0xffffffff;
@@ -41,6 +37,7 @@ namespace Compress.ZipFile
                 if (unCompressedSize >= 0xffffffff)
                 {
                     headerUnCompressedSize = 0xffffffff;
+                    eZip64 = new List<byte>(24);
                     eZip64.AddRange(BitConverter.GetBytes(unCompressedSize));
                 }
                 else
@@ -50,6 +47,8 @@ namespace Compress.ZipFile
                 if (compressedSize >= 0xffffffff)
                 {
                     headerCompressedSize = 0xffffffff;
+                    if (eZip64 == null)
+                        eZip64 = new List<byte>(16);
                     eZip64.AddRange(BitConverter.GetBytes(compressedSize));
                 }
                 else
@@ -60,6 +59,8 @@ namespace Compress.ZipFile
                 if (relativeOffsetOfLocalHeader >= 0xffffffff)
                 {
                     headerRelativeOffsetOfLocalHeader = 0xffffffff;
+                    if (eZip64 == null)
+                        eZip64 = new List<byte>(8);
                     eZip64.AddRange(BitConverter.GetBytes(relativeOffsetOfLocalHeader));
                 }
                 else
@@ -69,9 +70,10 @@ namespace Compress.ZipFile
 
             }
 
-            if (eZip64.Count == 0)
+            if (eZip64 == null)
                 return false;
 
+            _extraField = new List<byte>(eZip64.Count + 4);
             _extraField.AddRange(BitConverter.GetBytes((ushort)0x0001));
             _extraField.AddRange(BitConverter.GetBytes((ushort)eZip64.Count));
             _extraField.AddRange(eZip64);

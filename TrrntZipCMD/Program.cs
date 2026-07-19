@@ -169,8 +169,9 @@ namespace TrrntZipCMD
                     FileInfo[] fileInfo = dirInfo.GetFiles(filename);
                     foreach (FileInfo file in fileInfo)
                     {
-                        string ext = Path.GetExtension(file.FullName).ToLower();
-                        if (!string.IsNullOrEmpty(ext) && ((ext == ".zip") || (ext == ".7z")))
+                        string ext = Path.GetExtension(file.FullName);
+                        if (string.Equals(ext, ".zip", StringComparison.OrdinalIgnoreCase) ||
+                            string.Equals(ext, ".7z", StringComparison.OrdinalIgnoreCase))
                         {
                             torrentZip.Process(new FileInfo(file.FullName));
                         }
@@ -208,8 +209,9 @@ namespace TrrntZipCMD
             foreach (FileInfo f in fi)
             {
                 string filename = f.FullName;
-                string ext = Path.GetExtension(filename)?.ToLower();
-                if (!string.IsNullOrEmpty(ext) && (ext == ".zip" || ext == ".7z"))
+                string ext = Path.GetExtension(filename);
+                if (string.Equals(ext, ".zip", StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(ext, ".7z", StringComparison.OrdinalIgnoreCase))
                 {
                     torrentZip.Process(new FileInfo(filename));
                 }

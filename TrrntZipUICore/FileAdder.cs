@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
 using RVIO;
 using TrrntZip;
 using TrrntZipUICore;
@@ -63,15 +61,15 @@ namespace TrrntZipUICore
         private bool AddFile(string filename)
         {
             string extn = Path.GetExtension(filename);
-            extn = extn.ToLower();
 
-            if (extn == ".tztmp" && Path.GetFileName(filename).StartsWith("__"))
+            if (string.Equals(extn, ".tztmp", StringComparison.OrdinalIgnoreCase) &&
+                Path.GetFileName(filename).StartsWith("__", StringComparison.Ordinal))
             {
                 File.Delete(filename);
                 return false;
             }
 
-            if (extn == ".zip")
+            if (string.Equals(extn, ".zip", StringComparison.OrdinalIgnoreCase))
             {
                 if (_settings.InZip == zipType.zip || _settings.InZip == zipType.archive || _settings.InZip == zipType.all)
                 {
@@ -79,7 +77,7 @@ namespace TrrntZipUICore
                 }
             }
 
-            if (extn == ".7z")
+            if (string.Equals(extn, ".7z", StringComparison.OrdinalIgnoreCase))
             {
                 if (_settings.InZip == zipType.sevenzip || _settings.InZip == zipType.archive || _settings.InZip == zipType.all)
                 {
@@ -98,9 +96,8 @@ namespace TrrntZipUICore
         {
             DirectoryInfo di = new DirectoryInfo(directory);
 
-            List<string> lstFile = new List<string>();
-            List<FileInfo> fi = di.GetFiles().ToList();
-            fi.Sort((x, y) => string.Compare(x.FullName, y.FullName, StringComparison.Ordinal));
+            FileInfo[] fi = di.GetFiles();
+            Array.Sort(fi, (x, y) => string.Compare(x.FullName, y.FullName, StringComparison.Ordinal));
 
             foreach (FileInfo t in fi)
             {
@@ -112,8 +109,8 @@ namespace TrrntZipUICore
             }
             _updateFileCount?.Invoke(fileCount);
 
-            List<DirectoryInfo> diChild = di.GetDirectories().ToList();
-            diChild.Sort((x, y) => string.Compare(x.FullName, y.FullName, StringComparison.Ordinal));
+            DirectoryInfo[] diChild = di.GetDirectories();
+            Array.Sort(diChild, (x, y) => string.Compare(x.FullName, y.FullName, StringComparison.Ordinal));
             foreach (DirectoryInfo t in diChild)
             {
                 AddDirectory(t.FullName);

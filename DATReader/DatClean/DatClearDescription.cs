@@ -7,9 +7,10 @@ namespace DATReader.DatClean
     {
         public static void ClearDescription(DatDir dDir)
         {
-            DatBase[] arrDir = dDir.ToArray();
-            foreach (DatBase db in arrDir)
+            int childCount = dDir.Count;
+            for (int childIndex = 0; childIndex < childCount; childIndex++)
             {
+                DatBase db = dDir[childIndex];
                 if (db is DatDir ddir)
                 {
                     if (ddir.DGame != null)

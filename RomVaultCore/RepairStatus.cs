@@ -233,13 +233,28 @@ namespace RomVaultCore
 
     public class ReportStatus
     {
-        private readonly int[] _arrRepStatus = new int[(int)RepStatus.EndValue];
+        private int[] _arrRepStatus;
+
+        private int[] EnsureStatusArray()
+        {
+            int[] status = Volatile.Read(ref _arrRepStatus);
+            if (status != null)
+                return status;
+
+            int[] newStatus = new int[(int)RepStatus.EndValue];
+            Interlocked.CompareExchange(ref _arrRepStatus, newStatus, null);
+            return _arrRepStatus;
+        }
 
         public void RepStatusArrayAddRemove(ReportStatus rs, int direction)
         {
-            for (int i = 0; i < _arrRepStatus.Length; i++)
+            if (rs._arrRepStatus == null)
+                return;
+
+            int[] status = EnsureStatusArray();
+            for (int i = 0; i < status.Length; i++)
             {
-                _arrRepStatus[i] += rs.Get((RepStatus)i) * direction;
+                status[i] += rs.Get((RepStatus)i) * direction;
             }
         }
 
@@ -272,7 +287,7 @@ namespace RomVaultCore
         public void RepStatusAddRemove(RepStatus rs, int dir, MIAStatus mStat)
         {
             RepStatus trsNew = UIStatus(mStat, rs);
-            _arrRepStatus[(int)trsNew] += dir;
+            EnsureStatusArray()[(int)trsNew] += dir;
         }
 
         public void RepStatusUpdate(MIAStatus mStatOld, MIAStatus mStatNew, RepStatus rsStat)
@@ -280,8 +295,9 @@ namespace RomVaultCore
             RepStatus trsOld = UIStatus(mStatOld, rsStat);
             RepStatus trsNew = UIStatus(mStatNew, rsStat);
 
-            Interlocked.Decrement(ref _arrRepStatus[(int)trsOld]);
-            Interlocked.Increment(ref _arrRepStatus[(int)trsNew]);
+            int[] status = EnsureStatusArray();
+            Interlocked.Decrement(ref status[(int)trsOld]);
+            Interlocked.Increment(ref status[(int)trsNew]);
         }
 
         public void RepStatusUpdate(RepStatus rsOld, RepStatus rsNew, MIAStatus mStat)
@@ -289,29 +305,31 @@ namespace RomVaultCore
             RepStatus trsOld = UIStatus(mStat, rsOld);
             RepStatus trsNew = UIStatus(mStat, rsNew);
 
-            Interlocked.Decrement(ref _arrRepStatus[(int)trsOld]);
-            Interlocked.Increment(ref _arrRepStatus[(int)trsNew]);
+            int[] status = EnsureStatusArray();
+            Interlocked.Decrement(ref status[(int)trsOld]);
+            Interlocked.Increment(ref status[(int)trsNew]);
         }
 
         #region "arrGotStatus Processing"
 
         public int Get(RepStatus v)
         {
-            return _arrRepStatus[(int)v];
+            int[] status = Volatile.Read(ref _arrRepStatus);
+            return status == null ? 0 : status[(int)v];
         }
 
         public int CountCorrect()
         {
-            return _arrRepStatus[(int)RepStatus.Correct] + _arrRepStatus[(int)RepStatus.CorrectMIA];
+            return Get(RepStatus.Correct) + Get(RepStatus.CorrectMIA);
         }
 
         public int CountMIA()
         {
-            return _arrRepStatus[(int)RepStatus.MissingMIA];
+            return Get(RepStatus.MissingMIA);
         }
         public int CountFoundMIA()
         {
-            return _arrRepStatus[(int)RepStatus.CorrectMIA];
+            return Get(RepStatus.CorrectMIA);
         }
 
         public bool HasCorrect()
@@ -321,15 +339,15 @@ namespace RomVaultCore
 
         public int CountMissing(bool includeMIA = false)
         {
-            return _arrRepStatus[(int)RepStatus.Missing] +
-                   (includeMIA ? _arrRepStatus[(int)RepStatus.MissingMIA] : 0) +
-                   _arrRepStatus[(int)RepStatus.DirCorrupt] +
-                   _arrRepStatus[(int)RepStatus.Corrupt] +
-                   _arrRepStatus[(int)RepStatus.CanBeFixed] +
-                   _arrRepStatus[(int)RepStatus.CanBeFixedMIA] +
-                   _arrRepStatus[(int)RepStatus.CorruptCanBeFixed] +
-                   _arrRepStatus[(int)RepStatus.MoveToCorrupt] +
-                   _arrRepStatus[(int)RepStatus.Incomplete];
+            return Get(RepStatus.Missing) +
+                   (includeMIA ? Get(RepStatus.MissingMIA) : 0) +
+                   Get(RepStatus.DirCorrupt) +
+                   Get(RepStatus.Corrupt) +
+                   Get(RepStatus.CanBeFixed) +
+                   Get(RepStatus.CanBeFixedMIA) +
+                   Get(RepStatus.CorruptCanBeFixed) +
+                   Get(RepStatus.MoveToCorrupt) +
+                   Get(RepStatus.Incomplete);
         }
 
         public bool HasMissing(bool includeMIA = false)
@@ -344,14 +362,14 @@ namespace RomVaultCore
 
         public int CountFixesNeeded()
         {
-            return _arrRepStatus[(int)RepStatus.CanBeFixed] +
-                   _arrRepStatus[(int)RepStatus.CanBeFixedMIA] +
-                   _arrRepStatus[(int)RepStatus.MoveToSort] +
-                   _arrRepStatus[(int)RepStatus.Delete] +
-                   _arrRepStatus[(int)RepStatus.NeededForFix] +
-                   _arrRepStatus[(int)RepStatus.Rename] +
-                   _arrRepStatus[(int)RepStatus.CorruptCanBeFixed] +
-                   _arrRepStatus[(int)RepStatus.MoveToCorrupt];
+            return Get(RepStatus.CanBeFixed) +
+                   Get(RepStatus.CanBeFixedMIA) +
+                   Get(RepStatus.MoveToSort) +
+                   Get(RepStatus.Delete) +
+                   Get(RepStatus.NeededForFix) +
+                   Get(RepStatus.Rename) +
+                   Get(RepStatus.CorruptCanBeFixed) +
+                   Get(RepStatus.MoveToCorrupt);
         }
 
         public bool HasFixesNeeded()
@@ -360,47 +378,47 @@ namespace RomVaultCore
         }
         public bool HasAllMerged()
         {
-            return _arrRepStatus[(int)RepStatus.NotCollected] > 0 && CountAnyFiles() == 0;
+            return Get(RepStatus.NotCollected) > 0 && CountAnyFiles() == 0;
         }
 
         public int CountCanBeFixed()
         {
-            return _arrRepStatus[(int)RepStatus.CanBeFixed] +
-                   _arrRepStatus[(int)RepStatus.CanBeFixedMIA] +
-                   _arrRepStatus[(int)RepStatus.CorruptCanBeFixed];
+            return Get(RepStatus.CanBeFixed) +
+                   Get(RepStatus.CanBeFixedMIA) +
+                   Get(RepStatus.CorruptCanBeFixed);
         }
 
         private int CountFixable()
         {
-            return _arrRepStatus[(int)RepStatus.CanBeFixed] +
-                   _arrRepStatus[(int)RepStatus.CanBeFixedMIA] +
-                   _arrRepStatus[(int)RepStatus.CorruptCanBeFixed] +
+            return Get(RepStatus.CanBeFixed) +
+                   Get(RepStatus.CanBeFixedMIA) +
+                   Get(RepStatus.CorruptCanBeFixed) +
 
-                   _arrRepStatus[(int)RepStatus.MoveToSort] +
-                   _arrRepStatus[(int)RepStatus.Delete] +
-                   _arrRepStatus[(int)RepStatus.MoveToCorrupt];
+                   Get(RepStatus.MoveToSort) +
+                   Get(RepStatus.Delete) +
+                   Get(RepStatus.MoveToCorrupt);
         }
 
 
         public bool FixCheckFilesCanBeFixed()
         {
             return (
-                    _arrRepStatus[(int)RepStatus.CanBeFixed] +
-                    _arrRepStatus[(int)RepStatus.CanBeFixedMIA] +
-                    _arrRepStatus[(int)RepStatus.CorruptCanBeFixed]) > 0;
+                    Get(RepStatus.CanBeFixed) +
+                    Get(RepStatus.CanBeFixedMIA) +
+                    Get(RepStatus.CorruptCanBeFixed)) > 0;
         }
 
         public bool FixCheckHasNeededForFix()
         {
-            return _arrRepStatus[(int)RepStatus.NeededForFix] > 0;
+            return Get(RepStatus.NeededForFix) > 0;
         }
 
         public bool FixCheckHasFilesToBeRemoved()
         {
             return (
-                    _arrRepStatus[(int)RepStatus.MoveToSort] +
-                    _arrRepStatus[(int)RepStatus.Delete] +
-                    _arrRepStatus[(int)RepStatus.MoveToCorrupt]) > 0;
+                    Get(RepStatus.MoveToSort) +
+                    Get(RepStatus.Delete) +
+                    Get(RepStatus.MoveToCorrupt)) > 0;
         }
 
 
@@ -412,18 +430,18 @@ namespace RomVaultCore
         private int CountAnyFiles()
         {
             // this list include probably more status's than are needed, but all are here to double check I don't delete something I should not.
-            return _arrRepStatus[(int)RepStatus.Correct] +
-                   _arrRepStatus[(int)RepStatus.CorrectMIA] +
-                   _arrRepStatus[(int)RepStatus.UnNeeded] +
-                   _arrRepStatus[(int)RepStatus.Unknown] +
-                   _arrRepStatus[(int)RepStatus.InToSort] +
-                   _arrRepStatus[(int)RepStatus.Corrupt] +
-                   _arrRepStatus[(int)RepStatus.Ignore] +
-                   _arrRepStatus[(int)RepStatus.MoveToSort] +
-                   _arrRepStatus[(int)RepStatus.Delete] +
-                   _arrRepStatus[(int)RepStatus.NeededForFix] +
-                   _arrRepStatus[(int)RepStatus.Rename] +
-                   _arrRepStatus[(int)RepStatus.MoveToCorrupt];
+            return Get(RepStatus.Correct) +
+                   Get(RepStatus.CorrectMIA) +
+                   Get(RepStatus.UnNeeded) +
+                   Get(RepStatus.Unknown) +
+                   Get(RepStatus.InToSort) +
+                   Get(RepStatus.Corrupt) +
+                   Get(RepStatus.Ignore) +
+                   Get(RepStatus.MoveToSort) +
+                   Get(RepStatus.Delete) +
+                   Get(RepStatus.NeededForFix) +
+                   Get(RepStatus.Rename) +
+                   Get(RepStatus.MoveToCorrupt);
         }
 
         public bool HasAnyFiles()
@@ -433,7 +451,7 @@ namespace RomVaultCore
 
         public int CountUnknown()
         {
-            return _arrRepStatus[(int)RepStatus.Unknown];
+            return Get(RepStatus.Unknown);
         }
 
         public bool HasUnknown()
@@ -444,7 +462,7 @@ namespace RomVaultCore
 
         public int CountInToSort()
         {
-            return _arrRepStatus[(int)RepStatus.InToSort];
+            return Get(RepStatus.InToSort);
         }
 
         public bool HasInToSort()

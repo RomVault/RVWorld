@@ -24,7 +24,7 @@ namespace DATReader.DatClean
 
         public static void DatSetMatchIDs(DatDir tDat)
         {
-            Dictionary<string, string> idNameLookup = new Dictionary<string, string>();
+            Dictionary<string, string> idNameLookup = new Dictionary<string, string>(tDat.Count);
             for (int g = 0; g < tDat.Count; g++)
             {
                 DatDir mGame = (DatDir)tDat[g];

@@ -1,5 +1,6 @@
 ﻿using Compress.SevenZip;
 using Compress.ZipFile;
+using System;
 using System.IO;
 using Directory = RVIO.Directory;
 using FileStream = RVIO.FileStream;
@@ -29,16 +30,10 @@ namespace Compress.Support.Utils
             string ext = Path.GetExtension(filename);
 
             ICompress z = null;
-            switch (ext.ToLower())
-            {
-                case ".zip":
-                    z = new Zip();
-                    break;
-                case ".7z":
-                    z = new SevenZ();
-                    break;
-
-            }
+            if (string.Equals(ext, ".zip", StringComparison.OrdinalIgnoreCase))
+                z = new Zip();
+            else if (string.Equals(ext, ".7z", StringComparison.OrdinalIgnoreCase))
+                z = new SevenZ();
 
             if (z == null)
             {

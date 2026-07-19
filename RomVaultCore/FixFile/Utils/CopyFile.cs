@@ -44,7 +44,7 @@ namespace RomVaultCore.FixFile.Utils
 
     public static partial class FixFileUtils
     {
-        private const int BufferSize = 32 * 1024 * 1024;
+        private const int BufferSize = 1024 * 1024;
         private static byte[] _buffer;
 
         // This Function returns:

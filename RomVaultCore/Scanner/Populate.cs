@@ -184,7 +184,7 @@ namespace RomVaultCore.Scanner
             if (zr != ZipReturn.ZipGood)
             {
                 string error = zr.ToString();
-                if (error.ToLower().StartsWith("zip"))
+                if (error.StartsWith("zip", StringComparison.OrdinalIgnoreCase))
                     error = error.Substring(3);
 
                 ReportError.Show($"File: {filename} Error: {error}. Scan Aborted.");

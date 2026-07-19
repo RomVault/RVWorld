@@ -48,7 +48,7 @@ namespace DATReader.Utils
 
         public string GnNameToSize()
         {
-            int sizePos = _line.ToLower().LastIndexOf(" size ");
+            int sizePos = _line.LastIndexOf(" size ", StringComparison.OrdinalIgnoreCase);
             string strret = (sizePos == 0) ? "" : _line.Substring(0, sizePos);
             _line = _line.Substring(sizePos + 1);
             Next = strret;
@@ -58,12 +58,12 @@ namespace DATReader.Utils
         public string Gn()
         {
             string ret;
-            while ((_line.Trim().Length == 0) && !_streamReader.EndOfStream)
+            while (string.IsNullOrWhiteSpace(_line) && !_streamReader.EndOfStream)
             {
                 _line = _streamReader.ReadLine();
                 LineNumber++;
 
-                _line = (_line ?? "").Replace("" + (char)9, " ");
+                _line = (_line ?? "").Replace('\t', ' ');
 
                 int indexof = _line.IndexOf(@"//");
                 if (indexof >= 0)
@@ -77,31 +77,40 @@ namespace DATReader.Utils
                 }
                 */
 
-                if ((_line.TrimStart().Length > 1) && (_line.TrimStart().Substring(0, 1) == @"#"))
+                string lineTrimmedStart = _line.TrimStart();
+                if (lineTrimmedStart.Length > 1 && lineTrimmedStart[0] == '#')
                 {
                     _line = "";
                 }
-                if ((_line.TrimStart().Length > 1) && (_line.TrimStart().Substring(0, 1) == @";"))
+                else if (lineTrimmedStart.Length > 1 && lineTrimmedStart[0] == ';')
                 {
                     _line = "";
                 }
                 _line = _line.Trim() + " ";
             }
 
-            if (_line.Trim().Length > 0)
+            if (!string.IsNullOrWhiteSpace(_line))
             {
                 int intS;
-                if (_line.Substring(0, 1) == "\"")
+                if (_line[0] == '"')
                 {
-                    intS = (_line + "\"").IndexOf("\"", 1, StringComparison.Ordinal);
+                    intS = _line.IndexOf('"', 1);
+                    if (intS < 0)
+                        intS = _line.Length;
                     ret = _line.Substring(1, intS - 1);
-                    _line = (_line + " ").Substring(intS + 1).Trim(new char[] { ' ' });
+                    _line = intS < _line.Length
+                        ? _line.Substring(intS + 1).Trim(' ')
+                        : "";
                 }
                 else
                 {
-                    intS = (_line + " ").IndexOf(" ", StringComparison.Ordinal);
+                    intS = _line.IndexOf(' ');
+                    if (intS < 0)
+                        intS = _line.Length;
                     ret = _line.Substring(0, intS);
-                    _line = (_line + " ").Substring(intS).Trim(new char[] { ' ' });
+                    _line = intS < _line.Length
+                        ? _line.Substring(intS).Trim(' ')
+                        : "";
                 }
             }
             else

@@ -258,11 +258,19 @@ namespace Compress.ZipFile
         internal string GetCRC()
         {
             using CrcCalculatorStream crcCs = new(_zipFs, true);
-            byte[] buffer = new byte[_centralDirSize];
+            byte[] buffer = new byte[64 * 1024];
             _zipFs.Position = (long)_centralDirStart;
-            crcCs.Read(buffer, 0, (int)_centralDirSize);
-            crcCs.Flush();
-            crcCs.Close();
+            ulong bytesRemaining = _centralDirSize;
+            while (bytesRemaining > 0)
+            {
+                int bytesRequested = bytesRemaining > (ulong)buffer.Length
+                    ? buffer.Length
+                    : (int)bytesRemaining;
+                int bytesRead = crcCs.Read(buffer, 0, bytesRequested);
+                if (bytesRead == 0)
+                    throw new EndOfStreamException();
+                bytesRemaining -= (ulong)bytesRead;
+            }
 
             uint r = (uint)crcCs.Crc;
 

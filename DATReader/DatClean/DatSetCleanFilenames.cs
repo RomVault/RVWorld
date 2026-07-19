@@ -10,9 +10,10 @@ namespace DATReader.DatClean
 
         public static void RemoveDateTime(DatDir dDir)
         {
-            DatBase[] arrDir = dDir.ToArray();
-            foreach (DatBase db in arrDir)
+            int childCount = dDir.Count;
+            for (int childIndex = 0; childIndex < childCount; childIndex++)
             {
+                DatBase db = dDir[childIndex];
                 if (db is DatFile df)
                 {
                     df.DateModified = null;
@@ -27,9 +28,10 @@ namespace DATReader.DatClean
         }
         public static void RemoveMD5(DatDir dDir)
         {
-            DatBase[] arrDir = dDir.ToArray();
-            foreach (DatBase db in arrDir)
+            int childCount = dDir.Count;
+            for (int childIndex = 0; childIndex < childCount; childIndex++)
             {
+                DatBase db = dDir[childIndex];
                 if (db is DatFile df)
                 {
                     df.MD5 = null;
@@ -44,9 +46,10 @@ namespace DATReader.DatClean
         }
         public static void RemoveSHA256(DatDir dDir)
         {
-            DatBase[] arrDir = dDir.ToArray();
-            foreach (DatBase db in arrDir)
+            int childCount = dDir.Count;
+            for (int childIndex = 0; childIndex < childCount; childIndex++)
             {
+                DatBase db = dDir[childIndex];
                 if (db is DatFile df)
                 {
                     df.SHA256 = null;
@@ -62,9 +65,10 @@ namespace DATReader.DatClean
 
         public static void CleanFilenames(DatDir dDir)
         {
-            DatBase[] arrDir = dDir.ToArray();
-            foreach (DatBase db in arrDir)
+            int childCount = dDir.Count;
+            for (int childIndex = 0; childIndex < childCount; childIndex++)
             {
+                DatBase db = dDir[childIndex];
                 CleanFilename(db);
 
                 if (db is DatDir ddir)
@@ -159,7 +163,7 @@ namespace DATReader.DatClean
                 string thisName = db.Name;
                 FileType fileType = db.FileType;
 
-                if (lastFileType == fileType && lastName.ToLowerInvariant() == thisName.ToLowerInvariant())
+                if (lastFileType == fileType && string.Equals(lastName, thisName, System.StringComparison.OrdinalIgnoreCase))
                 {
                     switch (lastFileType)
                     {

@@ -37,6 +37,6 @@ namespace TrrntZip
             }
         }
 
-        public string StringCRC => ByteCRC == null ? "" : BitConverter.ToString(ByteCRC).ToLower().Replace("-", "");
+        public string StringCRC => CRC?.ToString("x8") ?? "";
     }
 }

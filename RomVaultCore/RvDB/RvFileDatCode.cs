@@ -14,7 +14,7 @@ namespace RomVaultCore.RvDB
     public partial class RvFile
     {
 
-        private readonly List<RvDat> _dirDats; // DAT's stored in this dir in DatRoot
+        private List<RvDat> _dirDats; // DAT's stored in this dir in DatRoot
 
 
         public int CountDats()
@@ -31,13 +31,18 @@ namespace RomVaultCore.RvDB
 
         public void DirDatAdd(RvDat dat)
         {
+            if (_dirDats == null)
+                _dirDats = new List<RvDat>(1);
             BinarySearch.ListSearch(_dirDats, dat, DBHelper.DatCompare, out int index);
             _dirDats.Insert(index, dat);
         }
         public int DirDatRemove(int index)
         {
             _dirDats.RemoveAt(index);
-            return _dirDats.Count;
+            int count = _dirDats.Count;
+            if (count == 0)
+                _dirDats = null;
+            return count;
         }
 
         public RvFile DatAddDirectory(string dirName, int index)
@@ -103,11 +108,8 @@ namespace RomVaultCore.RvDB
                     if (parentHasTree && Game == null && Tree == null)
                         Tree = new RvTreeRow();
 
-                    DatBase[] datB = datDir.ToArray();
-                    if (datB == null)
-                        return;
-                    foreach (DatBase b in datB)
-                        ChildAdd(new RvFile(b, rvDat, Tree != null));
+                    for (int i = 0; i < datDir.Count; i++)
+                        ChildAdd(new RvFile(datDir[i], rvDat, Tree != null));
                     return;
 
                 default:
@@ -166,7 +168,7 @@ namespace RomVaultCore.RvDB
                     if (Parent?.Tree != null && Game == null && Tree == null)
                         Tree = new RvTreeRow();
 
-                    if (_dirDats.Count > 0)
+                    if ((_dirDats?.Count ?? 0) > 0)
                         ReportError.SendAndShow("Setting Dir with a dat list");
 
                     break;
@@ -199,7 +201,7 @@ namespace RomVaultCore.RvDB
             Tree = null;
             Game = null;
             SetZipDatStruct(ZipStructure.None,false);
-            _dirDats?.Clear();
+            _dirDats = null;
 
             /************* RvFile ************/
             HeaderFileTypeSet = HeaderFileType; // this removes the required flag. (as the DAT is being removed.)

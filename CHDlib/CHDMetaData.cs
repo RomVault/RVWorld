@@ -70,7 +70,7 @@ internal static class CHDMetaData
         for (int i = 0; i < metaHashes.Count; i++)
             sha1Total.TransformBlock(metaHashes[i], 0, metaHashes[i].Length, null, 0);
 
-        byte[] tmp = new byte[0];
+        byte[] tmp = Array.Empty<byte>();
         sha1Total.TransformFinalBlock(tmp, 0, 0);
 
         // compare the calculated metaData + rawData SHA1 with sha1 from the CHD header

@@ -54,10 +54,9 @@ namespace RomVaultCore.Utils
                 }
             }
 
-            List<string> relativePath = new List<string>();
             string[] fromDirectories = fromDirectory.Split(Path.DirectorySeparatorChar);
-
             string[] toDirectories = toPath.Split(Path.DirectorySeparatorChar);
+            List<string> relativePath = new List<string>(fromDirectories.Length + toDirectories.Length);
 
             int length = Math.Min(fromDirectories.Length, toDirectories.Length);
 
@@ -95,10 +94,7 @@ namespace RomVaultCore.Utils
             }
 
             // create relative path
-            string[] relativeParts = new string[relativePath.Count];
-            relativePath.CopyTo(relativeParts, 0);
-
-            string newPath = string.Join(Path.DirectorySeparatorChar.ToString(CultureInfo.InvariantCulture), relativeParts);
+            string newPath = string.Join(Path.DirectorySeparatorChar.ToString(CultureInfo.InvariantCulture), relativePath);
 
             return newPath;
         }

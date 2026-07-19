@@ -125,11 +125,13 @@ public static class ByteUtils
 
     private static uint[] CreateLookup32()
     {
+        const string hex = "0123456789abcdef";
         uint[] result = new uint[256];
         for (int i = 0; i < 256; i++)
         {
-            string s = i.ToString("X2").ToLower();
-            result[i] = s[0] + ((uint)s[1] << 16);
+            char high = hex[i >> 4];
+            char low = hex[i & 0x0f];
+            result[i] = high + ((uint)low << 16);
         }
         return result;
     }

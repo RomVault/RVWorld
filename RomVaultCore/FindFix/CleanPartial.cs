@@ -25,6 +25,11 @@ namespace RomVaultCore.FindFix
 
         public static Dictionary<FileGroup, FileGroup> checkGroups = new Dictionary<FileGroup, FileGroup>();
 
+        public static void ResetCheckGroups()
+        {
+            checkGroups = new Dictionary<FileGroup, FileGroup>();
+        }
+
         public static void CheckRemovePartial(RvFile basePath)
         {
             bool nextSelect = false;
@@ -149,7 +154,16 @@ namespace RomVaultCore.FindFix
 
         public static void checkAllGroups()
         {
-            Parallel.ForEach(checkGroups, fg => RecheckFileGroup(fg.Value));
+            Dictionary<FileGroup, FileGroup> groups = checkGroups;
+            try
+            {
+                Parallel.ForEach(groups, fg => RecheckFileGroup(fg.Value));
+            }
+            finally
+            {
+                if (ReferenceEquals(checkGroups, groups))
+                    checkGroups = new Dictionary<FileGroup, FileGroup>();
+            }
         }
 
         private static void RecheckFileGroup(FileGroup fGroup)

@@ -45,12 +45,11 @@ namespace RomVaultCore.Utils
 
         public static FileType fromExtention(string ext)
         {
-            switch (ext.ToLower())
-            {
-                case ".7z": return FileType.SevenZip;
-                case ".zip": return FileType.Zip;
-                default: return FileType.File;
-            }
+            if (string.Equals(ext, ".7z", System.StringComparison.OrdinalIgnoreCase))
+                return FileType.SevenZip;
+            if (string.Equals(ext, ".zip", System.StringComparison.OrdinalIgnoreCase))
+                return FileType.Zip;
+            return FileType.File;
         }
 
     }

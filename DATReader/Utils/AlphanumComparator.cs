@@ -1,6 +1,7 @@
 ﻿using DATReader.DatStore;
 using System;
 using System.Collections;
+using System.Globalization;
 
 namespace DATReader.Utils
 {
@@ -68,23 +69,26 @@ namespace DATReader.Utils
             // Walk through the strings with two markers.
             while (marker1 < len1 && marker2 < len2)
             {
-                // Collect char arrays.
-                char[] chunk1 = GetChunk(ref marker1, s1);
-                char[] chunk2 = GetChunk(ref marker2, s2);
+                int start1 = marker1;
+                int start2 = marker2;
+                bool chunk1IsDigit = AdvanceChunk(ref marker1, s1);
+                bool chunk2IsDigit = AdvanceChunk(ref marker2, s2);
 
                 // If we have collected numbers, compare them numerically.
                 // Otherwise, if we have strings, compare them alphabetically.
-                string str1 = new string(chunk1);
-                string str2 = new string(chunk2);
-
                 int result;
-                if (IsDigit(chunk1[0]) && IsDigit(chunk2[0]))
+                if (chunk1IsDigit && chunk2IsDigit)
                 {
-                    result = compareTwoNumericString(str1, str2);
+                    result = CompareTwoNumericStrings(
+                        s1, start1, marker1 - start1,
+                        s2, start2, marker2 - start2);
                 }
                 else
                 {
-                    result = str1.CompareTo(str2);
+                    result = CultureInfo.CurrentCulture.CompareInfo.Compare(
+                        s1, start1, marker1 - start1,
+                        s2, start2, marker2 - start2,
+                        CompareOptions.None);
                 }
 
                 if (result != 0)
@@ -95,57 +99,33 @@ namespace DATReader.Utils
             return s1.Length - s2.Length;
         }
 
-        private static int compareTwoNumericString(string str1, string str2)
+        private static int CompareTwoNumericStrings(string str1, int start1, int length1, string str2, int start2, int length2)
         {
-            int pos1 = 0;
-            while (pos1 + 1 < str1.Length && str1[pos1 + 1] != 0) { pos1++; }
-            int pos2 = 0;
-            while (pos2 + 1 < str2.Length && str2[pos2 + 1] != 0) { pos2++; }
-
-
-            int maxlen = Math.Max(pos1, pos2);
-
-            int tpos1 = pos1 - maxlen;
-            int tpos2 = pos2 - maxlen;
-
-
-            while (true)
+            int maxLength = Math.Max(length1, length2);
+            for (int i = 0; i < maxLength; i++)
             {
-                char c1 = tpos1 < 0 ? '0' : str1[tpos1];
-                char c2 = tpos2 < 0 ? '0' : str2[tpos2];
+                int index1 = i - (maxLength - length1);
+                int index2 = i - (maxLength - length2);
+                char c1 = index1 < 0 ? '0' : str1[start1 + index1];
+                char c2 = index2 < 0 ? '0' : str2[start2 + index2];
 
                 int result = c1.CompareTo(c2);
                 if (result != 0)
                     return result;
-                tpos1++;
-                tpos2++;
-                if (tpos1 > pos1)
-                    return 0;
             }
+            return 0;
         }
 
-        private static char[] GetChunk(ref int marker, string s)
+        private static bool AdvanceChunk(ref int marker, string s)
         {
             // Walk through all following characters that are digits or
             // characters in a string starting at the appropriate marker.
-            char[] space = new char[s.Length];
-            int loc = 0;
-            char c = s[marker];
+            bool isDigit = IsDigit(s[marker]);
             do
             {
-                space[loc++] = c;
                 marker++;
-
-                if (marker < s.Length)
-                {
-                    c = s[marker];
-                }
-                else
-                {
-                    break;
-                }
-            } while (IsDigit(c) == IsDigit(space[0]));
-            return space;
+            } while (marker < s.Length && IsDigit(s[marker]) == isDigit);
+            return isDigit;
         }
 
         private static bool IsDigit(char c)

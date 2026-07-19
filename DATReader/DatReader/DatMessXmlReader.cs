@@ -147,12 +147,12 @@ namespace DATReader.DatReader
 
                 indexContinue = parentDir.ChildAdd(dRom);
             }
-            else if (loadflag.ToLower() == "continue")
+            else if (string.Equals(loadflag, "continue", System.StringComparison.OrdinalIgnoreCase))
             {
                 DatFile tRom = (DatFile)parentDir[indexContinue];
                 tRom.Size += VarFix.ULong(romNode.Attributes.GetNamedItem("size"));
             }
-            else if (loadflag.ToLower() == "ignore")
+            else if (string.Equals(loadflag, "ignore", System.StringComparison.OrdinalIgnoreCase))
             {
                 DatFile tRom = (DatFile)parentDir[indexContinue];
                 tRom.Size += VarFix.ULong(romNode.Attributes.GetNamedItem("size"));

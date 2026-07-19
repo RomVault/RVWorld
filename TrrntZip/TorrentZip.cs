@@ -15,17 +15,21 @@ namespace TrrntZip
 
     public class TorrentZip
     {
+        private const int BufferSize = 256 * 1024;
+
         public Settings settings;
-        private readonly byte[] _buffer;
+        private byte[] _buffer;
         public StatusCallback StatusCallBack;
         public LogCallback StatusLogCallBack;
         public ErrorCallback ErrorCallBack;
         public int ThreadId;
         public int workerCount;
 
-        public TorrentZip()
+        private byte[] GetBuffer()
         {
-            _buffer = new byte[1024 * 1024];
+            if (_buffer == null)
+                _buffer = new byte[BufferSize];
+            return _buffer;
         }
 
         public TrrntZipStatus Process(FileInfo fi, PauseCancel pc = null)
@@ -137,7 +141,7 @@ namespace TrrntZip
             }
 
             StatusLogCallBack?.Invoke(ThreadId, "TorrentZipping");
-            TrrntZipStatus fixedTzs = TorrentZipRebuild.ReZipFiles(zippedFiles, zipFile, _buffer, StatusCallBack, StatusLogCallBack, ErrorCallBack, ThreadId, workerCount, pc, settings);
+            TrrntZipStatus fixedTzs = TorrentZipRebuild.ReZipFiles(zippedFiles, zipFile, GetBuffer(), StatusCallBack, StatusLogCallBack, ErrorCallBack, ThreadId, workerCount, pc, settings);
             return fixedTzs;
         }
 
@@ -188,7 +192,7 @@ namespace TrrntZip
 
         private static List<ZippedFile> ReadZipContent(ICompress zipFile)
         {
-            List<ZippedFile> zippedFiles = new List<ZippedFile>();
+            List<ZippedFile> zippedFiles = new List<ZippedFile>(zipFile.LocalFilesCount);
             for (int i = 0; i < zipFile.LocalFilesCount; i++)
             {
                 FileHeader lf = zipFile.GetFileHeader(i);
@@ -253,7 +257,7 @@ namespace TrrntZip
 
 
             StatusLogCallBack?.Invoke(ThreadId, "TorrentZipping");
-            TrrntZipStatus fixedTzs = TorrentZipMake.ZipFiles(zippedFiles, di.FullName, _buffer, StatusCallBack, StatusLogCallBack, ErrorCallBack, ThreadId, workerCount, pc, settings);
+            TrrntZipStatus fixedTzs = TorrentZipMake.ZipFiles(zippedFiles, di.FullName, GetBuffer(), StatusCallBack, StatusLogCallBack, ErrorCallBack, ThreadId, workerCount, pc, settings);
             return fixedTzs;
 
         }

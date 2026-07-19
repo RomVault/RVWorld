@@ -248,7 +248,7 @@ public static class CHD
         }
         progress?.Invoke($"Verifying, 100.0% complete...");
 
-        byte[] tmp = new byte[0];
+        byte[] tmp = Array.Empty<byte>();
         md5Check?.TransformFinalBlock(tmp, 0, 0);
         sha1Check?.TransformFinalBlock(tmp, 0, 0);
 
@@ -458,7 +458,7 @@ public static class CHD
         if (errMaster != chd_error.CHDERR_NONE)
             return errMaster;
 
-        byte[] tmp = new byte[0];
+        byte[] tmp = Array.Empty<byte>();
         md5Check?.TransformFinalBlock(tmp, 0, 0);
         sha1Check?.TransformFinalBlock(tmp, 0, 0);
 

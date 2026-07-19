@@ -7,10 +7,10 @@ namespace StorageList
 
         public delegate byte getByte(T fileGound);
 
-        private T[][] baseArray;
+        private readonly T[][] baseArray;
 
-        private getByte bgFunc;
-        private SortOn<T> sOn;
+        private readonly getByte bgFunc;
+        private readonly SortOn<T> sOn;
 
         public ByteBinarySort(getByte bg, SortOn<T> s, List<T> arrToSort)
         {
@@ -19,18 +19,19 @@ namespace StorageList
             List<T> tmpOut = FastArraySort.SortList(arrToSort, sOn);
 
             List<T>[] tmpList = new List<T>[256];
-            for (int i = 0; i < 256; i++)
-                tmpList[i] = new List<T>();
-
             foreach (T toSort in tmpOut)
-                tmpList[bgFunc(toSort)].Add(toSort);
+            {
+                int bucketIndex = bgFunc(toSort);
+                if (tmpList[bucketIndex] == null)
+                    tmpList[bucketIndex] = new List<T>(1);
+                tmpList[bucketIndex].Add(toSort);
+            }
 
             baseArray = new T[256][];
             for (int i = 0; i < 256; i++)
             {
-                if (tmpList[i] == null)
-                    continue;
-                baseArray[i] = tmpList[i].ToArray();
+                if (tmpList[i] != null)
+                    baseArray[i] = tmpList[i].ToArray();
             }
 
 
