@@ -107,7 +107,7 @@ namespace RomVaultCore.Scanner
         public static void CheckAnArchive(RvFile dbDir, bool report, int? checkIndex)
         {
             FileType ft = dbDir.FileType;
-            if (!(ft == FileType.Zip || ft == FileType.SevenZip))
+            if (!(ft == FileType.Zip || ft == FileType.SevenZip || ft == FileType.CHD))
             {
                 ReportError.SendAndShow("Un supported file type in CheckADir " + ft);
                 return;
@@ -397,6 +397,7 @@ namespace RomVaultCore.Scanner
             {
                 case FileType.Zip:
                 case FileType.SevenZip:
+                case FileType.CHD:
                     if (dbChild.FileModTimeStamp != fileChild.FileModTimeStamp || EScanLevel == EScanLevel.Level3 || EScanLevel == EScanLevel.Level2 && !dbChild.IsDeepScanned)
                     {
                         dbChild.MarkAsMissing();
@@ -449,6 +450,7 @@ namespace RomVaultCore.Scanner
             {
                 case FileType.Zip:
                 case FileType.SevenZip:
+                case FileType.CHD:
                     {
                         RvFile newChild = dbDir.FileAdd(fileChild, dbIndex);
                         CheckAnArchive(newChild, false, fileIndex);
@@ -498,6 +500,7 @@ namespace RomVaultCore.Scanner
                 {
                     case FileType.Zip:
                     case FileType.SevenZip:
+                    case FileType.CHD:
                         dbChild.MarkAsMissing();
                         break;
                     case FileType.Dir:

@@ -39,15 +39,20 @@ namespace RomVaultCore.ReadDat
                 // filetypes are now know to be the same
 
                 // Dir's and Zip's are not deep scanned so matching here is done
-                if (dbFileType == FileType.Dir || dbFileType == FileType.Zip || dbFileType == FileType.SevenZip)
+                if (dbFileType == FileType.Dir || dbFileType == FileType.Zip || dbFileType == FileType.SevenZip || dbFileType == FileType.CHD)
                 {
                     return true;
                 }
 
                 // check headerTypes
-                if (HeaderFileTypeRequired(((DatFile)testFile).HeaderFileType))
+                if (testFile is not DatFile datTestFile)
                 {
-                    if (dbFile.HeaderFileType != HeaderFileTypeHeaderOnly(((DatFile)testFile).HeaderFileType))
+                    return false;
+                }
+
+                if (HeaderFileTypeRequired(datTestFile.HeaderFileType))
+                {
+                    if (dbFile.HeaderFileType != HeaderFileTypeHeaderOnly(datTestFile.HeaderFileType))
                         return false;
                 }
 
@@ -60,7 +65,7 @@ namespace RomVaultCore.ReadDat
                 if (datTicks != null && datTicks != dbFile.FileModTimeStamp)
                     return false;
 
-                return CompareWithAlt((DatFile)testFile, dbFile, out altMatch);
+                return CompareWithAlt(datTestFile, dbFile, out altMatch);
             }
 
             private static bool CompareWithAlt(DatFile dbFile, RvFile testFile, out bool altMatch)

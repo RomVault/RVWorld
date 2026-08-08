@@ -20,6 +20,8 @@ namespace RomVaultCore.Utils
                     return FileType.Zip;
                 case FileType.FileSevenZip:
                     return FileType.SevenZip;
+                case FileType.FileCHD:
+                    return FileType.CHD;
             }
             return FileType.Zip;
         }
@@ -34,13 +36,15 @@ namespace RomVaultCore.Utils
                     return FileType.FileZip;
                 case FileType.SevenZip:
                     return FileType.FileSevenZip;
+                case FileType.CHD:
+                    return FileType.FileCHD;
             }
             return FileType.Zip;
         }
 
         public static bool isCompressedDir(FileType fileType)
         {
-            return fileType == FileType.Zip || fileType == FileType.SevenZip;
+            return fileType == FileType.Zip || fileType == FileType.SevenZip || fileType == FileType.CHD;
         }
 
         public static FileType fromExtention(string ext)
@@ -49,6 +53,7 @@ namespace RomVaultCore.Utils
             {
                 case ".7z": return FileType.SevenZip;
                 case ".zip": return FileType.Zip;
+                case ".chd": return FileType.CHD;
                 default: return FileType.File;
             }
         }

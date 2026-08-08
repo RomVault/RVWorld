@@ -110,6 +110,7 @@ namespace RomVaultCore.FixFile.Utils
                 {
                     // if this is the file we are fixing then pull out the correct files.
                     if (thisFile.RepStatus == RepStatus.Correct ||
+                        thisFile.RepStatus == RepStatus.CorrectMIA ||
                         thisFile.RepStatus == RepStatus.InToSort ||
                         thisFile.RepStatus == RepStatus.MoveToSort)
                         extract = true;
@@ -120,7 +121,8 @@ namespace RomVaultCore.FixFile.Utils
                 {
                     foreach (RvFile f in thisFile.FileGroup.Files)
                     {
-                        if (f.RepStatus == RepStatus.CanBeFixed)
+                        if (f.RepStatus == RepStatus.CanBeFixed ||
+                            f.RepStatus == RepStatus.CanBeFixedMIA)
                         {
                             extract = true;
                             break;

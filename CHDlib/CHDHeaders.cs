@@ -195,6 +195,7 @@ internal static class CHDHeaders
 
         chd.blocksize = br.ReadUInt32BE();    // length of a CHD Hunk (Block)
         uint unitbytes = br.ReadUInt32BE();
+        chd.unitbytes = unitbytes;
         chd.rawsha1 = br.ReadBytes(20);
         chd.sha1 = br.ReadBytes(20);
         chd.parentsha1 = br.ReadBytes(20);

@@ -112,6 +112,11 @@ namespace DATReader.DatClean
 
         public static void DirectoryExpand(DatDir dDir)
         {
+            // CHD member paths may contain "/" (single-archive style naming), but CHD containers
+            // must remain a flat list of FileCHD children in the DB model.
+            if (dDir.FileType == FileType.CHD)
+                return;
+
             DatBase[] arrDir = dDir.ToArray();
             bool foundSubDir = false;
             foreach (DatBase db in arrDir)

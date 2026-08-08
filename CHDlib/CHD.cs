@@ -18,6 +18,7 @@ internal class CHDHeader
 
     public ulong totalbytes;
     public uint blocksize;
+    public uint unitbytes;
     public uint totalblocks;
 
     public mapentry[] map;
@@ -175,22 +176,40 @@ public static class CHD
 
     public static bool CheckHeader(Stream file, out uint length, out uint version)
     {
+        length = 0;
+        version = 0;
+        if (file == null || !file.CanRead)
+            return false;
+
         for (int i = 0; i < id.Length; i++)
         {
-            byte b = (byte)file.ReadByte();
-            if (b != id[i])
+            int value = file.ReadByte();
+            if (value < 0 || (byte)value != id[i])
             {
-                length = 0;
-                version = 0;
                 return false;
             }
         }
 
-        using (BinaryReader br = new BinaryReader(file, Encoding.UTF8, true))
+        try
         {
-            length = br.ReadUInt32BE();
-            version = br.ReadUInt32BE();
-            return HeaderLengths[version] == length;
+            using (BinaryReader br = new BinaryReader(file, Encoding.UTF8, true))
+            {
+                length = br.ReadUInt32BE();
+                version = br.ReadUInt32BE();
+                return version > 0 && version < HeaderLengths.Length && HeaderLengths[version] == length;
+            }
+        }
+        catch (EndOfStreamException)
+        {
+            length = 0;
+            version = 0;
+            return false;
+        }
+        catch (IOException)
+        {
+            length = 0;
+            version = 0;
+            return false;
         }
     }
 

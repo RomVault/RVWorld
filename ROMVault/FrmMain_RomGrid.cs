@@ -68,6 +68,10 @@ namespace ROMVault
             showFileModDate = false;
 
             List<RvFile> fileList = new List<RvFile>();
+            if (tGame.FileType == FileType.CHD && tGame.SHA1 != null)
+            {
+                AddRom(tGame, "", ref fileList);
+            }
             AddDir(tGame, "", ref fileList);
             romGrid = fileList.ToArray();
             if (RomGrid.RowCount != romGrid.Length)
@@ -203,6 +207,11 @@ namespace ROMVault
                         if (!string.IsNullOrEmpty(tFile.FileName))
                         {
                             fname += " (Found: " + tFile.FileName + ")";
+                        }
+
+                        if (tFile.FileType == FileType.CHD)
+                        {
+                            fname += " [Container]";
                         }
 
                         if (tFile.CHDVersion != null)

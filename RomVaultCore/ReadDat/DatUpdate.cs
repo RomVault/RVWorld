@@ -251,16 +251,13 @@ namespace RomVaultCore.ReadDat
                 }
             }
 
-            FileType ft = dbDir.FileType;
             // if we are checking a dir or zip recurse into it.
-            if (ft != FileType.Zip && ft != FileType.Dir && ft != FileType.SevenZip)
+            if (!dbDir.IsDirectory)
             {
                 return EFile.Keep;
             }
 
             RvFile tDir = dbDir;
-            if (!tDir.IsDirectory)
-                return EFile.Delete;
 
             // remove all DATStatus's here they will get set back correctly when adding dats back in below.
             dbDir.DatStatus = DatStatus.NotInDat;
@@ -275,7 +272,7 @@ namespace RomVaultCore.ReadDat
                 tDir.ChildRemove(i);
                 i--;
             }
-            if ((ft == FileType.Zip || ft == FileType.SevenZip) && dbDir.GotStatus == GotStatus.Corrupt)
+            if ((dbDir.FileType == FileType.Zip || dbDir.FileType == FileType.SevenZip || dbDir.FileType == FileType.CHD) && dbDir.GotStatus == GotStatus.Corrupt)
             {
                 return EFile.Keep;
             }
@@ -618,7 +615,7 @@ namespace RomVaultCore.ReadDat
 
                                 FileType ft = dbDats[indexDbDats].FileType;
 
-                                if (ft == FileType.Zip || ft == FileType.SevenZip || ft == FileType.Dir)
+                                if (ft == FileType.Zip || ft == FileType.SevenZip || ft == FileType.Dir || ft == FileType.CHD)
                                 {
                                     MergeInDat(dbDats[indexDbDats], (DatDir)newDatChild, thisRvDat, out conflict, false, out _);
                                 }
@@ -674,7 +671,7 @@ namespace RomVaultCore.ReadDat
 
 
             FileType ft = dbChild.FileType;
-            if (ft == FileType.Zip || ft == FileType.SevenZip || ft == FileType.Dir)
+            if (ft == FileType.Zip || ft == FileType.SevenZip || ft == FileType.Dir || ft == FileType.CHD)
             {
                 RvFile dbDir = dbChild;
                 for (int i = 0; i < dbDir.ChildCount; i++)
@@ -706,7 +703,37 @@ namespace RomVaultCore.ReadDat
 
         public static void InvalidateAllDATs(RvFile dbFile, string romVaultPath)
         {
-            InvalidateAllDATsInternal(dbFile, "DatRoot" + romVaultPath.Substring(8));
+            if (string.IsNullOrWhiteSpace(romVaultPath))
+            {
+                InvalidateAllDATsInternal(dbFile, "DatRoot");
+                return;
+            }
+
+            string path = romVaultPath.Trim().Replace('/', '\\');
+            while (path.EndsWith("\\", StringComparison.Ordinal))
+                path = path.Substring(0, path.Length - 1);
+
+            if (path.Equals("DatRoot", StringComparison.OrdinalIgnoreCase) ||
+                path.StartsWith("DatRoot\\", StringComparison.OrdinalIgnoreCase))
+            {
+                InvalidateAllDATsInternal(dbFile, path);
+                return;
+            }
+
+            const string rvRoot = "RomVault";
+            if (path.Equals(rvRoot, StringComparison.OrdinalIgnoreCase))
+            {
+                InvalidateAllDATsInternal(dbFile, "DatRoot");
+                return;
+            }
+
+            if (path.StartsWith(rvRoot + "\\", StringComparison.OrdinalIgnoreCase))
+            {
+                InvalidateAllDATsInternal(dbFile, "DatRoot" + path.Substring(rvRoot.Length));
+                return;
+            }
+
+            InvalidateAllDATsInternal(dbFile, "DatRoot");
         }
 
         private static void InvalidateAllDATsInternal(RvFile dbFile, string datPath)

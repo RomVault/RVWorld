@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using ByteSortedList;
+using RomVaultCore.ReadDat;
 using RomVaultCore.RvDB;
 using StorageList;
 using RVUtils;
@@ -137,7 +139,9 @@ namespace RomVaultCore.FindFix
                 ClearPartial.checkAllGroups();
 
                 //remove zero byte files from ToSort Fixes.
-                ToSortZeroByteFilesDontFix.Clear(fileGroupsCRCSorted[0]);
+                FileGroup zeroByteGroup = FindZeroByteGroup(fileGroupsCRCSorted);
+                if (zeroByteGroup != null)
+                    ToSortZeroByteFilesDontFix.Clear(zeroByteGroup);
 
                 _thWrk.Report(new bgwText("Complete (Unique Files " + totalAfterMerge + ")"));
                 _thWrk.Finished = true;
@@ -216,8 +220,6 @@ namespace RomVaultCore.FindFix
 
             Parallel.ForEach(gotFilesSortedByCRC, po, (file, state) =>
             {
-                if (file.CRC == null)
-                    return;
                 listFileGroupsOut.AddFindWithExact(file, exactFunc);
                 if (_thWrk != null && _thWrk.CancellationPending)
                 {
@@ -231,8 +233,22 @@ namespace RomVaultCore.FindFix
             }
             fileGroups = listFileGroupsOut.ToArray();
         }
+
+        private static FileGroup FindZeroByteGroup(IEnumerable<FileGroup> fileGroups)
+        {
+            foreach (FileGroup group in fileGroups)
+            {
+                if (group.Size == 0 && group.CRC != null && group.CRC.Length >= 4 &&
+                    group.CRC[0] == 0 && group.CRC[1] == 0 && group.CRC[2] == 0 && group.CRC[3] == 0)
+                    return group;
+            }
+
+            return null;
+        }
         private static byte getByteFunc(RvFile v1)
         {
+            if (v1.CRC == null || v1.CRC.Length == 0)
+                return 0;
             return v1.CRC[0];
         }
         private static FileGroup newFunc(RvFile file)
@@ -255,6 +271,7 @@ namespace RomVaultCore.FindFix
         public static void MergeInMissingFiles(FileGroup[] mergedCRCFamily, FileGroup[] mergedSHA1Family, FileGroup[] mergedMD5Family,
                                                 FileGroup[] mergedAltCRCFamily, FileGroup[] mergedAltSHA1Family, FileGroup[] mergedAltMD5Family, List<RvFile> missingFiles)
         {
+            Dictionary<string, int> discSourceIndex = BuildDiscSourceIndex(mergedCRCFamily);
             foreach (RvFile f in missingFiles)
             {
                 if (_thWrk.CancellationPending)
@@ -312,19 +329,99 @@ namespace RomVaultCore.FindFix
                         continue;
                 }
 
+                if (TryMergeMissingChdOnDiscSourceName(f, discSourceIndex, mergedCRCFamily))
+                    continue;
+
                 if (f.CRC == null && f.SHA1 == null && f.MD5 == null)
                 {
+                    FileGroup zeroByteGroup = FindZeroByteGroup(mergedCRCFamily);
 
-                    if (f.Size == 0)
+                    if (f.Size == 0 && zeroByteGroup != null)
                     {
-                        mergedCRCFamily[0].MergeFileIntoGroup(f);
+                        zeroByteGroup.MergeFileIntoGroup(f);
                     }
-                    else if (f.Size == null && f.Name.Length > 1 && f.Name.Substring(f.Name.Length - 1, 1) == "/")
+                    else if (f.Size == null && f.Name.Length > 1 &&
+                             f.Name.Substring(f.Name.Length - 1, 1) == "/" && zeroByteGroup != null)
                     {
-                        mergedCRCFamily[0].MergeFileIntoGroup(f);
+                        zeroByteGroup.MergeFileIntoGroup(f);
                     }
                 }
             }
+        }
+
+        private static Dictionary<string, int> BuildDiscSourceIndex(FileGroup[] groups)
+        {
+            Dictionary<string, int> index = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+            Dictionary<string, int> priorities = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+            for (int groupIndex = 0; groupIndex < groups.Length; groupIndex++)
+            {
+                FileGroup group = groups[groupIndex];
+                for (int fileIndex = 0; fileIndex < group.Files.Count; fileIndex++)
+                {
+                    RvFile file = group.Files[fileIndex];
+                    if (!file.IsFile)
+                        continue;
+
+                    int priority = DiscSourcePriority(Path.GetExtension(file.Name));
+                    string key = Path.GetFileNameWithoutExtension(file.Name);
+                    if (priority == 0 || string.IsNullOrWhiteSpace(key))
+                        continue;
+
+                    AddDiscSourceIndexCandidate(index, priorities, key, priority, groupIndex);
+                    AddDiscSourceIndexCandidate(index, priorities, Path.GetFileName(file.Name), priority, groupIndex);
+                }
+            }
+            return index;
+        }
+
+        private static int DiscSourcePriority(string extension)
+        {
+            switch (extension?.ToLowerInvariant())
+            {
+                case ".gdi": return 3;
+                case ".cue": return 2;
+                case ".iso": return 1;
+                case ".raw": return 1;
+                case ".img": return 1;
+                case ".hdd": return 1;
+                case ".hd": return 1;
+                case ".avi": return 1;
+                default: return 0;
+            }
+        }
+
+        private static void AddDiscSourceIndexCandidate(Dictionary<string, int> index, Dictionary<string, int> priorities, string key, int priority, int groupIndex)
+        {
+            if (string.IsNullOrWhiteSpace(key))
+                return;
+            if (!index.TryGetValue(key, out int existingIndex) || priority > priorities[key])
+            {
+                index[key] = groupIndex;
+                priorities[key] = priority;
+            }
+            else if (priority == priorities[key] && existingIndex != groupIndex)
+            {
+                index[key] = -1;
+            }
+        }
+
+        private static bool TryMergeMissingChdOnDiscSourceName(RvFile missingFile, Dictionary<string, int> sourceIndex, FileGroup[] groups)
+        {
+            if (missingFile?.Name?.EndsWith(".chd", StringComparison.OrdinalIgnoreCase) != true ||
+                (!missingFile.IsFile && missingFile.FileType != FileType.CHD))
+                return false;
+
+            DatRule rule = DatReader.FindDatRule(missingFile.Parent?.DatTreeFullName + "\\");
+            if (rule?.DiscArchiveAsCHD != true || !DBHelper.IsChdCreationAllowedForSet(missingFile))
+                return false;
+
+            string key = Path.GetFileNameWithoutExtension(missingFile.Name);
+            if (string.IsNullOrWhiteSpace(key) || !sourceIndex.TryGetValue(key, out int groupIndex) ||
+                groupIndex < 0 || groupIndex >= groups.Length)
+                return false;
+
+            groups[groupIndex].MergeFileIntoGroup(missingFile);
+            return true;
         }
 
 
