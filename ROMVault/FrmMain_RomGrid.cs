@@ -148,7 +148,7 @@ namespace ROMVault
 
                 if (tFile.DatStatus != DatStatus.InDatMerged || tFile.RepStatus != RepStatus.NotCollected || chkBoxShowMerged.Checked)
                 {
-                    tFile.UiDisplayName = pathAdd + tFile.Name;
+                    tFile.UiDisplayName = BuildRomDisplayName(tFile, pathAdd);
                     fileList.Add(tFile);
 
                     if (!showMerge)
@@ -168,6 +168,29 @@ namespace ROMVault
                 }
             }
             catch { }
+        }
+
+        /// <summary>
+        /// Keeps virtual CHD members visibly associated with their physical container when the ROM grid
+        /// flattens a directory tree into one list. Existing relative paths already containing the CHD
+        /// name are preserved so nested views are not double-prefixed.
+        /// </summary>
+        internal static string BuildRomDisplayName(RvFile file, string pathPrefix)
+        {
+            string prefix = pathPrefix ?? "";
+            if (file?.FileType == FileType.FileCHD && file.Parent?.FileType == FileType.CHD)
+            {
+                string containerName = file.Parent.NameCase ?? "";
+                if (!string.IsNullOrWhiteSpace(containerName))
+                {
+                    string normalizedPrefix = prefix.Replace('\\', '/');
+                    string containerPrefix = containerName.Replace('\\', '/') + "/";
+                    if (!normalizedPrefix.EndsWith(containerPrefix, StringComparison.OrdinalIgnoreCase))
+                        prefix += containerPrefix;
+                }
+            }
+
+            return prefix + (file?.Name ?? "");
         }
 
         private void RomGridCellValueNeeded(object sender, DataGridViewCellValueEventArgs e)
