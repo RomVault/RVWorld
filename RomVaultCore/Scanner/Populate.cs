@@ -174,7 +174,7 @@ namespace RomVaultCore.Scanner
         /// <summary>
         /// Current CHD scan cache schema version.
         /// </summary>
-        private const int ChdScanCacheVersion = 9;
+        private const int ChdScanCacheVersion = 10;
 
         /// <summary>
         /// Fingerprint describing the mapping and hashing behavior used when scanning CHDs.
@@ -182,7 +182,7 @@ namespace RomVaultCore.Scanner
         /// <remarks>
         /// This is used to invalidate old cache entries whenever descriptor selection or payload matching changes.
         /// </remarks>
-        private const string ChdScanMappingFp = "mapfp10:splitbin;embedded-exact-descriptor;embedded-sbi;toc;all-family-extractors;exact-extracted-payload-hashes";
+        private const string ChdScanMappingFp = "mapfp11:dat-backed-members;splitbin;embedded-exact-descriptor;embedded-sbi;toc;all-family-extractors;exact-extracted-payload-hashes";
         private const int ChdScanCacheLimit = 512;
         private static readonly object ChdScanCacheLock = new object();
         private static readonly Dictionary<string, ChdCacheFile> ChdScanMemoryCache = new Dictionary<string, ChdCacheFile>(StringComparer.OrdinalIgnoreCase);
@@ -239,11 +239,12 @@ namespace RomVaultCore.Scanner
             bool expectedIsCue = false;
             bool expectedIsToc = false;
             string expectedSingleFamily = null;
+            List<RvFile> expectedChildren = GetExpectedChdMembers(dbDir);
             try
             {
-                for (int i = 0; i < dbDir.ChildCount; i++)
+                for (int i = 0; i < expectedChildren.Count; i++)
                 {
-                    RvFile c = dbDir.Child(i);
+                    RvFile c = expectedChildren[i];
                     if (c?.Name == null)
                         continue;
                     if (c.Name.EndsWith(".iso", StringComparison.OrdinalIgnoreCase))
@@ -272,7 +273,7 @@ namespace RomVaultCore.Scanner
                 expectedIsDvd = false;
             string expectedDescriptor = expectedSingleFamily ?? (expectedIsGdi ? "gdi" : expectedIsToc ? "toc" : expectedIsCue ? "cue" : expectedIsDvd ? "dvd" : "cue");
 
-            if (dbDir.ChildCount == 0)
+            if (expectedChildren.Count == 0)
             {
                 try
                 {
@@ -407,14 +408,6 @@ namespace RomVaultCore.Scanner
             try
             {
                 IChdExtractor extractor = new ChdmanChdExtractor(chdmanExe, tempDir);
-                List<RvFile> expectedChildren = new List<RvFile>();
-                for (int i = 0; i < dbDir.ChildCount; i++)
-                {
-                    RvFile c = dbDir.Child(i);
-                    if (c != null && c.IsFile)
-                        expectedChildren.Add(c);
-                }
-
                 bool expectsIso = expectedChildren.Exists(c => c.Name != null && c.Name.EndsWith(".iso", StringComparison.OrdinalIgnoreCase));
                 bool expectsGdi = expectedChildren.Exists(c => c.Name != null && c.Name.EndsWith(".gdi", StringComparison.OrdinalIgnoreCase));
                 bool expectsCue = expectedChildren.Exists(c => c.Name != null && c.Name.EndsWith(".cue", StringComparison.OrdinalIgnoreCase));
@@ -1321,6 +1314,66 @@ namespace RomVaultCore.Scanner
                 catch
                 {
                 }
+            }
+        }
+
+        internal static List<RvFile> GetExpectedChdMembers(RvFile dbDir)
+        {
+            List<RvFile> expected = new List<RvFile>();
+            for (int i = 0; dbDir != null && i < dbDir.ChildCount; i++)
+            {
+                RvFile child = dbDir.Child(i);
+                if (child == null || !child.IsFile)
+                    continue;
+
+                switch (child.DatStatus)
+                {
+                    case DatStatus.InDatCollect:
+                    case DatStatus.InDatMerged:
+                    case DatStatus.InDatNoDump:
+                        expected.Add(child);
+                        break;
+                }
+            }
+            return expected;
+        }
+
+        internal static bool RunExpectedChdMembersSelfTest(out string error)
+        {
+            error = "";
+            try
+            {
+                RepairStatus.InitStatusCheck();
+                RvFile chd = new RvFile(FileType.CHD) { Name = "disc.cue.chd" };
+                RvFile expectedTrack = new RvFile(FileType.FileCHD) { Name = "disc (Track 01).bin" };
+                expectedTrack.SetDatGotStatus(DatStatus.InDatCollect, GotStatus.NotGot);
+                chd.ChildAdd(expectedTrack);
+
+                RvFile staleCue = new RvFile(FileType.FileCHD) { Name = "disc.cue" };
+                staleCue.SetDatGotStatus(DatStatus.NotInDat, GotStatus.Got);
+                chd.ChildAdd(staleCue);
+
+                List<RvFile> expected = GetExpectedChdMembers(chd);
+                if (expected.Count != 1 || !ReferenceEquals(expected[0], expectedTrack))
+                    throw new InvalidOperationException("A stale virtual CHD descriptor was treated as a DAT expectation.");
+
+                chd.MarkAsMissing();
+                if (chd.ChildCount != 1 || !ReferenceEquals(chd.Child(0), expectedTrack))
+                    throw new InvalidOperationException("A stale virtual CHD descriptor survived the next container scan.");
+
+                RvFile mergedCue = new RvFile(FileType.FileCHD) { Name = "disc-original.cue" };
+                mergedCue.SetDatGotStatus(DatStatus.InDatMerged, GotStatus.NotGot);
+                chd.ChildAdd(mergedCue);
+                expected = GetExpectedChdMembers(chd);
+                if (expected.Count != 2 || !expected.Contains(mergedCue))
+                    throw new InvalidOperationException("A DAT-backed merged descriptor was omitted from CHD expectations.");
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                error = ex.Message;
+                return false;
             }
         }
 

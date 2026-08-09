@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -2345,8 +2344,7 @@ namespace RomVaultCore.FixFile.Utils
                 return ReturnCode.FileSystemError;
             }
 
-            int lastPercent = -1;
-            string progressPhase = DescribeChdmanProgressPhase(arguments);
+            ChdProgressTracker progress = new ChdProgressTracker(arguments);
             ChdmanRunResult result = ChdmanService.Run(
                 chdmanExe,
                 arguments,
@@ -2355,12 +2353,8 @@ namespace RomVaultCore.FixFile.Utils
                 () => Report.CancellationPending(),
                 line =>
                 {
-                    int pct = TryParsePercent(line);
-                    if (pct >= 0 && pct <= 100 && pct != lastPercent)
-                    {
-                        lastPercent = pct;
-                        try { Report.ReportProgress(new bgwText($"CHD {progressPhase}: {pct}%")); } catch { }
-                    }
+                    if (progress.TryAdvance(line, out int pct))
+                        try { Report.ReportProgress(new bgwText($"CHD {progress.Phase}: {pct}%")); } catch { }
                 });
 
             errorMessage = result.Output;
@@ -2377,40 +2371,6 @@ namespace RomVaultCore.FixFile.Utils
             }
 
             return ReturnCode.Good;
-        }
-
-        private static string DescribeChdmanProgressPhase(string arguments)
-        {
-            string command = (arguments ?? "").TrimStart();
-            int separator = command.IndexOfAny(new[] { ' ', '\t' });
-            if (separator >= 0)
-                command = command.Substring(0, separator);
-
-            switch (command.ToLowerInvariant())
-            {
-                case "createcd":
-                case "createdvd":
-                case "createraw":
-                case "createhd":
-                case "createld":
-                    return "encoding";
-                case "copy":
-                    return Regex.IsMatch(arguments ?? "", @"(?:^|\s)-c\s+none(?:\s|$)", RegexOptions.IgnoreCase)
-                        ? "staging"
-                        : "compressing";
-                case "verify":
-                    return "verifying";
-                case "extractcd":
-                case "extractdvd":
-                case "extractraw":
-                case "extracthd":
-                case "extractld":
-                    return "extracting";
-                case "addmeta":
-                    return "writing metadata";
-                default:
-                    return "processing";
-            }
         }
 
         private static bool ValidateEmbeddedStandardMetadata(string chdPath, ChdEncodingProfileSpec expected, ChdmanIdentity identity, out string error)
@@ -2470,21 +2430,6 @@ namespace RomVaultCore.FixFile.Utils
                 return false;
             }
             return true;
-        }
-
-        private static int TryParsePercent(string line)
-        {
-            if (string.IsNullOrWhiteSpace(line))
-                return -1;
-
-            Match match = Regex.Match(line, @"(?<![\d.])(?<percent>\d{1,3}(?:\.\d+)?)\s*%");
-            if (match.Success &&
-                double.TryParse(match.Groups["percent"].Value, NumberStyles.AllowDecimalPoint,
-                    CultureInfo.InvariantCulture, out double percent) &&
-                percent >= 0 && percent <= 100)
-                return (int)Math.Floor(percent);
-
-            return -1;
         }
 
         private static ReturnCode VerifyAndMergeCreatedChd(string destinationPath, RvFile destinationFile, string chdmanExe, out string errorMessage, bool mergeResults = true)
@@ -2821,9 +2766,9 @@ namespace RomVaultCore.FixFile.Utils
             int chosenIndex = -1;
             for (int i = 0; i < candidates.Length; i++)
             {
-                if (TryFindArchiveEntryIndex(entryIndex, candidates[i], out int idx))
+                if (ChdArchiveEntries.TryFind(entryIndex, candidates[i], out string actualEntry, out int idx))
                 {
-                    chosenEntry = candidates[i];
+                    chosenEntry = actualEntry;
                     chosenIndex = idx;
                     break;
                 }
@@ -2837,7 +2782,12 @@ namespace RomVaultCore.FixFile.Utils
                 return ReturnCode.FileSystemError;
             }
 
-            string extractedMain = System.IO.Path.Combine(tempDir, chosenEntry);
+            string extractedMain = NormalizeChildPath(tempDir, chosenEntry);
+            if (extractedMain == null)
+            {
+                errorMessage = "Archive descriptor path escapes the CHD staging directory.";
+                return ReturnCode.FileSystemError;
+            }
             ReturnCode rc = ExtractArchiveEntryToPath(archiveFile, chosenIndex, extractedMain, out errorMessage);
             if (rc != ReturnCode.Good)
                 return rc;
@@ -2855,7 +2805,12 @@ namespace RomVaultCore.FixFile.Utils
             if ((ext == ".cue" || ext == ".toc") && TryFindArchiveEntryIndex(entryIndex, System.IO.Path.ChangeExtension(chosenEntry, ".sbi"), out int sbiIndex))
             {
                 string sbiEntry = System.IO.Path.ChangeExtension(chosenEntry, ".sbi");
-                string sbiPath = System.IO.Path.Combine(tempDir, sbiEntry);
+                string sbiPath = NormalizeChildPath(tempDir, sbiEntry);
+                if (sbiPath == null)
+                {
+                    errorMessage = "Archive SBI path escapes the CHD staging directory.";
+                    return ReturnCode.FileSystemError;
+                }
                 rc = ExtractArchiveEntryToPath(archiveFile, sbiIndex, sbiPath, out errorMessage);
                 if (rc != ReturnCode.Good)
                     return rc;
@@ -2867,8 +2822,9 @@ namespace RomVaultCore.FixFile.Utils
                 if (string.IsNullOrWhiteSpace(refName))
                     continue;
 
-                int refIndex;
-                if (!TryFindArchiveEntryIndex(entryIndex, refName, out refIndex))
+                string resolvedReference = ChdArchiveEntries.ResolveReference(chosenEntry, refName);
+                if (resolvedReference == null ||
+                    !ChdArchiveEntries.TryFind(entryIndex, resolvedReference, out _, out int refIndex))
                 {
                     // An archive containing a descriptor without every file it
                     // references is an incomplete source set.  It must remain
@@ -2877,7 +2833,12 @@ namespace RomVaultCore.FixFile.Utils
                     return ReturnCode.FileSystemError;
                 }
 
-                string outPath = System.IO.Path.Combine(tempDir, refName);
+                string outPath = NormalizeChildPath(tempDir, resolvedReference);
+                if (outPath == null)
+                {
+                    errorMessage = "__SKIP_PARTIAL_SET__";
+                    return ReturnCode.FileSystemError;
+                }
                 rc = ExtractArchiveEntryToPath(archiveFile, refIndex, outPath, out errorMessage);
                 if (rc != ReturnCode.Good)
                     return rc;
@@ -2906,7 +2867,7 @@ namespace RomVaultCore.FixFile.Utils
                     FileHeader fh = z.GetFileHeader(i);
                     if (fh == null || fh.IsDirectory)
                         continue;
-                    string name = (fh.Filename ?? "").Replace('\\', '/');
+                    string name = ChdArchiveEntries.NormalizeEntryName(fh.Filename);
                     if (string.IsNullOrWhiteSpace(name))
                         continue;
                     if (!map.ContainsKey(name))
@@ -2924,34 +2885,7 @@ namespace RomVaultCore.FixFile.Utils
 
         private static bool TryFindArchiveEntryIndex(Dictionary<string, int> entryIndex, string requestedName, out int index)
         {
-            index = -1;
-            if (entryIndex == null || string.IsNullOrWhiteSpace(requestedName))
-                return false;
-
-            string reqNorm = requestedName.Replace('\\', '/').Trim().Trim('"');
-            if (entryIndex.TryGetValue(reqNorm, out index))
-                return true;
-
-            string reqBase = System.IO.Path.GetFileName(reqNorm);
-            if (string.IsNullOrWhiteSpace(reqBase))
-                return false;
-
-            int found = -1;
-            foreach (KeyValuePair<string, int> kvp in entryIndex)
-            {
-                string baseName = System.IO.Path.GetFileName(kvp.Key);
-                if (!string.Equals(baseName, reqBase, StringComparison.OrdinalIgnoreCase))
-                    continue;
-                if (found != -1)
-                    return false;
-                found = kvp.Value;
-            }
-
-            if (found == -1)
-                return false;
-
-            index = found;
-            return true;
+            return ChdArchiveEntries.TryFind(entryIndex, requestedName, out _, out index);
         }
 
         private static ReturnCode ExtractArchiveEntryToPath(RvFile archiveFile, int fileIndex, string outputPath, out string errorMessage)

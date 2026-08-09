@@ -120,5 +120,25 @@ namespace RomVaultCore
             return f1.CompareTo(f2);
         }
 
+        internal static bool RunMixedContainerMemberSelfTest(out string error)
+        {
+            error = "";
+            try
+            {
+                int zipToChd = CompareName(FileType.FileZip, "same.cue", FileType.FileCHD, "same.cue");
+                int chdToZip = CompareName(FileType.FileCHD, "same.cue", FileType.FileZip, "same.cue");
+                int sevenToFile = CompareName(FileType.FileSevenZip, "same.cue", FileType.File, "same.cue");
+                int fileToSeven = CompareName(FileType.File, "same.cue", FileType.FileSevenZip, "same.cue");
+                if (zipToChd == 0 || chdToZip != -zipToChd || sevenToFile == 0 || fileToSeven != -sevenToFile)
+                    throw new InvalidOperationException("Mixed container-member comparisons are not symmetric and deterministic.");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                error = ex.Message;
+                return false;
+            }
+        }
+
     }
 }
