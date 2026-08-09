@@ -1,10 +1,13 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.Windows.Forms;
+using CHDSharpLib;
 using RomVaultCore;
 using RomVaultCore.RvDB;
 using RVIO;
+using RVUtils;
 
 namespace ROMVault
 {
@@ -30,6 +33,15 @@ namespace ROMVault
 
         private Label _labelGameCategory;
         private TextBox _textGameCategory;
+
+        private Label _labelChdSummary;
+        private TextBox _textChdSummary;
+
+        private Label _labelChdLayout;
+        private TextBox _textChdLayout;
+
+        private Label _labelChdHashes;
+        private TextBox _textChdHashes;
 
         //Trurip Extra Data
         private Label _labelTruripPublisher;
@@ -122,6 +134,10 @@ namespace ROMVault
             AddTextBox(4, "Rom of", 6, 84, out _labelGameRomOf, out _textGameRomOf);
             AddTextBox(4, "Category", 206, 284, out _labelGameCategory, out _textGameCategory);
 
+            AddTextBox(5, "CHD", 6, 84, out _labelChdSummary, out _textChdSummary);
+            AddTextBox(6, "Layout", 6, 84, out _labelChdLayout, out _textChdLayout);
+            AddTextBox(7, "Hashes", 6, 84, out _labelChdHashes, out _textChdHashes);
+
             //Trurip
 
             AddTextBox(2, "Publisher", 6, 84, out _labelTruripPublisher, out _textTruripPublisher);
@@ -180,6 +196,8 @@ namespace ROMVault
 
         private void UpdateGameMetaData(RvFile tGame)
         {
+            gbSetInfo.Text = "Game Info :";
+            HideChdMetaData();
             _labelGameName.Visible = true;
             _textGameName.Text = tGame.Name;
             string gameId = tGame.Game?.GetData(RvGame.GameData.Id);
@@ -379,9 +397,166 @@ namespace ROMVault
                 HidePannel();
             }
 
+            UpdateChdMetaData(tGame);
+
             this.ActiveControl = GameGrid;
         }
 
+
+        private void HideChdMetaData()
+        {
+            _labelChdSummary.Visible = false;
+            _textChdSummary.Visible = false;
+            _labelChdLayout.Visible = false;
+            _textChdLayout.Visible = false;
+            _labelChdHashes.Visible = false;
+            _textChdHashes.Visible = false;
+        }
+
+        private void UpdateChdMetaData(RvFile chd)
+        {
+            if (chd?.FileType != FileType.CHD || chd.GotStatus == GotStatus.NotGot)
+                return;
+
+            bool hasDatGameInfo = chd.Game != null;
+            int firstLine = hasDatGameInfo ? 5 : 1;
+            SetChdMetaDataLine(_labelChdSummary, _textChdSummary, firstLine);
+            SetChdMetaDataLine(_labelChdLayout, _textChdLayout, firstLine + 1);
+            SetChdMetaDataLine(_labelChdHashes, _textChdHashes, firstLine + 2);
+
+            // CHD details take the optional final TruRip rows when both kinds of metadata exist.
+            if (hasDatGameInfo && chd.Game.GetData(RvGame.GameData.EmuArc) == "yes")
+            {
+                _labelTruripRelatedTo.Visible = false;
+                _textTruripRelatedTo.Visible = false;
+                _labelTruripYear.Visible = false;
+                _textTruripYear.Visible = false;
+                _labelTruripPlayers.Visible = false;
+                _textTruripPlayers.Visible = false;
+                _labelTruripGenre.Visible = false;
+                _textTruripGenre.Visible = false;
+                _labelTruripSubGenre.Visible = false;
+                _textTruripSubGenre.Visible = false;
+                _labelTruripRatings.Visible = false;
+                _textTruripRatings.Visible = false;
+                _labelTruripScore.Visible = false;
+                _textTruripScore.Visible = false;
+            }
+
+            _labelChdSummary.Visible = true;
+            _textChdSummary.Visible = true;
+            gbSetInfo.Text = hasDatGameInfo ? "Game / CHD Info :" : "CHD Info :";
+
+            string path = chd.FullNameCase;
+            if (!ChdMetadata.TryReadContainerInfo(path, out ChdContainerInfo info, out string error))
+            {
+                _textChdSummary.Text = "Unable to read CHD header: " + error;
+                tooltip.SetToolTip(_textChdSummary, _textChdSummary.Text);
+                return;
+            }
+
+            string profileMetadata = "";
+            ChdMetadata.TryReadTextMetadata(path, "RVEP", 0, out profileMetadata, out _);
+            _textChdSummary.Text = FormatChdSummary(info, profileMetadata);
+            _textChdLayout.Text = FormatChdLayout(info);
+            _textChdHashes.Text = FormatChdHashes(chd, info);
+            _labelChdLayout.Visible = true;
+            _textChdLayout.Visible = true;
+            _labelChdHashes.Visible = true;
+            _textChdHashes.Visible = true;
+
+            string details = _textChdSummary.Text + Environment.NewLine +
+                             _textChdLayout.Text + Environment.NewLine +
+                             _textChdHashes.Text;
+            if (!string.IsNullOrWhiteSpace(chd.ChdScanMethod))
+                details += Environment.NewLine + "Scan: " + chd.ChdScanMethod;
+            if (!string.IsNullOrWhiteSpace(chd.ChdHashMatchMode))
+                details += Environment.NewLine + "Hash match: " + chd.ChdHashMatchMode;
+            if (!string.IsNullOrWhiteSpace(chd.ChdDescriptorMatch))
+                details += Environment.NewLine + "Descriptor: " + chd.ChdDescriptorMatch;
+            if (!string.IsNullOrWhiteSpace(chd.ChdStatus))
+                details += Environment.NewLine + "Status: " + chd.ChdStatus;
+            tooltip.SetToolTip(_textChdSummary, details);
+            tooltip.SetToolTip(_textChdLayout, details);
+            tooltip.SetToolTip(_textChdHashes, details);
+        }
+
+        private void SetChdMetaDataLine(Label label, TextBox textBox, int line)
+        {
+            label.Top = SPoint(0, 15 + line * 16).Y;
+            textBox.Top = SPoint(0, 14 + line * 16).Y;
+        }
+
+        internal static string FormatChdSummary(ChdContainerInfo info, string profileMetadata)
+        {
+            if (info == null)
+                return "";
+
+            string profile = DescribeChdProfile(profileMetadata);
+            string codecs = info.Codecs == null || info.Codecs.Count == 0 ? "none" : string.Join(", ", info.Codecs);
+            return "V" + info.Version +
+                   (string.IsNullOrWhiteSpace(profile) ? "" : " | " + profile) +
+                   " | Codecs " + codecs;
+        }
+
+        internal static string FormatChdLayout(ChdContainerInfo info)
+        {
+            if (info == null)
+                return "";
+
+            return "Logical " + info.LogicalSize.ToString("N0") + " bytes" +
+                   " | Hunk " + info.HunkSize.ToString("N0") +
+                   " | Unit " + info.UnitSize.ToString("N0") +
+                   " | " + (info.RequiresParent ? "Parent required" : "Standalone");
+        }
+
+        internal static string FormatChdHashes(RvFile chd, ChdContainerInfo info)
+        {
+            List<string> hashes = new List<string>();
+            AddHash(hashes, "File CRC32", chd?.CRC);
+            AddHash(hashes, "File SHA1", chd?.SHA1);
+            AddHash(hashes, "File MD5", chd?.MD5);
+            AddHash(hashes, "CHD SHA1", info?.Sha1);
+            AddHash(hashes, "Raw SHA1", info?.RawSha1);
+            if (info?.RequiresParent == true)
+                AddHash(hashes, "Parent SHA1", info.ParentSha1);
+            return hashes.Count == 0 ? "Unavailable" : string.Join(" | ", hashes);
+        }
+
+        private static void AddHash(List<string> hashes, string name, byte[] value)
+        {
+            string hex = value.ToHexString();
+            if (!string.IsNullOrWhiteSpace(hex))
+                hashes.Add(name + " " + hex);
+        }
+
+        internal static string DescribeChdProfile(string metadata)
+        {
+            if (string.IsNullOrWhiteSpace(metadata))
+                return "";
+
+            string profile = "";
+            string storage = "";
+            string family = "";
+            string[] values = metadata.Split(';');
+            for (int i = 0; i < values.Length; i++)
+            {
+                int separator = values[i].IndexOf('=');
+                if (separator <= 0)
+                    continue;
+                string key = values[i].Substring(0, separator).Trim();
+                string value = values[i].Substring(separator + 1).Trim();
+                if (string.Equals(key, "profile", StringComparison.OrdinalIgnoreCase)) profile = value;
+                else if (string.Equals(key, "storage", StringComparison.OrdinalIgnoreCase)) storage = value;
+                else if (string.Equals(key, "family", StringComparison.OrdinalIgnoreCase)) family = value;
+            }
+
+            List<string> parts = new List<string>();
+            if (!string.IsNullOrWhiteSpace(profile)) parts.Add(profile);
+            if (!string.IsNullOrWhiteSpace(storage)) parts.Add(storage);
+            if (!string.IsNullOrWhiteSpace(family)) parts.Add(family);
+            return string.Join(" / ", parts);
+        }
 
         private void gbSetInfo_Resize(object sender, EventArgs e)
         {
@@ -420,6 +595,10 @@ namespace ROMVault
             _labelGameCategory.Left = label2Left;
             _textGameCategory.Left = text2Left;
             _textGameCategory.Width = textWidth;
+
+            _textChdSummary.Width = width;
+            _textChdLayout.Width = width;
+            _textChdHashes.Width = width;
 
 
             // TruRip Meta Data

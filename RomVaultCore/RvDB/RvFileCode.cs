@@ -21,6 +21,11 @@ namespace RomVaultCore.RvDB
         {
             MarkAsMissing();
 
+            // A CHD is both an archive-like container and a hashed file. Preserve the root scan result
+            // instead of retaining only its virtual members.
+            if (FileType == FileType.CHD && fileArchive?.FileType == FileType.CHD)
+                FileMergeIn(fileArchive, false);
+
             fileArchive.Sort();
 
             int dbChildIndex = 0;
@@ -188,6 +193,7 @@ namespace RomVaultCore.RvDB
             if (AltSHA1 == null && file.AltSHA1 != null) AltSHA1 = file.AltSHA1;
             if (AltMD5 == null && file.AltMD5 != null) AltMD5 = file.AltMD5;
             if (HeaderFileType == HeaderFileType.Nothing && file.HeaderFileType != HeaderFileType.Nothing) HeaderFileTypeSet = file.HeaderFileType;
+            if (CHDVersion == null && file.CHDVersion != null) CHDVersion = file.CHDVersion;
             if (ChdStatus == null && file.ChdStatus != null) ChdStatus = file.ChdStatus;
             if (ChdScanMethod == null && file.ChdScanMethod != null) ChdScanMethod = file.ChdScanMethod;
             if (ChdHashMatchMode == null && file.ChdHashMatchMode != null) ChdHashMatchMode = file.ChdHashMatchMode;

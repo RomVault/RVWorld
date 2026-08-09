@@ -154,6 +154,10 @@ namespace RomVaultCore.Scanner
             public string SourcePath { get; set; }
             public long SourceTimestamp { get; set; }
             public long SourceSize { get; set; }
+            public uint? ChdVersion { get; set; }
+            public string ContainerCRC { get; set; }
+            public string ContainerSHA1 { get; set; }
+            public string ContainerMD5 { get; set; }
             public bool IsDvd { get; set; }
             public string Descriptor { get; set; }
             public string DescriptorSha1 { get; set; }
@@ -170,7 +174,7 @@ namespace RomVaultCore.Scanner
         /// <summary>
         /// Current CHD scan cache schema version.
         /// </summary>
-        private const int ChdScanCacheVersion = 8;
+        private const int ChdScanCacheVersion = 9;
 
         /// <summary>
         /// Fingerprint describing the mapping and hashing behavior used when scanning CHDs.
@@ -350,6 +354,13 @@ namespace RomVaultCore.Scanner
                 ScannedFile cached = new ScannedFile(FileType.CHD)
                 {
                     Name = filename,
+                    FileModTimeStamp = cache.SourceTimestamp,
+                    GotStatus = GotStatus.Got,
+                    Size = cache.SourceSize < 0 ? 0 : (ulong)cache.SourceSize,
+                    CRC = ParseHexToBytes(cache.ContainerCRC),
+                    SHA1 = ParseHexToBytes(cache.ContainerSHA1),
+                    MD5 = ParseHexToBytes(cache.ContainerMD5),
+                    CHDVersion = cache.ChdVersion,
                     ZipStruct = ZipStructure.None,
                     Comment = "",
                     ChdStatus = cache.ChdStatus,
@@ -357,6 +368,10 @@ namespace RomVaultCore.Scanner
                     ChdHashMatchMode = cache.ChdHashMatchMode,
                     ChdDescriptorMatch = cache.ChdDescriptorMatch
                 };
+                cached.FileStatusSet(FileStatus.SizeVerified |
+                                     (cached.CRC != null ? FileStatus.CRCVerified : 0) |
+                                     (cached.SHA1 != null ? FileStatus.SHA1Verified : 0) |
+                                     (cached.MD5 != null ? FileStatus.MD5Verified : 0));
                 for (int i = 0; i < cache.Entries.Count; i++)
                 {
                     ChdCacheEntry e = cache.Entries[i];
@@ -417,9 +432,14 @@ namespace RomVaultCore.Scanner
                 if (!expectsIso && expectedChildren.Count == 0 && string.Equals(expectedDescriptor, "dvd", StringComparison.OrdinalIgnoreCase))
                     expectsIso = true;
 
+                FileInfo containerFile = new FileInfo(filename);
+                ChdMetadata.TryReadContainerInfo(filename, out ChdContainerInfo containerInfo, out _);
                 ScannedFile ar = new ScannedFile(FileType.CHD)
                 {
                     Name = filename,
+                    FileModTimeStamp = containerFile.LastWriteTime,
+                    GotStatus = GotStatus.Got,
+                    CHDVersion = containerInfo?.Version,
                     ZipStruct = ZipStructure.None,
                     Comment = ""
                 };
@@ -1701,6 +1721,10 @@ namespace RomVaultCore.Scanner
                     SourcePath = chdPath,
                     SourceTimestamp = fi.LastWriteTime,
                     SourceSize = fi.Length,
+                    ChdVersion = archive.CHDVersion,
+                    ContainerCRC = archive.CRC?.ToHexString(),
+                    ContainerSHA1 = archive.SHA1?.ToHexString(),
+                    ContainerMD5 = archive.MD5?.ToHexString(),
                     IsDvd = isDvd,
                     Descriptor = descriptor,
                     DescriptorSha1 = descriptorSha1,

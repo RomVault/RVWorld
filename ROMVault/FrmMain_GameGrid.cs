@@ -370,6 +370,9 @@ namespace ROMVault
                     if (zs == ZipStructure.SevenZipSZSTD) { return "SevenZipSZSTD"; }
                     if (zs == ZipStructure.SevenZipNZSTD) { return "SevenZipNZSTD"; }
                     return null;
+                case FileType.CHD:
+                    // Placeholder until dedicated CHD artwork is added. CHDs are archive-like containers in the UI.
+                    return "Zip";
                 case FileType.Dir:
                     return "Dir";
             }
