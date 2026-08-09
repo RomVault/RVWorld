@@ -145,7 +145,7 @@ namespace ROMVault
             _chkChdExportOnFix = AddCheckBox(policy, "Allow track export while fixing", 70);
             _chkChdRecompressOnEncoderUpdate = AddCheckBox(policy, "Recompress standard CHDs after every newer validated chdman (otherwise only relevant writer fixes)", 93);
 
-            AddLabel(policy, "Standard profile v6: authenticated exact views, zstd/cdzs Playback, archival codecs, TOC/SBI, HDD, and LaserDisc", 121);
+            AddLabel(policy, "Standard profile v1: authenticated exact views, zstd/cdzs Playback, archival codecs, TOC/SBI, HDD, and LaserDisc", 121);
 
             _lblChdmanIdentity = new Label
             {

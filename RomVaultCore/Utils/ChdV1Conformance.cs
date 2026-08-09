@@ -9,16 +9,16 @@ using System.Text;
 namespace RomVaultCore.Utils;
 
 /// <summary>
-/// Independent conformance checks for the RVWorld v6 encoding profile.  The
+/// Independent conformance checks for the RVWorld v1 encoding profile.  The
 /// checks deliberately compare chdman's extractor with CHDSharpLib's decoder
 /// and require repeated encodes to be byte-for-byte deterministic.
 /// </summary>
-internal static class ChdV6Conformance
+internal static class ChdV1Conformance
 {
     public static bool Run(string executable, out string error)
     {
         error = "";
-        string root = Path.Combine(Path.GetTempPath(), "RomVault-v6-conformance-" + Guid.NewGuid().ToString("N"));
+        string root = Path.Combine(Path.GetTempPath(), "RomVault-v1-conformance-" + Guid.NewGuid().ToString("N"));
         try
         {
             Directory.CreateDirectory(root);
@@ -57,12 +57,12 @@ internal static class ChdV6Conformance
             step = ChdmanService.Run(executable, string.Format(args, ChdmanService.Quote(second)), dir, 180000);
         if (!step.Success)
         {
-            error = "v6 raw deterministic encode failed: " + step.Output;
+            error = "v1 raw deterministic encode failed: " + step.Output;
             return false;
         }
         if (!FilesEqual(first, second))
         {
-            error = "v6 zstd raw encoding is not byte-for-byte deterministic.";
+            error = "v1 zstd raw encoding is not byte-for-byte deterministic.";
             return false;
         }
         step = ChdmanService.Run(executable, $"copy -i {ChdmanService.Quote(first)} -o {ChdmanService.Quote(plain)} -c none -hs {profile.HunkSize} -f", dir, 180000);
@@ -70,12 +70,12 @@ internal static class ChdV6Conformance
             step = ChdmanService.Run(executable, $"extractraw -i {ChdmanService.Quote(first)} -o {ChdmanService.Quote(extracted)} -f", dir, 180000);
         if (!step.Success)
         {
-            error = "v6 raw differential decode failed: " + step.Output;
+            error = "v1 raw differential decode failed: " + step.Output;
             return false;
         }
         if (!FilesEqual(source, extracted) || !LogicalStreamsEqual(first, plain))
         {
-            error = "v6 zstd raw bytes differ between source, chdman extraction, and the native decoder.";
+            error = "v1 zstd raw bytes differ between source, chdman extraction, and the native decoder.";
             return false;
         }
         return true;
@@ -110,12 +110,12 @@ internal static class ChdV6Conformance
             step = ChdmanService.Run(executable, string.Format(args, ChdmanService.Quote(second)), dir, 180000);
         if (!step.Success)
         {
-            error = "v6 optical deterministic encode failed: " + step.Output;
+            error = "v1 optical deterministic encode failed: " + step.Output;
             return false;
         }
         if (!FilesEqual(first, second))
         {
-            error = "v6 cdzs optical encoding is not byte-for-byte deterministic.";
+            error = "v1 cdzs optical encoding is not byte-for-byte deterministic.";
             return false;
         }
         step = ChdmanService.Run(executable, $"copy -i {ChdmanService.Quote(first)} -o {ChdmanService.Quote(plain)} -c none -hs {profile.HunkSize} -f", dir, 180000);
@@ -125,13 +125,13 @@ internal static class ChdV6Conformance
             step = ChdmanService.Run(executable, $"extractcd -i {ChdmanService.Quote(first)} -o {ChdmanService.Quote(descriptor)} -ob {ChdmanService.Quote(pattern)} -sb -f", dir, 180000);
         if (!step.Success)
         {
-            error = "v6 optical differential decode failed: " + step.Output;
+            error = "v1 optical differential decode failed: " + step.Output;
             return false;
         }
         List<string> outputs = Directory.GetFiles(dir, "out-track*.bin").OrderBy(value => value, StringComparer.OrdinalIgnoreCase).ToList();
         if (outputs.Count != 2 || !FilesEqual(track1, outputs[0]) || !FilesEqual(track2, outputs[1]) || !LogicalStreamsEqual(first, plain))
         {
-            error = "v6 cdzs optical bytes differ between source, chdman extraction, and the native decoder.";
+            error = "v1 cdzs optical bytes differ between source, chdman extraction, and the native decoder.";
             return false;
         }
         return true;

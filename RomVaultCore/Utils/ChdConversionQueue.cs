@@ -298,7 +298,7 @@ internal static class ChdStandaloneConverter
         if (string.IsNullOrWhiteSpace(tool) || !ChdmanService.TryGetIdentity(tool, ChdmanProbeLevel.Full, out identity, out identityError))
         { report = string.IsNullOrWhiteSpace(selectionError) ? identityError : selectionError; return 2; }
         if (!ChdEncodingProfile.NeedsRecompression(path, profile, before, identity, out string reason))
-        { report = "CHD already matches " + profile.Storage + " v6."; return 0; }
+        { report = "CHD already matches " + profile.Storage + " v1."; return 0; }
         if (before.RequiresParent) { report = "Parented CHDs must be materialized before standalone conversion."; return 2; }
 
         string full = Path.GetFullPath(path);
@@ -362,7 +362,7 @@ internal static class ChdStandaloneConverter
             catch { File.Move(full, backup); try { File.Move(final, full); } catch { File.Move(backup, full); throw; } }
             try { if (File.Exists(backup)) File.Delete(backup); } catch { }
             changed = true;
-            report = "Converted CHD to " + profile.Storage + " v6; reason=" + reason + "; path=" + ChdDiagnosticFormatter.RedactPath(full);
+            report = "Converted CHD to " + profile.Storage + " v1; reason=" + reason + "; path=" + ChdDiagnosticFormatter.RedactPath(full);
             return 0;
         }
         catch (Exception ex)

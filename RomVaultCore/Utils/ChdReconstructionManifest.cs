@@ -42,7 +42,7 @@ internal sealed class ChdManifestAuxiliary
 internal sealed class ChdReconstructionManifest
 {
     public const string MetadataTag = "RVRM";
-    public const int CurrentSchema = 5;
+    public const int CurrentSchema = 1;
     private const uint Magic = 0x5256524d; // RVRM
     private const int MaxManifestBytes = 64 * 1024 * 1024;
     private const int MaxDescriptorBytes = 16 * 1024 * 1024;
@@ -238,52 +238,44 @@ internal sealed class ChdReconstructionManifest
             {
                 for (int i = 0; i < Tracks.Count; i++)
                 {
-                    WriteTrack(writer, Tracks[i], Schema);
+                    WriteTrack(writer, Tracks[i]);
                 }
             }
-            if (Schema >= 3)
+            writer.Write(Views?.Count ?? 0);
+            if (Views != null)
             {
-                writer.Write(Views?.Count ?? 0);
-                if (Views != null)
+                for (int i = 0; i < Views.Count; i++)
                 {
-                    for (int i = 0; i < Views.Count; i++)
+                    ChdManifestView view = Views[i] ?? new ChdManifestView();
+                    WriteString(writer, view.Name);
+                    WriteString(writer, view.Dialect);
+                    WriteString(writer, view.DescriptorName);
+                    WriteBytes(writer, view.DescriptorBytes);
+                    WriteBytes(writer, view.DescriptorSha256);
+                    writer.Write(view.Tracks?.Count ?? 0);
+                    if (view.Tracks != null)
                     {
-                        ChdManifestView view = Views[i] ?? new ChdManifestView();
-                        WriteString(writer, view.Name);
-                        WriteString(writer, view.Dialect);
-                        WriteString(writer, view.DescriptorName);
-                        WriteBytes(writer, view.DescriptorBytes);
-                        WriteBytes(writer, view.DescriptorSha256);
-                        writer.Write(view.Tracks?.Count ?? 0);
-                        if (view.Tracks != null)
-                        {
-                            for (int j = 0; j < view.Tracks.Count; j++)
-                                WriteTrack(writer, view.Tracks[j], Schema);
-                        }
+                        for (int j = 0; j < view.Tracks.Count; j++)
+                            WriteTrack(writer, view.Tracks[j]);
                     }
                 }
             }
-            if (Schema >= 5)
+            writer.Write(Auxiliaries?.Count ?? 0);
+            if (Auxiliaries != null)
             {
-                writer.Write(Auxiliaries?.Count ?? 0);
-                if (Auxiliaries != null)
+                for (int i = 0; i < Auxiliaries.Count; i++)
                 {
-                    for (int i = 0; i < Auxiliaries.Count; i++)
-                    {
-                        ChdManifestAuxiliary auxiliary = Auxiliaries[i] ?? new ChdManifestAuxiliary();
-                        WriteString(writer, auxiliary.Name);
-                        WriteString(writer, auxiliary.Role);
-                        WriteBytes(writer, auxiliary.Bytes);
-                        WriteBytes(writer, auxiliary.Sha256);
-                    }
+                    ChdManifestAuxiliary auxiliary = Auxiliaries[i] ?? new ChdManifestAuxiliary();
+                    WriteString(writer, auxiliary.Name);
+                    WriteString(writer, auxiliary.Role);
+                    WriteBytes(writer, auxiliary.Bytes);
+                    WriteBytes(writer, auxiliary.Sha256);
                 }
             }
             writer.Flush();
-            if (memory.Length > MaxManifestBytes - (Schema >= 4 ? IntegrityBytes : 0))
+            if (memory.Length > MaxManifestBytes - IntegrityBytes)
                 throw new InvalidDataException("Reconstruction metadata is too large.");
             byte[] payload = memory.ToArray();
-            if (Schema < 4)
-                return payload;
             byte[] digest = HashBytes(payload, SHA256.Create());
             byte[] result = new byte[payload.Length + digest.Length];
             Buffer.BlockCopy(payload, 0, result, 0, payload.Length);
@@ -315,18 +307,21 @@ internal sealed class ChdReconstructionManifest
                 }
                 declaredSchema = headerReader.ReadInt32();
             }
-            if (declaredSchema >= 4)
+            if (declaredSchema != CurrentSchema)
             {
-                if (data.Length < 16 + IntegrityBytes)
-                    throw new InvalidDataException("Reconstruction metadata integrity trailer is truncated.");
-                payloadLength -= IntegrityBytes;
-                byte[] expected = new byte[IntegrityBytes];
-                Buffer.BlockCopy(data, payloadLength, expected, 0, expected.Length);
-                byte[] payload = new byte[payloadLength];
-                Buffer.BlockCopy(data, 0, payload, 0, payload.Length);
-                if (!BytesEqual(expected, HashBytes(payload, SHA256.Create())))
-                    throw new InvalidDataException("Reconstruction metadata integrity checksum mismatch.");
+                error = "Unsupported reconstruction metadata schema: " + declaredSchema;
+                return false;
             }
+            if (data.Length < 16 + IntegrityBytes)
+                throw new InvalidDataException("Reconstruction metadata integrity trailer is truncated.");
+            payloadLength -= IntegrityBytes;
+            byte[] expected = new byte[IntegrityBytes];
+            Buffer.BlockCopy(data, payloadLength, expected, 0, expected.Length);
+            byte[] payload = new byte[payloadLength];
+            Buffer.BlockCopy(data, 0, payload, 0, payload.Length);
+            if (!BytesEqual(expected, HashBytes(payload, SHA256.Create())))
+                throw new InvalidDataException("Reconstruction metadata integrity checksum mismatch.");
+
             using (MemoryStream memory = new MemoryStream(data, 0, payloadLength, false))
             using (BinaryReader reader = new BinaryReader(memory, Encoding.UTF8, true))
             {
@@ -336,7 +331,7 @@ internal sealed class ChdReconstructionManifest
                     return false;
                 }
                 int schema = reader.ReadInt32();
-                if (schema < 1 || schema > CurrentSchema)
+                if (schema != CurrentSchema)
                 {
                     error = "Unsupported reconstruction metadata schema: " + schema;
                     return false;
@@ -345,7 +340,7 @@ internal sealed class ChdReconstructionManifest
                 int profileRevision = reader.ReadInt32();
                 int writerRevision = reader.ReadInt32();
                 string family = ReadString(reader);
-                string storage = schema >= 2 ? ReadString(reader) : "archive";
+                string storage = ReadString(reader);
                 ChdReconstructionManifest parsed = new ChdReconstructionManifest
                 {
                     Schema = schema,
@@ -369,45 +364,39 @@ internal sealed class ChdReconstructionManifest
                 if (trackCount < 0 || trackCount > MaxTracks)
                     throw new InvalidDataException("Invalid manifest track count.");
                 for (int i = 0; i < trackCount; i++)
-                    parsed.Tracks.Add(ReadTrack(reader, schema));
-                if (schema >= 3)
+                    parsed.Tracks.Add(ReadTrack(reader));
+                int viewCount = reader.ReadInt32();
+                if (viewCount < 0 || viewCount > MaxViews)
+                    throw new InvalidDataException("Invalid manifest view count.");
+                for (int i = 0; i < viewCount; i++)
                 {
-                    int viewCount = reader.ReadInt32();
-                    if (viewCount < 0 || viewCount > MaxViews)
-                        throw new InvalidDataException("Invalid manifest view count.");
-                    for (int i = 0; i < viewCount; i++)
+                    ChdManifestView view = new ChdManifestView
                     {
-                        ChdManifestView view = new ChdManifestView
-                        {
-                            Name = ReadString(reader),
-                            Dialect = ReadString(reader),
-                            DescriptorName = ReadString(reader),
-                            DescriptorBytes = ReadBytes(reader, MaxDescriptorBytes),
-                            DescriptorSha256 = ReadBytes(reader, 64)
-                        };
-                        int viewTrackCount = reader.ReadInt32();
-                        if (viewTrackCount < 0 || viewTrackCount > MaxTracks)
-                            throw new InvalidDataException("Invalid manifest view track count.");
-                        for (int j = 0; j < viewTrackCount; j++)
-                            view.Tracks.Add(ReadTrack(reader, schema));
-                        parsed.Views.Add(view);
-                    }
+                        Name = ReadString(reader),
+                        Dialect = ReadString(reader),
+                        DescriptorName = ReadString(reader),
+                        DescriptorBytes = ReadBytes(reader, MaxDescriptorBytes),
+                        DescriptorSha256 = ReadBytes(reader, 64)
+                    };
+                    int viewTrackCount = reader.ReadInt32();
+                    if (viewTrackCount < 0 || viewTrackCount > MaxTracks)
+                        throw new InvalidDataException("Invalid manifest view track count.");
+                    for (int j = 0; j < viewTrackCount; j++)
+                        view.Tracks.Add(ReadTrack(reader));
+                    parsed.Views.Add(view);
                 }
-                if (schema >= 5)
+                int auxiliaryCount = reader.ReadInt32();
+                if (auxiliaryCount < 0 || auxiliaryCount > MaxAuxiliaries)
+                    throw new InvalidDataException("Invalid manifest auxiliary count.");
+                for (int i = 0; i < auxiliaryCount; i++)
                 {
-                    int auxiliaryCount = reader.ReadInt32();
-                    if (auxiliaryCount < 0 || auxiliaryCount > MaxAuxiliaries)
-                        throw new InvalidDataException("Invalid manifest auxiliary count.");
-                    for (int i = 0; i < auxiliaryCount; i++)
+                    parsed.Auxiliaries.Add(new ChdManifestAuxiliary
                     {
-                        parsed.Auxiliaries.Add(new ChdManifestAuxiliary
-                        {
-                            Name = ReadString(reader),
-                            Role = ReadString(reader),
-                            Bytes = ReadBytes(reader, MaxDescriptorBytes),
-                            Sha256 = ReadBytes(reader, 64)
-                        });
-                    }
+                        Name = ReadString(reader),
+                        Role = ReadString(reader),
+                        Bytes = ReadBytes(reader, MaxDescriptorBytes),
+                        Sha256 = ReadBytes(reader, 64)
+                    });
                 }
                 if (memory.Position != memory.Length)
                     throw new InvalidDataException("Unexpected trailing reconstruction metadata.");
@@ -500,6 +489,13 @@ internal sealed class ChdReconstructionManifest
                 error = "Manifest integrity checksum accepted modified metadata.";
                 return false;
             }
+            byte[] obsoleteSchema = original.Serialize();
+            obsoleteSchema[4] = 5;
+            if (TryDeserialize(obsoleteSchema, out _, out _))
+            {
+                error = "Manifest parser accepted an unreleased migration schema.";
+                return false;
+            }
             return true;
         }
         catch (Exception ex)
@@ -527,11 +523,11 @@ internal sealed class ChdReconstructionManifest
 
     private void ValidateForSerialization()
     {
-        if (Schema < 1 || Schema > CurrentSchema)
+        if (Schema != CurrentSchema)
             throw new InvalidDataException("Unsupported reconstruction metadata schema: " + Schema);
         ValidateSafeName(DescriptorName, "descriptor");
         ValidateDescriptor(DescriptorBytes, DescriptorSha256, "primary descriptor");
-        ValidateTracks(Tracks, "primary view", Schema >= 4);
+        ValidateTracks(Tracks, "primary view");
         if (Views == null)
             Views = new List<ChdManifestView>();
         if (Views.Count > MaxViews)
@@ -544,7 +540,7 @@ internal sealed class ChdReconstructionManifest
                 throw new InvalidDataException("Reconstruction view names must be non-empty and unique.");
             ValidateSafeName(view.DescriptorName, "view descriptor");
             ValidateDescriptor(view.DescriptorBytes, view.DescriptorSha256, "view descriptor");
-            ValidateTracks(view.Tracks, "view " + view.Name, Schema >= 4);
+            ValidateTracks(view.Tracks, "view " + view.Name);
         }
         if (Auxiliaries == null)
             Auxiliaries = new List<ChdManifestAuxiliary>();
@@ -584,7 +580,7 @@ internal sealed class ChdReconstructionManifest
             throw new InvalidDataException(label + " checksum mismatch.");
     }
 
-    private static void ValidateTracks(List<ChdManifestTrack> tracks, string label, bool requireSha256)
+    private static void ValidateTracks(List<ChdManifestTrack> tracks, string label)
     {
         tracks = tracks ?? new List<ChdManifestTrack>();
         if (tracks.Count > MaxTracks)
@@ -602,8 +598,8 @@ internal sealed class ChdReconstructionManifest
             ValidateHash(track.Sha1, 20, "SHA1");
             ValidateHash(track.Md5, 16, "MD5");
             ValidateHash(track.Sha256, 32, "SHA256");
-            if (requireSha256 && (track.Sha256 == null || track.Sha256.Length != 32))
-                throw new InvalidDataException("SHA256 is required for every payload in reconstruction schema 4.");
+            if (track.Sha256 == null || track.Sha256.Length != 32)
+                throw new InvalidDataException("SHA256 is required for every payload in reconstruction schema 1.");
         }
     }
 
@@ -622,7 +618,7 @@ internal sealed class ChdReconstructionManifest
             throw new InvalidDataException("Unsafe " + label + " path: " + name);
     }
 
-    private static void WriteTrack(BinaryWriter writer, ChdManifestTrack value, int schema)
+    private static void WriteTrack(BinaryWriter writer, ChdManifestTrack value)
     {
         ChdManifestTrack track = value ?? new ChdManifestTrack();
         writer.Write(track.Number);
@@ -631,11 +627,10 @@ internal sealed class ChdReconstructionManifest
         WriteBytes(writer, track.Crc32);
         WriteBytes(writer, track.Sha1);
         WriteBytes(writer, track.Md5);
-        if (schema >= 4)
-            WriteBytes(writer, track.Sha256);
+        WriteBytes(writer, track.Sha256);
     }
 
-    private static ChdManifestTrack ReadTrack(BinaryReader reader, int schema)
+    private static ChdManifestTrack ReadTrack(BinaryReader reader)
     {
         return new ChdManifestTrack
         {
@@ -645,7 +640,7 @@ internal sealed class ChdReconstructionManifest
             Crc32 = ReadBytes(reader, 64),
             Sha1 = ReadBytes(reader, 64),
             Md5 = ReadBytes(reader, 64),
-            Sha256 = schema >= 4 ? ReadBytes(reader, 64) : Array.Empty<byte>()
+            Sha256 = ReadBytes(reader, 64)
         };
     }
 

@@ -8,14 +8,14 @@ A CHD replaces DAT payloads only after RomVault can extract every represented pa
 
 Every supported input dialect is capability-probed with a real create/extract/hash fixture before that `chdman` executable may write it. Unknown, ambiguous, lossy, truncated, excessively large, or unproved inputs fail closed and leave the source untouched.
 
-## Standard profile v6
+## Standard profile v1
 
 New and upgraded CHDs carry their reconstruction data inside the CHD, not in JSON sidecars:
 
-- `RVEP` schema 6 identifies `rvworld-v6` and records the media family, Playback/Archive policy, codecs, hunk and unit sizes, exact HDD geometry when relevant, `chdman` version, writer capability revision, and SHA-256 of the executable.
-- `RVRM` schema 5 records the source dialect, create/extract modes, exact descriptor bytes, payload names, sizes and hashes, proven alternate-view recipes, and authenticated auxiliary files such as SBI corrections.
+- `RVEP` schema 1 identifies `rvworld-v1` and records the media family, Playback/Archive policy, codecs, hunk and unit sizes, exact HDD geometry when relevant, `chdman` version, writer capability revision, and SHA-256 of the executable.
+- `RVRM` schema 1 records the source dialect, create/extract modes, exact descriptor bytes, payload names, sizes and hashes, proven alternate-view recipes, and authenticated auxiliary files such as SBI corrections.
 
-RVRM schemas 1 through 4 remain readable for migration. Current manifests require SHA-256 for every payload and carry a SHA-256 integrity trailer over all manifest data; schema 5 also hashes every embedded auxiliary. Parsing is bounded to a 64 MiB manifest, 16 MiB descriptor or auxiliary, 1,000 tracks, 16 views, and 64 auxiliaries. It rejects unsafe paths, duplicate members, invalid hash lengths, corrupt integrity data, descriptor graphs without payloads, and metadata traversal. A descriptor is retained beside a CHD only when the separate CUE/GDI/TOC sidecar preference is enabled. Diagnostic logs remain opt-in and are unrelated to reconstruction.
+There are no pre-release migration schemas. Schema 1 is the complete initial contract: every payload requires SHA-256, every embedded auxiliary is hashed, and a SHA-256 integrity trailer covers all manifest data. Any other schema number is rejected. Parsing is bounded to a 64 MiB manifest, 16 MiB descriptor or auxiliary, 1,000 tracks, 16 views, and 64 auxiliaries. It rejects unsafe paths, duplicate members, invalid hash lengths, corrupt integrity data, descriptor graphs without payloads, and metadata traversal. A descriptor is retained beside a CHD only when the separate CUE/GDI/TOC sidecar preference is enabled. Diagnostic logs remain opt-in and are unrelated to reconstruction.
 
 | Family | Canonical round trip | Playback | Archive |
 | --- | --- | --- | --- |
@@ -27,7 +27,7 @@ RVRM schemas 1 through 4 remain readable for migration. Current manifests requir
 | Hard disk | sector image through exact-geometry `createhd` / `extracthd` | `zstd`, 4,096-byte hunks | `lzma`, 1,048,576-byte hunks |
 | LaserDisc | canonical AVI through `createld` / `extractld` | `avhu`, one frame per hunk | `avhu`, one frame per hunk |
 
-Playback deliberately establishes Zstandard as the RomVault v6 standard: `cdzs` is the primary optical codec and `zstd` is used for non-optical byte/sector media. Emulator support does not silently downgrade a v6 file to the older zlib convention. Emulators that consume the v6 standard need to support these lossless CHD codecs.
+Playback deliberately establishes Zstandard as the RomVault v1 standard: `cdzs` is the primary optical codec and `zstd` is used for non-optical byte/sector media. Emulator support does not silently downgrade a v1 file to the older zlib convention. Emulators that consume the v1 standard need to support these lossless CHD codecs.
 
 MODE1/2048 and Unicode CUE use the verified `cdzl,cdfl` 19,584-byte layout for Archive. MODE2/2352, mixed/complex CUE, and TOC also omit `cdlz` in Archive because chdman 0.289 did not reliably decode those fixtures with CD-LZMA; they retain the large Archive hunk unless the dialect requires the smaller one. Preservation takes precedence over nominal compression settings.
 
@@ -145,7 +145,7 @@ RomVaultCmd -chdconvert run <queue.rvchdqueue> [maximum-items]
 RomVaultCmd -chdconvert status <queue.rvchdqueue>
 ```
 
-The preservation matrix covers both profiles for every family, all supported CUE/GDI/TOC dialects, Redump Dreamcast, authenticated manifest compatibility, Unicode and adversarial optical inputs, exact SBI embedding, parser bounds, interrupted-transaction recovery, equivalent multi-view reconstruction, health-record redaction, exact HDD geometry, two-file collection recovery, transactional cross-profile conversion, parent materialization, mixed-media DAT partitioning, ToSort rejection, and the logging default. V6 conformance additionally requires repeated `zstd` and `cdzs` encodes to be byte-identical and requires chdman extraction, the native logical reader, and CHDSharpLib decoding to agree on the source bytes.
+The preservation matrix covers both profiles for every family, all supported CUE/GDI/TOC dialects, Redump Dreamcast, authenticated manifest compatibility, Unicode and adversarial optical inputs, exact SBI embedding, parser bounds, interrupted-transaction recovery, equivalent multi-view reconstruction, health-record redaction, exact HDD geometry, two-file collection recovery, transactional cross-profile conversion, parent materialization, mixed-media DAT partitioning, ToSort rejection, and the logging default. V1 conformance additionally requires repeated `zstd` and `cdzs` encodes to be byte-identical and requires chdman extraction, the native logical reader, and CHDSharpLib decoding to agree on the source bytes.
 
 ## Upstream basis
 

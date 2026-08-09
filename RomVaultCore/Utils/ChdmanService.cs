@@ -1435,7 +1435,7 @@ public static class ChdmanDiagnostics
         bool healthOk = ChdHealthStore.RunSelfTest(out string healthError);
         bool geometryOk = ChdHddGeometry.RunSelfTest(out string geometryError);
         bool parityOk = ChdCollectionParity.RunSelfTest(out string parityError);
-        bool v6ConformanceOk = ChdV6Conformance.Run(executable, out string v6ConformanceError);
+        bool v1ConformanceOk = ChdV1Conformance.Run(executable, out string v1ConformanceError);
         bool opticalHardeningOk = ChdOpticalAdversarialTests.Run(identity, out string opticalHardeningError);
         bool conversionOk = ChdConversionSelfTests.Run(executable, identity, out string conversionError);
         string parentError = capabilities.SupportsCopy ? "" : "chdman copy is unavailable";
@@ -1473,7 +1473,7 @@ public static class ChdmanDiagnostics
             "Health-database-redaction=" + (healthOk ? "PASS" : "FAIL"),
             "HDD-exact-geometry=" + (geometryOk ? "PASS" : "FAIL"),
             "Collection-parity-recovery=" + (parityOk ? "PASS" : "FAIL"),
-            "V6-determinism-differential-decode=" + (v6ConformanceOk ? "PASS" : "FAIL"),
+            "V1-determinism-differential-decode=" + (v1ConformanceOk ? "PASS" : "FAIL"),
             "Optical-adversarial-corpus=" + (opticalHardeningOk ? "PASS" : "FAIL"),
             "Transactional-profile-conversion=" + (conversionOk ? "PASS" : "FAIL"),
             "Parent-standalone-roundtrip=" + (parentOk ? "PASS" : "FAIL"),
@@ -1497,8 +1497,8 @@ public static class ChdmanDiagnostics
             lines.Add("geometryError=" + geometryError);
         if (!string.IsNullOrWhiteSpace(parityError))
             lines.Add("parityError=" + parityError);
-        if (!string.IsNullOrWhiteSpace(v6ConformanceError))
-            lines.Add("v6ConformanceError=" + v6ConformanceError);
+        if (!string.IsNullOrWhiteSpace(v1ConformanceError))
+            lines.Add("v1ConformanceError=" + v1ConformanceError);
         if (!string.IsNullOrWhiteSpace(opticalHardeningError))
             lines.Add("opticalHardeningError=" + opticalHardeningError);
         if (!string.IsNullOrWhiteSpace(conversionError))
@@ -1518,6 +1518,6 @@ public static class ChdmanDiagnostics
                capabilities.RawPlaybackRoundTrip && capabilities.RawArchiveRoundTrip &&
                capabilities.HddPlaybackRoundTrip && capabilities.HddArchiveRoundTrip &&
                capabilities.LaserDiscPlaybackRoundTrip && capabilities.LaserDiscArchiveRoundTrip &&
-               manifestOk && hardeningOk && recoveryOk && multiViewOk && healthOk && geometryOk && parityOk && v6ConformanceOk && opticalHardeningOk && conversionOk && parentOk && mediaGraphOk && contentMatchOk && loggingDefaultOk ? 0 : 5;
+               manifestOk && hardeningOk && recoveryOk && multiViewOk && healthOk && geometryOk && parityOk && v1ConformanceOk && opticalHardeningOk && conversionOk && parentOk && mediaGraphOk && contentMatchOk && loggingDefaultOk ? 0 : 5;
     }
 }

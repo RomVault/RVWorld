@@ -22,16 +22,16 @@ internal sealed class ChdEncodingProfileSpec
     {
         int writerRevision = identity?.Capabilities?.WriterRevision(Family) ?? 0;
         string geometry = Family == "hdd" ? $";sector={HddSectorSize};cylinders={HddCylinders};heads={HddHeads};sectors={HddSectors};geometry={HddGeometryMode}" : "";
-        return $"schema=6;profile={ChdEncodingProfile.ProfileId};revision={ProfileRevision};writer={writerRevision};chdman={identity?.VersionText ?? ""};toolsha256={identity?.BinarySha256 ?? ""};family={Family};storage={Storage};codecs={Codecs};hunk={HunkSize};unit={UnitSize}{geometry}";
+        return $"schema={ChdEncodingProfile.CurrentProfileSchema};profile={ChdEncodingProfile.ProfileId};revision={ProfileRevision};writer={writerRevision};chdman={identity?.VersionText ?? ""};toolsha256={identity?.BinarySha256 ?? ""};family={Family};storage={Storage};codecs={Codecs};hunk={HunkSize};unit={UnitSize}{geometry}";
     }
 }
 
 internal sealed class ChdEncodingProfile
 {
     public const string MetadataTag = "RVEP";
-    public const string ProfileId = "rvworld-v6";
-    public const int CurrentProfileRevision = 6;
-    public const int CurrentProfileSchema = 6;
+    public const string ProfileId = "rvworld-v1";
+    public const int CurrentProfileRevision = 1;
+    public const int CurrentProfileSchema = 1;
 
     public int Schema { get; private set; }
     public string Profile { get; private set; }
@@ -171,6 +171,8 @@ internal sealed class ChdEncodingProfile
         {
             return false;
         }
+        if (schema != CurrentProfileSchema || !string.Equals(profileId, ProfileId, StringComparison.Ordinal))
+            return false;
 
         profile = new ChdEncodingProfile
         {
