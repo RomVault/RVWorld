@@ -383,11 +383,11 @@ namespace RomVaultCore.Scanner
             }
 
         SkipChdCache:
-            string baseTempDir = ResolveExistingDirectoryPath(DB.GetToSortCache()?.FullName);
-            if (string.IsNullOrWhiteSpace(baseTempDir))
-                baseTempDir = Environment.CurrentDirectory;
-            string tempDir = System.IO.Path.Combine(baseTempDir, "__RomVault.chdscan." + Guid.NewGuid().ToString("N"));
-            Directory.CreateDirectory(tempDir);
+            if (!ChdTemporaryWorkspace.TryCreateBesideSource(filename, "__RomVault.chdscan.", out string tempDir, out string workspaceError))
+            {
+                _thWrk?.Report(new bgwShowError(filename, "Could not create CHD scan workspace beside the source file: " + workspaceError));
+                return null;
+            }
 
             try
             {
@@ -417,22 +417,6 @@ namespace RomVaultCore.Scanner
                 if (!expectsIso && expectedChildren.Count == 0 && string.Equals(expectedDescriptor, "dvd", StringComparison.OrdinalIgnoreCase))
                     expectsIso = true;
 
-                if (!Settings.rvSettings.ChdStreaming || !expectsIso)
-                {
-                    long? logicalSize = TryGetChdLogicalSizeBytes(chdmanExe, filename, tempDir);
-                    if (logicalSize.HasValue)
-                    {
-                        long free = GetFreeSpaceBytes(tempDir);
-                        long overhead = expectsIso ? 512L * 1024 * 1024 : 256L * 1024 * 1024;
-                        long required = logicalSize.Value + overhead;
-                        if (free > 0 && free < required)
-                        {
-                            _thWrk?.Report(new bgwShowError(filename, $"Insufficient free space for CHD extraction. required={required} free={free}"));
-                            return null;
-                        }
-                    }
-                }
-
                 ScannedFile ar = new ScannedFile(FileType.CHD)
                 {
                     Name = filename,
@@ -457,6 +441,11 @@ namespace RomVaultCore.Scanner
 
                 if (!string.IsNullOrWhiteSpace(expectedSingleFamily))
                 {
+                    if (!HasChdExtractionSpace(chdmanExe, filename, tempDir, false, out string spaceError))
+                    {
+                        _thWrk?.Report(new bgwShowError(filename, spaceError));
+                        return null;
+                    }
                     string outputPath = System.IO.Path.Combine(tempDir, System.IO.Path.GetFileName(expectedSingleName));
                     bool extracted;
                     string extractionName;
@@ -549,6 +538,11 @@ namespace RomVaultCore.Scanner
                     }
                     if (!useStreaming)
                     {
+                        if (!HasChdExtractionSpace(chdmanExe, filename, tempDir, true, out string spaceError))
+                        {
+                            _thWrk?.Report(new bgwShowError(filename, spaceError));
+                            return null;
+                        }
                         string outIso = System.IO.Path.Combine(tempDir, "image.iso");
                         if (extractor.ExtractDvd(filename, outIso, out string err))
                         {
@@ -911,6 +905,11 @@ namespace RomVaultCore.Scanner
                 }
                 {
                 string outMain = System.IO.Path.Combine(tempDir, expectsGdi ? "disc.gdi" : "disc.cue");
+                if (!HasChdExtractionSpace(chdmanExe, filename, tempDir, false, out string spaceError))
+                {
+                    _thWrk?.Report(new bgwShowError(filename, spaceError));
+                    return null;
+                }
                 if (!extractor.ExtractCd(filename, outMain, out string err1))
                 {
                     _thWrk?.Report(new bgwShowError(filename, "CHD extractcd failed: " + err1));
@@ -1992,6 +1991,34 @@ namespace RomVaultCore.Scanner
         private static long? TryGetChdLogicalSizeBytes(string chdmanExe, string chdPath, string workingDir)
         {
             return ChdmanService.TryGetLogicalSize(chdmanExe, chdPath, workingDir);
+        }
+
+        private static bool HasChdExtractionSpace(string chdmanExe, string chdPath, string workingDir, bool isIso, out string error)
+        {
+            error = "";
+            long? logicalSize = TryGetChdLogicalSizeBytes(chdmanExe, chdPath, workingDir);
+            if (!logicalSize.HasValue)
+                return true;
+
+            long free = GetFreeSpaceBytes(workingDir);
+            long overhead = isIso ? 512L * 1024 * 1024 : 256L * 1024 * 1024;
+            long required;
+            try
+            {
+                required = checked(logicalSize.Value + overhead);
+            }
+            catch (OverflowException)
+            {
+                error = "CHD extraction size is too large to preflight safely.";
+                return false;
+            }
+
+            if (free > 0 && free < required)
+            {
+                error = $"Insufficient free space beside the source CHD for extraction. required={required} free={free}";
+                return false;
+            }
+            return true;
         }
 
 

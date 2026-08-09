@@ -96,6 +96,8 @@ Recovery handles interruption after the journal, staging, metadata, manifest, fi
 
 Native logical streaming is an optimization, never the initial authority. It is enabled for a container only after a current external chdman extraction has matched the native logical SHA-256. The default parity lifetime is 30 days; expiry forces a fresh external comparison.
 
+Scan and verification extractions use a temporary workspace beside the physical source CHD. A CHD reached through a mapped ToSort therefore consumes scratch space on that mapped storage, never in the primary ToSort cache. RomVault removes the workspace after the operation and fails closed if it cannot create or safely preflight that source-local workspace.
+
 The optional persistent health database lives in RomVault's LocalAppData area, not beside the ROM. It stores a redacted path token, filename, family/profile, tool hash, verification method, hashes, result, and time. It never stores the original absolute path. Scrubbing supports:
 
 - `container`: chdman verification plus bounded metadata traversal;

@@ -44,6 +44,9 @@ internal static class ChdHardeningSelfTests
             badHashManifest.Tracks[0].Sha1 = new byte[19];
             AssertSerializeRejected(badHashManifest, "invalid hash length");
 
+            if (!ChdTemporaryWorkspace.RunSelfTest(out string workspaceError))
+                throw new InvalidDataException("CHD workspace routing failed: " + workspaceError);
+
             return true;
         }
         catch (Exception ex)

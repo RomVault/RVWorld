@@ -327,29 +327,32 @@ public static class ChdVerify
             return 2;
         }
 
-        string baseTempDir = null;
-        try
+        if (!ChdTemporaryWorkspace.TryCreateBesideSource(chdPath, "__RomVault.chdverify.", out string tempDir, out string workspaceError))
         {
-            baseTempDir = DB.GetToSortCache()?.FullName;
+            report = "verify failed: could not create a workspace beside the source CHD: " + workspaceError;
+            return 2;
         }
-        catch
-        {
-        }
-        if (string.IsNullOrWhiteSpace(baseTempDir))
-            baseTempDir = System.IO.Path.GetTempPath();
-        string tempDir = System.IO.Path.Combine(baseTempDir, "__RomVault.chdverify." + Guid.NewGuid().ToString("N"));
-        Directory.CreateDirectory(tempDir);
 
         try
         {
             string chdmanExe = ChdmanProcessTracker.FindExecutable();
-            long? logicalSize = TryGetChdLogicalSizeBytes(chdmanExe, chdPath, tempDir);
+            long? logicalSize = forceStreaming == true ? null : TryGetChdLogicalSizeBytes(chdmanExe, chdPath, tempDir);
             if (logicalSize.HasValue)
             {
                 long free = GetFreeSpaceBytes(tempDir);
-                if (free > 0 && free < logicalSize.Value + 256L * 1024 * 1024)
+                long required;
+                try
                 {
-                    report = $"verify failed: insufficient free space. required={logicalSize.Value} free={free}";
+                    required = checked(logicalSize.Value + 256L * 1024 * 1024);
+                }
+                catch (OverflowException)
+                {
+                    report = "verify failed: CHD extraction size is too large to preflight safely";
+                    return 4;
+                }
+                if (free > 0 && free < required)
+                {
+                    report = $"verify failed: insufficient free space beside the source CHD. required={required} free={free}";
                     return 4;
                 }
             }
