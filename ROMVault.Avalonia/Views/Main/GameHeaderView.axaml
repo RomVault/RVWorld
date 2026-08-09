@@ -1,0 +1,66 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:ROMVault.Avalonia.ViewModels"
+             x:Class="ROMVault.Avalonia.Views.Main.GameHeaderView"
+             x:DataType="vm:MainWindowViewModel"
+             x:CompileBindings="True">
+  <Border MinHeight="92" Margin="5" Padding="8" Classes="Card">
+    <Grid Name="HeaderLayout" ColumnDefinitions="2*,3*" RowDefinitions="Auto,Auto" ColumnSpacing="12" RowSpacing="8">
+      <StackPanel Name="DetailsPanel" Spacing="6" VerticalAlignment="Top">
+        <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10" VerticalAlignment="Center">
+          <TextBlock Text="Game" Classes="Muted" FontSize="10" VerticalAlignment="Center"/>
+          <Border Grid.Column="1" BorderBrush="{DynamicResource SurfaceBorderBrush}" BorderThickness="1"
+                  CornerRadius="8" Padding="8,6" Background="{DynamicResource SurfaceBackgroundAltBrush}">
+            <TextBlock Text="{Binding GameDetails.Name}" FontSize="11" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"/>
+          </Border>
+        </Grid>
+        <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10" VerticalAlignment="Center" IsVisible="{Binding DatDetails.HasEffectiveRule}">
+          <TextBlock Text="Rule" Classes="Muted" FontSize="10" VerticalAlignment="Center"/>
+          <Border Grid.Column="1" BorderBrush="{DynamicResource SurfaceBorderBrush}" BorderThickness="1"
+                  CornerRadius="8" Padding="8,6" Background="{DynamicResource SurfaceBackgroundAltBrush}">
+            <TextBlock Text="{Binding DatDetails.EffectiveRule}" FontSize="10" TextWrapping="Wrap"/>
+          </Border>
+        </Grid>
+        <Grid ColumnDefinitions="Auto,*,Auto,*" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="10" RowSpacing="4">
+          <TextBlock Text="Description" Classes="Muted" FontSize="10" HorizontalAlignment="Right" IsVisible="{Binding GameDetails.HasDescription}"/>
+          <TextBlock Grid.Column="1" Text="{Binding GameDetails.Description}" FontSize="10" TextTrimming="CharacterEllipsis" IsVisible="{Binding GameDetails.HasDescription}"/>
+          <TextBlock Grid.Column="2" Text="Manufacturer" Classes="Muted" FontSize="10" HorizontalAlignment="Right" IsVisible="{Binding GameDetails.HasManufacturer}"/>
+          <TextBlock Grid.Column="3" Text="{Binding GameDetails.Manufacturer}" FontSize="10" TextTrimming="CharacterEllipsis" IsVisible="{Binding GameDetails.HasManufacturer}"/>
+          <TextBlock Grid.Row="1" Text="Clone Of" Classes="Muted" FontSize="10" HorizontalAlignment="Right" IsVisible="{Binding GameDetails.HasCloneOf}"/>
+          <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding GameDetails.CloneOf}" FontSize="10" TextTrimming="CharacterEllipsis" IsVisible="{Binding GameDetails.HasCloneOf}"/>
+          <TextBlock Grid.Row="1" Grid.Column="2" Text="Rom Of" Classes="Muted" FontSize="10" HorizontalAlignment="Right" IsVisible="{Binding GameDetails.HasRomOf}"/>
+          <TextBlock Grid.Row="1" Grid.Column="3" Text="{Binding GameDetails.RomOf}" FontSize="10" TextTrimming="CharacterEllipsis" IsVisible="{Binding GameDetails.HasRomOf}"/>
+          <TextBlock Grid.Row="2" Text="Year" Classes="Muted" FontSize="10" HorizontalAlignment="Right" IsVisible="{Binding GameDetails.HasYear}"/>
+          <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding GameDetails.Year}" FontSize="10" TextTrimming="CharacterEllipsis" IsVisible="{Binding GameDetails.HasYear}"/>
+          <TextBlock Grid.Row="2" Grid.Column="2" Text="Category" Classes="Muted" FontSize="10" HorizontalAlignment="Right" IsVisible="{Binding GameDetails.HasCategory}"/>
+          <TextBlock Grid.Row="2" Grid.Column="3" Text="{Binding GameDetails.Category}" FontSize="10" TextTrimming="CharacterEllipsis" IsVisible="{Binding GameDetails.HasCategory}"/>
+        </Grid>
+      </StackPanel>
+
+      <Grid Name="FiltersPanel" Grid.Column="1" RowDefinitions="Auto,Auto" RowSpacing="6" VerticalAlignment="Top">
+        <WrapPanel>
+          <ToggleButton Name="ShowCompleteToggle" Content="{Binding Games.CompleteLabel}" IsChecked="True" Classes="FilterChip" ToolTip.Tip="Show complete games" AutomationProperties.Name="Show complete games"/>
+          <ToggleButton Name="ShowPartialToggle" Content="{Binding Games.PartialLabel}" IsChecked="True" Classes="FilterChip" ToolTip.Tip="Show partially complete games" AutomationProperties.Name="Show partially complete games"/>
+          <ToggleButton Name="ShowEmptyToggle" Content="{Binding Games.EmptyLabel}" IsChecked="True" Classes="FilterChip" ToolTip.Tip="Show games with no available ROMs" AutomationProperties.Name="Show empty games"/>
+          <ToggleButton Name="ShowFixesToggle" Content="{Binding Games.FixesLabel}" IsChecked="True" Classes="FilterChip" ToolTip.Tip="Show fixable games" AutomationProperties.Name="Show fixable games"/>
+          <ToggleButton Name="ShowMiaToggle" Content="{Binding Games.MiaLabel}" IsChecked="True" Classes="FilterChip" ToolTip.Tip="Show MIA games" AutomationProperties.Name="Show MIA games"/>
+          <ToggleButton Name="ShowMergedToggle" Content="{Binding Games.MergedLabel}" Classes="FilterChip" ToolTip.Tip="Show merged or deduplicated games" AutomationProperties.Name="Show merged games"/>
+        </WrapPanel>
+        <Grid Grid.Row="1" ColumnDefinitions="*,Auto,Auto,Auto,Auto" ColumnSpacing="8">
+          <Grid>
+            <TextBox Name="FilterTextBox" MinWidth="190" Height="26" FontSize="11" Watermark="Filter games… (name, desc:, status:)" AutomationProperties.Name="Filter games" AutomationProperties.HelpText="Search by name, description, or status"/>
+            <Popup Name="SuggestionsPopup" IsOpen="False" PlacementTarget="{Binding #FilterTextBox}" Placement="Bottom" IsLightDismissEnabled="True">
+              <Border Classes="Card" Padding="8" Margin="0,4,0,0">
+                <ListBox Name="SuggestionsList" MinWidth="220" MaxHeight="220"/>
+              </Border>
+            </Popup>
+          </Grid>
+          <Button Grid.Column="1" Name="ClearButton" Content="Clear" MinWidth="64" Height="26" Padding="12,0" FontSize="11"/>
+          <TextBlock Grid.Column="2" Text="{Binding Games.CountText}" Classes="Muted" VerticalAlignment="Center"/>
+          <TextBlock Grid.Column="3" Text="{Binding Games.SortText}" Classes="Muted" VerticalAlignment="Center"/>
+          <Button Grid.Column="4" Name="HelpButton" Content="?" MinWidth="34" Height="26" Padding="0" FontSize="14"/>
+        </Grid>
+      </Grid>
+    </Grid>
+  </Border>
+</UserControl>

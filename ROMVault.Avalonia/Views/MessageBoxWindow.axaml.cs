@@ -27,7 +27,7 @@ namespace ROMVault.Avalonia.Views
         /// <param name="message">The message content.</param>
         public void SetMessage(string message)
         {
-            var textBlock = this.FindControl<TextBlock>("MessageText");
+            var textBlock = MessageText;
             if (textBlock != null)
             {
                 textBlock.Text = message;
@@ -38,8 +38,8 @@ namespace ROMVault.Avalonia.Views
         {
             _showCancel = showCancel;
 
-            var btnOk = this.FindControl<Button>("btnOk");
-            var btnCancel = this.FindControl<Button>("btnCancel");
+            var btnOk = this.btnOk;
+            var btnCancel = this.btnCancel;
 
             if (btnOk != null) btnOk.Content = okText;
             if (btnCancel != null)

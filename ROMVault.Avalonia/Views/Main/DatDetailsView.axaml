@@ -1,0 +1,43 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:ROMVault.Avalonia.ViewModels"
+             x:Class="ROMVault.Avalonia.Views.Main.DatDetailsView"
+             x:DataType="vm:DatDetailsViewModel"
+             x:CompileBindings="True">
+  <StackPanel Margin="5">
+    <TextBlock Text="DAT Info" Classes="SectionHeader" Margin="0,0,0,6"/>
+    <Border Padding="10" Classes="Card">
+      <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto"
+            ColumnDefinitions="80,*,80,*">
+        <TextBlock Grid.Row="0" Text="Name :" Margin="5,2" HorizontalAlignment="Right" FontSize="10"/>
+        <TextBox Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="3" Text="{Binding Name}" Classes="ReadOnlyLabel" Margin="2" Height="18" MinHeight="0" FontSize="10"/>
+
+        <TextBlock Grid.Row="1" Text="Description :" Margin="5,2" HorizontalAlignment="Right" FontSize="10"/>
+        <TextBox Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="3" Text="{Binding Description}" Classes="ReadOnlyLabel" Margin="2" Height="18" MinHeight="0" FontSize="10"/>
+
+        <TextBlock Grid.Row="2" Text="Category :" Margin="5,2" HorizontalAlignment="Right" FontSize="10"/>
+        <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding Category}" Classes="ReadOnlyLabel" Margin="2" Height="18" MinHeight="0" FontSize="10"/>
+        <TextBlock Grid.Row="2" Grid.Column="2" Text="Version :" Margin="5,2" HorizontalAlignment="Right" FontSize="10"/>
+        <TextBox Grid.Row="2" Grid.Column="3" Text="{Binding Version}" Classes="ReadOnlyLabel" Margin="2" Height="18" MinHeight="0" FontSize="10"/>
+
+        <TextBlock Grid.Row="3" Text="Author :" Margin="5,2" HorizontalAlignment="Right" FontSize="10"/>
+        <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding Author}" Classes="ReadOnlyLabel" Margin="2" Height="18" MinHeight="0" FontSize="10"/>
+        <TextBlock Grid.Row="3" Grid.Column="2" Text="Date :" Margin="5,2" HorizontalAlignment="Right" FontSize="10"/>
+        <TextBox Grid.Row="3" Grid.Column="3" Text="{Binding Date}" Classes="ReadOnlyLabel" Margin="2" Height="18" MinHeight="0" FontSize="10"/>
+
+        <Separator Grid.Row="4" Grid.ColumnSpan="4" Margin="0,8" Height="1"/>
+        <Grid Grid.Row="5" Grid.ColumnSpan="4" Margin="0,5"
+              RowDefinitions="Auto,Auto" ColumnDefinitions="80,*,80,*">
+          <TextBlock Text="ROMs Got :" Margin="5,2" HorizontalAlignment="Right" FontSize="10"/>
+          <TextBox Grid.Column="1" Text="{Binding RomsGot}" Classes="ReadOnlyLabel" Margin="2" Height="18" MinHeight="0" FontSize="10"/>
+          <TextBlock Grid.Column="2" Text="ROMs Fixable :" Margin="5,2" HorizontalAlignment="Right" FontSize="10"/>
+          <TextBox Grid.Column="3" Text="{Binding RomsFixable}" Classes="ReadOnlyLabel" Margin="2" Height="18" MinHeight="0" FontSize="10"/>
+          <TextBlock Grid.Row="1" Text="ROMs Missing :" Margin="5,2" HorizontalAlignment="Right" FontSize="10"/>
+          <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding RomsMissing}" Classes="ReadOnlyLabel" Margin="2" Height="18" MinHeight="0" FontSize="10"/>
+          <TextBlock Grid.Row="1" Grid.Column="2" Text="ROMs Unknown :" Margin="5,2" HorizontalAlignment="Right" FontSize="10"/>
+          <TextBox Grid.Row="1" Grid.Column="3" Text="{Binding RomsUnknown}" Classes="ReadOnlyLabel" Margin="2" Height="18" MinHeight="0" FontSize="10"/>
+        </Grid>
+      </Grid>
+    </Border>
+  </StackPanel>
+</UserControl>

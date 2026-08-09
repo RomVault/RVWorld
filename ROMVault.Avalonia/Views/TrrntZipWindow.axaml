@@ -2,9 +2,13 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="using:ROMVault.Avalonia.ViewModels"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="500"
         x:Class="ROMVault.Avalonia.Views.TrrntZipWindow"
+        x:DataType="vm:TrrntZipViewModel"
+        x:CompileBindings="True"
         Title="SAM-UI" Width="800" Height="500"
+        MinWidth="680" MinHeight="420"
         WindowStartupLocation="CenterScreen">
   
   <Grid ColumnDefinitions="250, *">
@@ -57,7 +61,7 @@
                   <ComboBox Grid.Row="1" Grid.Column="1" Name="cboOutType" HorizontalAlignment="Stretch" Margin="0,0,0,10"/>
 
                   <Grid Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2" ColumnDefinitions="Auto, Auto, *" Margin="0,0,0,10">
-                       <TextBlock Grid.Column="0" Name="lblTotalStatus" Text="( 0 / 0 )" VerticalAlignment="Center" Margin="0,0,10,0" Width="60"/>
+                       <TextBlock Grid.Column="0" Text="{Binding TotalStatus}" VerticalAlignment="Center" Margin="0,0,10,0" Width="72"/>
                        <CheckBox Grid.Column="1" Name="chkFix" Content="Fix" Margin="0,0,10,0" IsChecked="True"/>
                        <CheckBox Grid.Column="2" Name="chkForce" Content="Force"/>
                   </Grid>
@@ -73,7 +77,7 @@
 
     <!-- Right Panel (DataGrid) -->
     <Border Grid.Column="1" Classes="Card" Margin="8" Padding="0">
-        <DataGrid Name="dataGrid" AutoGenerateColumns="False" IsReadOnly="True" Margin="0" GridLinesVisibility="None" BorderThickness="0">
+        <DataGrid Name="dataGrid" ItemsSource="{Binding Items}" AutoGenerateColumns="False" IsReadOnly="True" Margin="0" GridLinesVisibility="None" BorderThickness="0">
             <DataGrid.ContextMenu>
                 <ContextMenu>
                     <MenuItem Header="Copy Filename" Click="OnCopyFilenameClick"/>
@@ -81,7 +85,7 @@
                 </ContextMenu>
             </DataGrid.ContextMenu>
             <DataGrid.Columns>
-                <DataGridTextColumn Header="Filename" Binding="{Binding Filename}" Width="*"/>
+                <DataGridTextColumn Header="Filename" Binding="{Binding FileName}" Width="*"/>
                 <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="150"/>
             </DataGrid.Columns>
         </DataGrid>

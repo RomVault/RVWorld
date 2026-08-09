@@ -36,7 +36,7 @@ namespace ROMVault.Avalonia.Views
             {
                 sb.AppendLine(v.GotStatus+" | "+   v.FullName);
             }
-            var textBox = this.FindControl<TextBox>("textBox1");
+            var textBox = textBox1;
             if (textBox != null)
             {
                 textBox.Text = sb.ToString();

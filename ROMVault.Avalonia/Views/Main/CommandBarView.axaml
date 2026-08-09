@@ -1,0 +1,71 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:ROMVault.Avalonia.ViewModels"
+             x:Class="ROMVault.Avalonia.Views.Main.CommandBarView"
+             x:DataType="vm:MainWindowViewModel"
+             x:CompileBindings="True">
+  <Border Classes="CommandBar">
+    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+      <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+        <StackPanel Orientation="Horizontal" Spacing="8">
+          <Button Classes="CommandButton Primary"
+                  Command="{Binding UpdateDatsCommand}"
+                  ToolTip.Tip="Update DAT definitions"
+                  AutomationProperties.Name="Update DAT definitions">
+            <StackPanel Orientation="Horizontal" Spacing="7">
+              <PathIcon Width="18" Height="18" Data="{StaticResource IconRefresh}"/>
+              <TextBlock Text="Update DATs"/>
+            </StackPanel>
+          </Button>
+          <Button Classes="CommandButton"
+                  Command="{Binding ScanRomsCommand}"
+                  CommandParameter="Level2"
+                  ToolTip.Tip="Scan selected ROM directories"
+                  AutomationProperties.Name="Scan selected ROM directories">
+            <StackPanel Orientation="Horizontal" Spacing="7">
+              <PathIcon Width="18" Height="18" Data="{StaticResource IconScan}"/>
+              <TextBlock Text="Scan ROMs"/>
+            </StackPanel>
+          </Button>
+          <Button Classes="CommandButton"
+                  Command="{Binding FindFixesCommand}"
+                  ToolTip.Tip="Find available fixes"
+                  AutomationProperties.Name="Find available fixes">
+            <StackPanel Orientation="Horizontal" Spacing="7">
+              <PathIcon Width="18" Height="18" Data="{StaticResource IconCheck}"/>
+              <TextBlock Text="Find Fixes"/>
+            </StackPanel>
+          </Button>
+          <Button Classes="CommandButton"
+                  Command="{Binding FixFilesCommand}"
+                  ToolTip.Tip="Apply available ROM fixes"
+                  AutomationProperties.Name="Apply available ROM fixes">
+            <StackPanel Orientation="Horizontal" Spacing="7">
+              <PathIcon Width="18" Height="18" Data="{StaticResource IconFix}"/>
+              <TextBlock Text="Fix Files"/>
+            </StackPanel>
+          </Button>
+          <Button Classes="CommandButton"
+                  Command="{Binding FixDatReportCommand}"
+                  ToolTip.Tip="Create ROMVault reports"
+                  AutomationProperties.Name="Create ROMVault reports">
+            <StackPanel Orientation="Horizontal" Spacing="7">
+              <PathIcon Width="18" Height="18" Data="{StaticResource IconReport}"/>
+              <TextBlock Text="Reports"/>
+            </StackPanel>
+          </Button>
+          <Button Classes="CommandButton"
+                  Command="{Binding ToggleInspectorCommand}"
+                  ToolTip.Tip="Show or hide the game inspector"
+                  AutomationProperties.Name="Toggle game inspector">
+            <StackPanel Orientation="Horizontal" Spacing="7">
+              <PathIcon Width="18" Height="18" Data="{StaticResource IconInspector}"/>
+              <TextBlock Text="Inspector"/>
+            </StackPanel>
+          </Button>
+        </StackPanel>
+      </ScrollViewer>
+      <TextBlock Grid.Column="1" Text="Ctrl+F to filter" Classes="Muted" VerticalAlignment="Center"/>
+    </Grid>
+  </Border>
+</UserControl>

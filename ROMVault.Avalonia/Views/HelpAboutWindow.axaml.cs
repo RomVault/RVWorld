@@ -28,7 +28,7 @@ namespace ROMVault.Avalonia.Views
 
             Title = "Version " + strVersion + " : " + AppDomain.CurrentDomain.BaseDirectory;
             
-            var lblVersion = this.FindControl<TextBlock>("lblVersion");
+            var lblVersion = this.lblVersion;
             if (lblVersion != null)
             {
                 lblVersion.Text = "Version " + strVersion;

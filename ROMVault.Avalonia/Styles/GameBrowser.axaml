@@ -1,0 +1,60 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Style Selector="Border.CommandBar">
+        <Setter Property="Background" Value="{DynamicResource SurfaceBackgroundBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource SurfaceBorderBrush}"/>
+        <Setter Property="BorderThickness" Value="0,0,0,1"/>
+        <Setter Property="Padding" Value="10,6"/>
+    </Style>
+
+    <Style Selector="Button.CommandButton">
+        <Setter Property="MinHeight" Value="36"/>
+        <Setter Property="Padding" Value="12,7"/>
+        <Setter Property="Background" Value="{DynamicResource SurfaceBackgroundAltBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource SurfaceBorderBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="8"/>
+    </Style>
+    <Style Selector="Button.CommandButton:pointerover /template/ Border#border">
+        <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+        <Setter Property="Background" Value="{DynamicResource AccentWeakBrush}"/>
+    </Style>
+    <Style Selector="Button.CommandButton:pressed /template/ Border#border">
+        <Setter Property="Opacity" Value="0.8"/>
+    </Style>
+    <Style Selector="Button.CommandButton.Primary">
+        <Setter Property="Background" Value="{DynamicResource AccentBrush}"/>
+        <Setter Property="Foreground" Value="White"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+    </Style>
+
+    <Style Selector="ToggleButton.FilterChip">
+        <Setter Property="MinHeight" Value="28"/>
+        <Setter Property="Margin" Value="0,0,6,6"/>
+        <Setter Property="Padding" Value="10,4"/>
+        <Setter Property="Background" Value="{DynamicResource SurfaceBackgroundAltBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource SurfaceBorderBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="14"/>
+    </Style>
+    <Style Selector="ToggleButton.FilterChip:checked">
+        <Setter Property="Background" Value="{DynamicResource AccentWeakBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+    </Style>
+    <Style Selector="ToggleButton.FilterChip:pointerover /template/ Border#PART_Border">
+        <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+    </Style>
+
+    <Style Selector="Window.Compact Button.CommandButton">
+        <Setter Property="MinHeight" Value="30"/>
+        <Setter Property="Padding" Value="9,4"/>
+    </Style>
+    <Style Selector="Window.Compact ToggleButton.FilterChip">
+        <Setter Property="MinHeight" Value="24"/>
+        <Setter Property="Padding" Value="8,2"/>
+        <Setter Property="Margin" Value="0,0,4,4"/>
+    </Style>
+    <Style Selector="Window.Compact TabItem">
+        <Setter Property="Padding" Value="8,4"/>
+    </Style>
+</Styles>

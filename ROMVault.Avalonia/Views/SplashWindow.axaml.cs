@@ -33,7 +33,7 @@ namespace ROMVault.Avalonia.Views
             if (version.Revision > 0)
                 strVersion += $" WIP{version.Revision}";
             
-            var lblVersion = this.FindControl<TextBlock>("lblVersion");
+            var lblVersion = this.lblVersion;
             if (lblVersion != null)
                 lblVersion.Text = $"Version {strVersion} : {AppDomain.CurrentDomain.BaseDirectory}";
 
@@ -83,8 +83,8 @@ namespace ROMVault.Avalonia.Views
         {
             Dispatcher.UIThread.Post(() =>
             {
-                var progressBar = this.FindControl<ProgressBar>("progressBar");
-                var lblStatus = this.FindControl<TextBlock>("lblStatus");
+                var progressBar = this.progressBar;
+                var lblStatus = this.lblStatus;
 
                 if (e is int percent)
                 {

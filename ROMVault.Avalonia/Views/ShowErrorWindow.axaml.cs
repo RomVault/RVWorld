@@ -20,7 +20,7 @@ namespace ROMVault.Avalonia.Views
         public ShowErrorWindow()
         {
             InitializeComponent();
-            var label1 = this.FindControl<TextBlock>("label1");
+            var label1 = this.label1;
             if (Settings.rvSettings.DoNotReportFeedback && label1 != null)
                 label1.Text = "You have opted out of sending this Crash Report";
         }
@@ -31,7 +31,7 @@ namespace ROMVault.Avalonia.Views
         /// <param name="s">The error message.</param>
         public void settype(string s)
         {
-            var textBox = this.FindControl<TextBox>("textBox1");
+            var textBox = textBox1;
             if (textBox != null)
             {
                 textBox.Text = s;

@@ -15,6 +15,7 @@ using System.Threading.Tasks;
 using Compress;
 using Compress.ZipFile;
 using DATReader.DatClean;
+using ROMVault.Avalonia.ViewModels;
 
 namespace ROMVault.Avalonia.Views;
 
@@ -32,8 +33,7 @@ namespace ROMVault.Avalonia.Views;
         public bool ChangesMade;
         private bool _displayType;
 
-        private ObservableCollection<DatRuleViewModel> _datRules;
-        private ObservableCollection<string> _categories;
+        private readonly DirectorySettingsViewModel _viewModel = new();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="DirectorySettingsWindow"/> class.
@@ -41,14 +41,9 @@ namespace ROMVault.Avalonia.Views;
         public DirectorySettingsWindow()
         {
             InitializeComponent();
+            DataContext = _viewModel;
             InitializeControls();
-            
-            _datRules = new ObservableCollection<DatRuleViewModel>();
-            DataGridGames.ItemsSource = _datRules;
             DataGridGames.SelectionChanged += DataGridGames_SelectionChanged;
-
-            _categories = new ObservableCollection<string>();
-            dgCategories.ItemsSource = _categories;
         }
 
         /// <summary>
@@ -114,13 +109,7 @@ namespace ROMVault.Avalonia.Views;
         public void SetDisplayType(bool type)
         {
             _displayType = type;
-            btnDelete.IsVisible = type;
-
-            var bottomGrid = this.FindControl<Grid>("BottomGrid");
-            if (bottomGrid != null)
-            {
-                bottomGrid.IsVisible = !type;
-            }
+            _viewModel.IsSpecificEditor = type;
         }
 
         /// <summary>
@@ -207,7 +196,7 @@ namespace ROMVault.Avalonia.Views;
         /// </summary>
         private void SetDisplay()
         {
-            txtDATLocation.Text = _rule.DirKey;
+            _viewModel.RulePath = _rule.DirKey;
 
             cboFileType.SelectedIndex = _rule.Compression == FileType.FileOnly ? 3 : (int)_rule.Compression - 1;
             chkFileTypeOverride.IsChecked = _rule.CompressionOverrideDAT;
@@ -252,12 +241,12 @@ namespace ROMVault.Avalonia.Views;
         /// </summary>
         private void UpdateGrid()
         {
-            _datRules.Clear();
+            _viewModel.Rules.Clear();
             string rootKey = NormalizeDirKey(_rule.DirKey);
             foreach (DatRule t in Settings.rvSettings.DatRules)
             {
                 string tKey = NormalizeDirKey(t.DirKey);
-                var vm = new DatRuleViewModel(t);
+                var vm = new DatRuleRowViewModel(t);
                 
                 if (t.DirPath == "ToSort")
                 {
@@ -274,7 +263,7 @@ namespace ROMVault.Avalonia.Views;
                          vm.Background = new SolidColorBrush(Down(_cYellow));
                     }
                 }
-                _datRules.Add(vm);
+                _viewModel.Rules.Add(vm);
             }
         }
 
@@ -314,7 +303,7 @@ namespace ROMVault.Avalonia.Views;
         /// </summary>
         private void DataGridGames_SelectionChanged(object? sender, SelectionChangedEventArgs e)
         {
-            if (DataGridGames.SelectedItem is DatRuleViewModel vm)
+            if (DataGridGames.SelectedItem is DatRuleRowViewModel vm)
             {
                 _rule = vm.Rule;
                 UpdateGrid();
@@ -482,7 +471,7 @@ namespace ROMVault.Avalonia.Views;
             int deleteCount = 0;
             foreach (var item in selectedItems)
             {
-                if (item is DatRuleViewModel vm && vm.DirKey != "RomVault")
+                if (item is DatRuleRowViewModel vm && vm.DirKey != "RomVault")
                     deleteCount++;
             }
             if (deleteCount == 0) return;
@@ -498,7 +487,7 @@ namespace ROMVault.Avalonia.Views;
             ChangesMade = true;
             foreach (var item in selectedItems)
             {
-                if (item is DatRuleViewModel vm)
+                if (item is DatRuleRowViewModel vm)
                 {
                     string datLocation = vm.DirKey;
                     if (datLocation == "RomVault") continue;
@@ -578,12 +567,12 @@ namespace ROMVault.Avalonia.Views;
         /// </summary>
         private void SetCategoryList()
         {
-            _categories.Clear();
+            _viewModel.Categories.Clear();
             if (_rule.CategoryOrder != null)
             {
                 foreach (string s in _rule.CategoryOrder)
                 {
-                    _categories.Add(s);
+                    _viewModel.Categories.Add(s);
                 }
             }
         }
@@ -618,23 +607,5 @@ namespace ROMVault.Avalonia.Views;
 
             SetCategoryList();
             dgCategories.SelectedIndex = idx + 1;
-        }
-    }
-
-    /// <summary>
-    /// ViewModel for displaying DAT rules in the DataGrid.
-    /// </summary>
-    public class DatRuleViewModel
-    {
-        public DatRule Rule { get; }
-        public string DirKey => Rule.DirKey;
-        public ZipStructure CompressionSub => Rule.CompressionSub;
-        public MergeType Merge => Rule.Merge;
-        public bool SingleArchive => Rule.SingleArchive;
-        public IBrush Background { get; set; } = Brushes.Transparent;
-
-        public DatRuleViewModel(DatRule rule)
-        {
-            Rule = rule;
         }
     }

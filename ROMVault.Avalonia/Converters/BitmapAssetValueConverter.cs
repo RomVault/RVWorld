@@ -1,101 +1,66 @@
 using System;
 using System.Globalization;
-using Avalonia.Data.Converters;
 using Avalonia.Media.Imaging;
-using Avalonia.Platform;
-using RomVaultCore.RvDB;
 using Compress;
+using RomVaultCore.RvDB;
 
-namespace ROMVault.Avalonia.Converters
+namespace ROMVault.Avalonia.Converters;
+
+/// <summary>
+/// Converts an asset name or ROMVault file into its packaged bitmap.
+/// </summary>
+public sealed class BitmapAssetValueConverter : OneWayValueConverter
 {
-    /// <summary>
-    /// Converts a string asset name or an RvFile object into a Bitmap image.
-    /// Used for displaying icons in the UI based on file type and status.
-    /// </summary>
-    public class BitmapAssetValueConverter : IValueConverter
+    public override object? Convert(
+        object? value,
+        Type targetType,
+        object? parameter,
+        CultureInfo culture)
     {
-        /// <summary>
-        /// Converts the value to a Bitmap.
-        /// </summary>
-        /// <param name="value">The value to convert (string or RvFile).</param>
-        /// <param name="targetType">The target type.</param>
-        /// <param name="parameter">The parameter.</param>
-        /// <param name="culture">The culture info.</param>
-        /// <returns>A <see cref="Bitmap"/> if found, otherwise null.</returns>
-        public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+        string? assetName = value switch
         {
-            string? assetName = null;
+            string name => name,
+            RvFile file => GetAssetName(file),
+            _ => null
+        };
 
-            if (value is string name)
-            {
-                assetName = name;
-            }
-            else if (value is RvFile rvFile)
-            {
-                assetName = GetBitmapFromType(rvFile.FileType, rvFile.newZipStruct);
-                
-                // Handle "Missing" suffix logic if needed (simplified check based on assets)
-                if (assetName != null && (assetName.StartsWith("Zip") || assetName.StartsWith("SevenZip")))
-                {
-                     if (rvFile.GotStatus == GotStatus.NotGot)
-                     {
-                         // Check if Missing asset exists
-                         if (AssetLoader.Exists(new Uri($"avares://ROMVault.Avalonia/Assets/{assetName}Missing.png")))
-                         {
-                             assetName += "Missing";
-                         }
-                     }
-                }
-            }
-
-            if (!string.IsNullOrEmpty(assetName))
-            {
-                try
-                {
-                    var uri = new Uri($"avares://ROMVault.Avalonia/Assets/{assetName}.png");
-                    if (AssetLoader.Exists(uri))
-                    {
-                        return new Bitmap(AssetLoader.Open(uri));
-                    }
-                }
-                catch { }
-            }
-            return null;
-        }
-
-        /// <summary>
-        /// Determines the asset name suffix based on file type and zip structure.
-        /// </summary>
-        /// <param name="ft">The file type.</param>
-        /// <param name="zs">The zip structure.</param>
-        /// <returns>The asset name base string.</returns>
-        private string? GetBitmapFromType(FileType ft, ZipStructure zs)
-        {
-            switch (ft)
-            {
-                case FileType.Zip:
-                    if (zs == ZipStructure.None) { return "Zip"; }
-                    if (zs == ZipStructure.ZipTrrnt) { return "ZipTrrnt"; }
-                    if (zs == ZipStructure.ZipTDC) { return "ZipTDC"; }
-                    if (zs == ZipStructure.ZipZSTD) { return "ZipZSTD"; }
-                    return "Zip";
-                case FileType.SevenZip:
-                    if (zs == ZipStructure.None) { return "SevenZip"; }
-                    if (zs == ZipStructure.SevenZipTrrnt) { return "SevenZipTrrnt"; }
-                    if (zs == ZipStructure.SevenZipSLZMA) { return "SevenZipSLZMA"; }
-                    if (zs == ZipStructure.SevenZipNLZMA) { return "SevenZipNLZMA"; }
-                    if (zs == ZipStructure.SevenZipSZSTD) { return "SevenZipSZSTD"; }
-                    if (zs == ZipStructure.SevenZipNZSTD) { return "SevenZipNZSTD"; }
-                    return "SevenZip";
-                case FileType.Dir:
-                    return "Dir";
-            }
-            return null;
-        }
-
-        public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
-        {
-            throw new NotImplementedException();
-        }
+        return string.IsNullOrWhiteSpace(assetName)
+            ? null
+            : AssetBitmapCache.Get(assetName);
     }
+
+    private static string? GetAssetName(RvFile file)
+    {
+        string? assetName = GetAssetName(file.FileType, file.newZipStruct);
+        if (assetName is null || file.GotStatus != GotStatus.NotGot || !IsArchiveAsset(assetName))
+        {
+            return assetName;
+        }
+
+        string missingAssetName = $"{assetName}Missing";
+        return AssetBitmapCache.Get(missingAssetName) is null
+            ? assetName
+            : missingAssetName;
+    }
+
+    private static bool IsArchiveAsset(string assetName) =>
+        assetName.StartsWith("Zip", StringComparison.Ordinal) ||
+        assetName.StartsWith("SevenZip", StringComparison.Ordinal);
+
+    private static string? GetAssetName(FileType fileType, ZipStructure zipStructure) =>
+        (fileType, zipStructure) switch
+        {
+            (FileType.Zip, ZipStructure.ZipTrrnt) => "ZipTrrnt",
+            (FileType.Zip, ZipStructure.ZipTDC) => "ZipTDC",
+            (FileType.Zip, ZipStructure.ZipZSTD) => "ZipZSTD",
+            (FileType.Zip, _) => "Zip",
+            (FileType.SevenZip, ZipStructure.SevenZipTrrnt) => "SevenZipTrrnt",
+            (FileType.SevenZip, ZipStructure.SevenZipSLZMA) => "SevenZipSLZMA",
+            (FileType.SevenZip, ZipStructure.SevenZipNLZMA) => "SevenZipNLZMA",
+            (FileType.SevenZip, ZipStructure.SevenZipSZSTD) => "SevenZipSZSTD",
+            (FileType.SevenZip, ZipStructure.SevenZipNZSTD) => "SevenZipNZSTD",
+            (FileType.SevenZip, _) => "SevenZip",
+            (FileType.Dir, _) => "Dir",
+            _ => null
+        };
 }

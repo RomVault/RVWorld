@@ -2,8 +2,11 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="using:ROMVault.Avalonia.ViewModels"
         mc:Ignorable="d" d:DesignWidth="700" d:DesignHeight="600"
         x:Class="ROMVault.Avalonia.Views.DirectorySettingsWindow"
+        x:DataType="vm:DirectorySettingsViewModel"
+        x:CompileBindings="True"
         Title="Set DAT Rules" Width="820" Height="860" MinWidth="720" MinHeight="760"
         WindowStartupLocation="CenterOwner">
     <Grid RowDefinitions="Auto,*,Auto" RowSpacing="12" Margin="16">
@@ -16,7 +19,7 @@
                         CornerRadius="8"
                         Padding="10,6"
                         Background="{DynamicResource SurfaceBackgroundAltBrush}">
-                    <TextBlock Name="txtDATLocation"/>
+                    <TextBlock Name="txtDATLocation" Text="{Binding RulePath}"/>
                 </Border>
             </Grid>
         </Border>
@@ -29,7 +32,7 @@
                         BorderThickness="0,1,0,0"
                         Padding="12">
                     <Grid ColumnDefinitions="Auto,Auto" ColumnSpacing="10" HorizontalAlignment="Right">
-                        <Button Grid.Column="0" Name="btnDelete" Content="Delete"
+                        <Button Grid.Column="0" Name="btnDelete" Content="Delete" IsVisible="{Binding IsSpecificEditor}"
                                 HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
                                 Padding="12,6"/>
                         <Button Grid.Column="1" Name="btnSet" Content="Apply"
@@ -113,7 +116,7 @@
                         </StackPanel>
                         <Grid Grid.Column="1" ColumnDefinitions="260,Auto" ColumnSpacing="8">
                             <Border Grid.Column="0" Classes="Card" Padding="0">
-                            <DataGrid Name="dgCategories" MinWidth="260" MinHeight="220" GridLinesVisibility="None" BorderThickness="0">
+                            <DataGrid Name="dgCategories" ItemsSource="{Binding Categories}" MinWidth="260" MinHeight="220" GridLinesVisibility="None" BorderThickness="0">
                                 <DataGrid.Columns>
                                     <DataGridTextColumn Header="Category Priority" Binding="{Binding}" Width="*"/>
                                 </DataGrid.Columns>
@@ -131,7 +134,7 @@
             </DockPanel>
         </Border>
 
-        <Grid Grid.Row="2" Name="BottomGrid" RowDefinitions="Auto,*,Auto" RowSpacing="10">
+        <Grid Grid.Row="2" Name="BottomGrid" IsVisible="{Binding IsGlobalListVisible}" RowDefinitions="Auto,*,Auto" RowSpacing="10">
             <Grid Grid.Row="0" ColumnDefinitions="*,Auto,Auto" ColumnSpacing="10">
                 <TextBlock Text="Existing DAT Rules" Classes="SectionHeader" VerticalAlignment="Center"/>
                         <Button Grid.Column="1" Name="btnDeleteSelected" Content="Delete Selected"
@@ -146,6 +149,7 @@
 
             <Border Grid.Row="1" Classes="Card" Padding="0">
                 <DataGrid Name="DataGridGames"
+                          ItemsSource="{Binding Rules}"
                           AutoGenerateColumns="False"
                           CanUserResizeColumns="True"
                           GridLinesVisibility="None"
@@ -153,7 +157,7 @@
                           BorderThickness="0"
                           Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}">
                     <DataGrid.Styles>
-                        <Style Selector="DataGridRow">
+                        <Style Selector="DataGridRow" x:DataType="vm:DatRuleRowViewModel">
                             <Setter Property="Background" Value="{Binding Background}"/>
                             <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
                         </Style>

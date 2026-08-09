@@ -1,9 +1,6 @@
 using System;
 using System.Globalization;
-using Avalonia.Data.Converters;
 using Avalonia.Media;
-using Avalonia.Media.Imaging;
-using Avalonia.Platform;
 using RomVaultCore.RvDB;
 using RomVaultCore;
 
@@ -12,7 +9,7 @@ namespace ROMVault.Avalonia.Converters
     /// <summary>
     /// Converts a Report Status (RepStatus) to a background Brush color.
     /// </summary>
-    public class ReportStatusToBrushConverter : IValueConverter
+    public sealed class ReportStatusToBrushConverter : OneWayValueConverter
     {
         private static bool _cachedDarkness;
         private static SolidColorBrush[]? _cachedBrushes;
@@ -56,7 +53,7 @@ namespace ROMVault.Avalonia.Converters
         /// <param name="parameter">The parameter.</param>
         /// <param name="culture">The culture info.</param>
         /// <returns>A SolidColorBrush corresponding to the status.</returns>
-        public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+        public override object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
         {
             if (value is RepStatus status)
             {
@@ -70,16 +67,12 @@ namespace ROMVault.Avalonia.Converters
             return Brushes.Transparent;
         }
 
-        public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
-        {
-            throw new NotImplementedException();
-        }
     }
 
     /// <summary>
     /// Converts a Report Status (RepStatus) to a foreground Brush color (text color).
     /// </summary>
-    public class ReportStatusToForegroundConverter : IValueConverter
+    public sealed class ReportStatusToForegroundConverter : OneWayValueConverter
     {
         private static SolidColorBrush[]? _cachedBrushes;
 
@@ -103,7 +96,7 @@ namespace ROMVault.Avalonia.Converters
         /// <param name="parameter">The parameter.</param>
         /// <param name="culture">The culture info.</param>
         /// <returns>A SolidColorBrush for the text.</returns>
-        public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+        public override object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
         {
             if (value is RepStatus status)
             {
@@ -118,9 +111,5 @@ namespace ROMVault.Avalonia.Converters
             return null;
         }
 
-        public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
-        {
-            throw new NotImplementedException();
-        }
     }
 }

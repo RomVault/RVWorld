@@ -1,0 +1,12 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <StreamGeometry x:Key="IconRefresh">M12,4 V1 L8,5 L12,9 V6 C15.31,6 18,8.69 18,12 C18,15.31 15.31,18 12,18 C8.69,18 6,15.31 6,12 H4 C4,16.42 7.58,20 12,20 C16.42,20 20,16.42 20,12 C20,7.58 16.42,4 12,4 Z</StreamGeometry>
+  <StreamGeometry x:Key="IconScan">M4,5 H20 V7 H4 Z M6,9 H18 V11 H6 Z M8,13 H16 V18 H8 Z</StreamGeometry>
+  <StreamGeometry x:Key="IconCheck">M4,12 L9,17 L20,6 L18.5,4.5 L9,14 L5.5,10.5 Z</StreamGeometry>
+  <StreamGeometry x:Key="IconFix">M14.7,6.3 A4,4 0 0 1 9.4,11.6 L4,17 L7,20 L12.4,14.6 A4,4 0 0 1 17.7,9.3 L15,12 L12,9 Z</StreamGeometry>
+  <StreamGeometry x:Key="IconReport">M5,2 H14 L19,7 V22 H5 Z M13,3 V8 H18 M8,12 H16 M8,16 H16 M8,20 H14</StreamGeometry>
+  <StreamGeometry x:Key="IconInspector">M3,4 H21 V20 H3 Z M5,6 V18 H14 V6 Z M16,6 V18 H19 V6 Z</StreamGeometry>
+  <StreamGeometry x:Key="IconListEmpty">M4,4 H20 V6 H4 Z M4,9 H16 V11 H4 Z M4,14 H13 V16 H4 Z</StreamGeometry>
+  <StreamGeometry x:Key="IconImage">M3,5 H21 V19 H3 Z M5,7 V17 H19 V7 Z M7,14 L10,11 L13,14 L15,12 L18,16 H6 Z</StreamGeometry>
+  <StreamGeometry x:Key="IconWarning">M12,2 L22,20 H2 Z M11,8 H13 V14 H11 Z M11,16 H13 V18 H11 Z</StreamGeometry>
+</ResourceDictionary>

@@ -23,6 +23,8 @@ using System.Text.RegularExpressions;
 using System.ComponentModel;
 using System.Globalization;
 using ROMVault.Avalonia.Utils;
+using ROMVault.Avalonia.ViewModels;
+using ROMVault.Avalonia.Services;
 using System.Threading.Tasks;
 using Path = System.IO.Path;
 using File = System.IO.File;
@@ -36,12 +38,17 @@ namespace ROMVault.Avalonia;
 public partial class MainWindow : Window
 {
     private RvFile? _gameGridSource;
+    private readonly GameBrowserViewModel _gameBrowser = new();
+    private readonly RomBrowserViewModel _romBrowser = new();
+    private readonly MediaInspectorViewModel _mediaInspector = new(new GameMediaPreviewService());
+    private readonly MainWindowViewModel _viewModel;
+    private readonly BackgroundOperationRunner _operationRunner;
     private bool _updatingGameGrid;
     private bool _working = false;
-    private GridLength _lastArtworkWidth = new GridLength(300);
+    private GridLength _lastArtworkWidth = new(300);
+    private bool _inspectorAutoCollapsed;
+    private bool _applyingResponsiveLayout;
     private DispatcherTimer? _filterDebounceTimer;
-    private readonly Dictionary<global::Avalonia.Controls.Image, double> _imageZoom = new();
-    private readonly Dictionary<Control, RvFile> _mediaContainers = new();
     private static readonly string[] StatusTokenSuggestions =
     {
         "missing",
@@ -63,6 +70,19 @@ public partial class MainWindow : Window
 
     private const string UiStatePrefix = "MainWindow";
 
+    private RvFile? SelectedGame => (GameGrid.SelectedItem as GameRowViewModel)?.Source;
+    private global::Avalonia.Controls.Primitives.ToggleButton chkBoxShowComplete => GameHeader.ShowComplete;
+    private global::Avalonia.Controls.Primitives.ToggleButton chkBoxShowPartial => GameHeader.ShowPartial;
+    private global::Avalonia.Controls.Primitives.ToggleButton chkBoxShowEmpty => GameHeader.ShowEmpty;
+    private global::Avalonia.Controls.Primitives.ToggleButton chkBoxShowFixes => GameHeader.ShowFixes;
+    private global::Avalonia.Controls.Primitives.ToggleButton chkBoxShowMIA => GameHeader.ShowMia;
+    private global::Avalonia.Controls.Primitives.ToggleButton chkBoxShowMerged => GameHeader.ShowMerged;
+    private TextBox txtFilter => GameHeader.Filter;
+    private Button btnClear => GameHeader.Clear;
+    private Button btnFilterHelp => GameHeader.Help;
+    private global::Avalonia.Controls.Primitives.Popup FilterSuggestionsPopup => GameHeader.FilterPopup;
+    private ListBox FilterSuggestionsList => GameHeader.FilterSuggestions;
+
     /// <summary>
     /// Initializes a new instance of the <see cref="MainWindow"/> class.
     /// Sets up the directory tree, event handlers, and initial status aggregation.
@@ -70,23 +90,50 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        _viewModel = new MainWindowViewModel(
+            _gameBrowser,
+            _romBrowser,
+            _mediaInspector,
+            new MainWindowActions(
+                UpdateDatsIfIdle,
+                UpdateAllDatsIfIdle,
+                ScanRomsIfIdle,
+                FindFixesIfIdle,
+                FixFilesIfIdle,
+                CreateFixDatReportAsync,
+                CreateFullReportAsync,
+                CreateFixReportAsync,
+                OpenSettingsAsync,
+                OpenGlobalDirectorySettingsAsync,
+                OpenGlobalDirectoryMappingsAsync,
+                AddToSortAsync,
+                OpenTorrentZip,
+                () => DesktopShellService.Instance.OpenUrl("https://wiki.romvault.com/doku.php?id=help"),
+                OpenColorKey,
+                OpenShortcutsAsync,
+                () => DesktopShellService.Instance.OpenUrl("https://wiki.romvault.com/doku.php?id=whats_new"),
+                OpenAboutAsync,
+                compact => ApplyCompactDensity(compact, true)));
+        DataContext = _viewModel;
+        _viewModel.PropertyChanged += OnShellPropertyChanged;
+        _operationRunner = new BackgroundOperationRunner(this, Start, Finish);
 
-        if (lblStatusLeft != null) lblStatusLeft.Text = "";
-        if (lblStatusRight != null) lblStatusRight.Text = "";
+        _viewModel.Status = string.Empty;
+        _viewModel.Activity = string.Empty;
         
         // Initialize Tree
-        var rvTree = this.FindControl<ROMVault.Avalonia.Views.RvTree>("RvTreeControl");
-        var treeScrollViewer = this.FindControl<ScrollViewer>("TreeScrollViewer");
-        var treeStatsHeader = this.FindControl<Grid>("TreeStatsHeader");
-        var chkTreeStats = this.FindControl<CheckBox>("chkTreeStats");
-        var lblTreeStatHave = this.FindControl<TextBlock>("lblTreeStatHave");
-        var lblTreeStatMissing = this.FindControl<TextBlock>("lblTreeStatMissing");
-        var lblTreeStatMia = this.FindControl<TextBlock>("lblTreeStatMia");
-        var lblTreeStatFixes = this.FindControl<TextBlock>("lblTreeStatFixes");
-        var lblTreeStatUnknown = this.FindControl<TextBlock>("lblTreeStatUnknown");
+        var rvTree = RvTreeControl;
+        var treeScrollViewer = TreeScrollViewer;
+        var treeStatsHeader = TreeStatsHeader;
+        var chkTreeStats = this.chkTreeStats;
+        var lblTreeStatHave = this.lblTreeStatHave;
+        var lblTreeStatMissing = this.lblTreeStatMissing;
+        var lblTreeStatMia = this.lblTreeStatMia;
+        var lblTreeStatFixes = this.lblTreeStatFixes;
+        var lblTreeStatUnknown = this.lblTreeStatUnknown;
 
-        var btnTreeAll = this.FindControl<Button>("btnTreeAll");
-        var btnTreeNil = this.FindControl<Button>("btnTreeNil");
+        var btnTreeAll = this.btnTreeAll;
+        var btnTreeNil = this.btnTreeNil;
         if (rvTree != null)
         {
             rvTree.Setup(DB.DirRoot);
@@ -98,8 +145,7 @@ public partial class MainWindow : Window
             };
             rvTree.RvRightClicked += (s, e) =>
             {
-                var contextMenu = this.FindControl<ContextMenu>("TreeContextMenu");
-                contextMenu?.Open(rvTree);
+                TreeContextMenu.Open(rvTree);
             };
         }
 
@@ -164,7 +210,9 @@ public partial class MainWindow : Window
             void SyncTreeViewport()
             {
                 rvTree.ViewportWidth = treeScrollViewer.Viewport.Width;
+                rvTree.ViewportHeight = treeScrollViewer.Viewport.Height;
                 rvTree.ViewportOffsetX = treeScrollViewer.Offset.X;
+                rvTree.ViewportOffsetY = treeScrollViewer.Offset.Y;
                 rvTree.InvalidateVisual();
             }
 
@@ -223,159 +271,17 @@ public partial class MainWindow : Window
         };
 
         SetupColumnMenus();
-        SetupMediaContextMenus();
         LoadUiState();
+        SizeChanged += (_, _) => ApplyResponsiveLayout();
+        ApplyResponsiveLayout();
         UpdateTreePresetTooltips();
-        Closing += (_, _) => SaveUiState();
-    }
-
-    /// <summary>
-    /// Attaches context menus to artwork images and info text panels.
-    /// The actions operate on the "container" (usually the zip/dir holding the artwork/text),
-    /// not the individual entry inside it.
-    /// </summary>
-    private void SetupMediaContextMenus()
-    {
-        AttachImageMenu(picLogo);
-        AttachImageMenu(picArtwork);
-        AttachImageMenu(picMedium1);
-        AttachImageMenu(picMedium2);
-        AttachImageMenu(picScreenTitle);
-        AttachImageMenu(picScreenShot);
-
-        AttachTextMenu(txtInfo);
-        AttachTextMenu(txtInfo2);
-    }
-
-    /// <summary>
-    /// Adds a context menu to an artwork image control.
-    /// </summary>
-    private void AttachImageMenu(global::Avalonia.Controls.Image? image)
-    {
-        if (image == null) return;
-
-        var open = new MenuItem { Header = "Open Source" };
-        open.Click += (_, _) => OpenMediaContainer(image);
-
-        var copy = new MenuItem { Header = "Copy Source Path" };
-        copy.Click += async (_, _) => await CopyMediaContainerPath(image);
-
-        var show = new MenuItem { Header = "Show in Folder" };
-        show.Click += (_, _) => ShowMediaContainerInFolder(image);
-
-        var reset = new MenuItem { Header = "Reset Zoom" };
-        reset.Click += (_, _) => ResetArtworkZoom(image);
-
-        image.ContextMenu = new ContextMenu
+        Closing += (_, _) =>
         {
-            Items =
-            {
-                open,
-                copy,
-                show,
-                new Separator(),
-                reset
-            }
+            SaveUiState();
+            _filterDebounceTimer?.Stop();
+            _mediaInspector.Dispose();
+            AppSettings.Flush();
         };
-    }
-
-    /// <summary>
-    /// Adds a context menu to an info text box.
-    /// </summary>
-    private void AttachTextMenu(TextBox? textBox)
-    {
-        if (textBox == null) return;
-
-        var copyAll = new MenuItem { Header = "Copy All" };
-        copyAll.Click += async (_, _) =>
-        {
-            var topLevel = TopLevel.GetTopLevel(this);
-            if (topLevel?.Clipboard == null) return;
-            await topLevel.Clipboard.SetTextAsync(textBox.Text ?? "");
-        };
-
-        var open = new MenuItem { Header = "Open Source" };
-        open.Click += (_, _) => OpenMediaContainer(textBox);
-
-        var copy = new MenuItem { Header = "Copy Source Path" };
-        copy.Click += async (_, _) => await CopyMediaContainerPath(textBox);
-
-        var show = new MenuItem { Header = "Show in Folder" };
-        show.Click += (_, _) => ShowMediaContainerInFolder(textBox);
-
-        textBox.ContextMenu = new ContextMenu
-        {
-            Items =
-            {
-                copyAll,
-                new Separator(),
-                open,
-                copy,
-                show
-            }
-        };
-    }
-
-    /// <summary>
-    /// Opens the resolved container path (file/folder) using the OS shell.
-    /// </summary>
-    private void OpenMediaContainer(Control control)
-    {
-        if (!_mediaContainers.TryGetValue(control, out var container))
-            return;
-
-        string path = container.FullName;
-        if (!File.Exists(path) && !Directory.Exists(path))
-            return;
-
-        try
-        {
-            Process.Start(new ProcessStartInfo
-            {
-                FileName = path,
-                UseShellExecute = true,
-                Verb = "open"
-            });
-        }
-        catch { }
-    }
-
-    /// <summary>
-    /// Copies the resolved container path (file/folder) to the clipboard.
-    /// </summary>
-    private async Task CopyMediaContainerPath(Control control)
-    {
-        if (!_mediaContainers.TryGetValue(control, out var container))
-            return;
-
-        var topLevel = TopLevel.GetTopLevel(this);
-        if (topLevel?.Clipboard == null)
-            return;
-
-        await topLevel.Clipboard.SetTextAsync(container.FullName);
-    }
-
-    /// <summary>
-    /// Opens Explorer on the container location. If it's a file, selects it.
-    /// </summary>
-    private void ShowMediaContainerInFolder(Control control)
-    {
-        if (!_mediaContainers.TryGetValue(control, out var container))
-            return;
-
-        string raw = container.FullName;
-        string path = ResolveOsPath(raw);
-
-        if (File.Exists(path))
-        {
-            OpenExplorerSelect(path);
-            return;
-        }
-
-        if (Directory.Exists(path))
-        {
-            OpenExplorer(path);
-        }
     }
 
     /// <summary>
@@ -450,11 +356,11 @@ public partial class MainWindow : Window
 
     private void LoadUiState()
     {
-        var mainSplitGrid = this.FindControl<Grid>("MainSplitGrid");
+        var mainSplitGrid = MainSplitGrid;
         if (mainSplitGrid != null && mainSplitGrid.ColumnDefinitions.Count >= 3)
         {
             string? leftWidth = AppSettings.ReadSetting($"{UiStatePrefix}.MainSplit.LeftWidth");
-            if (double.TryParse(leftWidth, NumberStyles.Float, CultureInfo.InvariantCulture, out var w) && w >= 300)
+            if (double.TryParse(leftWidth, NumberStyles.Float, CultureInfo.InvariantCulture, out var w) && w >= 240)
             {
                 mainSplitGrid.ColumnDefinitions[0].Width = new GridLength(w);
             }
@@ -466,6 +372,8 @@ public partial class MainWindow : Window
             _lastArtworkWidth = new GridLength(aw);
         }
 
+        _viewModel.IsInspectorOpen = AppSettings.ReadSetting($"{UiStatePrefix}.Inspector.Open") != "0";
+
         LoadDataGridState(GameGrid, $"{UiStatePrefix}.GameGrid");
         LoadDataGridState(RomGrid, $"{UiStatePrefix}.RomGrid");
 
@@ -473,12 +381,13 @@ public partial class MainWindow : Window
         _gameSortAsc = AppSettings.ReadSetting($"{UiStatePrefix}.GameGrid.SortAsc") != "0";
         _romSortHeader = AppSettings.ReadSetting($"{UiStatePrefix}.RomGrid.SortHeader");
         _romSortAsc = AppSettings.ReadSetting($"{UiStatePrefix}.RomGrid.SortAsc") != "0";
-
+        ApplyCompactDensity(AppSettings.ReadSetting($"{UiStatePrefix}.CompactDensity") == "1", false);
+        ApplyInspectorLayout();
     }
 
     private void SaveUiState()
     {
-        var mainSplitGrid = this.FindControl<Grid>("MainSplitGrid");
+        var mainSplitGrid = MainSplitGrid;
         if (mainSplitGrid != null && mainSplitGrid.ColumnDefinitions.Count >= 3)
         {
             AppSettings.AddUpdateAppSettings(
@@ -508,7 +417,84 @@ public partial class MainWindow : Window
         if (!string.IsNullOrWhiteSpace(_romSortHeader))
             AppSettings.AddUpdateAppSettings($"{UiStatePrefix}.RomGrid.SortHeader", _romSortHeader);
         AppSettings.AddUpdateAppSettings($"{UiStatePrefix}.RomGrid.SortAsc", _romSortAsc ? "1" : "0");
+        AppSettings.AddUpdateAppSettings($"{UiStatePrefix}.Inspector.Open", _viewModel.IsInspectorOpen ? "1" : "0");
 
+    }
+
+    private void OnShellPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName != nameof(MainWindowViewModel.IsInspectorOpen))
+        {
+            return;
+        }
+
+        if (!_applyingResponsiveLayout && _viewModel.IsInspectorOpen)
+        {
+            _inspectorAutoCollapsed = false;
+        }
+
+        ApplyInspectorLayout();
+    }
+
+    private void ApplyResponsiveLayout()
+    {
+        double width = Bounds.Width;
+        if (width <= 0)
+        {
+            return;
+        }
+
+        if (MainSplitGrid.ColumnDefinitions.Count >= 3)
+        {
+            MainSplitGrid.ColumnDefinitions[0].MinWidth = width < 900 ? 220 : 240;
+            if (width < 900 && MainSplitGrid.ColumnDefinitions[0].Width.Value > 280)
+            {
+                MainSplitGrid.ColumnDefinitions[0].Width = new GridLength(260);
+            }
+        }
+
+        if (width < 1120 && _viewModel.IsInspectorOpen && !_inspectorAutoCollapsed)
+        {
+            _inspectorAutoCollapsed = true;
+            _applyingResponsiveLayout = true;
+            _viewModel.IsInspectorOpen = false;
+            _applyingResponsiveLayout = false;
+        }
+        else if (width > 1240 && _inspectorAutoCollapsed)
+        {
+            _inspectorAutoCollapsed = false;
+            _applyingResponsiveLayout = true;
+            _viewModel.IsInspectorOpen = true;
+            _applyingResponsiveLayout = false;
+        }
+
+        ApplyInspectorLayout();
+    }
+
+    private void ApplyInspectorLayout()
+    {
+        if (GameListGrid.ColumnDefinitions.Count < 3)
+        {
+            return;
+        }
+
+        ColumnDefinition inspectorColumn = GameListGrid.ColumnDefinitions[2];
+        if (_viewModel.IsInspectorOpen)
+        {
+            inspectorColumn.MinWidth = 220;
+            inspectorColumn.Width = _lastArtworkWidth.Value >= 120 ? _lastArtworkWidth : new GridLength(300);
+            ArtworkSplitter.IsVisible = true;
+            return;
+        }
+
+        if (inspectorColumn.Width.Value > 0)
+        {
+            _lastArtworkWidth = inspectorColumn.Width;
+        }
+
+        inspectorColumn.MinWidth = 0;
+        inspectorColumn.Width = new GridLength(0);
+        ArtworkSplitter.IsVisible = false;
     }
 
     private static void LoadDataGridState(DataGrid grid, string keyPrefix)
@@ -568,78 +554,6 @@ public partial class MainWindow : Window
         _filterDebounceTimer.Start();
     }
 
-    private void ResetArtworkZoom(global::Avalonia.Controls.Image? image)
-    {
-        if (image == null) return;
-        _imageZoom[image] = 1.0;
-        image.RenderTransformOrigin = new global::Avalonia.RelativePoint(0.5, 0.5, global::Avalonia.RelativeUnit.Relative);
-        image.RenderTransform = new global::Avalonia.Media.ScaleTransform(1.0, 1.0);
-    }
-
-    private void SetArtworkZoom(global::Avalonia.Controls.Image image, double zoom)
-    {
-        zoom = Math.Clamp(zoom, 0.25, 6.0);
-        _imageZoom[image] = zoom;
-        image.RenderTransformOrigin = new global::Avalonia.RelativePoint(0.5, 0.5, global::Avalonia.RelativeUnit.Relative);
-        image.RenderTransform = new global::Avalonia.Media.ScaleTransform(zoom, zoom);
-    }
-
-    private double GetArtworkZoom(global::Avalonia.Controls.Image image)
-    {
-        if (_imageZoom.TryGetValue(image, out var z))
-            return z;
-        return 1.0;
-    }
-
-    private void ResetAllArtworkZoom()
-    {
-        ResetArtworkZoom(picLogo);
-        ResetArtworkZoom(picArtwork);
-        ResetArtworkZoom(picMedium1);
-        ResetArtworkZoom(picMedium2);
-        ResetArtworkZoom(picScreenTitle);
-        ResetArtworkZoom(picScreenShot);
-    }
-
-    private void ResetInfoTextBoxes()
-    {
-        ConfigureWrappedText(txtInfo);
-        ConfigureWrappedText(txtInfo2);
-        if (txtInfo != null) txtInfo.Text = "";
-        if (txtInfo2 != null) txtInfo2.Text = "";
-    }
-
-    private static void ConfigureWrappedText(TextBox? textBox)
-    {
-        if (textBox == null) return;
-        textBox.TextWrapping = global::Avalonia.Media.TextWrapping.Wrap;
-        textBox.FontFamily = global::Avalonia.Media.FontFamily.Default;
-    }
-
-    private static void ConfigureMonospaceText(TextBox? textBox)
-    {
-        if (textBox == null) return;
-        textBox.TextWrapping = global::Avalonia.Media.TextWrapping.NoWrap;
-        textBox.FontFamily = new global::Avalonia.Media.FontFamily("Consolas, Courier New, monospace");
-    }
-
-    /// <summary>
-    /// Updates the small counters in the header area (visible/total and sort state).
-    /// </summary>
-    private void UpdateGameCountLabel(int visible, int total)
-    {
-        if (lblGameCount != null)
-            lblGameCount.Text = $"{visible}/{total}";
-
-        if (lblSortInfo != null)
-        {
-            if (string.IsNullOrWhiteSpace(_gameSortHeader))
-                lblSortInfo.Text = "";
-            else
-                lblSortInfo.Text = $"Sort: {_gameSortHeader} {(_gameSortAsc ? "↑" : "↓")}";
-        }
-    }
-
     /// <summary>
     /// Shows quick help for the filter syntax.
     /// </summary>
@@ -671,26 +585,27 @@ public partial class MainWindow : Window
 
         if (grid == RomGrid)
         {
-            if (RomGrid.SelectedItem is not RvFile file)
+            if (RomGrid.SelectedItem is not RomRowViewModel row)
                 return;
 
-            string text = $"{file.UiDisplayName}\t{file.Size}\t{file.CRC32}\t{file.SHA1Hex}\t{file.MD5Hex}";
+            string text = $"{row.DisplayName}\t{row.Size}\t{row.Crc32}\t{row.Sha1}\t{row.Md5}";
             await CopyTextToClipboard(text);
-            if (lblStatusRight != null) lblStatusRight.Text = "Copied";
+            _viewModel.Activity = "Copied";
             e.Handled = true;
             return;
         }
 
         if (grid == GameGrid)
         {
-            if (GameGrid.SelectedItem is not RvFile game)
+            RvFile? game = SelectedGame;
+            if (game is null)
                 return;
 
             string desc = game.Game?.GetData(RvGame.GameData.Description) ?? "";
             if (desc == "¤") desc = "";
             string text = string.IsNullOrWhiteSpace(desc) ? (game.Name ?? "") : $"{game.Name}\t{desc}";
             await CopyTextToClipboard(text);
-            if (lblStatusRight != null) lblStatusRight.Text = "Copied";
+            _viewModel.Activity = "Copied";
             e.Handled = true;
         }
     }
@@ -709,7 +624,7 @@ public partial class MainWindow : Window
         if (e.Source is TextBlock tb && !string.IsNullOrWhiteSpace(tb.Text))
         {
             await CopyTextToClipboard(tb.Text);
-            if (lblStatusRight != null) lblStatusRight.Text = "Copied";
+            _viewModel.Activity = "Copied";
             e.Handled = true;
         }
     }
@@ -861,102 +776,13 @@ public partial class MainWindow : Window
             _romSortAsc = true;
         }
 
-        if (GameGrid.SelectedItem is RvFile game)
+        if (SelectedGame is { } game)
             UpdateRomGrid(game);
-    }
-
-    private void ApplyGameSort(List<RvFile> list)
-    {
-        if (string.IsNullOrWhiteSpace(_gameSortHeader) || list.Count <= 1)
-            return;
-
-        bool asc = _gameSortAsc;
-        string header = _gameSortHeader;
-
-        Comparison<RvFile> cmp = header switch
-        {
-            "Game (Directory / Zip)" => (a, b) => string.Compare(a.Name, b.Name, StringComparison.CurrentCultureIgnoreCase),
-            "Description" => (a, b) =>
-            {
-                string da = a.Game?.GetData(RvGame.GameData.Description) ?? "";
-                string db = b.Game?.GetData(RvGame.GameData.Description) ?? "";
-                if (da == "¤") da = "";
-                if (db == "¤") db = "";
-                return string.Compare(da, db, StringComparison.CurrentCultureIgnoreCase);
-            },
-            "Modified" => (a, b) => (a.FileModTimeStamp).CompareTo(b.FileModTimeStamp),
-            "ROM Status" => (a, b) =>
-            {
-                int wa = a.DirStatus.CountMissing() * 100000 + a.DirStatus.CountCanBeFixed() * 1000 + a.DirStatus.CountUnknown();
-                int wb = b.DirStatus.CountMissing() * 100000 + b.DirStatus.CountCanBeFixed() * 1000 + b.DirStatus.CountUnknown();
-                return wa.CompareTo(wb);
-            },
-            "Extras" => (a, b) => string.Compare(GetExtrasBadge(a), GetExtrasBadge(b), StringComparison.OrdinalIgnoreCase),
-            _ => (a, b) => string.Compare(a.Name, b.Name, StringComparison.CurrentCultureIgnoreCase)
-        };
-
-        list.Sort((a, b) => asc ? cmp(a, b) : cmp(b, a));
-    }
-
-    private static string GetExtrasBadge(RvFile dir)
-    {
-        bool hasText = false;
-        bool hasArt = false;
-        int limit = Math.Min(dir.ChildCount, 400);
-        for (int i = 0; i < limit; i++)
-        {
-            var child = dir.Child(i);
-            if (child.GotStatus != GotStatus.Got)
-                continue;
-
-            string name = child.Name ?? "";
-            if (!hasText)
-            {
-                if (name.EndsWith(".nfo", StringComparison.OrdinalIgnoreCase) || name.EndsWith(".diz", StringComparison.OrdinalIgnoreCase))
-                    hasText = true;
-            }
-
-            if (!hasArt)
-            {
-                if (name.StartsWith("Artwork/", StringComparison.OrdinalIgnoreCase) || name.StartsWith("Artwork\\", StringComparison.OrdinalIgnoreCase))
-                    hasArt = true;
-            }
-
-            if (hasText && hasArt)
-                break;
-        }
-
-        if (hasArt) return "ART";
-        if (hasText) return "TXT";
-        return "";
-    }
-
-    private void ApplyRomSort(List<RvFile> list)
-    {
-        if (string.IsNullOrWhiteSpace(_romSortHeader) || list.Count <= 1)
-            return;
-
-        bool asc = _romSortAsc;
-        string header = _romSortHeader;
-
-        Comparison<RvFile> cmp = header switch
-        {
-            "ROM (File)" => (a, b) => string.Compare(a.UiDisplayName, b.UiDisplayName, StringComparison.CurrentCultureIgnoreCase),
-            "Size" => (a, b) => Nullable.Compare(a.Size, b.Size),
-            "CRC32" => (a, b) => string.Compare(a.CRC32, b.CRC32, StringComparison.OrdinalIgnoreCase),
-            "SHA1" => (a, b) => string.Compare(a.SHA1Hex, b.SHA1Hex, StringComparison.OrdinalIgnoreCase),
-            "MD5" => (a, b) => string.Compare(a.MD5Hex, b.MD5Hex, StringComparison.OrdinalIgnoreCase),
-            "Zip Index" => (a, b) => a.ZipIndex.CompareTo(b.ZipIndex),
-            "Instance Count" => (a, b) => a.InstanceCount.CompareTo(b.InstanceCount),
-            _ => (a, b) => string.Compare(a.UiDisplayName, b.UiDisplayName, StringComparison.CurrentCultureIgnoreCase)
-        };
-
-        list.Sort((a, b) => asc ? cmp(a, b) : cmp(b, a));
     }
 
     private void EnsureTreeNodeVisible(ROMVault.Avalonia.Views.RvTree rvTree, RvFile node)
     {
-        var sv = this.FindControl<ScrollViewer>("TreeScrollViewer");
+        var sv = TreeScrollViewer;
         if (sv == null)
             return;
 
@@ -970,9 +796,9 @@ public partial class MainWindow : Window
 
     private void GameGrid_DoubleTapped(object? sender, global::Avalonia.Input.TappedEventArgs e)
     {
-        if (GameGrid.SelectedItem is RvFile tGame && tGame.FileType == FileType.Dir)
+        if (SelectedGame is { FileType: FileType.Dir } tGame)
         {
-            var rvTree = this.FindControl<ROMVault.Avalonia.Views.RvTree>("RvTreeControl");
+            var rvTree = RvTreeControl;
             if (rvTree != null)
             {
                 rvTree.SetSelected(tGame);
@@ -1037,141 +863,12 @@ public partial class MainWindow : Window
 
         if (lblStatusLeft != null)
         {
-            lblStatusLeft.Text = cf.FullName;
+            _viewModel.Status = cf.FullName;
         }
 
-        UpdateEffectiveDatRuleDisplay(cf);
-
-        lblDITName.Text = cf.Name ?? "";
-
-        RvDat? tDat = null;
-        if (cf.Dat != null)
-        {
-            tDat = cf.Dat;
-        }
-        else if (cf.DirDatCount == 1)
-        {
-            // Many tree nodes represent a directory that *contains* a DAT rather than being the DAT itself.
-            // WinForms treated "single DAT under this node" as the DAT to display.
-            tDat = cf.DirDat(0);
-        }
-
-        if (tDat != null)
-        {
-            string datName = NormalizeDatField(tDat.GetData(RvDat.DatData.DatName));
-            if (!string.IsNullOrWhiteSpace(datName) && !string.Equals(lblDITName.Text, datName, StringComparison.Ordinal))
-            {
-                lblDITName.Text = $"{lblDITName.Text}:  {datName}";
-            }
-
-            string datId = NormalizeDatField(tDat.GetData(RvDat.DatData.Id));
-            if (!string.IsNullOrWhiteSpace(datId))
-                lblDITName.Text += $" (ID:{datId})";
-
-            lblDITDescription.Text = NormalizeDatField(tDat.GetData(RvDat.DatData.Description));
-            lblDITCategory.Text = NormalizeDatField(tDat.GetData(RvDat.DatData.Category));
-            lblDITVersion.Text = NormalizeDatField(tDat.GetData(RvDat.DatData.Version));
-            lblDITAuthor.Text = NormalizeDatField(tDat.GetData(RvDat.DatData.Author));
-            lblDITDate.Text = NormalizeDatField(tDat.GetData(RvDat.DatData.Date));
-
-            string header = NormalizeDatField(tDat.GetData(RvDat.DatData.Header));
-            if (!string.IsNullOrWhiteSpace(header))
-                lblDITName.Text += $" ({header})";
-        }
-        else
-        {
-            lblDITDescription.Text = "";
-            lblDITCategory.Text = "";
-            lblDITVersion.Text = "";
-            lblDITAuthor.Text = "";
-            lblDITDate.Text = "";
-        }
-
-        // Populate Stats
-        lblDITRomsGot.Text = cf.DirStatus.CountCorrect().ToString();
-        lblDITRomsMissing.Text = cf.DirStatus.CountMissing().ToString();
-        lblDITRomsFixable.Text = cf.DirStatus.CountCanBeFixed().ToString();
-        lblDITRomsUnknown.Text = cf.DirStatus.CountUnknown().ToString();
+        _viewModel.DatDetails.SetSelection(cf);
 
         UpdateGameGrid(cf);
-    }
-
-    /// <summary>
-    /// Updates the header-area display that shows the effective (inherited) DAT rule for the currently selected subtree.
-    /// Rules are defined on specific tree paths and cascade downwards, so we resolve the closest matching ancestor rule.
-    /// </summary>
-    private void UpdateEffectiveDatRuleDisplay(RvFile selected)
-    {
-        var lbl = this.FindControl<TextBlock>("lblEffectiveDatRule");
-        var row = this.FindControl<Grid>("EffectiveRuleRow");
-        if (lbl == null || row == null)
-            return;
-
-        var resolved = ResolveEffectiveDatRule(selected.TreeFullName);
-        if (resolved == null)
-        {
-            lbl.Text = "";
-            row.IsVisible = false;
-            return;
-        }
-
-        string inherit = string.Equals(resolved.DirKey, selected.TreeFullName, StringComparison.Ordinal) ? "" : $" (from {resolved.DirKey})";
-        lbl.Text = $"{FormatDatRuleSummary(resolved)}{inherit}";
-        row.IsVisible = true;
-    }
-
-    /// <summary>
-    /// Finds the most specific (longest DirKey) DAT rule whose path matches the selected tree path.
-    /// </summary>
-    private static DatRule? ResolveEffectiveDatRule(string treePath)
-    {
-        if (string.IsNullOrWhiteSpace(treePath))
-            return null;
-
-        DatRule? best = null;
-        foreach (DatRule rule in Settings.rvSettings.DatRules)
-        {
-            if (string.IsNullOrWhiteSpace(rule.DirKey))
-                continue;
-
-            if (treePath.Equals(rule.DirKey, StringComparison.Ordinal) ||
-                treePath.StartsWith(rule.DirKey + "\\", StringComparison.Ordinal))
-            {
-                if (best == null || rule.DirKey.Length > best.DirKey.Length)
-                    best = rule;
-            }
-        }
-
-        return best;
-    }
-
-    /// <summary>
-    /// Formats the key rule fields into a compact one-line summary suitable for a header area.
-    /// </summary>
-    private static string FormatDatRuleSummary(DatRule rule)
-    {
-        string archive = rule.Compression.ToString();
-        string compression = rule.Compression == FileType.Zip ? rule.CompressionSub.ToString() : "";
-        string merge = rule.Merge.ToString();
-        string header = rule.HeaderType.ToString();
-
-        string summary = $"Archive {archive}";
-        if (!string.IsNullOrWhiteSpace(compression))
-            summary += $", Compression {compression}";
-        summary += $", Merge {merge}, Header {header}";
-        if (rule.SingleArchive)
-            summary += ", Single";
-        return summary;
-    }
-
-    /// <summary>
-    /// Normalizes DAT fields where RomVault uses a sentinel value ("¤") to mean "empty".
-    /// </summary>
-    private static string NormalizeDatField(string? value)
-    {
-        if (string.IsNullOrEmpty(value) || value == "¤")
-            return "";
-        return value;
     }
 
     /// <summary>
@@ -1183,72 +880,31 @@ public partial class MainWindow : Window
         if (tDir != null)
         {
             _gameGridSource = tDir;
+            _gameBrowser.SetRows(GameListService.CreateRows(tDir));
         }
 
-        if (_gameGridSource == null) return;
+        if (_gameGridSource == null)
+        {
+            _gameBrowser.Clear();
+            return;
+        }
 
         _updatingGameGrid = true;
-        
-        var gameList = new List<RvFile>();
-        var filter = ParseGameFilter(txtFilter.Text);
-        bool showDescriptionColumn = false;
-        int totalDirCount = 0;
-
-        for (int j = 0; j < _gameGridSource.ChildCount; j++)
-        {
-            RvFile tChildDir = _gameGridSource.Child(j);
-            if (!tChildDir.IsDirectory) continue;
-            totalDirCount++;
-
-            string descValue = "";
-            if (tChildDir.Game != null)
-            {
-                descValue = tChildDir.Game.GetData(RvGame.GameData.Description) ?? "";
-                if (descValue == "¤") descValue = "";
-            }
-
-            if (!showDescriptionColumn && tChildDir.Game != null)
-            {
-                if (!string.IsNullOrWhiteSpace(descValue))
-                {
-                    showDescriptionColumn = true;
-                }
-            }
-
-            ReportStatus tDirStat = tChildDir.DirStatus;
-
-            bool gCorrect = tDirStat.HasCorrect();
-            bool gMissing = tDirStat.HasMissing(false);
-            bool gUnknown = tDirStat.HasUnknown();
-            bool gInToSort = tDirStat.HasInToSort();
-            bool gFixes = tDirStat.HasFixesNeeded();
-            bool gMIA = tDirStat.HasMIA();
-            bool gAllMerged = tDirStat.HasAllMerged();
-
-            bool show = (chkBoxShowComplete.IsChecked == true && gCorrect && !gMissing && !gFixes);
-            show = show || (chkBoxShowPartial.IsChecked == true && gMissing && gCorrect);
-            show = show || (chkBoxShowEmpty.IsChecked == true && gMissing && !gCorrect);
-            show = show || (chkBoxShowFixes.IsChecked == true && gFixes);
-            show = show || (chkBoxShowMIA.IsChecked == true && gMIA);
-            show = show || (chkBoxShowMerged.IsChecked == true && gAllMerged);
-            show = show || gUnknown;
-            show = show || gInToSort;
-            show = show || tChildDir.GotStatus == GotStatus.Corrupt;
-            show = show || !(gCorrect || gMissing || gUnknown || gInToSort || gFixes || gMIA || gAllMerged);
-
-            if (!show)
-                continue;
-
-            if (!MatchesGameFilter(filter, tChildDir.Name ?? "", descValue, gCorrect, gMissing, gFixes, gMIA, gAllMerged, gUnknown, gInToSort, tChildDir.GotStatus))
-                continue;
-
-            if (show)
-            {
-                gameList.Add(tChildDir);
-            }
-        }
-
-        ApplyGameSort(gameList);
+        var visibility = new GameVisibilityOptions(
+            chkBoxShowComplete.IsChecked == true,
+            chkBoxShowPartial.IsChecked == true,
+            chkBoxShowEmpty.IsChecked == true,
+            chkBoxShowFixes.IsChecked == true,
+            chkBoxShowMIA.IsChecked == true,
+            chkBoxShowMerged.IsChecked == true);
+        GameFilter filter = GameFilter.Parse(txtFilter.Text);
+        _gameBrowser.Apply(
+            visibility,
+            filter,
+            _gameSortHeader,
+            _gameSortAsc,
+            !string.IsNullOrWhiteSpace(txtFilter.Text));
+        bool showDescriptionColumn = _gameBrowser.AllRows.Any(row => !string.IsNullOrWhiteSpace(row.Description));
 
         var gameDescColumn = GameGrid.Columns.FirstOrDefault(c => string.Equals(c.Header?.ToString(), "Description", StringComparison.Ordinal));
         if (gameDescColumn != null)
@@ -1258,136 +914,14 @@ public partial class MainWindow : Window
                 gameDescColumn.IsVisible = showDescriptionColumn;
         }
 
-        GameGrid.ItemsSource = gameList;
-        UpdateGameCountLabel(gameList.Count, totalDirCount);
         _updatingGameGrid = false;
-        
-        if (gameList.Count > 0)
+
+        if (_gameBrowser.Items.Count == 0)
         {
-            // GameGrid.SelectedIndex = 0; // Optional: Select first item
+            _romBrowser.SetGame(null, includeMerged: false);
+            RomGrid.ItemsSource = _romBrowser.Items;
+            _ = _mediaInspector.SelectGameAsync(null);
         }
-        else
-        {
-            RomGrid.ItemsSource = null;
-        }
-    }
-
-    private sealed class GameFilter
-    {
-        public string? FreeText { get; set; }
-        public string? DescText { get; set; }
-        public HashSet<string> Statuses { get; } = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-    }
-
-    private static GameFilter ParseGameFilter(string? text)
-    {
-        var f = new GameFilter();
-        if (string.IsNullOrWhiteSpace(text))
-            return f;
-
-        var parts = text.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-        var free = new List<string>();
-
-        foreach (var p in parts)
-        {
-            if (p.StartsWith("desc:", StringComparison.OrdinalIgnoreCase))
-            {
-                var v = p.Substring(5);
-                if (!string.IsNullOrWhiteSpace(v))
-                    f.DescText = v;
-                continue;
-            }
-
-            if (p.StartsWith("status:", StringComparison.OrdinalIgnoreCase))
-            {
-                var v = p.Substring(7);
-                if (!string.IsNullOrWhiteSpace(v))
-                {
-                    foreach (var s in v.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
-                        f.Statuses.Add(s);
-                }
-                continue;
-            }
-
-            free.Add(p);
-        }
-
-        if (free.Count > 0)
-            f.FreeText = string.Join(' ', free);
-
-        return f;
-    }
-
-    private static bool MatchesGameFilter(
-        GameFilter filter,
-        string name,
-        string description,
-        bool gCorrect,
-        bool gMissing,
-        bool gFixes,
-        bool gMIA,
-        bool gAllMerged,
-        bool gUnknown,
-        bool gInToSort,
-        GotStatus gotStatus)
-    {
-        if (!string.IsNullOrWhiteSpace(filter.FreeText))
-        {
-            string t = filter.FreeText.ToLowerInvariant();
-            if (!(name?.ToLowerInvariant().Contains(t) == true || description?.ToLowerInvariant().Contains(t) == true))
-                return false;
-        }
-
-        if (!string.IsNullOrWhiteSpace(filter.DescText))
-        {
-            string t = filter.DescText.ToLowerInvariant();
-            if (!(description?.ToLowerInvariant().Contains(t) == true))
-                return false;
-        }
-
-        if (filter.Statuses.Count > 0)
-        {
-            bool any = false;
-            foreach (var s in filter.Statuses)
-            {
-                if (IsStatusMatch(s, gCorrect, gMissing, gFixes, gMIA, gAllMerged, gUnknown, gInToSort, gotStatus))
-                {
-                    any = true;
-                    break;
-                }
-            }
-            if (!any)
-                return false;
-        }
-
-        return true;
-    }
-
-    private static bool IsStatusMatch(
-        string status,
-        bool gCorrect,
-        bool gMissing,
-        bool gFixes,
-        bool gMIA,
-        bool gAllMerged,
-        bool gUnknown,
-        bool gInToSort,
-        GotStatus gotStatus)
-    {
-        status = status.Trim();
-        if (status.Length == 0)
-            return false;
-
-        return status.Equals("complete", StringComparison.OrdinalIgnoreCase) && gCorrect && !gMissing && !gFixes
-            || status.Equals("partial", StringComparison.OrdinalIgnoreCase) && gMissing && gCorrect
-            || status.Equals("empty", StringComparison.OrdinalIgnoreCase) && gMissing && !gCorrect
-            || status.Equals("missing", StringComparison.OrdinalIgnoreCase) && gMissing
-            || status.Equals("fixes", StringComparison.OrdinalIgnoreCase) && gFixes
-            || status.Equals("mia", StringComparison.OrdinalIgnoreCase) && gMIA
-            || status.Equals("merged", StringComparison.OrdinalIgnoreCase) && gAllMerged
-            || status.Equals("unknown", StringComparison.OrdinalIgnoreCase) && gUnknown
-            || status.Equals("intosort", StringComparison.OrdinalIgnoreCase) && gInToSort
-            || status.Equals("corrupt", StringComparison.OrdinalIgnoreCase) && gotStatus == GotStatus.Corrupt;
     }
 
     /// <summary>
@@ -1396,208 +930,21 @@ public partial class MainWindow : Window
     /// </summary>
     /// <param name="sender">The source of the event.</param>
     /// <param name="e">The event arguments.</param>
-    private void GameGrid_SelectionChanged(object? sender, SelectionChangedEventArgs e)
+    private async void GameGrid_SelectionChanged(object? sender, SelectionChangedEventArgs e)
     {
         if (_updatingGameGrid) return;
-        if (GameGrid.SelectedItem is RvFile tGame)
+        if (SelectedGame is { } tGame)
         {
-             UpdateGameMetaData(tGame);
+             _viewModel.GameDetails.SetGame(tGame);
              UpdateRomGrid(tGame);
-             UpdateArtworkVisibility(tGame);
+             await _mediaInspector.SelectGameAsync(tGame);
         }
         else
         {
-             UpdateGameMetaData(null);
-             RomGrid.ItemsSource = null;
-             HideAllArtworkTabs();
-        }
-    }
-
-    /// <summary>
-    /// Updates the Game Metadata panel (description, manufacturer, year, etc.) for the selected game.
-    /// </summary>
-    /// <param name="tGame">The selected game file.</param>
-    private void UpdateGameMetaData(RvFile? tGame)
-    {
-        var lblGameName = this.FindControl<TextBlock>("lblGameName");
-        
-        var lblGameDescriptionLabel = this.FindControl<TextBlock>("lblGameDescriptionLabel");
-        var lblGameDescription = this.FindControl<TextBlock>("lblGameDescription");
-        
-        var lblGameManufacturerLabel = this.FindControl<TextBlock>("lblGameManufacturerLabel");
-        var lblGameManufacturer = this.FindControl<TextBlock>("lblGameManufacturer");
-        
-        var lblGameCloneOfLabel = this.FindControl<TextBlock>("lblGameCloneOfLabel");
-        var lblGameCloneOf = this.FindControl<TextBlock>("lblGameCloneOf");
-        
-        var lblGameRomOfLabel = this.FindControl<TextBlock>("lblGameRomOfLabel");
-        var lblGameRomOf = this.FindControl<TextBlock>("lblGameRomOf");
-        
-        var lblGameYearLabel = this.FindControl<TextBlock>("lblGameYearLabel");
-        var lblGameYear = this.FindControl<TextBlock>("lblGameYear");
-        
-        var lblGameCategoryLabel = this.FindControl<TextBlock>("lblGameCategoryLabel");
-        var lblGameCategory = this.FindControl<TextBlock>("lblGameCategory");
-
-        void SetVisible(bool visible, params Control?[] controls)
-        {
-            foreach (var c in controls)
-            {
-                if (c != null) c.IsVisible = visible;
-            }
-        }
-
-        if (tGame == null)
-        {
-            if (lblGameName != null) lblGameName.Text = "";
-            SetVisible(false, lblGameDescriptionLabel, lblGameDescription, 
-                              lblGameManufacturerLabel, lblGameManufacturer,
-                              lblGameCloneOfLabel, lblGameCloneOf,
-                              lblGameRomOfLabel, lblGameRomOf,
-                              lblGameYearLabel, lblGameYear,
-                              lblGameCategoryLabel, lblGameCategory);
-            return;
-        }
-
-        if (lblGameName != null)
-        {
-            string gameId = tGame.Game?.GetData(RvGame.GameData.Id) ?? "";
-            lblGameName.Text = tGame.Name + (!string.IsNullOrWhiteSpace(gameId) ? $" (ID:{gameId})" : "");
-        }
-
-        if (tGame.Game != null)
-        {
-            // Note: Treating EmuArc same as Standard for basic fields to match WinForms behavior
-            bool isEmuArc = tGame.Game.GetData(RvGame.GameData.EmuArc) == "yes";
-
-            // Description
-            string desc = tGame.Game.GetData(RvGame.GameData.Description);
-            if (desc == "¤") desc = Path.GetFileNameWithoutExtension(tGame.Name);
-            if (lblGameDescription != null) lblGameDescription.Text = desc;
-            SetVisible(true, lblGameDescriptionLabel, lblGameDescription);
-
-            // Manufacturer
-            string manu = NormalizeGameField(tGame.Game.GetData(RvGame.GameData.Manufacturer));
-            if (lblGameManufacturer != null) lblGameManufacturer.Text = manu;
-            SetVisible(!isEmuArc || !string.IsNullOrWhiteSpace(manu), lblGameManufacturerLabel, lblGameManufacturer);
-
-            // CloneOf
-            string clone = NormalizeGameField(tGame.Game.GetData(RvGame.GameData.CloneOf));
-            if (lblGameCloneOf != null) lblGameCloneOf.Text = clone;
-            SetVisible(!isEmuArc || !string.IsNullOrWhiteSpace(clone), lblGameCloneOfLabel, lblGameCloneOf);
-
-            // RomOf
-            string romOf = NormalizeGameField(tGame.Game.GetData(RvGame.GameData.RomOf));
-            if (lblGameRomOf != null) lblGameRomOf.Text = romOf;
-            SetVisible(!isEmuArc || !string.IsNullOrWhiteSpace(romOf), lblGameRomOfLabel, lblGameRomOf);
-
-            // Year
-            string year = NormalizeGameField(tGame.Game.GetData(RvGame.GameData.Year));
-            if (lblGameYear != null) lblGameYear.Text = year;
-            SetVisible(!isEmuArc || !string.IsNullOrWhiteSpace(year), lblGameYearLabel, lblGameYear);
-
-            // Category
-            string cat = NormalizeGameField(tGame.Game.GetData(RvGame.GameData.Category));
-            if (string.IsNullOrWhiteSpace(cat) && isEmuArc)
-            {
-                string genre = NormalizeGameField(tGame.Game.GetData(RvGame.GameData.Genre));
-                string sub = NormalizeGameField(tGame.Game.GetData(RvGame.GameData.SubGenre));
-                if (!string.IsNullOrWhiteSpace(genre) && !string.IsNullOrWhiteSpace(sub))
-                    cat = $"{genre} | {sub}";
-                else if (!string.IsNullOrWhiteSpace(genre))
-                    cat = genre;
-            }
-            if (lblGameCategory != null) lblGameCategory.Text = cat;
-            SetVisible(!isEmuArc || !string.IsNullOrWhiteSpace(cat), lblGameCategoryLabel, lblGameCategory);
-        }
-        else
-        {
-            SetVisible(false, lblGameDescriptionLabel, lblGameDescription, 
-                              lblGameManufacturerLabel, lblGameManufacturer,
-                              lblGameCloneOfLabel, lblGameCloneOf,
-                              lblGameRomOfLabel, lblGameRomOf,
-                              lblGameYearLabel, lblGameYear,
-                              lblGameCategoryLabel, lblGameCategory);
-        }
-    }
-
-    private static string NormalizeGameField(string? value)
-    {
-        if (string.IsNullOrEmpty(value) || value == "¤")
-            return "";
-        return value;
-    }
-
-    /// <summary>
-    /// Hides all artwork tabs and collapses the artwork column.
-    /// </summary>
-    private void HideAllArtworkTabs()
-    {
-        if (GameListGrid != null && GameListGrid.ColumnDefinitions[2].Width.Value > 0)
-        {
-             _lastArtworkWidth = GameListGrid.ColumnDefinitions[2].Width;
-        }
-
-        ResetAllArtworkZoom();
-        ResetInfoTextBoxes();
-        _mediaContainers.Remove(picLogo);
-        _mediaContainers.Remove(picArtwork);
-        _mediaContainers.Remove(picMedium1);
-        _mediaContainers.Remove(picMedium2);
-        _mediaContainers.Remove(picScreenTitle);
-        _mediaContainers.Remove(picScreenShot);
-        _mediaContainers.Remove(txtInfo);
-        _mediaContainers.Remove(txtInfo2);
-        TabArtwork.Header = "Artwork";
-        TabMedium.Header = "Medium";
-        TabScreens.Header = "Screens";
-        TabInfo.Header = "Info";
-        TabInfo2.Header = "Info2";
-        TabArtwork.IsVisible = false;
-        TabMedium.IsVisible = false;
-        TabScreens.IsVisible = false;
-        TabInfo.IsVisible = false;
-        TabInfo2.IsVisible = false;
-
-        if (ArtworkSplitter != null) ArtworkSplitter.IsVisible = false;
-        if (ArtworkTabs != null) ArtworkTabs.IsVisible = false;
-        if (GameListGrid != null) GameListGrid.ColumnDefinitions[2].Width = new GridLength(0);
-    }
-
-    /// <summary>
-    /// Shows the artwork section and restores its width.
-    /// </summary>
-    private void ShowArtworkSection()
-    {
-        if (ArtworkSplitter != null) ArtworkSplitter.IsVisible = true;
-        if (ArtworkTabs != null) ArtworkTabs.IsVisible = true;
-        if (GameListGrid != null) GameListGrid.ColumnDefinitions[2].Width = _lastArtworkWidth.Value > 0 ? _lastArtworkWidth : new GridLength(300);
-    }
-
-    private void OnArtworkPointerWheelChanged(object? sender, PointerWheelEventArgs e)
-    {
-        if (sender is not global::Avalonia.Controls.Image image)
-            return;
-
-        if ((e.KeyModifiers & KeyModifiers.Control) != KeyModifiers.Control)
-            return;
-
-        double zoom = GetArtworkZoom(image);
-        if (e.Delta.Y > 0)
-            zoom *= 1.12;
-        else if (e.Delta.Y < 0)
-            zoom /= 1.12;
-
-        SetArtworkZoom(image, zoom);
-        e.Handled = true;
-    }
-
-    private void OnArtworkDoubleTapped(object? sender, global::Avalonia.Input.TappedEventArgs e)
-    {
-        if (sender is global::Avalonia.Controls.Image image)
-        {
-            ResetArtworkZoom(image);
-            e.Handled = true;
+             _viewModel.GameDetails.SetGame(null);
+             _romBrowser.SetGame(null, includeMerged: false);
+             RomGrid.ItemsSource = _romBrowser.Items;
+             await _mediaInspector.SelectGameAsync(null);
         }
     }
 
@@ -1619,486 +966,55 @@ public partial class MainWindow : Window
                 txtFilter.Text = "";
                 e.Handled = true;
             }
-        }
-    }
 
-    /// <summary>
-    /// Updates the visibility of artwork tabs based on available assets for the selected game.
-    /// Checks for emulator specific artwork first, then NFOs, then C64 specifics.
-    /// </summary>
-    /// <param name="tGame">The selected game file.</param>
-    private void UpdateArtworkVisibility(RvFile tGame)
-    {
-        HideAllArtworkTabs();
-
-        if (tGame == null) return;
-        if (tGame.Parent == null) return;
-
-        bool found = false;
-
-        if (tGame.Game != null && tGame.Game.GetData(RvGame.GameData.EmuArc) == "yes")
-        {
-             LoadTruRipPannel(tGame);
-             return;
+            return;
         }
 
-        string path = tGame.Parent.DatTreeFullName;
-        foreach (EmulatorInfo ei in Settings.rvSettings.EInfo)
+        if (_working)
+            return;
+
+        switch (e.Key)
         {
-            if (path.Length <= 8)
-                continue;
-
-            if (!string.Equals(path.Substring(8), ei.TreeDir, StringComparison.CurrentCultureIgnoreCase))
-                continue;
-
-            if (string.IsNullOrWhiteSpace(ei.ExtraPath))
-                continue;
-
-            if (ei.ExtraPath != null)
-            {
-                found = true;
-                if (ei.ExtraPath.Substring(0, 1) == "%")
-                    LoadMameSLPannels(tGame, ei.ExtraPath.Substring(1));
-                else
-                    LoadMamePannels(tGame, ei.ExtraPath);
-
+            case Key.F5:
+                UpdateDats();
+                e.Handled = true;
                 break;
-            }
-        }
-
-        if (!found)
-            found = LoadNFOPannel(tGame);
-
-        if (!found)
-            found = LoadC64Pannel(tGame);
-    }
-
-    /// <summary>
-    /// Loads MAME-style artwork panels (artwork, logo, screenshots, cabinets).
-    /// </summary>
-    /// <param name="tGame">The game file.</param>
-    /// <param name="extraPath">The path to the artwork assets.</param>
-    private void LoadMamePannels(RvFile tGame, string extraPath)
-    {
-        string[] path = extraPath.Split('\\');
-        RvFile fExtra = DB.DirRoot.Child(0);
-
-        foreach (string p in path)
-        {
-            if (fExtra.ChildNameSearch(FileType.Dir, p, out int pIndex) != 0)
-                return;
-            fExtra = fExtra.Child(pIndex);
-        }
-
-        bool artLoaded = false;
-        bool logoLoaded = false;
-        bool titleLoaded = false;
-        bool screenLoaded = false;
-        int index;
-
-        if (fExtra.ChildNameSearch(FileType.Zip, "artpreview.zip", out index) == 0)
-            artLoaded = TryLoadImage(picArtwork, fExtra.Child(index), Path.GetFileNameWithoutExtension(tGame.Name));
-        else if (fExtra.ChildNameSearch(FileType.Dir, "artpreviewsnap", out index) == 0)
-            artLoaded = TryLoadImage(picArtwork, fExtra.Child(index), Path.GetFileNameWithoutExtension(tGame.Name));
-
-        if (fExtra.ChildNameSearch(FileType.Zip, "marquees.zip", out index) == 0)
-            logoLoaded = TryLoadImage(picLogo, fExtra.Child(index), Path.GetFileNameWithoutExtension(tGame.Name));
-        else if (fExtra.ChildNameSearch(FileType.Dir, "marquees", out index) == 0)
-            logoLoaded = TryLoadImage(picLogo, fExtra.Child(index), Path.GetFileNameWithoutExtension(tGame.Name));
-
-        if (fExtra.ChildNameSearch(FileType.Zip, "snap.zip", out index) == 0)
-            screenLoaded = TryLoadImage(picScreenShot, fExtra.Child(index), Path.GetFileNameWithoutExtension(tGame.Name));
-        else if (fExtra.ChildNameSearch(FileType.Dir, "snap", out index) == 0)
-            screenLoaded = TryLoadImage(picScreenShot, fExtra.Child(index), Path.GetFileNameWithoutExtension(tGame.Name));
-
-        if (fExtra.ChildNameSearch(FileType.Zip, "cabinets.zip", out index) == 0)
-            titleLoaded = TryLoadImage(picScreenTitle, fExtra.Child(index), Path.GetFileNameWithoutExtension(tGame.Name));
-        else if (fExtra.ChildNameSearch(FileType.Dir, "cabinets", out index) == 0)
-            titleLoaded = TryLoadImage(picScreenTitle, fExtra.Child(index), Path.GetFileNameWithoutExtension(tGame.Name));
-
-        if (artLoaded || logoLoaded)
-        {
-            TabArtwork.Header = $"Artwork ({(artLoaded ? 1 : 0) + (logoLoaded ? 1 : 0)})";
-            TabArtwork.IsVisible = true;
-        }
-        if (titleLoaded || screenLoaded)
-        {
-            TabScreens.Header = $"Screens ({(titleLoaded ? 1 : 0) + (screenLoaded ? 1 : 0)})";
-            TabScreens.IsVisible = true;
-        }
-
-        if (artLoaded || logoLoaded || titleLoaded || screenLoaded)
-        {
-            ShowArtworkSection();
+            case Key.F6:
+                ScanRoms(EScanLevel.Level2);
+                e.Handled = true;
+                break;
+            case Key.F7:
+                FindFixes();
+                e.Handled = true;
+                break;
+            case Key.F8:
+                FixFiles();
+                e.Handled = true;
+                break;
         }
     }
 
-    /// <summary>
-    /// Loads MAME Software List style artwork panels.
-    /// </summary>
-    /// <param name="tGame">The game file.</param>
-    /// <param name="extraPath">The path to the artwork assets.</param>
-    /// <summary>
-    /// Loads MAME Software List style artwork panels.
-    /// </summary>
-    /// <param name="tGame">The game file.</param>
-    /// <param name="extraPath">The path to the artwork assets.</param>
-    private void LoadMameSLPannels(RvFile tGame, string extraPath)
+    private void ApplyCompactDensity(bool compact, bool persist)
     {
-        string[] path = extraPath.Split('\\');
-        RvFile fExtra = DB.DirRoot.Child(0);
-
-        foreach (string p in path)
+        _viewModel.IsCompact = compact;
+        MenuCompactDensity.IsChecked = compact;
+        if (compact)
         {
-            if (fExtra.ChildNameSearch(FileType.Dir, p, out int pIndex) != 0)
-                return;
-            fExtra = fExtra.Child(pIndex);
+            if (!Classes.Contains("Compact"))
+                Classes.Add("Compact");
+        }
+        else
+        {
+            Classes.Remove("Compact");
         }
 
-        bool artLoaded = false;
-        bool logoLoaded = false;
-        bool screenLoaded = false;
-        int index;
+        GameGrid.RowHeight = compact ? 18 : 22;
+        RomGrid.RowHeight = compact ? 18 : 22;
+        GameGrid.FontSize = compact ? 10 : 11;
+        RomGrid.FontSize = compact ? 10 : 11;
 
-        string fname = tGame.Parent.Name + "/" + Path.GetFileNameWithoutExtension(tGame.Name);
-
-        if (fExtra.ChildNameSearch(FileType.Zip, "covers_SL.zip", out index) == 0)
-            artLoaded = TryLoadImage(picArtwork, fExtra.Child(index), fname);
-
-        if (fExtra.ChildNameSearch(FileType.Zip, "snap_SL.zip", out index) == 0)
-            logoLoaded = TryLoadImage(picLogo, fExtra.Child(index), fname);
-
-        if (fExtra.ChildNameSearch(FileType.Zip, "titles_SL.zip", out index) == 0)
-            screenLoaded = TryLoadImage(picScreenShot, fExtra.Child(index), fname);
-
-        if (artLoaded || logoLoaded)
-        {
-            TabArtwork.Header = $"Artwork ({(artLoaded ? 1 : 0) + (logoLoaded ? 1 : 0)})";
-            TabArtwork.IsVisible = true;
-        }
-        if (screenLoaded)
-        {
-            TabScreens.Header = "Screens (1)";
-            TabScreens.IsVisible = true;
-        }
-
-        if (artLoaded || logoLoaded || screenLoaded)
-        {
-            ShowArtworkSection();
-        }
-    }
-
-    /// <summary>
-    /// Loads TruRip specific artwork panels.
-    /// </summary>
-    /// <param name="tGame">The game file.</param>
-    private void LoadTruRipPannel(RvFile tGame)
-    {
-        ConfigureWrappedText(txtInfo);
-        bool artLoaded = TryLoadImage(picArtwork, tGame, "Artwork/artwork_front");
-        bool logoLoaded = TryLoadImage(picLogo, tGame, "Artwork/logo");
-        if (!logoLoaded)
-            logoLoaded = TryLoadImage(picArtwork, tGame, "Artwork/artwork_back");
-
-        bool medium1Loaded = TryLoadImage(picMedium1, tGame, "Artwork/medium_front*");
-        bool medium2Loaded = TryLoadImage(picMedium2, tGame, "Artwork/medium_back*");
-        bool titleLoaded = TryLoadImage(picScreenTitle, tGame, "Artwork/screentitle");
-        bool screenLoaded = TryLoadImage(picScreenShot, tGame, "Artwork/screenshot");
-        bool storyLoaded = LoadText(txtInfo, tGame, "Artwork/story.txt");
-
-        if (artLoaded || logoLoaded)
-        {
-            TabArtwork.Header = $"Artwork ({(artLoaded ? 1 : 0) + (logoLoaded ? 1 : 0)})";
-            TabArtwork.IsVisible = true;
-        }
-        if (medium1Loaded || medium2Loaded)
-        {
-            TabMedium.Header = $"Medium ({(medium1Loaded ? 1 : 0) + (medium2Loaded ? 1 : 0)})";
-            TabMedium.IsVisible = true;
-        }
-        if (titleLoaded || screenLoaded)
-        {
-            TabScreens.Header = $"Screens ({(titleLoaded ? 1 : 0) + (screenLoaded ? 1 : 0)})";
-            TabScreens.IsVisible = true;
-        }
-        if (storyLoaded) { TabInfo.Header = "Info"; TabInfo.IsVisible = true; }
-
-        if (artLoaded || logoLoaded || medium1Loaded || medium2Loaded || titleLoaded || screenLoaded || storyLoaded)
-        {
-            ShowArtworkSection();
-        }
-    }
-
-    /// <summary>
-    /// Loads C64 specific artwork panels (Front, Cassette, Inlay).
-    /// </summary>
-    /// <param name="tGame">The game file.</param>
-    /// <returns>True if any artwork was loaded.</returns>
-    private bool LoadC64Pannel(RvFile tGame)
-    {
-        bool artLoaded = TryLoadImage(picArtwork, tGame, "Front");
-        bool logoLoaded = TryLoadImage(picLogo, tGame, "Extras/Cassette");
-        bool titleLoaded = TryLoadImage(picScreenTitle, tGame, "Extras/Inlay");
-        bool screenLoaded = TryLoadImage(picScreenShot, tGame, "Extras/Inlay_back");
-
-        if (artLoaded || logoLoaded)
-        {
-            TabArtwork.Header = $"Artwork ({(artLoaded ? 1 : 0) + (logoLoaded ? 1 : 0)})";
-            TabArtwork.IsVisible = true;
-        }
-        if (titleLoaded || screenLoaded)
-        {
-            TabScreens.Header = $"Screens ({(titleLoaded ? 1 : 0) + (screenLoaded ? 1 : 0)})";
-            TabScreens.IsVisible = true;
-        }
-
-        if (artLoaded || logoLoaded || titleLoaded || screenLoaded)
-        {
-            ShowArtworkSection();
-            return true;
-        }
-        return false;
-    }
-
-    /// <summary>
-    /// Loads NFO and DIZ files for display.
-    /// </summary>
-    /// <param name="tGame">The game file.</param>
-    /// <returns>True if any text file was loaded.</returns>
-    private bool LoadNFOPannel(RvFile tGame)
-    {
-        ConfigureMonospaceText(txtInfo);
-        bool storyLoaded = LoadNFO(txtInfo, tGame, "*.nfo");
-        if (storyLoaded)
-        {
-            TabInfo.Header = "NFO";
-            TabInfo.IsVisible = true;
-        }
-
-        ConfigureMonospaceText(txtInfo2);
-        bool storyLoaded2 = LoadNFO(txtInfo2, tGame, "*.diz");
-        if (storyLoaded2)
-        {
-            TabInfo2.Header = "DIZ";
-            TabInfo2.IsVisible = true;
-        }
-        
-        if (storyLoaded || storyLoaded2)
-        {
-            ShowArtworkSection();
-            return true;
-        }
-        return false;
-    }
-
-    // --- Helpers ---
-
-    /// <summary>
-    /// Tries to load an image with .png or .jpg extension.
-    /// </summary>
-    private bool TryLoadImage(global::Avalonia.Controls.Image pic, RvFile tGame, string filename)
-    {
-        return LoadImage(pic, tGame, filename + ".png") || LoadImage(pic, tGame, filename + ".jpg");
-    }
-
-    /// <summary>
-    /// Loads an image from a file or zip entry into an Image control.
-    /// </summary>
-    private bool LoadImage(global::Avalonia.Controls.Image picBox, RvFile tGame, string filename)
-    {
-        ResetArtworkZoom(picBox);
-        picBox.Source = null;
-        if (!LoadBytes(tGame, filename, out byte[] memBuffer))
-        {
-            _mediaContainers.Remove(picBox);
-            return false;
-        }
-        
-        try
-        {
-            using (MemoryStream ms = new MemoryStream(memBuffer))
-            {
-                picBox.Source = new Bitmap(ms);
-            }
-            _mediaContainers[picBox] = tGame;
-            return true;
-        }
-        catch
-        {
-            _mediaContainers.Remove(picBox);
-            return false;
-        }
-    }
-
-    /// <summary>
-    /// Loads text from a file or zip entry into a TextBox.
-    /// </summary>
-    private bool LoadText(TextBox txtBox, RvFile tGame, string filename)
-    {
-        txtBox.Text = "";
-        if (!LoadBytes(tGame, filename, out byte[] memBuffer))
-        {
-            _mediaContainers.Remove(txtBox);
-            return false;
-        }
-
-        try
-        {
-            string txt = System.Text.Encoding.ASCII.GetString(memBuffer);
-            txt = txt.Replace("\r\n", "\r\n\r\n");
-            txtBox.Text = txt;
-            _mediaContainers[txtBox] = tGame;
-            return true;
-        }
-        catch
-        {
-            _mediaContainers.Remove(txtBox);
-            return false;
-        }
-    }
-
-    /// <summary>
-    /// Loads NFO text, attempting to handle CodePage 437 or ASCII.
-    /// </summary>
-    private bool LoadNFO(TextBox txtBox, RvFile tGame, string search)
-    {
-        if (!LoadBytes(tGame, search, out byte[] memBuffer))
-        {
-            _mediaContainers.Remove(txtBox);
-            return false;
-        }
-
-        try
-        {
-            // Try to use CodePage 437 if available, else ASCII
-            string txt;
-            try
-            {
-                System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
-                txt = System.Text.Encoding.GetEncoding(437).GetString(memBuffer);
-            }
-            catch
-            {
-                txt = System.Text.Encoding.ASCII.GetString(memBuffer);
-            }
-            
-            txt = txt.Replace("\r\n", "\n");
-            txt = txt.Replace("\r", "\n");
-            txt = txt.Replace("\n", "\r\n");
-            txtBox.Text = txt;
-            _mediaContainers[txtBox] = tGame;
-            return true;
-        }
-        catch
-        {
-            _mediaContainers.Remove(txtBox);
-            return false;
-        }
-    }
-
-    /// <summary>
-    /// Converts a wildcard pattern to a regex.
-    /// </summary>
-    private static Regex WildcardToRegex(string pattern)
-    {
-        if (pattern.ToLower().StartsWith("regex:"))
-            return new Regex(pattern.Substring(6), RegexOptions.IgnoreCase);
-
-        return new Regex("^" + Regex.Escape(pattern).
-        Replace("\\*", ".*").
-        Replace("\\?", ".") + "$", RegexOptions.IgnoreCase);
-    }
-
-    /// <summary>
-    /// Loads bytes from a file or a zip entry matching the filename pattern.
-    /// </summary>
-    private static bool LoadBytes(RvFile tGame, string filename, out byte[] memBuffer)
-    {
-        memBuffer = Array.Empty<byte>();
-
-        Regex rSearch = WildcardToRegex(filename);
-
-        int cCount = tGame.ChildCount;
-        if (cCount == 0)
-            return false;
-
-        int found = -1;
-        for (int i = 0; i < cCount; i++)
-        {
-            RvFile rvf = tGame.Child(i);
-            if (rvf.GotStatus != GotStatus.Got)
-                continue;
-            if (!rSearch.IsMatch(rvf.Name)) 
-                continue;
-            found = i;
-            break;
-        }
-
-        if (found == -1)
-            return false;
-
-        try
-        {
-            switch (tGame.FileType)
-            {
-                case FileType.Zip:
-                    {
-                        RvFile imagefile = tGame.Child(found);
-                        if (imagefile.ZipFileHeaderPosition == null)
-                            return false;
-
-                        Zip zf = new Zip();
-                        if (zf.ZipFileOpen(tGame.FullNameCase, tGame.FileModTimeStamp, false) != ZipReturn.ZipGood)
-                            return false;
-
-                        if (zf.ZipFileOpenReadStreamFromLocalHeaderPointer((ulong)imagefile.ZipFileHeaderPosition, false,
-                                out Stream stream, out ulong streamSize, out ushort _) != ZipReturn.ZipGood)
-                        {
-                            zf.ZipFileClose();
-                            return false;
-                        }
-
-                        memBuffer = new byte[streamSize];
-                        int bytesRead = 0;
-                        while (bytesRead < (int)streamSize)
-                        {
-                            int read = stream.Read(memBuffer, bytesRead, (int)streamSize - bytesRead);
-                            if (read == 0) break;
-                            bytesRead += read;
-                        }
-                        zf.ZipFileClose();
-                        return true;
-                    }
-                case FileType.Dir:
-                    {
-                        RvFile imagefile = tGame.Child(found);
-                        string artwork = imagefile.FullNameCase;
-                        if (!File.Exists(artwork))
-                            return false;
-
-                        using (FileStream stream = new FileStream(artwork, FileMode.Open, FileAccess.Read))
-                        {
-                            memBuffer = new byte[stream.Length];
-                            int bytesRead = 0;
-                            while (bytesRead < memBuffer.Length)
-                            {
-                                int read = stream.Read(memBuffer, bytesRead, memBuffer.Length - bytesRead);
-                                if (read == 0) break;
-                                bytesRead += read;
-                            }
-                        }
-                        return true;
-                    }
-                default:
-                    return false;
-            }
-
-        }
-        catch (Exception e)
-        {
-            Debug.WriteLine(e);
-            return false;
-        }
+        if (persist)
+            AppSettings.AddUpdateAppSettings($"{UiStatePrefix}.CompactDensity", compact ? "1" : "0");
     }
 
     /// <summary>
@@ -2107,122 +1023,31 @@ public partial class MainWindow : Window
     /// <param name="tGame">The selected game file.</param>
     private void UpdateRomGrid(RvFile tGame)
     {
-        var fileList = new List<RvFile>();
-        AddDir(tGame, "", ref fileList);
-
-        bool showMergeColumn = false;
-        bool altFound = false;
-        bool showStatus = false;
-        bool showFileModDate = false;
-
-        for (int i = 0; i < fileList.Count; i++)
-        {
-            var tFile = fileList[i];
-
-            if (!showMergeColumn && !string.IsNullOrWhiteSpace(tFile.Merge))
-            {
-                showMergeColumn = true;
-            }
-
-            if (!altFound)
-            {
-                altFound = (tFile.AltSize != null) || (tFile.AltCRC != null) || (tFile.AltSHA1 != null) || (tFile.AltMD5 != null);
-            }
-
-            if (!showStatus && !string.IsNullOrWhiteSpace(tFile.Status))
-            {
-                showStatus = true;
-            }
-
-            if (!showFileModDate)
-            {
-                showFileModDate =
-                    (tFile.FileModTimeStamp != 0) &&
-                    (tFile.FileModTimeStamp != long.MinValue) &&
-                    (tFile.FileModTimeStamp != Compress.StructuredZip.StructuredZip.TrrntzipDateTime) &&
-                    (tFile.FileModTimeStamp != Compress.StructuredZip.StructuredZip.TrrntzipDosDateTime);
-            }
-        }
+        _romBrowser.SetGame(tGame, chkBoxShowMerged.IsChecked == true);
+        _romBrowser.SetSort(_romSortHeader, _romSortAsc);
 
         var romMergeColumn = RomGrid.Columns.FirstOrDefault(c => string.Equals(c.Header?.ToString(), "Merge", StringComparison.Ordinal));
-        if (romMergeColumn != null) romMergeColumn.IsVisible = showMergeColumn;
+        if (romMergeColumn != null) romMergeColumn.IsVisible = _romBrowser.ShowMergeColumn;
 
         var romAltSizeColumn = RomGrid.Columns.FirstOrDefault(c => string.Equals(c.Header?.ToString(), "Alt Size", StringComparison.Ordinal));
-        if (romAltSizeColumn != null) romAltSizeColumn.IsVisible = altFound;
+        if (romAltSizeColumn != null) romAltSizeColumn.IsVisible = _romBrowser.ShowAlternateColumns;
 
         var romAltCRC32Column = RomGrid.Columns.FirstOrDefault(c => string.Equals(c.Header?.ToString(), "Alt CRC32", StringComparison.Ordinal));
-        if (romAltCRC32Column != null) romAltCRC32Column.IsVisible = altFound;
+        if (romAltCRC32Column != null) romAltCRC32Column.IsVisible = _romBrowser.ShowAlternateColumns;
 
         var romAltSHA1Column = RomGrid.Columns.FirstOrDefault(c => string.Equals(c.Header?.ToString(), "Alt SHA1", StringComparison.Ordinal));
-        if (romAltSHA1Column != null) romAltSHA1Column.IsVisible = altFound;
+        if (romAltSHA1Column != null) romAltSHA1Column.IsVisible = _romBrowser.ShowAlternateColumns;
 
         var romAltMD5Column = RomGrid.Columns.FirstOrDefault(c => string.Equals(c.Header?.ToString(), "Alt MD5", StringComparison.Ordinal));
-        if (romAltMD5Column != null) romAltMD5Column.IsVisible = altFound;
+        if (romAltMD5Column != null) romAltMD5Column.IsVisible = _romBrowser.ShowAlternateColumns;
 
         var romStatusColumn = RomGrid.Columns.FirstOrDefault(c => string.Equals(c.Header?.ToString(), "Status", StringComparison.Ordinal));
-        if (romStatusColumn != null) romStatusColumn.IsVisible = showStatus;
+        if (romStatusColumn != null) romStatusColumn.IsVisible = _romBrowser.ShowStatusColumn;
 
         var romFileModDateColumn = RomGrid.Columns.FirstOrDefault(c => string.Equals(c.Header?.ToString(), "Modified Date/Time", StringComparison.Ordinal));
-        if (romFileModDateColumn != null) romFileModDateColumn.IsVisible = showFileModDate;
+        if (romFileModDateColumn != null) romFileModDateColumn.IsVisible = _romBrowser.ShowModifiedColumn;
 
-        ApplyRomSort(fileList);
-        RomGrid.ItemsSource = fileList;
-    }
-
-    /// <summary>
-    /// Recursively adds files from a directory to the file list for the ROM Grid.
-    /// </summary>
-    /// <param name="tGame">The current directory to process.</param>
-    /// <param name="pathAdd">The path prefix to add to file names.</param>
-    /// <param name="fileList">The list to populate.</param>
-    private void AddDir(RvFile tGame, string pathAdd, ref List<RvFile> fileList)
-    {
-        if (tGame == null) return;
-
-        try
-        {
-            for (int l = 0; l < tGame.ChildCount; l++)
-            {
-                RvFile tBase = tGame.Child(l);
-                RvFile tFile = tBase;
-
-                if (tFile.IsFile)
-                {
-                    AddRom(tFile, pathAdd, ref fileList);
-                }
-
-                if (tGame.Dat == null) continue;
-
-                RvFile tDir = tBase;
-                if (!tDir.IsDirectory) continue;
-
-                if (tDir.Game == null)
-                {
-                    AddDir(tDir, pathAdd + tDir.Name + "/", ref fileList);
-                }
-            }
-        }
-        catch { }
-    }
-
-    /// <summary>
-    /// Adds a single ROM file to the file list if it meets the display criteria.
-    /// </summary>
-    /// <param name="tFile">The file to add.</param>
-    /// <param name="pathAdd">The path prefix.</param>
-    /// <param name="fileList">The list to populate.</param>
-    private void AddRom(RvFile tFile, string pathAdd, ref List<RvFile> fileList)
-    {
-        try
-        {
-            if (tFile.DatStatus != DatStatus.InDatMerged || tFile.RepStatus != RepStatus.NotCollected ||
-                chkBoxShowMerged.IsChecked == true)
-            {
-                tFile.UiDisplayName = pathAdd + tFile.Name;
-                fileList.Add(tFile);
-            }
-        }
-        catch { }
+        RomGrid.ItemsSource = _romBrowser.Items;
     }
 
     // Context Menu Handlers
@@ -2239,7 +1064,7 @@ public partial class MainWindow : Window
              Enum.TryParse(level, out scanLevel);
         }
         
-        var rvTree = this.FindControl<ROMVault.Avalonia.Views.RvTree>("RvTreeControl");
+        var rvTree = RvTreeControl;
         ScanRoms(scanLevel, rvTree?.Selected);
     }
 
@@ -2249,7 +1074,7 @@ public partial class MainWindow : Window
     /// </summary>
     private async void OnSetDirDatSettingsClick(object? sender, RoutedEventArgs e) 
     {
-        var rvTree = this.FindControl<ROMVault.Avalonia.Views.RvTree>("RvTreeControl");
+        var rvTree = RvTreeControl;
         var selected = rvTree?.Selected;
         if (selected != null)
         {
@@ -2271,7 +1096,7 @@ public partial class MainWindow : Window
     /// </summary>
     private async void OnSetDirMappingsClick(object? sender, RoutedEventArgs e) 
     {
-        var rvTree = this.FindControl<ROMVault.Avalonia.Views.RvTree>("RvTreeControl");
+        var rvTree = RvTreeControl;
         var selected = rvTree?.Selected;
         if (selected != null)
         {
@@ -2286,7 +1111,7 @@ public partial class MainWindow : Window
     /// Handles the "Global Dir Mappings" menu click.
     /// Opens the global directory mappings window.
     /// </summary>
-    private async void OnGlobalDirMappingsClick(object? sender, RoutedEventArgs e)
+    private async Task OpenGlobalDirectoryMappingsAsync()
     {
          if (_working) return;
          var win = new Views.DirectoryMappingsWindow();
@@ -2300,7 +1125,7 @@ public partial class MainWindow : Window
     /// </summary>
     private void OnOpenDirectoryClick(object? sender, RoutedEventArgs e) 
     {
-        var rvTree = this.FindControl<ROMVault.Avalonia.Views.RvTree>("RvTreeControl");
+        var rvTree = RvTreeControl;
         var selected = rvTree?.Selected;
         if (selected != null)
         {
@@ -2326,7 +1151,7 @@ public partial class MainWindow : Window
     /// </summary>
     private async void OnSaveFixDatsClick(object? sender, RoutedEventArgs e) 
     {
-        var rvTree = this.FindControl<ROMVault.Avalonia.Views.RvTree>("RvTreeControl");
+        var rvTree = RvTreeControl;
         var selected = rvTree?.Selected;
         if (selected != null)
         {
@@ -2340,7 +1165,7 @@ public partial class MainWindow : Window
     /// </summary>
     private async void OnSaveFullDatClick(object? sender, RoutedEventArgs e) 
     {
-        var rvTree = this.FindControl<ROMVault.Avalonia.Views.RvTree>("RvTreeControl");
+        var rvTree = RvTreeControl;
         var selected = rvTree?.Selected;
         if (selected == null) return;
 
@@ -2375,40 +1200,41 @@ public partial class MainWindow : Window
     private void OnInstanceCountPointerPressed(object? sender, PointerPressedEventArgs e)
     {
         var textBlock = sender as TextBlock;
-        var rvFile = textBlock?.DataContext as RvFile;
-        if (rvFile != null)
+        var row = textBlock?.DataContext as RomRowViewModel;
+        if (row != null)
         {
             var win = new Views.RomInfoWindow();
-            win.SetRom(rvFile);
+            win.SetRom(row.Source);
             win.ShowDialog(this);
         }
     }
 
     private async void OnRomGridCopyCrcClick(object? sender, RoutedEventArgs e)
     {
-        if (RomGrid.SelectedItem is not RvFile file)
+        if (RomGrid.SelectedItem is not RomRowViewModel row)
             return;
-        await CopyTextToClipboard(file.CRC32 ?? "");
+        await CopyTextToClipboard(row.Crc32);
     }
 
     private async void OnRomGridCopySha1Click(object? sender, RoutedEventArgs e)
     {
-        if (RomGrid.SelectedItem is not RvFile file)
+        if (RomGrid.SelectedItem is not RomRowViewModel row)
             return;
-        await CopyTextToClipboard(file.SHA1Hex ?? "");
+        await CopyTextToClipboard(row.Sha1);
     }
 
     private async void OnRomGridCopyMd5Click(object? sender, RoutedEventArgs e)
     {
-        if (RomGrid.SelectedItem is not RvFile file)
+        if (RomGrid.SelectedItem is not RomRowViewModel row)
             return;
-        await CopyTextToClipboard(file.MD5Hex ?? "");
+        await CopyTextToClipboard(row.Md5);
     }
 
     private void OnRomGridOpenFolderClick(object? sender, RoutedEventArgs e)
     {
-        if (RomGrid.SelectedItem is not RvFile file)
+        if (RomGrid.SelectedItem is not RomRowViewModel row)
             return;
+        RvFile file = row.Source;
 
         string candidate = ResolveOsPath(file.FullNameCase);
         if (File.Exists(candidate))
@@ -2429,11 +1255,11 @@ public partial class MainWindow : Window
 
     private void OnRomGridShowOccurrencesClick(object? sender, RoutedEventArgs e)
     {
-        if (RomGrid.SelectedItem is not RvFile file)
+        if (RomGrid.SelectedItem is not RomRowViewModel row)
             return;
 
         var win = new Views.RomInfoWindow();
-        win.SetRom(file);
+        win.SetRom(row.Source);
         win.ShowDialog(this);
     }
 
@@ -2498,7 +1324,7 @@ public partial class MainWindow : Window
              Enum.TryParse(level, out scanLevel);
         }
         
-        if (GameGrid.SelectedItem is RvFile selected)
+        if (SelectedGame is { } selected)
         {
             ScanRoms(scanLevel, selected);
         }
@@ -2514,7 +1340,7 @@ public partial class MainWindow : Window
     /// </summary>
     private void OnGameGridOpenDirClick(object? sender, RoutedEventArgs e) 
     { 
-        if (GameGrid.SelectedItem is RvFile thisFile)
+        if (SelectedGame is { } thisFile)
         {
             if (thisFile.FileType == FileType.Dir)
             {
@@ -2556,7 +1382,7 @@ public partial class MainWindow : Window
     /// </summary>
     private void OnGameGridOpenParentClick(object? sender, RoutedEventArgs e) 
     { 
-        if (GameGrid.SelectedItem is RvFile thisFile)
+        if (SelectedGame is { } thisFile)
         {
             var parent = thisFile.Parent;
             if (parent != null && parent.FileType == FileType.Dir)
@@ -2583,7 +1409,7 @@ public partial class MainWindow : Window
     /// </summary>
     private void OnLaunchEmulatorClick(object? sender, RoutedEventArgs e) 
     { 
-        if (GameGrid.SelectedItem is RvFile tGame)
+        if (SelectedGame is { } tGame)
         {
             LaunchEmulator(tGame);
         }
@@ -2595,7 +1421,7 @@ public partial class MainWindow : Window
     /// </summary>
     private void OnOpenWebPageClick(object? sender, RoutedEventArgs e) 
     { 
-        if (GameGrid.SelectedItem is RvFile thisGame)
+        if (SelectedGame is { } thisGame)
         {
             if (thisGame.Game != null && thisGame.Dat?.GetData(RvDat.DatData.HomePage) == "No-Intro")
             {
@@ -2618,7 +1444,7 @@ public partial class MainWindow : Window
     /// <summary>
     /// Handles the "Update New DATs" menu click.
     /// </summary>
-    private void OnUpdateNewDatsClick(object? sender, RoutedEventArgs e) 
+    private void UpdateDatsIfIdle()
     {
         if (_working) return;
         UpdateDats();
@@ -2628,7 +1454,7 @@ public partial class MainWindow : Window
     /// Handles the "Update All DATs" menu click.
     /// Checks for changes in all DATs and updates the database.
     /// </summary>
-    private void OnUpdateAllDatsClick(object? sender, RoutedEventArgs e) 
+    private void UpdateAllDatsIfIdle()
     {
         if (_working) return;
         DatUpdate.CheckAllDats(DB.DirRoot.Child(0), @"DatRoot\");
@@ -2638,27 +1464,31 @@ public partial class MainWindow : Window
     /// <summary>
     /// Handles the "Scan ROMs" menu click.
     /// </summary>
-    private void OnScanRomsClick(object? sender, RoutedEventArgs e) 
+    private void ScanRomsIfIdle(string? level)
     {
          if (_working) return;
          EScanLevel scanLevel = EScanLevel.Level2;
-         if (sender is MenuItem menuItem && menuItem.Tag is string level)
-        {
-            Enum.TryParse(level, out scanLevel);
-        }
+         if (!string.IsNullOrWhiteSpace(level))
+             Enum.TryParse(level, out scanLevel);
         ScanRoms(scanLevel);
     }
 
-    private void OnFixRomsClick(object? sender, RoutedEventArgs e)
+    private void FixFilesIfIdle()
     {
         if (_working) return;
         FixFiles();
+    }
+
+    private void FindFixesIfIdle()
+    {
+        if (_working) return;
+        FindFixes();
     }
     
     /// <summary>
     /// Handles the "Fix DAT Report" menu click.
     /// </summary>
-    private async void OnFixDatReportClick(object? sender, RoutedEventArgs e) 
+    private async Task CreateFixDatReportAsync()
     {
         if (_working) return;
         await Code.Report.CreateFixDat(this, DB.DirRoot.Child(0), true);
@@ -2667,7 +1497,7 @@ public partial class MainWindow : Window
     /// <summary>
     /// Handles the "Generate Full Report" menu click.
     /// </summary>
-    private async void OnFullReportClick(object? sender, RoutedEventArgs e) 
+    private async Task CreateFullReportAsync()
     {
         if (_working) return;
         await Code.Report.GenerateReport(this);
@@ -2676,7 +1506,7 @@ public partial class MainWindow : Window
     /// <summary>
     /// Handles the "Generate Fix Report" menu click.
     /// </summary>
-    private async void OnFixReportClick(object? sender, RoutedEventArgs e) 
+    private async Task CreateFixReportAsync()
     {
         if (_working) return;
         await Code.Report.GenerateFixReport(this);
@@ -2685,7 +1515,7 @@ public partial class MainWindow : Window
     /// <summary>
     /// Handles the "Global Dir Dat Settings" menu click.
     /// </summary>
-    private async void OnGlobalDirDatSettingsClick(object? sender, RoutedEventArgs e)
+    private async Task OpenGlobalDirectorySettingsAsync()
     {
          if (_working) return;
          var win = new Views.DirectorySettingsWindow();
@@ -2702,7 +1532,7 @@ public partial class MainWindow : Window
     /// <summary>
     /// Handles the "Settings" menu click.
     /// </summary>
-    private async void OnRomVaultSettingsClick(object? sender, RoutedEventArgs e)
+    private async Task OpenSettingsAsync()
     {
         if (_working) return;
         var win = new Views.SettingsWindow();
@@ -2713,7 +1543,7 @@ public partial class MainWindow : Window
     /// Handles the "Add To Sort" menu click.
     /// Adds a new directory to be sorted into the database.
     /// </summary>
-    private async void OnAddToSortClick(object? sender, RoutedEventArgs e)
+    private async Task AddToSortAsync()
     {
         if (_working) return;
         
@@ -2745,7 +1575,7 @@ public partial class MainWindow : Window
         RepairStatus.ReportStatusReset(DB.DirRoot);
         
         // Refresh Tree
-        var rvTree = this.FindControl<ROMVault.Avalonia.Views.RvTree>("RvTreeControl");
+        var rvTree = RvTreeControl;
         if (rvTree != null)
         {
              rvTree.Setup(DB.DirRoot);
@@ -2759,7 +1589,7 @@ public partial class MainWindow : Window
     /// <summary>
     /// Shows the TorrentZip help window.
     /// </summary>
-    private void OnHelpTorrentZipClick(object? sender, RoutedEventArgs e) 
+    private void OpenTorrentZip()
     {
         var win = new Views.TrrntZipWindow();
         win.Show();
@@ -2768,21 +1598,13 @@ public partial class MainWindow : Window
     /// <summary>
     /// Opens the online Wiki.
     /// </summary>
-    private void OnHelpWikiClick(object? sender, RoutedEventArgs e) 
-    {
-        try { Process.Start(new ProcessStartInfo { FileName = "https://wiki.romvault.com/doku.php?id=help", UseShellExecute = true }); } catch { }
-    }
-
-    /// <summary>
-    /// Shows the Color Key window.
-    /// </summary>
-    private void OnHelpColorKeyClick(object? sender, RoutedEventArgs e) 
+    private void OpenColorKey()
     {
         var win = new Views.KeyWindow();
         win.Show(this);
     }
 
-    private async void OnHelpShortcutsClick(object? sender, RoutedEventArgs e)
+    private async Task OpenShortcutsAsync()
     {
         string msg =
             "Shortcuts:\r\n\r\n" +
@@ -2800,39 +1622,10 @@ public partial class MainWindow : Window
         await Views.MessageBoxWindow.ShowInfo(this, msg, "Shortcuts");
     }
 
-    /// <summary>
-    /// Opens the What's New online page.
-    /// </summary>
-    private void OnHelpWhatsNewClick(object? sender, RoutedEventArgs e) 
-    {
-        try { Process.Start(new ProcessStartInfo { FileName = "https://wiki.romvault.com/doku.php?id=whats_new", UseShellExecute = true }); } catch { }
-    }
-
-    /// <summary>
-    /// Shows the About window.
-    /// </summary>
-    private void OnHelpAboutClick(object? sender, RoutedEventArgs e) 
+    private async Task OpenAboutAsync()
     {
         var win = new Views.HelpAboutWindow();
-        win.ShowDialog(this);
-    }
-
-    /// <summary>
-    /// Handles the "Update DATs" toolbar button click.
-    /// </summary>
-    private void OnUpdateDatsClick(object? sender, RoutedEventArgs e) 
-    {
-        if (_working) return;
-        UpdateDats();
-    }
-
-    /// <summary>
-    /// Handles the "Find Fixes" toolbar button click.
-    /// </summary>
-    private void OnFindFixesClick(object? sender, RoutedEventArgs e) 
-    {
-        if (_working) return;
-        FindFixes();
+        await win.ShowDialog(this);
     }
 
     private async void OnTreePresetPointerPressed(object? sender, PointerPressedEventArgs e)
@@ -2853,7 +1646,7 @@ public partial class MainWindow : Window
         miSave.Click += (_, _) =>
         {
             TreeDefault(set: true, index);
-            if (lblStatusRight != null) lblStatusRight.Text = $"Saved preset {index}";
+            _viewModel.Activity = $"Saved preset {index}";
         };
 
         var miLoad = new MenuItem { Header = "Load" };
@@ -2882,7 +1675,7 @@ public partial class MainWindow : Window
 
             AppSettings.AddUpdateAppSettings($"{UiStatePrefix}.TreePreset.{index}.Name", "");
             UpdateTreePresetTooltips();
-            if (lblStatusRight != null) lblStatusRight.Text = $"Cleared preset {index}";
+            _viewModel.Activity = $"Cleared preset {index}";
         };
 
         menu.Items.Add(miSave);
@@ -2904,7 +1697,7 @@ public partial class MainWindow : Window
             return;
         }
         dtss.read(index);
-        var rvTree = this.FindControl<ROMVault.Avalonia.Views.RvTree>("RvTreeControl");
+        var rvTree = RvTreeControl;
         rvTree?.Setup(DB.DirRoot);
     }
 
@@ -2915,7 +1708,7 @@ public partial class MainWindow : Window
 
         ApplyTreeCheckAllInternal(DB.DirRoot, selected);
 
-        var rvTree = this.FindControl<ROMVault.Avalonia.Views.RvTree>("RvTreeControl");
+        var rvTree = RvTreeControl;
         rvTree?.Setup(DB.DirRoot);
     }
 
@@ -3063,24 +1856,6 @@ public partial class MainWindow : Window
     }
     
     /// <summary>
-    /// Handles the "Fix Files" toolbar button click.
-    /// </summary>
-    private void OnFixFilesClick(object? sender, RoutedEventArgs e) 
-    {
-         if (_working) return;
-         FixFiles();
-    }
-
-    /// <summary>
-    /// Handles the "Report" toolbar button click.
-    /// </summary>
-    private async void OnReportClick(object? sender, RoutedEventArgs e) 
-    {
-        if (_working) return;
-        await Code.Report.CreateFixDat(this, DB.DirRoot.Child(0), true);
-    }
-
-    /// <summary>
     /// Launches the configured emulator for the selected game.
     /// </summary>
     /// <param name="tGame">The game file to launch.</param>
@@ -3144,164 +1919,6 @@ public partial class MainWindow : Window
             return ei;
         }
         return null;
-    }
-
-    // Worker Functions
-
-    /// <summary>
-    /// Sets the UI to a "Working" state (busy cursor, disabled controls).
-    /// </summary>
-    private void Start(string activity)
-    {
-        _working = true;
-        this.Cursor = new global::Avalonia.Input.Cursor(global::Avalonia.Input.StandardCursorType.Wait);
-        if (lblStatusRight != null) lblStatusRight.Text = activity;
-        if (StatusProgress != null) StatusProgress.IsVisible = true;
-        var rvTree = this.FindControl<ROMVault.Avalonia.Views.RvTree>("RvTreeControl");
-        if (rvTree != null) rvTree.Working = true;
-        var menu = this.FindControl<Menu>("MainMenu");
-        if (menu != null) menu.IsEnabled = false;
-        var toolbarActions = this.FindControl<StackPanel>("ToolbarActions");
-        if (toolbarActions != null) toolbarActions.IsEnabled = false;
-    }
-
-    /// <summary>
-    /// Resets the UI from a "Working" state.
-    /// </summary>
-    private void Finish()
-    {
-        _working = false;
-        this.Cursor = global::Avalonia.Input.Cursor.Default;
-        if (lblStatusRight != null) lblStatusRight.Text = "";
-        if (StatusProgress != null) StatusProgress.IsVisible = false;
-        var rvTree = this.FindControl<ROMVault.Avalonia.Views.RvTree>("RvTreeControl");
-        if (rvTree != null)
-        {
-            rvTree.Working = false;
-            DatSetSelected(rvTree.Selected);
-        }
-        var menu = this.FindControl<Menu>("MainMenu");
-        if (menu != null) menu.IsEnabled = true;
-        var toolbarActions = this.FindControl<StackPanel>("ToolbarActions");
-        if (toolbarActions != null) toolbarActions.IsEnabled = true;
-    }
-
-    /// <summary>
-    /// Starts the ROM scanning process in a background thread.
-    /// </summary>
-    /// <param name="sd">The scan level (depth).</param>
-    /// <param name="StartAt">The file/directory to start scanning from. If null, scans everything.</param>
-    public void ScanRoms(EScanLevel sd, RvFile? StartAt = null)
-    {
-        FileScanning.StartAt = StartAt;
-        FileScanning.EScanLevel = sd;
-        
-        Start("Scanning ROMs...");
-        
-        var thWrk = new ThreadWorker(FileScanning.ScanFiles);
-        
-        var progressWindow = new Views.ProgressWindow(thWrk);
-        progressWindow.Title = "Scanning Roms";
-        progressWindow.ShowDialog(this);
-        
-        thWrk.wFinal += OnScanFinal;
-        thWrk.StartAsync();
-    }
-
-    private void OnScanReport(object obj)
-    {
-        // Handled by ProgressWindow
-    }
-
-    private void OnScanFinal()
-    {
-        Dispatcher.UIThread.Post(() => {
-            Finish();
-        });
-    }
-
-    /// <summary>
-    /// Starts the DAT update process in a background thread.
-    /// Updates the internal database from DAT files.
-    /// </summary>
-    public void UpdateDats()
-    {
-        // Preserve selection
-        var rvTree = this.FindControl<ROMVault.Avalonia.Views.RvTree>("RvTreeControl");
-        RvFile? selected = rvTree?.Selected;
-        List<RvFile> parents = new List<RvFile>();
-        while (selected != null)
-        {
-            parents.Add(selected);
-            selected = selected.Parent;
-        }
-
-        Start("Updating DATs...");
-
-        var thWrk = new ThreadWorker(DatUpdate.UpdateDat);
-        
-        var progressWindow = new Views.ProgressWindow(thWrk);
-        progressWindow.Title = "Updating Dats";
-        progressWindow.ShowDialog(this);
-
-        thWrk.wFinal += () => {
-             Dispatcher.UIThread.Post(() => {
-                // Rebuild Tree
-                if (rvTree != null) rvTree.Setup(DB.DirRoot);
-
-                // Restore selection
-                while (parents.Count > 1 && parents[0].Parent == null)
-                    parents.RemoveAt(0);
-
-                if (parents.Count > 0)
-                    selected = parents[0];
-                else
-                    selected = null;
-
-                if (rvTree != null)
-                {
-                    rvTree.SetSelected(selected);
-                }
-                
-                Finish();
-                
-                // Extra Finish steps for UpdateDats
-                 DatSetSelected(selected);
-            });
-        };
-        thWrk.StartAsync();
-    }
-
-    /// <summary>
-    /// Starts the process to find fixes for missing/broken ROMs.
-    /// </summary>
-    public void FindFixes()
-    {
-        Start("Finding fixes...");
-        var thWrk = new ThreadWorker(RomVaultCore.FindFix.FindFixes.ScanFiles);
-        
-        var progressWindow = new Views.ProgressWindow(thWrk);
-        progressWindow.Title = "Finding Fixes";
-        progressWindow.ShowDialog(this);
-
-        thWrk.wFinal += OnScanFinal;
-        thWrk.StartAsync();
-    }
-
-    /// <summary>
-    /// Starts the process to apply fixes (move/rename/copy files).
-    /// </summary>
-    public void FixFiles()
-    {
-        Start("Fixing files...");
-        var thWrk = new ThreadWorker(RomVaultCore.FixFile.Fix.PerformFixes);
-        
-        var progressWindow = new Views.ProgressWindow(thWrk);
-        progressWindow.Title = "Fixing Files";
-        progressWindow.ShowDialog(this);
-        
-        thWrk.wFinal += OnScanFinal;
-        thWrk.StartAsync();
     }
 
 }

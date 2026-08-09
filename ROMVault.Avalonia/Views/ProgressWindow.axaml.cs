@@ -40,7 +40,7 @@ namespace ROMVault.Avalonia.Views
         {
             InitializeComponent();
             _logEntries = new ObservableCollection<LogEntry>();
-            var errorGrid = this.FindControl<DataGrid>("ErrorGrid");
+            var errorGrid = ErrorGrid;
             if (errorGrid != null) errorGrid.ItemsSource = _logEntries;
         }
 
@@ -75,7 +75,7 @@ namespace ROMVault.Avalonia.Views
             {
                 e.Cancel = true;
                 _thWrk.Cancel();
-                var btnCancel = this.FindControl<Button>("btnCancel");
+                var btnCancel = this.btnCancel;
                 if (btnCancel != null) btnCancel.IsEnabled = false;
             }
         }
@@ -86,7 +86,7 @@ namespace ROMVault.Avalonia.Views
         /// </summary>
         private void OnCancelClick(object sender, RoutedEventArgs e)
         {
-            var btnCancel = this.FindControl<Button>("btnCancel");
+            var btnCancel = this.btnCancel;
             if (_isClosing || (btnCancel != null && btnCancel.Content?.ToString() == "Close"))
             {
                 _isClosing = true;
@@ -117,14 +117,14 @@ namespace ROMVault.Avalonia.Views
             {
                 if (obj is int e)
                 {
-                    var progressBar1 = this.FindControl<ProgressBar>("progressBar1");
+                    var progressBar1 = this.progressBar1;
                     if (progressBar1 != null) progressBar1.Value = e;
                     return;
                 }
 
                 if (obj is bgwText bgwT)
                 {
-                    var lblMessage = this.FindControl<TextBlock>("lblMessage");
+                    var lblMessage = this.lblMessage;
                     if (lblMessage != null) lblMessage.Text = bgwT.Text;
                     
                     if (ShowTimeLog) TimeLogShow(bgwT.Text);
@@ -133,7 +133,7 @@ namespace ROMVault.Avalonia.Views
 
                 if (obj is bgwSetRange bgwSr)
                 {
-                    var progressBar1 = this.FindControl<ProgressBar>("progressBar1");
+                    var progressBar1 = this.progressBar1;
                     if (progressBar1 != null)
                     {
                         progressBar1.Minimum = 0;
@@ -145,7 +145,7 @@ namespace ROMVault.Avalonia.Views
                 
                 if (obj is bgwText2 bgwT2)
                 {
-                    var lblMessage2 = this.FindControl<TextBlock>("lblMessage2");
+                    var lblMessage2 = this.lblMessage2;
                     if (lblMessage2 != null) 
                     {
                         lblMessage2.Text = bgwT2.Text;
@@ -156,7 +156,7 @@ namespace ROMVault.Avalonia.Views
 
                 if (obj is bgwValue2 bgwV2)
                 {
-                    var progressBar2 = this.FindControl<ProgressBar>("progressBar2");
+                    var progressBar2 = this.progressBar2;
                     if (progressBar2 != null)
                     {
                          progressBar2.Value = bgwV2.Value;
@@ -167,7 +167,7 @@ namespace ROMVault.Avalonia.Views
 
                 if (obj is bgwSetRange2 bgwSr2)
                 {
-                    var progressBar2 = this.FindControl<ProgressBar>("progressBar2");
+                    var progressBar2 = this.progressBar2;
                     if (progressBar2 != null)
                     {
                         progressBar2.Minimum = 0;
@@ -180,8 +180,8 @@ namespace ROMVault.Avalonia.Views
                 
                 if (obj is bgwRange2Visible bgwR2V)
                 {
-                    var lblMessage2 = this.FindControl<TextBlock>("lblMessage2");
-                    var progressBar2 = this.FindControl<ProgressBar>("progressBar2");
+                    var lblMessage2 = this.lblMessage2;
+                    var progressBar2 = this.progressBar2;
                     if (lblMessage2 != null) lblMessage2.IsVisible = bgwR2V.Visible;
                     if (progressBar2 != null) progressBar2.IsVisible = bgwR2V.Visible;
                     return;
@@ -189,7 +189,7 @@ namespace ROMVault.Avalonia.Views
 
                 if (obj is bgwShowError bgwE)
                 {
-                    var errorGrid = this.FindControl<DataGrid>("ErrorGrid");
+                    var errorGrid = ErrorGrid;
                     if (!_errorOpen)
                     {
                         _errorOpen = true;
@@ -212,7 +212,7 @@ namespace ROMVault.Avalonia.Views
         /// <param name="message">The message to log.</param>
         private void TimeLogShow(string message)
         {
-            var errorGrid = this.FindControl<DataGrid>("ErrorGrid");
+            var errorGrid = ErrorGrid;
             if (!_errorOpen)
             {
                 _errorOpen = true;
@@ -244,7 +244,7 @@ namespace ROMVault.Avalonia.Views
         {
             Dispatcher.UIThread.Post(() =>
             {
-                var btnCancel = this.FindControl<Button>("btnCancel");
+                var btnCancel = this.btnCancel;
                 if (btnCancel != null)
                 {
                     btnCancel.Content = "Close";

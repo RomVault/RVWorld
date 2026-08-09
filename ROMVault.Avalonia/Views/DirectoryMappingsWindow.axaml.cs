@@ -13,6 +13,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using ROMVault.Avalonia.ViewModels;
 
 namespace ROMVault.Avalonia.Views
 {
@@ -28,6 +29,7 @@ namespace ROMVault.Avalonia.Views
 
         private DirMapping _rule = null!;
         private bool _displayType;
+        private readonly DirectoryMappingsViewModel _viewModel = new();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="DirectoryMappingsWindow"/> class.
@@ -35,6 +37,7 @@ namespace ROMVault.Avalonia.Views
         public DirectoryMappingsWindow()
         {
             InitializeComponent();
+            DataContext = _viewModel;
             
             if (Settings.rvSettings.DirMappings.Count > 0)
                 _rule = Settings.rvSettings.DirMappings[0];
@@ -51,14 +54,14 @@ namespace ROMVault.Avalonia.Views
             }
 
             // Setup events
-            var btnSetROMLocation = this.FindControl<Button>("btnSetROMLocation");
-            var btnClearROMLocation = this.FindControl<Button>("btnClearROMLocation");
-            var btnApply = this.FindControl<Button>("btnSet");
-            var btnDelete = this.FindControl<Button>("btnDelete");
-            var btnDeleteSelected = this.FindControl<Button>("btnDeleteSelected");
-            var btnResetAll = this.FindControl<Button>("btnResetAll");
-            var btnClose = this.FindControl<Button>("btnClose");
-            var dgRules = this.FindControl<DataGrid>("DGDirectoryMappingRules");
+            var btnSetROMLocation = this.btnSetROMLocation;
+            var btnClearROMLocation = this.btnClearROMLocation;
+            var btnApply = btnSet;
+            var btnDelete = this.btnDelete;
+            var btnDeleteSelected = this.btnDeleteSelected;
+            var btnResetAll = this.btnResetAll;
+            var btnClose = this.btnClose;
+            var dgRules = DGDirectoryMappingRules;
 
             if (btnSetROMLocation != null) btnSetROMLocation.Click += BtnSetROMLocationClick;
             if (btnClearROMLocation != null) btnClearROMLocation.Click += BtnClearROMLocation_Click;
@@ -91,22 +94,7 @@ namespace ROMVault.Avalonia.Views
         public void SetDisplayType(bool type)
         {
             _displayType = type;
-            var btnDelete = this.FindControl<Button>("btnDelete");
-            if (btnDelete != null) btnDelete.IsVisible = type;
-
-            // Hide/Show controls based on type (simplified logic compared to WinForms loop)
-            var lblDelete = this.FindControl<TextBlock>("lblDelete"); // "Existing Mapping"
-            var dgRules = this.FindControl<DataGrid>("DGDirectoryMappingRules");
-            var btnDeleteSelected = this.FindControl<Button>("btnDeleteSelected");
-            var btnResetAll = this.FindControl<Button>("btnResetAll");
-            var btnClose = this.FindControl<Button>("btnClose");
-
-            bool showGrid = !type;
-            if (lblDelete != null) lblDelete.IsVisible = showGrid;
-            if (dgRules != null) dgRules.IsVisible = showGrid;
-            if (btnDeleteSelected != null) btnDeleteSelected.IsVisible = showGrid;
-            if (btnResetAll != null) btnResetAll.IsVisible = showGrid;
-            if (btnClose != null) btnClose.IsVisible = showGrid;
+            _viewModel.IsSpecificEditor = type;
 
             if (type)
             {
@@ -140,11 +128,8 @@ namespace ROMVault.Avalonia.Views
         /// </summary>
         private void SetDisplay()
         {
-            var txtDATLocation = this.FindControl<TextBox>("txtDATLocation");
-            var txtROMLocation = this.FindControl<TextBox>("txtROMLocation");
-            
-            if (txtDATLocation != null) txtDATLocation.Text = _rule.DirKey;
-            if (txtROMLocation != null) txtROMLocation.Text = _rule.DirPath;
+            _viewModel.RulePath = _rule.DirKey;
+            _viewModel.DirectoryPath = _rule.DirPath;
         }
 
         /// <summary>
@@ -153,37 +138,33 @@ namespace ROMVault.Avalonia.Views
         /// </summary>
         private void UpdateGrid()
         {
-            var dgRules = this.FindControl<DataGrid>("DGDirectoryMappingRules");
-            if (dgRules == null) return;
-
-            var items = new List<DirMappingViewModel>();
+            _viewModel.Items.Clear();
             foreach (DirMapping t in Settings.rvSettings.DirMappings)
             {
-                var vm = new DirMappingViewModel(t);
+                var vm = new DirectoryMappingRowViewModel(t);
                 
                 if (t.DirPath == "ToSort")
                 {
-                    vm.BgColor = new SolidColorBrush(_cMagenta);
+                    vm.Background = new SolidColorBrush(_cMagenta);
                 }
                 else if (t == _rule)
                 {
-                    vm.BgColor = new SolidColorBrush(_cGreen);
+                    vm.Background = new SolidColorBrush(_cGreen);
                 }
                 else if (t.DirKey.Length > _rule.DirKey.Length)
                 {
                     if (t.DirKey.Substring(0, _rule.DirKey.Length + 1) == _rule.DirKey + "\\")
                     {
-                        vm.BgColor = new SolidColorBrush(_cYellow);
+                        vm.Background = new SolidColorBrush(_cYellow);
                     }
                 }
 
                 if (!Directory.Exists(t.DirPath))
                 {
-                    vm.BgColor = new SolidColorBrush(_cRed);
+                    vm.Background = new SolidColorBrush(_cRed);
                 }
-                items.Add(vm);
+                _viewModel.Items.Add(vm);
             }
-            dgRules.ItemsSource = items;
         }
 
         /// <summary>
@@ -191,22 +172,19 @@ namespace ROMVault.Avalonia.Views
         /// </summary>
         private void BtnClearROMLocation_Click(object? sender, RoutedEventArgs e)
         {
-            var txtROMLocation = this.FindControl<TextBox>("txtROMLocation");
-            if (txtROMLocation == null) return;
-
             if (_rule.DirKey == "RomVault")
             {
-                txtROMLocation.Text = "RomRoot";
+                _viewModel.DirectoryPath = "RomRoot";
                 return;
             }
 
             if (_rule.DirKey == "ToSort")
             {
-                txtROMLocation.Text = "ToSort";
+                _viewModel.DirectoryPath = "ToSort";
                 return;
             }
 
-            txtROMLocation.Text = null;
+            _viewModel.DirectoryPath = string.Empty;
         }
 
         /// <summary>
@@ -214,8 +192,6 @@ namespace ROMVault.Avalonia.Views
         /// </summary>
         private async void BtnSetROMLocationClick(object? sender, RoutedEventArgs e)
         {
-            var txtROMLocation = this.FindControl<TextBox>("txtROMLocation");
-            
             var topLevel = TopLevel.GetTopLevel(this);
             if (topLevel == null) return;
 
@@ -225,11 +201,11 @@ namespace ROMVault.Avalonia.Views
                 AllowMultiple = false
             });
 
-            if (folders.Count == 1 && txtROMLocation != null)
+            if (folders.Count == 1)
             {
                 string selectedPath = folders[0].Path.LocalPath;
                 string relPath = RelativePath.MakeRelative(AppDomain.CurrentDomain.BaseDirectory, selectedPath);
-                txtROMLocation.Text = relPath;
+                _viewModel.DirectoryPath = relPath;
             }
         }
 
@@ -250,8 +226,7 @@ namespace ROMVault.Avalonia.Views
         /// </summary>
         private async void BtnApplyClick(object? sender, RoutedEventArgs e)
         {
-            var txtROMLocation = this.FindControl<TextBox>("txtROMLocation");
-            string? newDir = txtROMLocation?.Text;
+            string newDir = _viewModel.DirectoryPath;
 
             if (string.IsNullOrWhiteSpace(newDir))
             {
@@ -341,13 +316,13 @@ namespace ROMVault.Avalonia.Views
         /// </summary>
         private async void BtnDeleteSelectedClick(object? sender, RoutedEventArgs e)
         {
-            var dgRules = this.FindControl<DataGrid>("DGDirectoryMappingRules");
+            var dgRules = DGDirectoryMappingRules;
             if (dgRules?.SelectedItems == null) return;
 
             int deleteCount = 0;
             foreach (var item in dgRules.SelectedItems)
             {
-                if (item is DirMappingViewModel vm && vm.DirKey != "RomVault")
+                if (item is DirectoryMappingRowViewModel vm && vm.DirKey != "RomVault")
                     deleteCount++;
             }
 
@@ -364,7 +339,7 @@ namespace ROMVault.Avalonia.Views
 
             foreach (var item in dgRules.SelectedItems)
             {
-                if (item is DirMappingViewModel vm)
+                if (item is DirectoryMappingRowViewModel vm)
                 {
                     string datLocation = vm.DirKey;
                     if (datLocation == "RomVault")
@@ -418,10 +393,10 @@ namespace ROMVault.Avalonia.Views
         /// </summary>
         private void DataGridGamesDoubleClick(object? sender, global::Avalonia.Input.TappedEventArgs e)
         {
-            var dgRules = this.FindControl<DataGrid>("DGDirectoryMappingRules");
+            var dgRules = DGDirectoryMappingRules;
             if (dgRules?.SelectedItem == null) return;
 
-            if (dgRules.SelectedItem is DirMappingViewModel vm)
+            if (dgRules.SelectedItem is DirectoryMappingRowViewModel vm)
             {
                 Title = "Edit Existing Directory / DATs Mapping";
                 _rule = FindRule(vm.DirKey);
@@ -434,42 +409,24 @@ namespace ROMVault.Avalonia.Views
         {
             base.OnOpened(e);
 
-            var btnCopyRulePath = this.FindControl<Button>("btnCopyRulePath");
+            var btnCopyRulePath = this.btnCopyRulePath;
             if (btnCopyRulePath != null)
             {
                 btnCopyRulePath.Click += async (_, _) =>
                 {
-                    var tb = this.FindControl<TextBox>("txtDATLocation");
-                    await CopyToClipboard(tb?.Text);
+                    await CopyToClipboard(_viewModel.RulePath);
                 };
             }
 
-            var btnCopyDirPath = this.FindControl<Button>("btnCopyDirPath");
+            var btnCopyDirPath = this.btnCopyDirPath;
             if (btnCopyDirPath != null)
             {
                 btnCopyDirPath.Click += async (_, _) =>
                 {
-                    var tb = this.FindControl<TextBox>("txtROMLocation");
-                    await CopyToClipboard(tb?.Text);
+                    await CopyToClipboard(_viewModel.DirectoryPath);
                 };
             }
         }
     }
 
-    /// <summary>
-    /// ViewModel for displaying directory mappings in the DataGrid.
-    /// </summary>
-    public class DirMappingViewModel
-    {
-        public string DirKey { get; set; }
-        public string DirPath { get; set; }
-        public IBrush BgColor { get; set; }
-
-        public DirMappingViewModel(DirMapping mapping)
-        {
-            DirKey = mapping.DirKey;
-            DirPath = mapping.DirPath;
-            BgColor = Brushes.Transparent;
-        }
-    }
 }

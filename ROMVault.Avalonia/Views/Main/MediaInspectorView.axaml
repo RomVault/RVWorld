@@ -1,0 +1,96 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:ROMVault.Avalonia.ViewModels"
+             x:Class="ROMVault.Avalonia.Views.Main.MediaInspectorView"
+             x:DataType="vm:MediaInspectorViewModel"
+             x:CompileBindings="True"
+             AutomationProperties.Name="Game media inspector">
+  <Grid>
+    <TabControl Name="MediaTabs" IsVisible="{Binding HasAny}">
+      <TabItem Header="{Binding ArtworkHeader}" IsVisible="{Binding HasArtwork}">
+        <Grid RowDefinitions="*,*">
+          <ScrollViewer Grid.Row="0" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+            <Image Name="LogoImage" Source="{Binding Logo}" Stretch="Uniform" Margin="4"
+                   PointerWheelChanged="OnArtworkPointerWheelChanged" DoubleTapped="OnArtworkDoubleTapped"/>
+          </ScrollViewer>
+          <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+            <Image Name="ArtworkImage" Source="{Binding Artwork}" Stretch="Uniform" Margin="4"
+                   PointerWheelChanged="OnArtworkPointerWheelChanged" DoubleTapped="OnArtworkDoubleTapped"/>
+          </ScrollViewer>
+        </Grid>
+      </TabItem>
+      <TabItem Header="{Binding MediumHeader}" IsVisible="{Binding HasMedium}">
+        <Grid RowDefinitions="*,*">
+          <ScrollViewer Grid.Row="0" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+            <Image Name="MediumFrontImage" Source="{Binding MediumFront}" Stretch="Uniform" Margin="4"
+                   PointerWheelChanged="OnArtworkPointerWheelChanged" DoubleTapped="OnArtworkDoubleTapped"/>
+          </ScrollViewer>
+          <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+            <Image Name="MediumBackImage" Source="{Binding MediumBack}" Stretch="Uniform" Margin="4"
+                   PointerWheelChanged="OnArtworkPointerWheelChanged" DoubleTapped="OnArtworkDoubleTapped"/>
+          </ScrollViewer>
+        </Grid>
+      </TabItem>
+      <TabItem Header="{Binding ScreensHeader}" IsVisible="{Binding HasScreens}">
+        <Grid RowDefinitions="*,*">
+          <ScrollViewer Grid.Row="0" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+            <Image Name="ScreenTitleImage" Source="{Binding ScreenTitle}" Stretch="Uniform" Margin="4"
+                   PointerWheelChanged="OnArtworkPointerWheelChanged" DoubleTapped="OnArtworkDoubleTapped"/>
+          </ScrollViewer>
+          <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+            <Image Name="ScreenshotImage" Source="{Binding Screenshot}" Stretch="Uniform" Margin="4"
+                   PointerWheelChanged="OnArtworkPointerWheelChanged" DoubleTapped="OnArtworkDoubleTapped"/>
+          </ScrollViewer>
+        </Grid>
+      </TabItem>
+      <TabItem Header="{Binding InfoHeader}" IsVisible="{Binding HasInfo}">
+        <TextBox Name="InfoText"
+                 Text="{Binding Info}"
+                 AcceptsReturn="True"
+                 TextWrapping="Wrap"
+                 IsReadOnly="True"
+                 FontFamily="Consolas, Menlo, Monospace"
+                 ScrollViewer.VerticalScrollBarVisibility="Auto"
+                 ScrollViewer.HorizontalScrollBarVisibility="Auto"/>
+      </TabItem>
+      <TabItem Header="{Binding Info2Header}" IsVisible="{Binding HasInfo2}">
+        <TextBox Name="Info2Text"
+                 Text="{Binding Info2}"
+                 AcceptsReturn="True"
+                 TextWrapping="Wrap"
+                 IsReadOnly="True"
+                 FontFamily="Consolas, Menlo, Monospace"
+                 ScrollViewer.VerticalScrollBarVisibility="Auto"
+                 ScrollViewer.HorizontalScrollBarVisibility="Auto"/>
+      </TabItem>
+    </TabControl>
+
+    <Border IsVisible="{Binding IsLoading}" Background="#66000000" IsHitTestVisible="False">
+      <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="10">
+        <ProgressBar Width="180" IsIndeterminate="True"/>
+        <TextBlock Text="Loading game media…" Foreground="White"/>
+      </StackPanel>
+    </Border>
+
+    <StackPanel IsVisible="{Binding ShowEmpty}"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                MaxWidth="260"
+                Spacing="8">
+      <PathIcon Width="32" Height="32" Foreground="{DynamicResource TextSecondaryBrush}"
+                Data="{StaticResource IconImage}"/>
+      <TextBlock Text="{Binding EmptyMessage}"
+                 Classes="Muted" TextAlignment="Center" TextWrapping="Wrap"/>
+    </StackPanel>
+
+    <StackPanel IsVisible="{Binding ShowError}"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                MaxWidth="280"
+                Spacing="8">
+      <PathIcon Width="30" Height="30" Foreground="#D97706"
+                Data="{StaticResource IconWarning}"/>
+      <TextBlock Text="{Binding ErrorMessage}" TextAlignment="Center" TextWrapping="Wrap"/>
+    </StackPanel>
+  </Grid>
+</UserControl>

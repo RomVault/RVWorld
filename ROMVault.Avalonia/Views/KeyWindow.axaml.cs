@@ -34,7 +34,7 @@ namespace ROMVault.Avalonia.Views
         /// </summary>
         private void LoadKey()
         {
-            var mainStack = this.FindControl<StackPanel>("MainStackPanel");
+            var mainStack = MainStackPanel;
             if (mainStack == null) return;
 
             List<RepStatus> displayList = new List<RepStatus>

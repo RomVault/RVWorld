@@ -17,6 +17,8 @@ using System.IO;
 using System.Threading;
 using System.Linq;
 using System.Collections.ObjectModel;
+using ROMVault.Avalonia.ViewModels;
+using ROMVault.Avalonia.Services;
 using Path = RVIO.Path;
 using Directory = RVIO.Directory;
 
@@ -29,8 +31,8 @@ namespace ROMVault.Avalonia.Views;
     public partial class TrrntZipWindow : Window
     {
         private int _fileIndex;
-        private int FileCount;
-        private int FileCountProcessed;
+        private int _fileCount;
+        private int _fileCountProcessed;
 
         private BlockingCollection<cFile>? bccFile;
 
@@ -45,19 +47,8 @@ namespace ROMVault.Avalonia.Views;
         }
         private readonly List<ThreadProcess> _threads;
 
-        /// <summary>
-        /// Represents a file item in the processing grid.
-        /// </summary>
-        public class GridItem
-        {
-            public int fileId { get; set; }
-            public string? Filename { get; set; }
-            public string? Status { get; set; }
-        }
-
-        private readonly ObservableCollection<GridItem> tGrid;
-        // We use a separate list for thread-safe updates before syncing to ObservableCollection
-        private readonly List<GridItem> _pendingGridUpdates = new List<GridItem>();
+        private readonly TrrntZipViewModel _viewModel = new();
+        private readonly List<TrrntZipItemUpdate> _pendingGridUpdates = [];
         
         private readonly PauseCancel pc;
 
@@ -68,7 +59,7 @@ namespace ROMVault.Avalonia.Views;
         private readonly Dictionary<int, string> _filePathById = new();
 
         private bool UiUpdate = false;
-        private bool scanningForFiles = false;
+        private volatile bool _scanningForFiles;
         private DispatcherTimer? _timer;
 
         /// <summary>
@@ -79,6 +70,7 @@ namespace ROMVault.Avalonia.Views;
         {
             UiUpdate = true;
             InitializeComponent();
+            DataContext = _viewModel;
             
             DropBox.AddHandler(DragDrop.DragEnterEvent, PDragEnter);
             DropBox.AddHandler(DragDrop.DragLeaveEvent, PDragLeave);
@@ -124,8 +116,6 @@ namespace ROMVault.Avalonia.Views;
             tbProccessors.Value = procc;
 
             _threads = new List<ThreadProcess>();
-            tGrid = new ObservableCollection<GridItem>();
-            dataGrid.ItemsSource = tGrid;
             pc = new PauseCancel();
 
             // Event handlers
@@ -152,11 +142,11 @@ namespace ROMVault.Avalonia.Views;
             };
             btnCancel.Click += (s, e) => {
                 pc.Cancel();
-                var img = this.FindControl<Image>("imgPause");
+                var img = imgPause;
                 if (img != null) img.Source = new global::Avalonia.Media.Imaging.Bitmap(global::Avalonia.Platform.AssetLoader.Open(new Uri("avares://ROMVault.Avalonia/Assets/Pause.png")));
             };
             btnPause.Click += (s, e) => {
-                var img = this.FindControl<Image>("imgPause");
+                var img = imgPause;
                 if (pc.Paused) {
                     pc.UnPause();
                     if (img != null) img.Source = new global::Avalonia.Media.Imaging.Bitmap(global::Avalonia.Platform.AssetLoader.Open(new Uri("avares://ROMVault.Avalonia/Assets/Pause.png")));
@@ -181,12 +171,12 @@ namespace ROMVault.Avalonia.Views;
 
         private void OnDonateClick(object? sender, global::Avalonia.Input.PointerPressedEventArgs e)
         {
-             try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo { FileName = "https://www.patreon.com/romvault", UseShellExecute = true }); } catch { }
+             DesktopShellService.Instance.OpenUrl("https://www.patreon.com/romvault");
         }
 
         private void OnRomVaultClick(object? sender, global::Avalonia.Input.PointerPressedEventArgs e)
         {
-             try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo { FileName = "http://www.romvault.com", UseShellExecute = true }); } catch { }
+             DesktopShellService.Instance.OpenUrl("https://www.romvault.com");
         }
 
         private void SetDropHighlight(bool highlight)
@@ -240,10 +230,10 @@ namespace ROMVault.Avalonia.Views;
 
         private async void OnCopyFilenameClick(object? sender, RoutedEventArgs e)
         {
-            if (dataGrid.SelectedItem is not GridItem item)
+            if (dataGrid.SelectedItem is not TrrntZipItemViewModel item)
                 return;
 
-            string path = item.Filename ?? (_filePathById.TryGetValue(item.fileId, out var p) ? p : "");
+            string path = !string.IsNullOrWhiteSpace(item.FileName) ? item.FileName : (_filePathById.TryGetValue(item.Id, out var p) ? p : "");
             if (string.IsNullOrWhiteSpace(path))
                 return;
 
@@ -256,26 +246,17 @@ namespace ROMVault.Avalonia.Views;
 
         private void OnOpenSourceClick(object? sender, RoutedEventArgs e)
         {
-            if (dataGrid.SelectedItem is not GridItem item)
+            if (dataGrid.SelectedItem is not TrrntZipItemViewModel item)
                 return;
 
-            string path = item.Filename ?? (_filePathById.TryGetValue(item.fileId, out var p) ? p : "");
+            string path = !string.IsNullOrWhiteSpace(item.FileName) ? item.FileName : (_filePathById.TryGetValue(item.Id, out var p) ? p : "");
             if (string.IsNullOrWhiteSpace(path))
                 return;
 
             if (!System.IO.File.Exists(path) && !System.IO.Directory.Exists(path))
                 return;
 
-            try
-            {
-                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
-                {
-                    FileName = path,
-                    UseShellExecute = true,
-                    Verb = "open"
-                });
-            }
-            catch { }
+            DesktopShellService.Instance.ShowInFolder(path);
         }
 
         /// <summary>
@@ -411,13 +392,13 @@ namespace ROMVault.Avalonia.Views;
             TrrntZip.Program.InZip = (zipType)cboInType.SelectedIndex;
             TrrntZip.Program.OutZip = ZipStructureFromUIIndex(cboOutType.SelectedIndex);
 
-            tGrid.Clear();
+            _viewModel.Reset();
             _pendingGridUpdates.Clear();
             
             StartWorking();
 
-            FileCountProcessed = 0;
-            scanningForFiles = true;
+            Interlocked.Exchange(ref _fileCountProcessed, 0);
+            _scanningForFiles = true;
             
             FileAdder pm = new FileAdder(bccFile, fileList, UpdateFileCount, ProcessFileEndCallback);
             Thread procT = new Thread(pm.ProcFiles);
@@ -523,7 +504,7 @@ namespace ROMVault.Avalonia.Views;
         /// <param name="fileCount">The total number of files.</param>
         private void UpdateFileCount(int fileCount)
         {
-            FileCount = fileCount;
+            Volatile.Write(ref _fileCount, fileCount);
         }
 
         /// <summary>
@@ -542,7 +523,7 @@ namespace ROMVault.Avalonia.Views;
 
             lock (_pendingGridUpdates)
             {
-                _pendingGridUpdates.Add(new GridItem { fileId = fileId, Filename = filename, Status = "Processing....(" + processId + ")" });
+                _pendingGridUpdates.Add(new TrrntZipItemUpdate(fileId, filename, $"Processing… ({processId})"));
             }
         }
 
@@ -557,8 +538,8 @@ namespace ROMVault.Avalonia.Views;
         {
             if (processId == -1)
             {
-                scanningForFiles = false;
-                if (FileCount == 0)
+                _scanningForFiles = false;
+                if (Volatile.Read(ref _fileCount) == 0)
                 {
                     Dispatcher.UIThread.Post(() => {
                         StopWorking();
@@ -580,11 +561,11 @@ namespace ROMVault.Avalonia.Views;
 
                 lock (_pendingGridUpdates)
                 {
-                    _pendingGridUpdates.Add(new GridItem { fileId = fileId, Filename = null, Status = statusStr });
+                    _pendingGridUpdates.Add(new TrrntZipItemUpdate(fileId, null, statusStr));
                 }
 
-                FileCountProcessed += 1;
-                if (!scanningForFiles && FileCountProcessed == FileCount)
+                int processed = Interlocked.Increment(ref _fileCountProcessed);
+                if (!_scanningForFiles && processed == Volatile.Read(ref _fileCount))
                 {
                     Dispatcher.UIThread.Post(() => {
                         StopWorking();
@@ -628,11 +609,13 @@ namespace ROMVault.Avalonia.Views;
     /// </summary>
     private void Timer_Tick(object? sender, EventArgs e)
     {
-        if (_fileIndex != uiFileIndex || FileCount != uiFileCount)
+        int fileIndex = Volatile.Read(ref _fileIndex);
+        int fileCount = Volatile.Read(ref _fileCount);
+        if (fileIndex != uiFileIndex || fileCount != uiFileCount)
         {
-            uiFileIndex = _fileIndex;
-            uiFileCount = FileCount;
-            lblTotalStatus.Text = @"( " + uiFileIndex + @" / " + uiFileCount + @" )";
+            uiFileIndex = fileIndex;
+            uiFileCount = fileCount;
+            _viewModel.SetProgress(uiFileIndex, uiFileCount);
         }
 
         foreach (ThreadProcess tp in _threads)
@@ -645,31 +628,9 @@ namespace ROMVault.Avalonia.Views;
 
         lock (_pendingGridUpdates)
         {
-            foreach (var item in _pendingGridUpdates)
+            foreach (TrrntZipItemUpdate item in _pendingGridUpdates)
             {
-                if (item.fileId >= tGrid.Count)
-                {
-                    // Add fillers if needed (shouldn't happen if sequential, but threading)
-                    while (tGrid.Count <= item.fileId)
-                    {
-                        tGrid.Add(new GridItem());
-                    }
-                }
-                
-                var gridItem = tGrid[item.fileId];
-                gridItem.fileId = item.fileId;
-                if (item.Filename != null) gridItem.Filename = item.Filename;
-                if (item.Status != null) gridItem.Status = item.Status;
-                
-                // Force refresh if needed, but ObservableCollection handles property changes if item implements INotifyPropertyChanged
-                // Since GridItem doesn't, we might need to replace the item or use DynamicData.
-                // For simplicity, we just replace the item in the collection to trigger update
-                tGrid[item.fileId] = new GridItem 
-                { 
-                    fileId = gridItem.fileId, 
-                    Filename = gridItem.Filename, 
-                    Status = gridItem.Status 
-                };
+                _viewModel.Apply(item);
             }
             _pendingGridUpdates.Clear();
         }
