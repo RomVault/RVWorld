@@ -15,6 +15,33 @@ namespace RomVaultCore.FindFix
             PreserveLooseSources(basePath, true);
         }
 
+        /// <summary>
+        /// A CUE/GDI/TOC shown below a CHD is a reconstructed virtual view, not
+        /// an independently removable archive entry.  If a DAT rule moves the
+        /// descriptor beside the CHD, do not offer to delete that stale virtual
+        /// member on the next Find Fixes pass.
+        /// </summary>
+        public static void IgnoreVirtualDescriptorRemovals(RvFile basePath)
+        {
+            if (basePath == null)
+                return;
+
+            if (basePath.FileType == FileType.FileCHD &&
+                basePath.Parent?.FileType == FileType.CHD &&
+                basePath.DatStatus == DatStatus.NotInDat &&
+                basePath.GotStatus == GotStatus.Got &&
+                IsDescriptor(basePath.Name))
+            {
+                basePath.RepStatus = RepStatus.Ignore;
+            }
+
+            if (!basePath.IsDirectory)
+                return;
+
+            for (int i = 0; i < basePath.ChildCount; i++)
+                IgnoreVirtualDescriptorRemovals(basePath.Child(i));
+        }
+
         private static void PreserveLooseSources(RvFile directory, bool selected)
         {
             if (directory == null || !directory.IsDirectory)
@@ -176,6 +203,12 @@ namespace RomVaultCore.FindFix
             }
         }
 
+        private static bool IsDescriptor(string name)
+        {
+            string extension = System.IO.Path.GetExtension(name ?? "").ToLowerInvariant();
+            return extension == ".cue" || extension == ".gdi" || extension == ".toc";
+        }
+
         internal static bool RunSelfTest(out string error)
         {
             error = "";
@@ -228,6 +261,14 @@ namespace RomVaultCore.FindFix
                 PreserveSetSources(directChd);
                 if (gdi.RepStatus != RepStatus.Ignore || track.RepStatus != RepStatus.Ignore)
                     throw new InvalidOperationException("Sources beside a direct CHD game node were not preserved.");
+
+                RvFile virtualCue = new RvFile(FileType.FileCHD) { Name = "direct.gdi.cue" };
+                virtualCue.SetDatGotStatus(DatStatus.NotInDat, GotStatus.Got);
+                virtualCue.RepStatus = RepStatus.Delete;
+                directChd.ChildAdd(virtualCue);
+                IgnoreVirtualDescriptorRemovals(category);
+                if (virtualCue.RepStatus != RepStatus.Ignore)
+                    throw new InvalidOperationException("A virtual CHD descriptor was still offered for removal.");
 
                 return true;
             }

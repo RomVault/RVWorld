@@ -99,20 +99,12 @@ namespace RomVaultCore
         private static int CompareName(FileType f1, string name1, FileType f2, string name2)
         {
             int res;
-            if (f1 == FileType.FileZip || f2 == FileType.FileZip)
+            if (f1 == FileType.FileZip && f2 == FileType.FileZip)
             {
-                if (f1 != f2)
-                {
-                    ReportError.SendAndShow("Incompatible Compare type");
-                }
                 return Sorters.TrrntZipStringCompareCase(name1, name2);
             }
-            if (f1 == FileType.FileSevenZip || f2 == FileType.FileSevenZip)
+            if (f1 == FileType.FileSevenZip && f2 == FileType.FileSevenZip)
             {
-                if (f1 != f2)
-                {
-                    ReportError.SendAndShow("Incompatible Compare type");
-                }
                 return Sorters.Trrnt7ZipStringCompare(name1, name2);
             }
 

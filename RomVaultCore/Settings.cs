@@ -52,7 +52,6 @@ namespace RomVaultCore
     public enum ChdCompressionType
     {
         Auto,
-        Normal,
         CD,
         DVD,
         PSP,
@@ -548,7 +547,7 @@ namespace RomVaultCore
         public bool ConvertWhileFixing = true;
 
         public bool DiscArchiveAsCHD = false;
-        public ChdCompressionType ChdCompressionType = ChdCompressionType.Normal;
+        public ChdCompressionType ChdCompressionType = ChdCompressionType.Auto;
         public ChdStorageProfile ChdStorageProfile = ChdStorageProfile.Archive;
         public ChdHddGeometryMode ChdHddGeometry = ChdHddGeometryMode.Auto;
         public ChdParentMode ChdParents = ChdParentMode.Independent;

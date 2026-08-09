@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -2345,6 +2346,7 @@ namespace RomVaultCore.FixFile.Utils
             }
 
             int lastPercent = -1;
+            string progressPhase = DescribeChdmanProgressPhase(arguments);
             ChdmanRunResult result = ChdmanService.Run(
                 chdmanExe,
                 arguments,
@@ -2357,7 +2359,7 @@ namespace RomVaultCore.FixFile.Utils
                     if (pct >= 0 && pct <= 100 && pct != lastPercent)
                     {
                         lastPercent = pct;
-                        try { Report.ReportProgress(new bgwText($"CHD {pct}%")); } catch { }
+                        try { Report.ReportProgress(new bgwText($"CHD {progressPhase}: {pct}%")); } catch { }
                     }
                 });
 
@@ -2375,6 +2377,40 @@ namespace RomVaultCore.FixFile.Utils
             }
 
             return ReturnCode.Good;
+        }
+
+        private static string DescribeChdmanProgressPhase(string arguments)
+        {
+            string command = (arguments ?? "").TrimStart();
+            int separator = command.IndexOfAny(new[] { ' ', '\t' });
+            if (separator >= 0)
+                command = command.Substring(0, separator);
+
+            switch (command.ToLowerInvariant())
+            {
+                case "createcd":
+                case "createdvd":
+                case "createraw":
+                case "createhd":
+                case "createld":
+                    return "encoding";
+                case "copy":
+                    return Regex.IsMatch(arguments ?? "", @"(?:^|\s)-c\s+none(?:\s|$)", RegexOptions.IgnoreCase)
+                        ? "staging"
+                        : "compressing";
+                case "verify":
+                    return "verifying";
+                case "extractcd":
+                case "extractdvd":
+                case "extractraw":
+                case "extracthd":
+                case "extractld":
+                    return "extracting";
+                case "addmeta":
+                    return "writing metadata";
+                default:
+                    return "processing";
+            }
         }
 
         private static bool ValidateEmbeddedStandardMetadata(string chdPath, ChdEncodingProfileSpec expected, ChdmanIdentity identity, out string error)
@@ -2440,20 +2476,14 @@ namespace RomVaultCore.FixFile.Utils
         {
             if (string.IsNullOrWhiteSpace(line))
                 return -1;
-            for (int i = 0; i < line.Length; i++)
-            {
-                if (line[i] != '%')
-                    continue;
-                int j = i - 1;
-                while (j >= 0 && line[j] >= '0' && line[j] <= '9')
-                    j--;
-                int start = j + 1;
-                int len = i - start;
-                if (len <= 0 || len > 3)
-                    continue;
-                if (int.TryParse(line.Substring(start, len), out int pct))
-                    return pct;
-            }
+
+            Match match = Regex.Match(line, @"(?<![\d.])(?<percent>\d{1,3}(?:\.\d+)?)\s*%");
+            if (match.Success &&
+                double.TryParse(match.Groups["percent"].Value, NumberStyles.AllowDecimalPoint,
+                    CultureInfo.InvariantCulture, out double percent) &&
+                percent >= 0 && percent <= 100)
+                return (int)Math.Floor(percent);
+
             return -1;
         }
 
@@ -2840,7 +2870,10 @@ namespace RomVaultCore.FixFile.Utils
                 int refIndex;
                 if (!TryFindArchiveEntryIndex(entryIndex, refName, out refIndex))
                 {
-                    errorMessage = $"Referenced file not found in archive: {refName}";
+                    // An archive containing a descriptor without every file it
+                    // references is an incomplete source set.  It must remain
+                    // untouched instead of aborting the entire fix run.
+                    errorMessage = "__SKIP_PARTIAL_SET__";
                     return ReturnCode.FileSystemError;
                 }
 

@@ -192,7 +192,6 @@ namespace ROMVault
                     chkSingleArchive.Enabled = false;
                     chkSingleArchive.Checked = false;
                     cboCompression.Items.Add("Auto (standard profile)");
-                    cboCompression.Items.Add("Normal (standard profile)");
                     cboCompression.Items.Add("CD (standard profile)");
                     cboCompression.Items.Add("DVD (standard profile)");
                     cboCompression.Items.Add("PSP (standard profile)");

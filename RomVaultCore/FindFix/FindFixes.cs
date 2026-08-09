@@ -138,6 +138,7 @@ namespace RomVaultCore.FindFix
                 ClearPartial.CheckRemovePartial(DB.DirRoot.Child(0));
                 ClearPartial.checkAllGroups();
                 ChdIncompleteSetPolicy.PreserveLooseSources(DB.DirRoot.Child(0));
+                ChdIncompleteSetPolicy.IgnoreVirtualDescriptorRemovals(DB.DirRoot.Child(0));
 
                 //remove zero byte files from ToSort Fixes.
                 FileGroup zeroByteGroup = FindZeroByteGroup(fileGroupsCRCSorted);
