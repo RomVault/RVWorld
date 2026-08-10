@@ -1,155 +1,270 @@
 # RomVault CHD preservation standard
 
-This document defines the CHD containers that RomVault writes and accepts for preservation. The implementation is in `RomVaultCore`, `RomVaultCmd`, and the WinForms application. Avalonia is intentionally out of scope.
+CHD is a compressed disk-image format. RomVault uses it to save space without giving up the original data. chdman is MAME's command-line tool for creating, extracting, and checking CHDs.
 
-## Non-negotiable preservation invariant
+This standard applies to RomVaultCore, RomVaultCmd, and the Windows application. Avalonia is not covered.
 
-A CHD replaces DAT payloads only after RomVault can extract every represented payload and reproduce its exact byte count and every available DAT CRC32, MD5, and SHA-1. A strong payload hash (MD5 or SHA-1) is required for content-addressed ToSort matching. `chdman verify`, a valid CHD header, and the CHD's internal SHA-1 are useful container checks, but never substitute for DAT payload parity.
+RomVault accepts a CHD as a replacement only when it can rebuild every represented file exactly.
 
-Every supported input dialect is capability-probed with a real create/extract/hash fixture before that `chdman` executable may write it. Unknown, ambiguous, lossy, truncated, excessively large, or unproved inputs fail closed and leave the source untouched.
+- Every rebuilt file must have the expected byte count and every CRC32, MD5, and SHA-1 listed in the DAT.
+- A valid CHD header, internal SHA-1, or successful chdman verify is useful, but is not proof that the original files can be rebuilt.
+- Unknown, ambiguous, incomplete, lossy, excessively large, or untested input is left unchanged.
+- The original remains available until the replacement has been installed, extracted, and compared with the DAT.
+- Content is identified by size and digital fingerprints, not by filenames.
 
-## Standard profile v1
+A DAT is a catalog of expected files, sizes, and fingerprints. A payload is original file data represented by the CHD. For ToSort matching, every payload needs an MD5 or SHA-1; CRC32 alone is not strong enough.
 
-New and upgraded CHDs carry their reconstruction data inside the CHD, not in JSON sidecars:
+RomVault tests the exact chdman executable, media layout, and storage profile with real create/extract/hash samples before allowing it to write. Passing one kind of disc does not approve every kind.
 
-- `RVEP` schema 1 identifies `rvworld-v1` and records the media family, Playback/Archive policy, codecs, hunk and unit sizes, exact HDD geometry when relevant, `chdman` version, writer capability revision, and SHA-256 of the executable.
-- `RVRM` schema 1 records the source dialect, create/extract modes, exact descriptor bytes, payload names, sizes and hashes, proven alternate-view recipes, and authenticated auxiliary files such as SBI corrections.
+## What a RomVault CHD contains
 
-There are no pre-release migration schemas. Schema 1 is the complete initial contract: every payload requires SHA-256, every embedded auxiliary is hashed, and a SHA-256 integrity trailer covers all manifest data. Any other schema number is rejected. Parsing is bounded to a 64 MiB manifest, 16 MiB descriptor or auxiliary, 1,000 tracks, 16 views, and 64 auxiliaries. It rejects unsafe paths, duplicate members, invalid hash lengths, corrupt integrity data, descriptor graphs without payloads, and metadata traversal. A descriptor is retained beside a CHD only when the separate CUE/GDI/TOC sidecar preference is enabled. Diagnostic logs remain opt-in and are unrelated to reconstruction.
+A new or upgraded CHD keeps its reconstruction information inside the CHD, not in a JSON companion file.
 
-| Family | Canonical round trip | Playback | Archive |
+Think of the two records this way: RVEP is the storage label; it says which RomVault policy wrote the CHD. RVRM is the packing list; it identifies the original data and tells RomVault how to rebuild it. Keeping them separate means compression can change without changing content identity.
+
+| Record | What it means |
+| --- | --- |
+| RVEP schema 1 | How the CHD was stored: the RomVault standard revision, Playback or Archive policy, and optional details about the tool that wrote it. |
+| RVRM schema 1 | What original data the CHD represents and how to rebuild it, including any proven alternate form or exact extra data such as an SBI correction. |
+
+Compression, data-block size, and hard-disk geometry are read from the CHD itself; they are not repeated in RVEP. Native CHD metadata remains the authority for disc tracks. RVRM does not store source filenames or descriptor text. RomVault regenerates supported CUE and GDI files using the names required by the current DAT. If a descriptor cannot be rebuilt safely, it remains a separate companion file.
+
+Renaming the CHD, CUE/GDI/TOC, referenced tracks, or SBI does not change the RVRM record. Payload bytes still have to match exactly; harmless descriptor differences such as spacing, quoting, and filenames are compared by meaning.
+
+Changing compression, hunk size, parent/standalone representation, or Playback/Archive policy must also leave RVRM byte-for-byte unchanged. Only an explicit DAT-aware metadata repair may migrate an older RVRM, and payload identity may never change during that repair.
+
+## Supported media and profiles
+
+RomVault supports CD, GD-ROM, DVD, PSP, raw byte streams, hard-disk images, and canonical LaserDisc AVI.
+
+- **Playback** favors fast emulator access with smaller data blocks. Emulators must support the RomVault v1 codecs listed in the technical settings.
+- **Archive** favors the strongest tested space saving.
+
+Both profiles are lossless and reversible. Exact preservation always overrides a preferred compression setting.
+
+Raw data uses a one-byte unit because RomVault cannot safely guess its sector layout. LaserDisc is accepted only when chdman's standard uncompressed AVI exactly matches the DAT; arbitrary or lossy AVI files are not claimed to be byte-reversible.
+
+## Disc-image rules
+
+RomVault has separate proof for common CD sector modes, audio and mixed-mode split CUEs, cdrdao TOC, TOSEC GDI, Redump GD-ROM CUE, Unicode paths, DVD/PSP ISO, raw data, hard disks, and canonical LaserDisc AVI.
+
+Supported optical layouts retain track types, indexes, gaps, sector and subchannel formats, and GD-ROM padding. SBI subchannel corrections are embedded by role and fingerprint, not by filename.
+
+RomVault deliberately leaves complex or uncertain layouts unchanged, including shared-file CUEs, non-BINARY wrappers, later indexes, catalog/ISRC/CD-Text data, explicit multisession boundaries, overlapping GDI tracks, and GDI files with non-zero offsets. The detailed list is in the technical reference.
+
+Some DATs contain both CUE/BIN tracks and an ISO view. RomVault stores one CHD only when it can prove that the ISO can be rebuilt exactly from one data track. Otherwise the ISO remains independent; similar filenames are never treated as proof.
+
+For example:
+
+    Disc.cue + Disc (Track 01).bin -> Disc.cue.chd
+    Install.iso                    -> Install.iso.chd
+    Machine.img                    -> Machine.img.chd
+    Side A.avi                     -> Side A.avi.chd
+
+A standalone .raw file is treated as Raw or Hard Disk only when that family is selected because .raw is also used for optical tracks.
+
+## How RomVault changes files safely
+
+Creation and conversion follow the same basic process:
+
+1. Check space, source relationships, layout support, and the selected chdman's proven abilities.
+2. Build a temporary candidate and add fresh RVEP and RVRM records.
+3. Compress and verify the candidate without changing the source.
+4. Install it while retaining the recovery record and original backup.
+5. Extract every represented payload and compare it with the DAT.
+6. Commit only after that comparison succeeds; otherwise restore the original.
+
+The **Convert and upgrade CHDs while fixing** option can move a standard CHD between Playback and Archive through a verified uncompressed intermediate.
+
+A recovery journal makes interrupted work repeatable and safe. An active operation cannot be recovered by another RomVault process, and unfinished cleanup remains recorded. Temporary transaction files use short names so long CHD filenames do not become even longer chdman paths.
+
+If a source or temporary path is still too long, RomVault stops before changing anything and asks for a shorter RomRoot or mapped path.
+
+### Read-only collections
+
+A scan or verification operation that can stream directly creates no temporary workspace.
+
+When extraction is needed, RomVault first tries a private workspace beside the CHD. If that location is read-only or too long for chdman, it uses a private per-user temporary location. It checks space on the location actually selected and stops safely if no suitable location exists.
+
+RomVault deletes only the exact workspace created for that operation. Workspace cleanup failures are reported. Transaction artifacts remain in the recovery journal until their cleanup succeeds.
+
+## Verification and health
+
+RomVault initially checks a CHD through external chdman extraction. Its faster built-in reader is trusted for direct streaming only after both methods produce the same fingerprint for the uncompressed data. That proof normally expires after 30 days.
+
+Scrubbing has three levels:
+
+- **container:** chdman verification and safe metadata reading;
+- **native:** container checks plus a complete built-in read;
+- **full:** native checks plus standard external extraction and exact comparison.
+
+The optional health database is stored in LocalAppData, not beside the ROMs. It stores verification details and a redacted path token, never the original absolute path. The scheduler checks failed items first, then changed or expired items, then items never fully checked. Planning is read-only and running can be bounded and resumed.
+
+## Optional features
+
+- **Conversion queues:** large Playback/Archive conversions can be planned, stopped, and resumed. RomVault rechecks file identity, space, metadata, and extracted content before each replacement.
+- **Recovery volumes:** an .rvpar file protects CHDs without changing them or making them depend on the recovery volume. It can rebuild up to two missing or corrupt CHDs in each protected block group. Rebuilt files remain separate candidates until normal verification passes.
+- **Parent/child CHDs:** optional child files save space but depend on the exact parent. RomVault proves the relationship and standalone reconstruction before installation.
+- **ToSort matching:** a differently named CHD is considered only when family, payload count, sizes, and strong fingerprints give one unambiguous match. It is still extracted and checked before moving.
+- **Debug logs:** off by default. Enabling **Write CHD scan debug logs** creates __RomVault.chdlogs under the ToSort cache only when a CHD is scanned.
+
+CHD operations return structured error codes and phases. User-facing diagnostics redact absolute paths.
+
+The sections above describe the user-visible standard. The remainder records the exact technical contract.
+
+---
+
+## Technical reference
+
+### Metadata rules and limits
+
+RVEP schema 1 identifies `rvworld-v1` and records only its revision and `playback` or `archive` policy. A writer capability revision, chdman version, and executable SHA-256 may be added as provenance. Family, codecs, hunk/unit sizes, and HDD geometry are not stored in RVEP; RomVault reads those facts from RVRM and native CHD headers/tags.
+
+The canonical text form is:
+
+    schema=1;profile=rvworld-v1;revision=1;storage=archive[;writer=N][;chdman=V][;toolsha256=64-hex]
+
+RVRM schema 1 records typed media and reconstruction-recipe IDs, then an ordered identity for every payload: number, byte size, CRC32, MD5, SHA-1, and SHA-256. The complete fixed set prevents the same content producing different metadata merely because one DAT supplied more hashes than another. Alternate views use typed recipe IDs. Auxiliary data uses typed roles plus exact bytes. It does not repeat RVEP data, detailed native CHD layout, filenames, basenames, descriptor text, or tool provenance.
+
+The operational code may temporarily carry DAT names, descriptor text, and tool details, but serialization first converts it to a separate persistent RVRM record that has no fields for them.
+
+RVRM schema 1 has a required-feature bitmap and length-delimited sections for core payloads, alternate views, and auxiliaries. Readers ignore the meaning of unknown optional sections but preserve their exact bytes through rewrites. Unknown required sections or feature bits are rejected. Recipe and role strings are compact numeric IDs on disk, so presentation wording cannot change identity.
+
+Every RVRM ends with an unkeyed SHA-256 integrity checksum over all preceding RVRM bytes. This detects corruption; it is not a signature and does not authenticate who created the metadata. Parsing also rejects duplicate numbers/sections, incomplete fixed hashes, invalid typed IDs, corrupt lengths, excessive counts, and trailing data.
+
+Schema 1 is the initial contract for both records; there is no public migration schema before it. Unsupported schema numbers are rejected rather than guessed. An RVEP profile revision that this build does not understand remains visible in diagnostics, but RomVault will not apply current compression or geometry rules to it and leaves the CHD unchanged.
+
+The complete RVRM, including its integrity trailer, is limited to 16,777,215 bytes so it fits CHD's 24-bit metadata length. Each auxiliary is non-empty and at most 15 MiB. Schema 1 allows 32 sections, 1,000 payloads per identity list, one proven alternate view, and 64 auxiliaries.
+
+### Exact storage settings
+
+Hunks are the blocks CHD compresses and reads as units.
+
+| Media | Proven round trip | Playback | Archive |
 | --- | --- | --- | --- |
-| CD | exact CUE/BIN or TOC payload through `createcd`; split or native exact reconstruction | `cdzs,cdzl,cdfl`, 19,584-byte hunks | normally `cdlz,cdzl,cdfl`, 1,047,744-byte hunks |
-| GD-ROM | TOSEC GDI or Redump CUE through same-dialect split `createcd` / `extractcd -sb` | `cdzs,cdzl,cdfl`, 19,584-byte hunks | `cdlz,cdzl,cdfl`, 1,047,744-byte hunks |
-| DVD | ISO through `createdvd` / `extractdvd` | `zstd`, 4,096-byte hunks | `lzma`, 1,048,576-byte hunks |
-| PSP | ISO through `createdvd` / `extractdvd` | `zstd`, 2,048-byte hunks | `lzma`, 1,048,576-byte hunks |
-| Raw | byte stream through `createraw -us 1` / `extractraw` | `zstd`, 4,096-byte hunks | `lzma`, 1,048,576-byte hunks |
-| Hard disk | sector image through exact-geometry `createhd` / `extracthd` | `zstd`, 4,096-byte hunks | `lzma`, 1,048,576-byte hunks |
-| LaserDisc | canonical AVI through `createld` / `extractld` | `avhu`, one frame per hunk | `avhu`, one frame per hunk |
+| CD | Exact CUE/BIN or TOC through createcd and split/native reconstruction | cdzs, cdzl, cdfl; 19,584-byte hunks | Normally cdlz, cdzl, cdfl; 1,047,744-byte hunks |
+| GD-ROM | TOSEC GDI or Redump CUE through matching createcd and extractcd -sb | cdzs, cdzl, cdfl; 19,584-byte hunks | cdlz, cdzl, cdfl; 1,047,744-byte hunks |
+| DVD | ISO through createdvd and extractdvd | zstd; 4,096-byte hunks | lzma; 1,048,576-byte hunks |
+| PSP | ISO through createdvd and extractdvd | zstd; 2,048-byte hunks | lzma; 1,048,576-byte hunks |
+| Raw | Byte stream through createraw -us 1 and extractraw | zstd; 4,096-byte hunks | lzma; 1,048,576-byte hunks |
+| Hard disk | Sector image through exact-geometry createhd and extracthd | zstd; 4,096-byte hunks | lzma; 1,048,576-byte hunks |
+| LaserDisc | Canonical AVI through createld and extractld | avhu; one frame per hunk | avhu; one frame per hunk |
 
-Playback deliberately establishes Zstandard as the RomVault v1 standard: `cdzs` is the primary optical codec and `zstd` is used for non-optical byte/sector media. Emulator support does not silently downgrade a v1 file to the older zlib convention. Emulators that consume the v1 standard need to support these lossless CHD codecs.
+Playback v1 requires Zstandard: cdzs for optical media and zstd for other byte/sector media. RomVault does not silently substitute older zlib settings.
 
-MODE1/2048 and Unicode CUE use the verified `cdzl,cdfl` 19,584-byte layout for Archive. MODE2/2352, mixed/complex CUE, and TOC also omit `cdlz` in Archive because chdman 0.289 did not reliably decode those fixtures with CD-LZMA; they retain the large Archive hunk unless the dialect requires the smaller one. Preservation takes precedence over nominal compression settings.
+Known chdman 0.289 exceptions:
 
-Raw uses a one-byte unit because RomVault cannot safely infer sector semantics. LaserDisc's AVHUFF encoding and frame hunks are inherent to CHD, so Playback and Archive have the same physical encoding while remaining profile-convertible.
+- MODE1/2048 Archive uses cdzl, cdfl with 19,584-byte hunks.
+- Unicode CUE Archive also uses cdzl, cdfl with 19,584-byte hunks.
+- MODE2/2352, mixed CUE, TOC, and supported complex-layout CUE Archive omit cdlz.
+- The last group keeps the large Archive hunk; only MODE1/2048 and Unicode CUE use the smaller one.
 
-`createld` decodes input video and `extractld` emits MAME's canonical uncompressed YUY2/PCM AVI. RomVault therefore accepts LaserDisc creation only when the extracted canonical AVI itself matches the DAT payload. Arbitrary or lossy AVI containers are not claimed to be byte-reversible.
+Unicode paths use temporary ASCII aliases without changing stored metadata. LaserDisc Playback and Archive both use AVHUFF with one frame per hunk.
 
-## Exact optical dialects, SBI, and Dreamcast
+### Exact optical contract
 
-RomVault detects and separately proves MODE1/2048, MODE1/2352, MODE2/2352, audio-only and mixed data/audio CUE layouts, complex CUE layouts with index/pregap/postgap/flags, Unicode CUE paths, cdrdao TOC with MODE2_RAW/RW_RAW subchannels, TOSEC GDI, Redump GD-ROM CUE, ISO, PSP ISO, raw, HDD, and canonical AVI. The selected executable must pass the exact dialect in the selected storage profile; family-level success is not enough.
+RomVault separately tests MODE1/2048, MODE1/2352, MODE2/2352, audio-only and mixed data/audio split CUE, Unicode CUE paths, cdrdao TOC with MODE2_RAW/RW_RAW subchannels, TOSEC GDI, and Redump GD-ROM CUE.
 
-The original CUE, GDI, or TOC bytes are authenticated in RVRM. Unicode CUEs are presented to tools through temporary ASCII aliases without changing the embedded original descriptor or payload names. A same-stem SBI file is embedded with role `sbi-subchannel-correction`, emitted only when requested by the DAT, and hash-checked on scan/export. TOC payloads, including interleaved 2,448-byte RW_RAW frames, are reconstructed from the canonical CHD logical stream and verified against the authenticated source hash rather than relying on a potentially lossy descriptor translation.
+For supported split-file BINARY CUE and GDI sets, every referenced track payload must exist, be non-empty, and contain a whole number of sectors. RomVault preserves physical INDEX 00, synthetic pregap, postgap, track type/subtype, sector/subchannel format, and GD-ROM padding.
 
-Current chdman handles Redump Dreamcast CUEs directly. The removed historical `-rp` and `-ap` switches are neither required nor emitted. RomVault's probe converts a GDI fixture to Redump CUE, creates a CHD from that CUE, extracts it again with split tracks, and compares every resulting payload.
+Redump GD-ROM CUEs require the standard single-density marker before track 01 and high-density marker before track 03. RomVault rebuilds them from native CHGD/LBA geometry.
 
-## Playback and Archive
+V1 rejects:
 
-- Playback favors smaller hunks and inexpensive codecs for emulator access.
-- Archive favors the strongest verified storage savings.
+- shared-file CUEs and non-BINARY wrappers;
+- FLAGS, INDEX 02 and later, catalog, ISRC, and CD-Text fields;
+- conflicting or unreferenced index data;
+- explicit multisession boundaries and unsupported track modes;
+- overlapping GDI geometry and non-zero GDI file offsets.
 
-Both policies use the same embedded reconstruction contract and are fully reversible. When **Convert and upgrade CHDs while fixing** is enabled, RomVault can cross-convert an existing standardized CHD through an uncompressed verified intermediate. A newer tool is used only after its executable-specific capability matrix passes; the original is retained until final extraction and DAT parity succeed.
+CUE/GDI text is regenerated from native metadata using current DAT names. TOC data, including interleaved 2,448-byte RW_RAW frames, is rebuilt from the logical stream and fingerprint-checked. Presentation stays in a sidecar when it cannot be regenerated losslessly.
 
-Large collection conversions use a persistent XML queue. Planning classifies every CHD as current, pending, or blocked, binds each job to the source file and CHD identities, records a conservative temporary-space estimate, and refuses files without a current authenticated manifest. Running is bounded and resumable, rejects sources changed since planning, saves after each item, preflights free space, preserves the logical/raw CHD SHA-1, verifies both embedded contracts, and replaces the source only after the final container succeeds. Queue status and diagnostics redact source paths.
+A same-stem SBI is stored with role sbi-subchannel-correction, emitted using the current DAT name when requested, and checked during scan/export.
 
-For HDDs, Auto selects conventional exact 16x63, 16x32, or 4x17 geometry for Playback when the sector count factors exactly. Otherwise it uses exact `sectors,1,1`; Archive always defaults to this canonical exact geometry. No mode may pad or truncate the source. Geometry changes materialize the raw disk, recreate it with explicit `-ss` and `-chs`, validate GDDD metadata, and prove logical parity before installation.
+Current chdman handles Redump Dreamcast CUE directly; removed -rp and -ap switches are not used. RomVault's probe converts GDI to Redump CUE, creates and re-extracts a CHD with split tracks, and compares all payloads.
 
-## Toolchain discovery and upgrades
+An alternate ISO view is permitted only from one MODE1/2048 track or the 2,048-byte user-data area of one MODE1/2352 track. It is embedded only after its generated size and every DAT fingerprint match. Scan and export rebuild it sector by sector and check every member.
 
-RomVault discovers configured chdman paths, the application/current directories, and PATH. Each candidate is identified by version and SHA-256 and cached only for that exact executable plus probe schema. Selection prefers an explicitly pinned SHA-256; otherwise it chooses the newest validated writer capable of the requested family, dialect, and profile.
+### Hard-disk geometry
 
-Every CHD records the writer version and executable hash. A newer validated writer revision can trigger an upgrade; the optional broad recompression policy also permits recompression for any newer validated encoder. Containers written by a newer tool are not silently downgraded. Multiple installed versions can be compared with `-testchdmans` and reported with `-chdtools full`.
+Playback Auto uses exact 16x63, 16x32, or 4x17 geometry when the sector count factors evenly; otherwise it uses sectors,1,1. Archive defaults to sectors,1,1.
 
-## Equivalent multi-view sets
+RomVault never pads or truncates. Geometry changes materialize the raw disk, recreate it with explicit sector size and geometry, validate GDDD metadata, and prove logical equality before installation.
 
-Some DAT sets contain both CUE/BIN tracks and an ISO view of the same disc. RomVault stores one CHD only when the ISO is provably derivable from a single MODE1/2048 track, or from the 2,048-byte user-data area of a single MODE1/2352 track. The generated ISO must match the DAT size and every available DAT hash before its bounded view recipe and hashes are embedded in `RVRM`.
+### Tool selection and upgrades
 
-Scanning and export extract the optical tracks, regenerate the ISO view sector by sector, and verify all members. If equivalence cannot be proved, the ISO remains an independent media root. An unrelated ISO in the same Redump IBM PC set is therefore never swallowed by a CUE graph merely because the names are similar.
+RomVault searches configured chdman paths, the application/current directories, and PATH. Each executable is identified by version and SHA-256. Probe results are cached only for that exact binary and probe schema.
 
-Other roots are always independent, for example:
+An explicitly pinned SHA-256 wins; otherwise RomVault chooses the newest validated writer that supports the requested family, layout, and profile. A newer validated writer revision can trigger an upgrade, and optional broad recompression can use any newer validated encoder. Files written by a newer tool are not silently downgraded.
 
-```text
-Disc.cue + Disc (Track 01).bin -> Disc.cue.chd
-Install.iso                    -> Install.iso.chd
-Machine.img                    -> Machine.img.chd
-Side A.avi                     -> Side A.avi.chd
-notes.txt                      -> notes.txt
-```
+Use -testchdmans to compare installed tools and -chdtools full for details.
 
-Standalone `.raw` is treated as Raw or HDD only when that family is explicitly selected because `.raw` is also a common optical-track extension.
+### Queue contract
 
-## Transactional fixing and recovery
+Planning marks each CHD current, pending, or blocked; binds the job to source-file and CHD identities; estimates temporary space conservatively; and rejects files without a current integrity-checked manifest.
 
-Creation and conversion use a recoverable journaled transaction:
+Running is bounded and resumable. It rejects changed sources, saves after every item, checks space, preserves logical/raw CHD SHA-1 and the exact canonical RVRM, verifies RVEP and RVRM, and replaces only after extracted content passes. Reports redact source paths.
 
-1. Validate space, source graph, dialect, and selected tool capability.
-2. Create a staged uncompressed container or exact raw HDD intermediate.
-3. Embed fresh `RVEP` and `RVRM` metadata.
+### Transaction and recovery contract
+
+The full transaction is:
+
+1. Validate space, source graph, layout, and tool capability.
+2. Create an uncompressed stage or exact raw HDD intermediate.
+3. Embed fresh RVEP and RVRM.
 4. Recompress to Playback or Archive.
-5. Run non-mutating `chdman verify`.
-6. Extract through the family-specific path and compare every DAT payload.
-7. Install atomically; restore the original from backup on any failure.
+5. Run non-mutating chdman and profile checks.
+6. Install atomically while retaining the journal and original backup.
+7. Extract through the family-specific path and compare every DAT payload.
 
-Recovery handles interruption after the journal, staging, metadata, manifest, final verification, backup, or installation phases. Fault-injection self-tests exercise each boundary. CHD operations return structured error codes and phases; user-facing diagnostics redact absolute paths.
+Journal updates use same-directory atomic replacement with a recoverable backup. A journal-path-specific global process lock covers same-user Windows sessions. A live-operation lease prevents recovery of active work and is released when the operation ends.
 
-## Verification, health, and scrubbing
+Rollback is checkpointed, repeatable, and retained until owned artifacts are removed. The journal binds a candidate to its canonical RVRM SHA-256, container SHA-1, and raw-data SHA-1, and records the original or backup identity separately. A fully DAT-verified installed replacement wins only when all expected identities still match; before that point, a verified original or backup wins over an unverified candidate. Tests inject interruption at every declared boundary, including unavailable files, foreign replacements, corrupt candidates, and failed cleanup.
 
-Native logical streaming is an optimization, never the initial authority. It is enabled for a container only after a current external chdman extraction has matched the native logical SHA-256. The default parity lifetime is 30 days; expiry forces a fresh external comparison.
+Compact random transaction names preserve same-volume replacement and Windows path compatibility. Exact chdman paths and free space are checked before work begins.
 
-Scan and verification extractions use a temporary workspace beside the physical source CHD. A CHD reached through a mapped ToSort therefore consumes scratch space on that mapped storage, never in the primary ToSort cache. RomVault removes the workspace after the operation and fails closed if it cannot create or safely preflight that source-local workspace.
+### Verification details
 
-The optional persistent health database lives in RomVault's LocalAppData area, not beside the ROM. It stores a redacted path token, filename, family/profile, tool hash, verification method, hashes, result, and time. It never stores the original absolute path. Scrubbing supports:
+Native streaming is enabled only after external chdman extraction matches its logical SHA-256 and normally expires after 30 days.
 
-- `container`: chdman verification plus bounded metadata traversal;
-- `native`: container checks plus a complete native logical read;
-- `full`: native verification plus canonical external extraction and parity.
+Optical and LaserDisc full scrubs use the canonical reconstruction report. DVD, PSP, Raw, and Hard Disk also compare native and external logical SHA-256 directly.
 
-Optical and LaserDisc full scrubs use their canonical reconstruction report; DVD, PSP, Raw, and HDD additionally compare native and external logical SHA-256 directly.
+The health database records a redacted path token, filename, family/profile, tool fingerprint, method, content fingerprints, result, and time.
 
-The bounded scrub scheduler ranks failed containers first, then containers whose identity changed or whose external parity expired, and finally never-verified containers. Planning is read-only. Running performs only the selected maximum number of full scrubs, updates the health record after each item, and can be resumed on the next maintenance run.
+### Recovery volumes and parents
 
-## Collection recovery volumes
+An .rvpar volume contains integrity-checked manifest, file, block, and volume fingerprints plus two Reed-Solomon shards per group. Repair writes separate candidates for normal verification.
 
-Optional `.rvpar` collection recovery volumes protect independent CHDs without creating parent dependencies or modifying a CHD. Each volume contains authenticated manifest, file, block, and volume hashes plus two Reed-Solomon recovery shards per group. Verification identifies missing/corrupt members; recovery can rebuild up to two missing or corrupt CHDs in each block stripe and always writes separate candidate files for normal CHD/DAT verification before installation.
+Before a child CHD is installed, RomVault verifies the parent SHA relationship, creates a temporary standalone copy, and compares both raw CHD identity and logical content. It rejects missing parents, cycles, self-parenting, and overwrites.
 
-## Parent CHDs
+For V5 CHDs, the child's `Parent SHA1` must match the parent's header `SHA1`, not its `Data SHA1`. RomVault indexes standalone CHDs first, then resolves children by that identity across RomRoot, ToSort, and configured parent paths. Any chdman operation that reads a child supplies the parent with `-ip`; `-op` is used only when deliberately creating a parented output.
 
-Normal fixing writes independent CHDs. Parent/child storage is optional and explicit because losing or changing a parent can make a child unusable. Before a child is installed, RomVault verifies the parent SHA relationship, materializes a temporary standalone copy, and compares both raw CHD identity and logical content with the standalone source. Graph validation rejects missing parents, cycles, self-parenting, and overwrite attempts.
+### Command-line reference
 
-The CLI can verify a pair, create a reversible child, materialize a standalone CHD, or validate a complete graph. Emulators may use the smaller child; archival workflows can always recover the independent form when the declared parent is present.
+    RomVaultCmd -testchdman [path-to-chdman]
+    RomVaultCmd -testchdmans <chdman-path> [more-paths...]
+    RomVaultCmd -chdtools [full]
+    RomVaultCmd -chdscrub <container|native|full> <path> [report]
+    RomVaultCmd -chdparent verify <child> <parent>
+    RomVaultCmd -chdparent create <standalone> <parent> <output>
+    RomVaultCmd -chdparent standalone <child> <parent> <output>
+    RomVaultCmd -chdparent graph <chd...>
+    RomVaultCmd -chdhealthdb
+    RomVaultCmd -chdschedule <plan|run> <root> [maximum-items]
+    RomVaultCmd -chdparity create <collection> <volume> [group-size] [block-KiB]
+    RomVaultCmd -chdparity verify <volume> <collection>
+    RomVaultCmd -chdparity repair <volume> <collection> <output>
+    RomVaultCmd -chdconvert plan <playback|archive> <root> <queue.rvchdqueue>
+    RomVaultCmd -chdconvert run <queue.rvchdqueue> [maximum-items]
+    RomVaultCmd -chdconvert status <queue.rvchdqueue>
 
-## ToSort matching
+### Conformance tests
 
-A differently named ToSort CHD becomes a candidate only when the media families and payload counts agree, every payload has a unique size plus strong-hash match, and any strongly hashed descriptor has one exact match. RomVault still extracts and compares the candidate to the destination DAT before moving it. Ambiguous or hashless content does not qualify.
+The test matrix covers both profiles and every supported family/layout, filename independence and renaming, schema rejection, fixed hash identities, typed recipe round trips, optional/required extension handling, Unicode and hostile input, SBI integrity, parser limits, RVRM invariance during conversion, recovery at every fault boundary, alternate ISO views, exact HDD geometry, health-record redaction, collection repair, profile conversion, parent materialization, mixed-media DAT separation, ToSort rejection, and logging defaults.
 
-## Diagnostics and command-line tools
+Repeated zstd and cdzs encodes of the same input must be byte-identical. chdman extraction, RomVault's native reader, and CHDSharpLib must agree on the source bytes.
 
-CHD diagnostic-file creation is opt-in and off by default. Enabling **Write CHD scan debug logs** creates `__RomVault.chdlogs` under the ToSort cache only when a CHD is scanned. Disabling it creates no directory and no log file.
-
-```text
-RomVaultCmd -testchdman [path-to-chdman]
-RomVaultCmd -testchdmans <chdman-path> [more-paths...]
-RomVaultCmd -chdtools [full]
-RomVaultCmd -chdscrub <container|native|full> <path> [report]
-RomVaultCmd -chdparent verify <child> <parent>
-RomVaultCmd -chdparent create <standalone> <parent> <output>
-RomVaultCmd -chdparent standalone <child> <parent> <output>
-RomVaultCmd -chdparent graph <chd...>
-RomVaultCmd -chdhealthdb
-RomVaultCmd -chdschedule <plan|run> <root> [maximum-items]
-RomVaultCmd -chdparity create <collection> <volume> [group-size] [block-KiB]
-RomVaultCmd -chdparity verify <volume> <collection>
-RomVaultCmd -chdparity repair <volume> <collection> <output>
-RomVaultCmd -chdconvert plan <playback|archive> <root> <queue.rvchdqueue>
-RomVaultCmd -chdconvert run <queue.rvchdqueue> [maximum-items]
-RomVaultCmd -chdconvert status <queue.rvchdqueue>
-```
-
-The preservation matrix covers both profiles for every family, all supported CUE/GDI/TOC dialects, Redump Dreamcast, authenticated manifest compatibility, Unicode and adversarial optical inputs, exact SBI embedding, parser bounds, interrupted-transaction recovery, equivalent multi-view reconstruction, health-record redaction, exact HDD geometry, two-file collection recovery, transactional cross-profile conversion, parent materialization, mixed-media DAT partitioning, ToSort rejection, and the logging default. V1 conformance additionally requires repeated `zstd` and `cdzs` encodes to be byte-identical and requires chdman extraction, the native logical reader, and CHDSharpLib decoding to agree on the source bytes.
-
-## Upstream basis
-
-The command behavior and limits follow current MAME documentation and source:
+### Upstream basis
 
 - <https://docs.mamedev.org/tools/chdman.html>
 - <https://github.com/mamedev/mame/blob/master/src/tools/chdman.cpp>

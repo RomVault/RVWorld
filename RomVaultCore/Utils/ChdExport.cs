@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 
 namespace RomVaultCore.Utils;
@@ -88,8 +89,12 @@ public static class ChdExport
             long? logicalSize = ChdmanService.TryGetLogicalSize(chdman, chdPath, tempDir);
             if (logicalSize.HasValue)
             {
-                long free = GetFreeSpaceBytes(tempDir);
-                if (free > 0 && free < logicalSize.Value + 256L * 1024 * 1024)
+                if (!ChdFreeSpace.TryGetAvailableBytes(tempDir, out long free, out string freeSpaceError))
+                {
+                    report = "export failed: " + freeSpaceError;
+                    return 4;
+                }
+                if (free < logicalSize.Value + 256L * 1024 * 1024)
                 {
                     report = $"export failed: insufficient free space. required={logicalSize.Value} free={free}";
                     return 4;
@@ -307,8 +312,9 @@ public static class ChdExport
                     }
                     else
                     {
-                        string primaryExpectedName = expectedData.FirstOrDefault(item =>
-                            string.Equals(NormalizeMemberName(item.Name), NormalizeMemberName(reconstruction.Tracks[0].Name), StringComparison.OrdinalIgnoreCase))?.Name;
+                        List<RvFile> primaryMatches = expectedData.Where(item =>
+                            ManifestTrackMatches(item, reconstruction.Tracks[0])).ToList();
+                        string primaryExpectedName = primaryMatches.Count == 1 ? primaryMatches[0].Name : null;
                         if (string.IsNullOrWhiteSpace(primaryExpectedName) || !mapping.TryGetValue(primaryExpectedName, out string extractedPrimary))
                         {
                             verifyErrors.Add("ISO view: the primary extracted track could not be identified");
@@ -345,7 +351,10 @@ public static class ChdExport
                 }
 
                 RvFile expectedDescriptor = expectedList.FirstOrDefault(e => string.Equals(e.Name, destDescriptorName, StringComparison.OrdinalIgnoreCase));
-                if (verifyErrors.Count == 0 && HasExpectedHash(expectedDescriptor))
+                // CUE/GDI are regenerated semantic views with the active DAT
+                // filenames. Exact descriptor bytes (including old names,
+                // whitespace and quoting) are intentionally not reconstructed.
+                if (verifyErrors.Count == 0 && expectsToc && HasExpectedHash(expectedDescriptor))
                     VerifyFileAgainstExpected(descriptorForCopy, expectedDescriptor, verifyErrors);
             }
 
@@ -362,8 +371,9 @@ public static class ChdExport
                     {
                         RvFile expectedAuxiliary = expectedAuxiliaries[i];
                         ChdManifestAuxiliary auxiliary = auxiliaryManifest.Auxiliaries.FirstOrDefault(item =>
-                            item != null && string.Equals(NormalizeMemberName(item.Name), NormalizeMemberName(expectedAuxiliary.Name), StringComparison.OrdinalIgnoreCase) &&
-                            string.Equals(item.Role, "sbi-subchannel-correction", StringComparison.OrdinalIgnoreCase));
+                            item != null &&
+                            string.Equals(item.Role, "sbi-subchannel-correction", StringComparison.OrdinalIgnoreCase) &&
+                            AuxiliaryMatches(expectedAuxiliary, item.Bytes));
                         if (auxiliary == null)
                         {
                             verifyErrors.Add(expectedAuxiliary.Name + ": exact embedded SBI payload is unavailable");
@@ -537,45 +547,8 @@ public static class ChdExport
         IReadOnlyList<RvFile> expectedData,
         out string reason)
     {
-        reason = "";
-        if (!ChdReconstructionManifest.TryRead(chdPath, out ChdReconstructionManifest manifest, out reason))
-            return false;
-        if (manifest.DescriptorBytes == null || manifest.DescriptorBytes.Length == 0)
-        {
-            reason = "manifest contains no original descriptor bytes";
-            return false;
-        }
-        string extension = System.IO.Path.GetExtension(manifest.DescriptorName ?? "");
-        if ((expectsGdi && !string.Equals(extension, ".gdi", StringComparison.OrdinalIgnoreCase)) ||
-            (expectsToc && !string.Equals(extension, ".toc", StringComparison.OrdinalIgnoreCase)) ||
-            (!expectsGdi && !expectsToc && !string.Equals(extension, ".cue", StringComparison.OrdinalIgnoreCase)))
-        {
-            reason = "manifest descriptor family does not match the DAT";
-            return false;
-        }
-
-        for (int i = 0; i < expectedData.Count; i++)
-        {
-            RvFile expected = expectedData[i];
-            ChdManifestTrack track = manifest.Tracks.FirstOrDefault(item =>
-                string.Equals(NormalizeMemberName(item.Name), NormalizeMemberName(expected.Name), StringComparison.OrdinalIgnoreCase));
-            if (track == null || !ManifestTrackMatches(expected, track))
-            {
-                reason = "manifest track identity does not exactly match the DAT: " + expected.Name;
-                return false;
-            }
-        }
-
-        try
-        {
-            System.IO.File.WriteAllBytes(destinationDescriptor, manifest.DescriptorBytes);
-            return true;
-        }
-        catch (Exception ex)
-        {
-            reason = ex.Message;
-            return false;
-        }
+        reason = "RVRM intentionally contains no descriptor filenames or source descriptor bytes";
+        return false;
     }
 
     private static bool ManifestTrackMatches(RvFile expected, ChdManifestTrack track)
@@ -591,6 +564,42 @@ public static class ChdExport
         if (expected.MD5 != null && (track.Md5 == null || !expected.MD5.SequenceEqual(track.Md5)))
             return false;
         return HasExpectedHash(expected);
+    }
+
+    private static bool AuxiliaryMatches(RvFile expected, byte[] bytes)
+    {
+        if (expected == null || bytes == null || !HasExpectedHash(expected))
+            return false;
+        if (expected.Size.HasValue && expected.Size.Value != 0 && expected.Size.Value != (ulong)bytes.LongLength)
+            return false;
+        if (expected.CRC != null && !expected.CRC.SequenceEqual(ComputeCrc32(bytes)))
+            return false;
+        if (expected.SHA1 != null)
+        {
+            using SHA1 sha1 = SHA1.Create();
+            if (!expected.SHA1.SequenceEqual(sha1.ComputeHash(bytes)))
+                return false;
+        }
+        if (expected.MD5 != null)
+        {
+            using MD5 md5 = MD5.Create();
+            if (!expected.MD5.SequenceEqual(md5.ComputeHash(bytes)))
+                return false;
+        }
+        return true;
+    }
+
+    private static byte[] ComputeCrc32(byte[] bytes)
+    {
+        uint crc = 0xffffffff;
+        for (int i = 0; i < bytes.Length; i++)
+        {
+            crc ^= bytes[i];
+            for (int bit = 0; bit < 8; bit++)
+                crc = (crc & 1) != 0 ? (crc >> 1) ^ 0xedb88320 : crc >> 1;
+        }
+        crc ^= 0xffffffff;
+        return new[] { (byte)(crc >> 24), (byte)(crc >> 16), (byte)(crc >> 8), (byte)crc };
     }
 
     private static string NormalizeMemberName(string name)
@@ -778,20 +787,6 @@ public static class ChdExport
         }
 
         return list;
-    }
-
-    private static long GetFreeSpaceBytes(string path)
-    {
-        try
-        {
-            string root = System.IO.Path.GetPathRoot(System.IO.Path.GetFullPath(path));
-            DriveInfo di = new DriveInfo(root);
-            return di.AvailableFreeSpace;
-        }
-        catch
-        {
-            return 0;
-        }
     }
 
     private static string NormalizeExistingPath(string path)

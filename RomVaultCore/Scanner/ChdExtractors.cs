@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using CHDSharpLib;
 using RomVaultCore.Utils;
 
 namespace RomVaultCore.Scanner;
@@ -19,18 +20,24 @@ public sealed class ChdmanChdExtractor : IChdExtractor
 {
     private readonly string _chdman;
     private readonly string _workingDir;
+    private readonly string _inputParent;
 
-    public ChdmanChdExtractor(string chdmanPath, string workingDir)
+    public ChdmanChdExtractor(string chdmanPath, string workingDir, string inputParentPath = null)
     {
         _chdman = chdmanPath;
         _workingDir = workingDir;
+        _inputParent = string.IsNullOrWhiteSpace(inputParentPath) ? null : Path.GetFullPath(inputParentPath);
     }
 
     public bool ExtractDvd(string chdPath, string outIsoPath, out string error)
     {
         string absChd = Path.GetFullPath(NormalizePossiblyConcatenatedPath(chdPath));
         string absOut = Path.GetFullPath(outIsoPath);
-        return Run($"extractdvd -i {ChdmanService.Quote(absChd)} -o {ChdmanService.Quote(absOut)} -f", out error);
+        if (!TryGetInputParent(absChd, out string inputParent, out error))
+            return false;
+        if (!ChdmanService.TryValidateExternalPaths(out error, absChd, inputParent, absOut, _workingDir))
+            return false;
+        return Run($"extractdvd -i {ChdmanService.Quote(absChd)}{InputParentArgument(inputParent)} -o {ChdmanService.Quote(absOut)} -f", out error);
     }
 
     public bool ExtractCd(string chdPath, string outDescriptorPath, out string error)
@@ -42,6 +49,10 @@ public sealed class ChdmanChdExtractor : IChdExtractor
         string trackPattern = string.Equals(extension, ".gdi", StringComparison.OrdinalIgnoreCase)
             ? Path.Combine(outputDirectory, "track%02t.bin")
             : Path.Combine(outputDirectory, "track (Track %02t).bin");
+        if (!TryGetInputParent(absChd, out string inputParent, out error))
+            return false;
+        if (!ChdmanService.TryValidateExternalPaths(out error, absChd, inputParent, absOut, trackPattern, _workingDir))
+            return false;
 
         // chdman 0.265 and newer can emit one file per track.  For GD-ROMs,
         // CUE output uses the Redump layout while GDI output uses the native
@@ -50,7 +61,7 @@ public sealed class ChdmanChdExtractor : IChdExtractor
         // compatible with both released chdman builds and current MAME master.
         // Split output is required because merged BIN output cannot be compared
         // directly with split-track DAT hashes.
-        bool ok = Run($"extractcd -i {ChdmanService.Quote(absChd)} -o {ChdmanService.Quote(absOut)} -ob {ChdmanService.Quote(trackPattern)} -sb -f", out error);
+        bool ok = Run($"extractcd -i {ChdmanService.Quote(absChd)}{InputParentArgument(inputParent)} -o {ChdmanService.Quote(absOut)} -ob {ChdmanService.Quote(trackPattern)} -sb -f", out error);
         if (!ok)
         {
             error = (error ?? "").Trim() + Environment.NewLine +
@@ -72,12 +83,18 @@ public sealed class ChdmanChdExtractor : IChdExtractor
     {
         string absChd = Path.GetFullPath(NormalizePossiblyConcatenatedPath(chdPath));
         string absOut = Path.GetFullPath(outputPath);
-        return Run($"{command} -i {ChdmanService.Quote(absChd)} -o {ChdmanService.Quote(absOut)} -f", out error);
+        if (!TryGetInputParent(absChd, out string inputParent, out error))
+            return false;
+        if (!ChdmanService.TryValidateExternalPaths(out error, absChd, inputParent, absOut, _workingDir))
+            return false;
+        return Run($"{command} -i {ChdmanService.Quote(absChd)}{InputParentArgument(inputParent)} -o {ChdmanService.Quote(absOut)} -f", out error);
     }
 
     public bool Info(string chdPath, out string infoText)
     {
         string absChd = Path.GetFullPath(NormalizePossiblyConcatenatedPath(chdPath));
+        if (!ChdmanService.TryValidateExternalPaths(out infoText, absChd, _workingDir))
+            return false;
         return Run($"info -i {ChdmanService.Quote(absChd)}", out infoText);
     }
 
@@ -105,5 +122,26 @@ public sealed class ChdmanChdExtractor : IChdExtractor
         ChdmanRunResult result = ChdmanService.Run(_chdman, args, _workingDir);
         output = result.Output;
         return result.Success;
+    }
+
+    private bool TryGetInputParent(string chdPath, out string inputParent, out string error)
+    {
+        inputParent = _inputParent;
+        error = "";
+        if (!ChdMetadata.TryReadContainerInfo(chdPath, out ChdContainerInfo info, out error))
+            return false;
+        if (!info.RequiresParent)
+        {
+            inputParent = null;
+            return true;
+        }
+        if (!string.IsNullOrWhiteSpace(inputParent))
+            return ChdParentResolver.TryValidatePair(chdPath, inputParent, out error);
+        return ChdParentResolver.TryResolveParent(chdPath, out inputParent, out error);
+    }
+
+    private static string InputParentArgument(string inputParent)
+    {
+        return string.IsNullOrWhiteSpace(inputParent) ? "" : " -ip " + ChdmanService.Quote(inputParent);
     }
 }

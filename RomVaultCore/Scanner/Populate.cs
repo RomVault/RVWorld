@@ -48,7 +48,7 @@ namespace RomVaultCore.Scanner
         /// <param name="eScanLevel">Requested scan depth.</param>
         /// <param name="thWrk">Optional background worker used for progress reporting.</param>
         /// <returns>A populated <see cref="ScannedFile"/> on success; otherwise null.</returns>
-        public static ScannedFile FromAZipFileArchive(RvFile dbDir, EScanLevel eScanLevel, ThreadWorker thWrk)
+        public static ScannedFile FromAZipFileArchive(RvFile dbDir, EScanLevel eScanLevel, ThreadWorker thWrk, string chdParentPath = null)
         {
             if (_fileScans == null) _fileScans = new FileScan();
             _thWrk = thWrk;
@@ -57,7 +57,7 @@ namespace RomVaultCore.Scanner
             FileType sType = dbDir.FileType;
             if (sType == FileType.CHD)
             {
-                ScannedFile chdScan = ScanChdContainer(dbDir, filename, eScanLevel);
+                ScannedFile chdScan = ScanChdContainer(dbDir, filename, eScanLevel, parentPath: chdParentPath);
                 if (chdScan != null)
                     return chdScan;
 
@@ -196,10 +196,39 @@ namespace RomVaultCore.Scanner
         /// Members are emitted as <see cref="FileType.FileCHD"/> so the normal archive merge pipeline can match them against DAT expectations.
         /// The scan may run in streaming mode (no extraction) when CHD metadata is available; otherwise it falls back to chdman extraction.
         /// </remarks>
-        private static ScannedFile ScanChdContainer(RvFile dbDir, string filename, EScanLevel eScanLevel, bool forceExtraction = false)
+        private static ScannedFile ScanChdContainer(RvFile dbDir, string filename, EScanLevel eScanLevel, bool forceExtraction = false, string parentPath = null)
         {
             if (!File.Exists(filename))
                 return null;
+
+            if (!ChdMetadata.TryReadContainerInfo(filename, out ChdContainerInfo scanContainerInfo, out string containerInfoError))
+            {
+                _thWrk?.Report(new bgwShowError(filename, "Unable to read CHD header: " + containerInfoError));
+                return null;
+            }
+            bool requiresParent = scanContainerInfo.RequiresParent;
+            if (requiresParent)
+            {
+                if (string.IsNullOrWhiteSpace(parentPath))
+                {
+                    if (!ChdParentResolver.TryResolveParent(filename, out parentPath, out string resolveError))
+                    {
+                        _thWrk?.Report(new bgwShowError(filename, "CHD parent could not be resolved: " + resolveError));
+                        return null;
+                    }
+                }
+                else if (!ChdParentResolver.TryValidatePair(filename, parentPath, out string pairError))
+                {
+                    _thWrk?.Report(new bgwShowError(filename, "CHD parent did not match: " + pairError));
+                    return null;
+                }
+                forceExtraction = true;
+            }
+            else
+            {
+                parentPath = null;
+                ChdParentResolver.Register(filename, scanContainerInfo);
+            }
 
             if (Settings.rvSettings.CheckCHDVersion)
             {
@@ -207,7 +236,8 @@ namespace RomVaultCore.Scanner
                 {
                     using (FileStream fs = System.IO.File.OpenRead(filename))
                     {
-                        if (CHD.CheckFile(fs, filename, false, out uint? ver, out _, out _) == chd_error.CHDERR_NONE)
+                        chd_error headerResult = CHD.CheckFile(fs, filename, false, out uint? ver, out _, out _);
+                        if (headerResult == chd_error.CHDERR_NONE || headerResult == chd_error.CHDERR_REQUIRES_PARENT)
                         {
                             if (ver.GetValueOrDefault() != 5)
                                 _thWrk?.Report(new bgwShowError(filename, "CHD header version is not V5"));
@@ -306,7 +336,7 @@ namespace RomVaultCore.Scanner
                 }
             }
 
-            bool forceScan = (eScanLevel == EScanLevel.Level3);
+            bool forceScan = (eScanLevel == EScanLevel.Level3) || requiresParent;
             string chdmanExe = ChdmanProcessTracker.FindExecutable();
 
             if (!forceScan &&
@@ -399,15 +429,10 @@ namespace RomVaultCore.Scanner
             }
 
         SkipChdCache:
-            if (!ChdTemporaryWorkspace.TryCreateBesideSource(filename, "__RomVault.chdscan.", out string tempDir, out string workspaceError))
-            {
-                _thWrk?.Report(new bgwShowError(filename, "Could not create CHD scan workspace beside the source file: " + workspaceError));
-                return null;
-            }
-
+            string tempDir = "";
             try
             {
-                IChdExtractor extractor = new ChdmanChdExtractor(chdmanExe, tempDir);
+                IChdExtractor extractor = null;
                 bool expectsIso = expectedChildren.Exists(c => c.Name != null && c.Name.EndsWith(".iso", StringComparison.OrdinalIgnoreCase));
                 bool expectsGdi = expectedChildren.Exists(c => c.Name != null && c.Name.EndsWith(".gdi", StringComparison.OrdinalIgnoreCase));
                 bool expectsCue = expectedChildren.Exists(c => c.Name != null && c.Name.EndsWith(".cue", StringComparison.OrdinalIgnoreCase));
@@ -416,17 +441,13 @@ namespace RomVaultCore.Scanner
                 string expectedIsoName = expectedChildren.Find(c => c.Name != null && c.Name.EndsWith(".iso", StringComparison.OrdinalIgnoreCase))?.Name;
                 RvFile expectedSingle = expectedChildren.Find(c => IsSingleImageMember(c?.Name, expectedSingleFamily));
                 string expectedSingleName = expectedSingle?.Name;
-                if (string.IsNullOrWhiteSpace(expectedSingleName) &&
-                    ChdReconstructionManifest.TryRead(filename, out ChdReconstructionManifest embeddedManifest, out _) &&
-                    embeddedManifest.Tracks.Count == 1)
-                    expectedSingleName = embeddedManifest.Tracks[0].Name;
                 if (string.IsNullOrWhiteSpace(expectedSingleName) && !string.IsNullOrWhiteSpace(expectedSingleFamily))
                     expectedSingleName = expectedSingleFamily == "laserdisc" ? "image.avi" : expectedSingleFamily == "hdd" ? "image.img" : "image.raw";
                 if (!expectsIso && expectedChildren.Count == 0 && string.Equals(expectedDescriptor, "dvd", StringComparison.OrdinalIgnoreCase))
                     expectsIso = true;
 
                 FileInfo containerFile = new FileInfo(filename);
-                ChdMetadata.TryReadContainerInfo(filename, out ChdContainerInfo containerInfo, out _);
+                ChdContainerInfo containerInfo = scanContainerInfo;
                 ScannedFile ar = new ScannedFile(FileType.CHD)
                 {
                     Name = filename,
@@ -454,12 +475,13 @@ namespace RomVaultCore.Scanner
 
                 if (!string.IsNullOrWhiteSpace(expectedSingleFamily))
                 {
-                    if (!HasChdExtractionSpace(chdmanExe, filename, tempDir, false, out string spaceError))
+                    if (!TryPrepareChdScanWorkspace(filename, chdmanExe, false, parentPath, false, out tempDir, out extractor, out string spaceError))
                     {
                         _thWrk?.Report(new bgwShowError(filename, spaceError));
                         return null;
                     }
-                    string outputPath = System.IO.Path.Combine(tempDir, System.IO.Path.GetFileName(expectedSingleName));
+                    string physicalName = expectedSingleFamily == "laserdisc" ? "image.avi" : expectedSingleFamily == "hdd" ? "image.img" : "image.raw";
+                    string outputPath = System.IO.Path.Combine(tempDir, physicalName);
                     bool extracted;
                     string extractionName;
                     string extractionError;
@@ -511,7 +533,7 @@ namespace RomVaultCore.Scanner
                         familyDebug.AppendLine("method=" + payload.ChdScanMethod);
                         familyDebug.AppendLine($"payload={payload.Name};size={payload.Size};crc={payload.CRC.ToHexString()};sha1={payload.SHA1.ToHexString()};md5={payload.MD5.ToHexString()}");
                     }
-                    if (Settings.rvSettings.ChdScanCacheEnabled)
+                    if (Settings.rvSettings.ChdScanCacheEnabled && !requiresParent)
                         SaveChdScanCache(filename, datRule, chdmanExe, ar, isDvd: false, descriptor: expectedSingleFamily, descriptorSha1: null);
                     WriteChdDebugLog(filename, familyDebug);
                     return ar;
@@ -551,7 +573,7 @@ namespace RomVaultCore.Scanner
                     }
                     if (!useStreaming)
                     {
-                        if (!HasChdExtractionSpace(chdmanExe, filename, tempDir, true, out string spaceError))
+                        if (!TryPrepareChdScanWorkspace(filename, chdmanExe, true, parentPath, false, out tempDir, out extractor, out string spaceError))
                         {
                             _thWrk?.Report(new bgwShowError(filename, spaceError));
                             return null;
@@ -575,7 +597,7 @@ namespace RomVaultCore.Scanner
                             isoSf.Size = (ulong)fi.Length;
                             ar.Add(isoSf);
                             ar.ChdScanMethod = "Extraction (DVD)";
-                            if (Settings.rvSettings.ChdHealthDatabase)
+                            if (Settings.rvSettings.ChdHealthDatabase && !requiresParent)
                             {
                                 string externalHash;
                                 using (Stream externalStream = System.IO.File.OpenRead(outIso))
@@ -595,10 +617,17 @@ namespace RomVaultCore.Scanner
                         else
                         {
                             _thWrk?.Report(new bgwShowError(filename, "CHD extractdvd failed: " + err));
+                            return null;
                         }
                     }
 
-                    if (Settings.rvSettings.ChdScanCacheEnabled)
+                    if (ar.Count == 0)
+                    {
+                        _thWrk?.Report(new bgwShowError(filename, "CHD scan produced no DVD payload."));
+                        return null;
+                    }
+
+                    if (Settings.rvSettings.ChdScanCacheEnabled && !requiresParent)
                         SaveChdScanCache(filename, datRule, chdmanExe, ar, isDvd: true, descriptor: "dvd", descriptorSha1: null);
                     if (familyDebug != null && ar.Count > 0)
                     {
@@ -617,7 +646,7 @@ namespace RomVaultCore.Scanner
                 {
                     try
                     {
-                        if (CHDSharpLib.ChdMetadata.TryReadCdTrackLayout(filename, out List<CHDSharpLib.ChdCdTrackInfo> cdTracks, out string metaErr) && cdTracks.Count > 0)
+                        if (CHDSharpLib.ChdMetadata.TryReadCdTrackLayout(filename, out List<CHDSharpLib.ChdCdTrackInfo> cdTracks, out bool nativeIsGdRom, out string metaErr) && cdTracks.Count > 0)
                         {
                             Dictionary<int, RvFile> expectedByTrack = BuildExpectedTrackMap(expectedChildren);
                             List<RvFile> expectedDataFiles = expectedChildren.FindAll(c => IsTrackDataFile(c.Name));
@@ -799,7 +828,6 @@ namespace RomVaultCore.Scanner
                                     Size = 0
                                 };
                                 bool haveDescriptor = false;
-                                bool embeddedDescriptor = false;
                                 bool keepDescriptor = Settings.rvSettings.ChdKeepCueGdi;
                                 if (keepDescriptor && !string.IsNullOrWhiteSpace(descName))
                                 {
@@ -822,27 +850,11 @@ namespace RomVaultCore.Scanner
                                     {
                                     }
                                 }
-                                if (!haveDescriptor && ChdReconstructionManifest.TryRead(filename, out ChdReconstructionManifest reconstruction, out _) &&
-                                    reconstruction.DescriptorBytes != null && reconstruction.DescriptorBytes.Length > 0)
-                                {
-                                    string expectedExtension = expectedGdi != null ? ".gdi" : ".cue";
-                                    if (string.Equals(System.IO.Path.GetExtension(reconstruction.DescriptorName ?? ""), expectedExtension, StringComparison.OrdinalIgnoreCase))
-                                    {
-                                        byte[] bytes = reconstruction.DescriptorBytes;
-                                        dsf.Size = (ulong)bytes.LongLength;
-                                        using (var ms = new System.IO.MemoryStream(bytes, false))
-                                        {
-                                            _fileScans.CheckSumRead(ms, dsf, (ulong)bytes.LongLength, true, false, null, 0, 0);
-                                        }
-                                        haveDescriptor = true;
-                                        embeddedDescriptor = true;
-                                    }
-                                }
                                 if (!haveDescriptor)
                                 {
                                     string descText = expectedGdi != null
                                         ? ChdDescriptorGenerator.BuildGdi(cdTracks, expectedByTrack)
-                                        : ChdDescriptorGenerator.BuildCue(cdTracks, expectedByTrack);
+                                        : ChdDescriptorGenerator.BuildCue(cdTracks, expectedByTrack, nativeIsGdRom);
                                     byte[] bytes = System.Text.Encoding.ASCII.GetBytes(descText ?? "");
                                     dsf.Size = (ulong)bytes.LongLength;
                                     using (var ms = new System.IO.MemoryStream(bytes, false))
@@ -865,10 +877,8 @@ namespace RomVaultCore.Scanner
                                 }
                                 if (ok || (Settings.rvSettings.ChdPreferSynthetic && (expDesc == null || (!expDesc.Size.HasValue || expDesc.Size.Value == 0) && expDesc.CRC == null && expDesc.SHA1 == null && expDesc.MD5 == null)))
                                 {
-                                    if (keepDescriptor && haveDescriptor && !embeddedDescriptor)
-                                        dsf.ChdDescriptorMatch = ok ? "External" : "External";
-                                    else if (embeddedDescriptor)
-                                        dsf.ChdDescriptorMatch = "Embedded Exact";
+                                    if (keepDescriptor && haveDescriptor)
+                                        dsf.ChdDescriptorMatch = "External";
                                     else
                                         dsf.ChdDescriptorMatch = ok ? "True" : "Synthetic";
                                     ar.Add(dsf);
@@ -888,7 +898,7 @@ namespace RomVaultCore.Scanner
                 }
 
                 ar.Sort();
-                            if (Settings.rvSettings.ChdScanCacheEnabled)
+                            if (Settings.rvSettings.ChdScanCacheEnabled && !requiresParent)
                             {
                                 string layoutHash = ComputeTrackLayoutSha1Hex(cdTracks);
                                 SaveChdScanCache(filename, datRule, chdmanExe, ar, isDvd: false, descriptor: expectsGdi ? "gdi" : "cue", descriptorSha1: layoutHash);
@@ -917,12 +927,12 @@ namespace RomVaultCore.Scanner
                     }
                 }
                 {
-                string outMain = System.IO.Path.Combine(tempDir, expectsGdi ? "disc.gdi" : "disc.cue");
-                if (!HasChdExtractionSpace(chdmanExe, filename, tempDir, false, out string spaceError))
+                if (!TryPrepareChdScanWorkspace(filename, chdmanExe, false, parentPath, requiresParent && expectsToc, out tempDir, out extractor, out string spaceError))
                 {
                     _thWrk?.Report(new bgwShowError(filename, spaceError));
                     return null;
                 }
+                string outMain = System.IO.Path.Combine(tempDir, expectsGdi ? "disc.gdi" : "disc.cue");
                 if (!extractor.ExtractCd(filename, outMain, out string err1))
                 {
                     _thWrk?.Report(new bgwShowError(filename, "CHD extractcd failed: " + err1));
@@ -936,19 +946,20 @@ namespace RomVaultCore.Scanner
                 }
 
                 string descriptorForHash = outMain;
-                if (ChdReconstructionManifest.TryRead(filename, out ChdReconstructionManifest reconstruction, out _) &&
-                    reconstruction.DescriptorBytes != null && reconstruction.DescriptorBytes.Length > 0)
+                if (ChdReconstructionManifest.TryRead(filename, out ChdReconstructionManifest embeddedDescriptorManifest, out _) &&
+                    embeddedDescriptorManifest.DescriptorBytes != null && embeddedDescriptorManifest.DescriptorBytes.Length > 0)
                 {
-                    string manifestExtension = System.IO.Path.GetExtension(reconstruction.DescriptorName ?? "");
+                    string embeddedExtension = System.IO.Path.GetExtension(embeddedDescriptorManifest.DescriptorName ?? "");
                     bool matchingFamily = expectsGdi
-                        ? string.Equals(manifestExtension, ".gdi", StringComparison.OrdinalIgnoreCase)
+                        ? string.Equals(embeddedExtension, ".gdi", StringComparison.OrdinalIgnoreCase)
                         : expectsToc
-                            ? string.Equals(manifestExtension, ".toc", StringComparison.OrdinalIgnoreCase)
-                            : string.Equals(manifestExtension, ".cue", StringComparison.OrdinalIgnoreCase);
+                            ? string.Equals(embeddedExtension, ".toc", StringComparison.OrdinalIgnoreCase)
+                            : string.Equals(embeddedExtension, ".cue", StringComparison.OrdinalIgnoreCase);
                     if (matchingFamily)
                     {
-                        descriptorForHash = System.IO.Path.Combine(tempDir, expectsGdi ? "embedded.gdi" : expectsToc ? "embedded.toc" : "embedded.cue");
-                        System.IO.File.WriteAllBytes(descriptorForHash, reconstruction.DescriptorBytes);
+                        descriptorForHash = System.IO.Path.Combine(tempDir,
+                            expectsGdi ? "embedded.gdi" : expectsToc ? "embedded.toc" : "embedded.cue");
+                        System.IO.File.WriteAllBytes(descriptorForHash, embeddedDescriptorManifest.DescriptorBytes);
                     }
                 }
                 string descriptorSha1 = ComputeFileSha1Hex(descriptorForHash);
@@ -962,7 +973,13 @@ namespace RomVaultCore.Scanner
                     }
                     string tocPayloadName = "rv-native-toc-payload.bin";
                     string tocPayloadPath = System.IO.Path.Combine(tempDir, tocPayloadName);
-                    if (!ChdOpticalReconstruction.TryMaterializeSingleTocPayload(filename, tocManifest, tocPayloadPath, out string tocError))
+                    string tocLogicalSource = filename;
+                    if (requiresParent && !TryMaterializeStandaloneForScan(chdmanExe, filename, parentPath, tempDir, out tocLogicalSource, out string standaloneError))
+                    {
+                        _thWrk?.Report(new bgwShowError(filename, "CHD parent materialization failed: " + standaloneError));
+                        return null;
+                    }
+                    if (!ChdOpticalReconstruction.TryMaterializeSingleTocPayload(tocLogicalSource, tocManifest, tocPayloadPath, out string tocError))
                     {
                         _thWrk?.Report(new bgwShowError(filename, "CHD exact TOC extraction failed: " + tocError));
                         return null;
@@ -1130,14 +1147,15 @@ namespace RomVaultCore.Scanner
                         _thWrk?.Report(new bgwShowError(filename, "CHD does not contain a proven reversible ISO view."));
                         return null;
                     }
-                    RvFile primaryExpected = expectedDataFiles.Find(item =>
-                        string.Equals(NormalizeChdMemberName(item.Name), NormalizeChdMemberName(multiManifest.Tracks[0].Name), StringComparison.OrdinalIgnoreCase));
+                    List<RvFile> primaryMatches = expectedDataFiles.FindAll(item =>
+                        ManifestTrackMatchesExpected(multiManifest.Tracks[0], item));
+                    RvFile primaryExpected = primaryMatches.Count == 1 ? primaryMatches[0] : null;
                     if (primaryExpected == null || !mapping.TryGetValue(primaryExpected.Name, out string primaryExtracted))
                     {
                         _thWrk?.Report(new bgwShowError(filename, "CHD primary track could not be mapped for ISO reconstruction."));
                         return null;
                     }
-                    string isoOutput = System.IO.Path.Combine(tempDir, "view-" + System.IO.Path.GetFileName(expectedIsoName ?? "image.iso"));
+                    string isoOutput = System.IO.Path.Combine(tempDir, "view.iso");
                     if (!ChdMultiView.TryMaterializeIsoView(System.IO.Path.Combine(tempDir, primaryExtracted), isoView, isoOutput, out string isoError))
                     {
                         _thWrk?.Report(new bgwShowError(filename, "CHD ISO view reconstruction failed: " + isoError));
@@ -1169,7 +1187,7 @@ namespace RomVaultCore.Scanner
                         return null;
                     }
                     ChdManifestAuxiliary sbi = sbiManifest.Auxiliaries.Find(item =>
-                        item != null && string.Equals(NormalizeChdMemberName(item.Name), NormalizeChdMemberName(expectedSbi.Name), StringComparison.OrdinalIgnoreCase) &&
+                        item != null &&
                         string.Equals(item.Role, "sbi-subchannel-correction", StringComparison.OrdinalIgnoreCase));
                     if (sbi == null || sbi.Bytes == null)
                     {
@@ -1221,6 +1239,7 @@ namespace RomVaultCore.Scanner
                     };
 
                     bool haveDescriptor = false;
+                    bool externalDescriptor = false;
                     if (keepDescriptor && !string.IsNullOrWhiteSpace(descName))
                     {
                         try
@@ -1236,6 +1255,7 @@ namespace RomVaultCore.Scanner
                                     _fileScans.CheckSumRead(s, dsf, (ulong)fi.Length, true, false, null, 0, 0);
                                 }
                                 haveDescriptor = true;
+                                externalDescriptor = true;
                             }
                         }
                         catch
@@ -1276,7 +1296,9 @@ namespace RomVaultCore.Scanner
                                 ok = false;
                         }
 
-                        if (ok || (Settings.rvSettings.ChdPreferSynthetic && (expDesc == null || (!expDesc.Size.HasValue || expDesc.Size.Value == 0) && expDesc.CRC == null && expDesc.SHA1 == null && expDesc.MD5 == null)))
+                        bool semanticOpticalDescriptor = !ok && !externalDescriptor && expectedToc == null &&
+                            (expectedCue != null || expectedGdi != null);
+                        if (ok || semanticOpticalDescriptor || (Settings.rvSettings.ChdPreferSynthetic && (expDesc == null || (!expDesc.Size.HasValue || expDesc.Size.Value == 0) && expDesc.CRC == null && expDesc.SHA1 == null && expDesc.MD5 == null)))
                         {
                             string descFileName = System.IO.Path.GetFileName((descName ?? "").Replace('\\', '/'));
                             if (keepDescriptor && !string.IsNullOrWhiteSpace(descFileName) && System.IO.File.Exists(System.IO.Path.Combine(System.IO.Path.GetDirectoryName(filename) ?? "", descFileName)))
@@ -1284,21 +1306,21 @@ namespace RomVaultCore.Scanner
                             else if (!string.Equals(descriptorForHash, outMain, StringComparison.OrdinalIgnoreCase))
                                 dsf.ChdDescriptorMatch = "Embedded Exact";
                             else
-                                dsf.ChdDescriptorMatch = ok ? "True" : "Synthetic";
+                                dsf.ChdDescriptorMatch = ok ? "True" : semanticOpticalDescriptor ? "Semantic" : "Synthetic";
                             ar.Add(dsf);
                         }
                     }
                 }
 
                 ar.Sort();
-                if (Settings.rvSettings.ChdHealthDatabase && !expectsIso &&
+                if (Settings.rvSettings.ChdHealthDatabase && !requiresParent && !expectsIso &&
                     !ChdHealthStore.HasCurrentExternalParity(filename, Settings.rvSettings.ChdExternalParityDays))
                 {
                     int parityCode = ChdVerify.TryGenerateParityReport(filename, expectedChildren, out _);
                     ChdHealthStore.RecordParity(filename, expectsGdi ? "gdi" : "cd", datRule?.ChdStorageProfile.ToString().ToLowerInvariant(),
                         GetChdmanSha256(chdmanExe), "track-stream", "track-extract", "scan-track-parity", parityCode == 0);
                 }
-                if (Settings.rvSettings.ChdScanCacheEnabled)
+                if (Settings.rvSettings.ChdScanCacheEnabled && !requiresParent)
                     SaveChdScanCache(filename, datRule, chdmanExe, ar, isDvd: false, descriptor: expectsGdi ? "gdi" : expectsToc ? "toc" : "cue", descriptorSha1: descriptorSha1);
                 WriteChdDebugLog(filename, debug);
                 return ar;
@@ -1306,14 +1328,8 @@ namespace RomVaultCore.Scanner
             }
             finally
             {
-                try
-                {
-                    if (Directory.Exists(tempDir))
-                        Directory.Delete(tempDir, true);
-                }
-                catch
-                {
-                }
+                if (!ChdTemporaryWorkspace.TryDelete(tempDir, out string cleanupError))
+                    _thWrk?.Report(new bgwShowError(filename, "Could not clean the CHD scan workspace: " + cleanupError));
             }
         }
 
@@ -1573,6 +1589,24 @@ namespace RomVaultCore.Scanner
                 return false;
             if (expected.MD5 != null && expected.MD5.Length > 0 &&
                 (actual.md5 == null || !expected.MD5.AsSpan().SequenceEqual(actual.md5)))
+                return false;
+            return true;
+        }
+
+        private static bool ManifestTrackMatchesExpected(ChdManifestTrack track, RvFile expected)
+        {
+            if (track == null || expected == null || !HasExpectedHash(expected))
+                return false;
+            if (expected.Size.HasValue && expected.Size.Value != 0 && expected.Size.Value != (ulong)Math.Max(0, track.Size))
+                return false;
+            if (expected.CRC != null && expected.CRC.Length > 0 &&
+                (track.Crc32 == null || !expected.CRC.AsSpan().SequenceEqual(track.Crc32)))
+                return false;
+            if (expected.SHA1 != null && expected.SHA1.Length > 0 &&
+                (track.Sha1 == null || !expected.SHA1.AsSpan().SequenceEqual(track.Sha1)))
+                return false;
+            if (expected.MD5 != null && expected.MD5.Length > 0 &&
+                (track.Md5 == null || !expected.MD5.AsSpan().SequenceEqual(track.Md5)))
                 return false;
             return true;
         }
@@ -2051,38 +2085,35 @@ namespace RomVaultCore.Scanner
             return result.Success;
         }
 
-        private static long GetFreeSpaceBytes(string path)
-        {
-            try
-            {
-                string root = System.IO.Path.GetPathRoot(System.IO.Path.GetFullPath(path));
-                DriveInfo di = new DriveInfo(root);
-                return di.AvailableFreeSpace;
-            }
-            catch
-            {
-                return 0;
-            }
-        }
-
         private static long? TryGetChdLogicalSizeBytes(string chdmanExe, string chdPath, string workingDir)
         {
+            if (ChdMetadata.TryReadContainerInfo(chdPath, out ChdContainerInfo info, out _) && info.LogicalSize <= long.MaxValue)
+                return (long)info.LogicalSize;
             return ChdmanService.TryGetLogicalSize(chdmanExe, chdPath, workingDir);
         }
 
-        private static bool HasChdExtractionSpace(string chdmanExe, string chdPath, string workingDir, bool isIso, out string error)
+        private static bool HasChdExtractionSpace(string chdmanExe, string chdPath, string workingDir, bool isIso, bool reserveParentedTocPeak, out string error)
         {
             error = "";
             long? logicalSize = TryGetChdLogicalSizeBytes(chdmanExe, chdPath, workingDir);
             if (!logicalSize.HasValue)
-                return true;
+            {
+                error = "Could not determine the CHD logical size for extraction-space preflight.";
+                return false;
+            }
 
-            long free = GetFreeSpaceBytes(workingDir);
+            if (!ChdFreeSpace.TryGetAvailableBytes(workingDir, out long free, out error))
+                return false;
             long overhead = isIso ? 512L * 1024 * 1024 : 256L * 1024 * 1024;
             long required;
             try
             {
-                required = checked(logicalSize.Value + overhead);
+                // Parented exact-TOC reconstruction temporarily retains the
+                // extractcd payload, a standalone materialized CHD, and the
+                // exact TOC payload. Three logical payloads is deliberately
+                // conservative for an incompressible standalone stage.
+                int logicalCopies = reserveParentedTocPeak ? 3 : 1;
+                required = checked(logicalSize.Value * logicalCopies + overhead);
             }
             catch (OverflowException)
             {
@@ -2090,12 +2121,58 @@ namespace RomVaultCore.Scanner
                 return false;
             }
 
-            if (free > 0 && free < required)
+            if (free < required)
             {
-                error = $"Insufficient free space beside the source CHD for extraction. required={required} free={free}";
+                error = $"Insufficient free space on the selected CHD workspace volume for extraction. required={required} free={free}";
                 return false;
             }
             return true;
+        }
+
+        private static bool TryPrepareChdScanWorkspace(
+            string chdPath,
+            string chdmanExe,
+            bool isIso,
+            string parentPath,
+            bool reserveParentedTocPeak,
+            out string tempDir,
+            out IChdExtractor extractor,
+            out string error)
+        {
+            tempDir = "";
+            extractor = null;
+            error = "";
+            if (!ChdTemporaryWorkspace.TryCreateForSource(chdPath, ChdWorkspacePurpose.Scan, out tempDir, out string workspaceError))
+            {
+                error = "Could not create a writable CHD scan workspace: " + workspaceError;
+                return false;
+            }
+            if (!HasChdExtractionSpace(chdmanExe, chdPath, tempDir, isIso, reserveParentedTocPeak, out error))
+                return false;
+            extractor = new ChdmanChdExtractor(chdmanExe, tempDir, parentPath);
+            return true;
+        }
+
+        private static bool TryMaterializeStandaloneForScan(
+            string chdmanExe,
+            string childPath,
+            string parentPath,
+            string workingDirectory,
+            out string standalonePath,
+            out string error)
+        {
+            standalonePath = System.IO.Path.Combine(workingDirectory, "rv-parent-standalone.chd");
+            error = "";
+            if (!ChdmanService.TryValidateExternalPaths(out error, childPath, parentPath, standalonePath, workingDirectory))
+                return false;
+            ChdmanRunResult result = ChdmanService.Run(chdmanExe,
+                $"copy -i {ChdmanService.Quote(childPath)} -ip {ChdmanService.Quote(parentPath)} -o {ChdmanService.Quote(standalonePath)} -f",
+                workingDirectory,
+                600000);
+            if (result.Success)
+                return true;
+            error = result.Output;
+            return false;
         }
 
 
@@ -2117,6 +2194,8 @@ namespace RomVaultCore.Scanner
             // add all the subdirectories into scanDir 
             foreach (DirectoryInfo dir in oDirs)
             {
+                if (ChdTemporaryWorkspace.IsOwnedWorkspaceName(dir.Name))
+                    continue;
                 ScannedFile tDir = new ScannedFile(FileType.Dir)
                 {
                     Name = dir.Name,
@@ -2138,6 +2217,8 @@ namespace RomVaultCore.Scanner
             foreach (FileInfo oFile in oFiles)
             {
                 string fName = oFile.Name;
+                if (ChdArtifactPaths.IsOwnedArtifactName(fName))
+                    continue;
                 if (fName.StartsWith("__RomVault.") && fName.EndsWith(".tmp"))
                 {
                     try

@@ -137,11 +137,22 @@ public static class ChdVerify
         string reconstructionManifest = "missing";
         if (ChdEncodingProfile.TryRead(chdPath, out ChdEncodingProfile embeddedProfile))
         {
-            standardProfile = $"{embeddedProfile.Profile}/r{embeddedProfile.ProfileRevision};family={embeddedProfile.Family};writer={embeddedProfile.WriterRevision};encoder={embeddedProfile.ChdmanText};toolsha256={embeddedProfile.ToolSha256}";
+            List<string> fields = new List<string>
+            {
+                embeddedProfile.Profile + "/r" + embeddedProfile.ProfileRevision,
+                "storage=" + embeddedProfile.Storage
+            };
+            if (!string.IsNullOrWhiteSpace(embeddedProfile.Family)) fields.Add("family=" + embeddedProfile.Family);
+            if (embeddedProfile.WriterRevision > 0) fields.Add("writer=" + embeddedProfile.WriterRevision);
+            if (!string.IsNullOrWhiteSpace(embeddedProfile.ChdmanText)) fields.Add("encoder=" + embeddedProfile.ChdmanText);
+            if (!string.IsNullOrWhiteSpace(embeddedProfile.ToolSha256)) fields.Add("toolsha256=" + embeddedProfile.ToolSha256);
+            standardProfile = string.Join(";", fields);
         }
         if (ChdReconstructionManifest.TryRead(chdPath, out ChdReconstructionManifest embeddedManifest, out string manifestError))
         {
-            reconstructionManifest = $"schema={embeddedManifest.Schema};family={embeddedManifest.Family};dialect={embeddedManifest.Dialect};tracks={embeddedManifest.Tracks.Count};descriptorBytes={embeddedManifest.DescriptorBytes.Length};capabilities={embeddedManifest.CapabilityFingerprint}";
+            reconstructionManifest = $"schema={embeddedManifest.Schema};family={embeddedManifest.Family};dialect={embeddedManifest.Dialect};tracks={embeddedManifest.Tracks.Count};filenameIndependent=true";
+            if (!ChdReconstructionManifest.HasCompleteOpticalIdentity(embeddedManifest, out string descriptorError))
+                reconstructionManifest = "incomplete: " + descriptorError + "; " + reconstructionManifest;
         }
         else if (!string.IsNullOrWhiteSpace(manifestError))
         {
@@ -150,10 +161,12 @@ public static class ChdVerify
         try
         {
             string chdmanExe = ChdmanProcessTracker.FindExecutable();
+            string chdmanWorkingDirectory = Path.GetDirectoryName(chdPath) ?? Environment.CurrentDirectory;
             if (ChdmanService.TryGetIdentity(chdmanExe, ChdmanProbeLevel.Full, out ChdmanIdentity identity, out _))
                 chdmanVersion = identity.Banner + " sha256=" + identity.BinarySha256 + " capabilities=" + identity.Capabilities?.Fingerprint;
 
-            if (RunProcess(chdmanExe, $"info -i \"{chdPath}\"", Path.GetDirectoryName(chdPath) ?? Environment.CurrentDirectory, out string infoOut))
+            if (ChdmanService.TryValidateExternalPaths(out _, chdPath, chdmanWorkingDirectory) &&
+                RunProcess(chdmanExe, $"info -i \"{chdPath}\"", chdmanWorkingDirectory, out string infoOut))
             {
                 ParseInfoField(infoOut, "Compression", out chdmanInfoCompression);
                 ParseInfoBytesField(infoOut, "Hunk Size", out chdmanInfoHunkBytes);
@@ -161,7 +174,8 @@ public static class ChdVerify
                 ParseInfoBytesField(infoOut, "Logical size", out chdmanInfoLogicalBytes);
             }
 
-            if (RunProcess(chdmanExe, $"dumpmeta -i \"{chdPath}\"", Path.GetDirectoryName(chdPath) ?? Environment.CurrentDirectory, out string metaOut))
+            if (ChdmanService.TryValidateExternalPaths(out _, chdPath, chdmanWorkingDirectory) &&
+                RunProcess(chdmanExe, $"dumpmeta -i \"{chdPath}\"", chdmanWorkingDirectory, out string metaOut))
             {
                 chdmanDumpMeta = NormalizeDumpMeta(metaOut, 80);
             }
@@ -327,36 +341,10 @@ public static class ChdVerify
             return 2;
         }
 
-        if (!ChdTemporaryWorkspace.TryCreateBesideSource(chdPath, "__RomVault.chdverify.", out string tempDir, out string workspaceError))
-        {
-            report = "verify failed: could not create a workspace beside the source CHD: " + workspaceError;
-            return 2;
-        }
-
+        string tempDir = "";
         try
         {
             string chdmanExe = ChdmanProcessTracker.FindExecutable();
-            long? logicalSize = forceStreaming == true ? null : TryGetChdLogicalSizeBytes(chdmanExe, chdPath, tempDir);
-            if (logicalSize.HasValue)
-            {
-                long free = GetFreeSpaceBytes(tempDir);
-                long required;
-                try
-                {
-                    required = checked(logicalSize.Value + 256L * 1024 * 1024);
-                }
-                catch (OverflowException)
-                {
-                    report = "verify failed: CHD extraction size is too large to preflight safely";
-                    return 4;
-                }
-                if (free > 0 && free < required)
-                {
-                    report = $"verify failed: insufficient free space beside the source CHD. required={required} free={free}";
-                    return 4;
-                }
-            }
-
             uint? ver = null;
             byte[] chdSha1 = null;
             byte[] chdMd5 = null;
@@ -426,9 +414,14 @@ public static class ChdVerify
             }
             else
             {
+                if (!TryPrepareExtractionWorkspace(chdPath, chdmanExe, out tempDir, out string preparationError, out int preparationCode))
+                {
+                    report = "verify failed: " + preparationError;
+                    return preparationCode;
+                }
                 if (!string.IsNullOrWhiteSpace(singleFamily))
                 {
-                    string outputName = System.IO.Path.GetFileName(expectedSingle.Name);
+                    string outputName = singleFamily == "laserdisc" ? "image.avi" : singleFamily == "hdd" ? "image.img" : "image.raw";
                     string outputPath = System.IO.Path.Combine(tempDir, outputName);
                     IChdExtractor extractor = new ChdmanChdExtractor(chdmanExe, tempDir);
                     bool ok;
@@ -450,7 +443,8 @@ public static class ChdVerify
                 else if (treatAsDvd)
                 {
                     string outIso = System.IO.Path.Combine(tempDir, "image.iso");
-                    if (!RunProcess(chdmanExe, $"extractdvd -i \"{chdPath}\" -o \"{outIso}\" -f", tempDir, out string dvdError) ||
+                    IChdExtractor extractor = new ChdmanChdExtractor(chdmanExe, tempDir);
+                    if (!extractor.ExtractDvd(chdPath, outIso, out string dvdError) ||
                         !System.IO.File.Exists(outIso))
                     {
                         report = $"verify failed: {dvdError}";
@@ -507,7 +501,7 @@ public static class ChdVerify
             }
             else if (string.Equals(mode, "cd-stream", StringComparison.OrdinalIgnoreCase))
             {
-                if (CHDSharpLib.ChdMetadata.TryReadCdTrackLayout(chdPath, out var cdTracks, out string metaErr))
+                if (CHDSharpLib.ChdMetadata.TryReadCdTrackLayout(chdPath, out var cdTracks, out bool streamIsGdRom, out string metaErr))
                 {
                     using (Stream s = CHDSharpLib.ChdLogicalStream.OpenRead(chdPath))
                     {
@@ -558,7 +552,7 @@ public static class ChdVerify
                             string descName = expGdi?.Name ?? expCue?.Name;
                             string descText = expGdi != null
                                 ? ChdDescriptorGenerator.BuildGdi(cdTracks, expByTrack)
-                                : ChdDescriptorGenerator.BuildCue(cdTracks, expByTrack);
+                                : ChdDescriptorGenerator.BuildCue(cdTracks, expByTrack, streamIsGdRom);
                             byte[] bytes = System.Text.Encoding.ASCII.GetBytes(descText ?? "");
                             ScannedFile dsf = new ScannedFile(FileType.File)
                             {
@@ -585,40 +579,27 @@ public static class ChdVerify
                         report = "verify failed: cd-stream metadata unavailable: " + metaErr;
                         return 3;
                     }
-                    mode = "cd";
+                    if (!TryPrepareExtractionWorkspace(chdPath, chdmanExe, out tempDir, out string preparationError, out int preparationCode))
+                    {
+                        report = "verify failed: " + preparationError;
+                        return preparationCode;
+                    }
+                    string outDescriptor = System.IO.Path.Combine(tempDir, expectsGdi ? "disc.gdi" : "disc.cue");
+                    IChdExtractor extractor = new ChdmanChdExtractor(chdmanExe, tempDir);
+                    if (!extractor.ExtractCd(chdPath, outDescriptor, out string extractionError))
+                    {
+                        report = "verify failed: " + extractionError;
+                        return 3;
+                    }
+                    foreach (string file in Directory.GetFiles(tempDir, "*", SearchOption.TopDirectoryOnly))
+                        extractedFiles.Add(file);
+                    mode = expectsGdi ? "cd-gdi-split" : "cd-cue-split";
+                    HashExtractedFiles(extractedFiles, scanner, lines, fileHashCache);
                 }
             }
             else
             {
-                for (int i = 0; i < extractedFiles.Count; i++)
-                {
-                    string f = extractedFiles[i];
-                    FileInfo fi = new FileInfo(f);
-                    ScannedFile sf = new ScannedFile(FileType.File)
-                    {
-                        Name = System.IO.Path.GetFileName(f),
-                        FileModTimeStamp = fi.LastWriteTime.ToFileTimeUtc(),
-                        GotStatus = GotStatus.Got,
-                        DeepScanned = true,
-                        Size = (ulong)fi.Length
-                    };
-                    using (Stream s = System.IO.File.OpenRead(f))
-                    {
-                        scanner.CheckSumRead(s, sf, (ulong)fi.Length, true, false, null, 0, 0);
-                    }
-
-                    lines.Add($"{sf.Name} size={sf.Size} crc={sf.CRC?.ToHexString()} sha1={sf.SHA1?.ToHexString()} md5={sf.MD5?.ToHexString()}");
-                    fileHashCache[sf.Name] = ((ulong)fi.Length, sf.CRC, sf.SHA1, sf.MD5);
-                }
-                for (int i = 0; i < extractedFiles.Count; i++)
-                {
-                    string name = System.IO.Path.GetFileName(extractedFiles[i]);
-                    if (name.EndsWith(".cue", StringComparison.OrdinalIgnoreCase) || name.EndsWith(".gdi", StringComparison.OrdinalIgnoreCase))
-                    {
-                        lines.Add("descriptorSource=extracted");
-                        break;
-                    }
-                }
+                HashExtractedFiles(extractedFiles, scanner, lines, fileHashCache);
             }
 
             if (expectedMembers != null && expectedMembers.Count > 0)
@@ -655,14 +636,8 @@ public static class ChdVerify
         }
         finally
         {
-            try
-            {
-                if (Directory.Exists(tempDir))
-                    Directory.Delete(tempDir, true);
-            }
-            catch
-            {
-            }
+            if (!ChdTemporaryWorkspace.TryDelete(tempDir, out string cleanupError))
+                report = (report ?? "") + Environment.NewLine + "warning: could not clean the CHD workspace: " + cleanupError;
         }
     }
 
@@ -696,6 +671,16 @@ public static class ChdVerify
             RvFile exp = expectedMembers[i];
             if (exp == null || !exp.IsFile || string.IsNullOrWhiteSpace(exp.Name))
                 continue;
+
+            string extension = System.IO.Path.GetExtension(exp.Name);
+            if (string.Equals(extension, ".cue", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(extension, ".gdi", StringComparison.OrdinalIgnoreCase))
+            {
+                // Optical descriptors are canonical semantic views. Payload
+                // members, not descriptor spelling or presentation names, are
+                // the exact-hash preservation boundary.
+                continue;
+            }
 
             bool hasConstraint = (exp.Size.HasValue && exp.Size.Value != 0) ||
                                  (exp.CRC != null && exp.CRC.Length > 0) ||
@@ -741,23 +726,90 @@ public static class ChdVerify
         return result.Success;
     }
 
-    private static long GetFreeSpaceBytes(string path)
-    {
-        try
-        {
-            string root = System.IO.Path.GetPathRoot(System.IO.Path.GetFullPath(path));
-            DriveInfo di = new DriveInfo(root);
-            return di.AvailableFreeSpace;
-        }
-        catch
-        {
-            return 0;
-        }
-    }
-
     private static long? TryGetChdLogicalSizeBytes(string chdmanExe, string chdPath, string workingDir)
     {
+        if (ChdMetadata.TryReadContainerInfo(chdPath, out ChdContainerInfo info, out _) && info.LogicalSize <= long.MaxValue)
+            return (long)info.LogicalSize;
         return ChdmanService.TryGetLogicalSize(chdmanExe, chdPath, workingDir);
+    }
+
+    private static bool TryPrepareExtractionWorkspace(string chdPath, string chdmanExe, out string tempDir, out string error, out int errorCode)
+    {
+        tempDir = "";
+        error = "";
+        errorCode = 2;
+        if (!ChdTemporaryWorkspace.TryCreateForSource(chdPath, ChdWorkspacePurpose.Verify, out tempDir, out string workspaceError))
+        {
+            error = "could not create a writable CHD workspace: " + workspaceError;
+            return false;
+        }
+
+        long? logicalSize = TryGetChdLogicalSizeBytes(chdmanExe, chdPath, tempDir);
+        if (!logicalSize.HasValue)
+        {
+            error = "could not determine the CHD logical size for extraction-space preflight";
+            errorCode = 4;
+            return false;
+        }
+
+        long required;
+        try
+        {
+            required = checked(logicalSize.Value + 256L * 1024 * 1024);
+        }
+        catch (OverflowException)
+        {
+            error = "CHD extraction size is too large to preflight safely";
+            errorCode = 4;
+            return false;
+        }
+        if (!ChdFreeSpace.TryGetAvailableBytes(tempDir, out long free, out error))
+        {
+            errorCode = 4;
+            return false;
+        }
+        if (free < required)
+        {
+            error = $"insufficient free space on the selected CHD workspace volume. required={required} free={free}";
+            errorCode = 4;
+            return false;
+        }
+        return true;
+    }
+
+    private static void HashExtractedFiles(
+        List<string> extractedFiles,
+        FileScan scanner,
+        List<string> lines,
+        Dictionary<string, (ulong size, byte[] crc, byte[] sha1, byte[] md5)> fileHashCache)
+    {
+        for (int i = 0; i < extractedFiles.Count; i++)
+        {
+            string path = extractedFiles[i];
+            FileInfo info = new FileInfo(path);
+            ScannedFile scanned = new ScannedFile(FileType.File)
+            {
+                Name = System.IO.Path.GetFileName(path),
+                FileModTimeStamp = info.LastWriteTime.ToFileTimeUtc(),
+                GotStatus = GotStatus.Got,
+                DeepScanned = true,
+                Size = (ulong)info.Length
+            };
+            using (Stream stream = System.IO.File.OpenRead(path))
+                scanner.CheckSumRead(stream, scanned, (ulong)info.Length, true, false, null, 0, 0);
+
+            lines.Add($"{scanned.Name} size={scanned.Size} crc={scanned.CRC?.ToHexString()} sha1={scanned.SHA1?.ToHexString()} md5={scanned.MD5?.ToHexString()}");
+            fileHashCache[scanned.Name] = ((ulong)info.Length, scanned.CRC, scanned.SHA1, scanned.MD5);
+        }
+        for (int i = 0; i < extractedFiles.Count; i++)
+        {
+            string name = System.IO.Path.GetFileName(extractedFiles[i]);
+            if (name.EndsWith(".cue", StringComparison.OrdinalIgnoreCase) || name.EndsWith(".gdi", StringComparison.OrdinalIgnoreCase))
+            {
+                lines.Add("descriptorSource=extracted");
+                break;
+            }
+        }
     }
 
     private static void SkipBytes(Stream s, ulong bytes)

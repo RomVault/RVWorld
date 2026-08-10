@@ -22,10 +22,8 @@ internal static class ChdDialect
         if (normalizedFamily == "gdi") return "redump-gdrom-cue";
 
         string text = File.ReadAllText(inputPath);
-        bool unicode = (inputPath ?? "").Any(value => value > 127) || text.Any(value => value > 127);
         bool complexLayout = Regex.IsMatch(text, @"^\s*(?:INDEX\s+00|PREGAP|POSTGAP|FLAGS\s+.*\bPRE\b)", RegexOptions.IgnoreCase | RegexOptions.Multiline);
         if (complexLayout) return "cue-complex-layout";
-        if (unicode) return "cue-unicode";
         bool mode12048 = Regex.IsMatch(text, @"\bMODE1/2048\b", RegexOptions.IgnoreCase);
         bool mode12352 = Regex.IsMatch(text, @"\bMODE1/2352\b", RegexOptions.IgnoreCase);
         bool mode22352 = Regex.IsMatch(text, @"\bMODE2/2352\b", RegexOptions.IgnoreCase);
@@ -37,5 +35,13 @@ internal static class ChdDialect
         if (mode12352) return audio ? "cue-mode1-2352-audio" : "cue-mode1-2352";
         if (audio) return "cue-audio";
         return "cue-unknown";
+    }
+
+    public static bool RequiresUnicodeStaging(string inputPath)
+    {
+        if (!string.Equals(Path.GetExtension(inputPath ?? ""), ".cue", StringComparison.OrdinalIgnoreCase))
+            return false;
+        string text = File.ReadAllText(inputPath);
+        return (inputPath ?? "").Any(value => value > 127) || text.Any(value => value > 127);
     }
 }

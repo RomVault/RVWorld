@@ -537,7 +537,6 @@ namespace ROMVault
 
             string profile = "";
             string storage = "";
-            string family = "";
             string[] values = metadata.Split(';');
             for (int i = 0; i < values.Length; i++)
             {
@@ -548,13 +547,11 @@ namespace ROMVault
                 string value = values[i].Substring(separator + 1).Trim();
                 if (string.Equals(key, "profile", StringComparison.OrdinalIgnoreCase)) profile = value;
                 else if (string.Equals(key, "storage", StringComparison.OrdinalIgnoreCase)) storage = value;
-                else if (string.Equals(key, "family", StringComparison.OrdinalIgnoreCase)) family = value;
             }
 
             List<string> parts = new List<string>();
             if (!string.IsNullOrWhiteSpace(profile)) parts.Add(profile);
             if (!string.IsNullOrWhiteSpace(storage)) parts.Add(storage);
-            if (!string.IsNullOrWhiteSpace(family)) parts.Add(family);
             return string.Join(" / ", parts);
         }
 

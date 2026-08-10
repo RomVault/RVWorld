@@ -1,5 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
+using System.Text;
 using CHDSharpLib;
 
 namespace RomVaultCore.Utils;
@@ -20,9 +23,22 @@ internal sealed class ChdEncodingProfileSpec
 
     public string ToMetadata(ChdmanIdentity identity)
     {
+        if (ProfileRevision != ChdEncodingProfile.CurrentProfileRevision || !ChdEncodingProfile.IsStorage(Storage))
+            throw new InvalidOperationException("CHD encoder profile identity is invalid.");
         int writerRevision = identity?.Capabilities?.WriterRevision(Family) ?? 0;
-        string geometry = Family == "hdd" ? $";sector={HddSectorSize};cylinders={HddCylinders};heads={HddHeads};sectors={HddSectors};geometry={HddGeometryMode}" : "";
-        return $"schema={ChdEncodingProfile.CurrentProfileSchema};profile={ChdEncodingProfile.ProfileId};revision={ProfileRevision};writer={writerRevision};chdman={identity?.VersionText ?? ""};toolsha256={identity?.BinarySha256 ?? ""};family={Family};storage={Storage};codecs={Codecs};hunk={HunkSize};unit={UnitSize}{geometry}";
+        StringBuilder metadata = new StringBuilder()
+            .Append("schema=").Append(ChdEncodingProfile.CurrentProfileSchema.ToString(CultureInfo.InvariantCulture))
+            .Append(";profile=").Append(ChdEncodingProfile.ProfileId)
+            .Append(";revision=").Append(ProfileRevision.ToString(CultureInfo.InvariantCulture))
+            .Append(";storage=").Append(Storage.ToLowerInvariant());
+
+        if (writerRevision > 0)
+            metadata.Append(";writer=").Append(writerRevision.ToString(CultureInfo.InvariantCulture));
+        if (Version.TryParse(identity?.VersionText, out Version chdmanVersion))
+            metadata.Append(";chdman=").Append(chdmanVersion.ToString());
+        if (ChdEncodingProfile.IsSha256(identity?.BinarySha256))
+            metadata.Append(";toolsha256=").Append(identity.BinarySha256.ToLowerInvariant());
+        return metadata.ToString();
     }
 }
 
@@ -37,6 +53,8 @@ internal sealed class ChdEncodingProfile
     public string Profile { get; private set; }
     public string ChdmanText { get; private set; }
     public Version ChdmanVersion { get; private set; }
+    // RVEP does not serialize these physical facts; TryRead hydrates them
+    // from RVRM/native CHD metadata.
     public string Family { get; private set; }
     public string Storage { get; private set; }
     public string Codecs { get; private set; }
@@ -152,27 +170,55 @@ internal sealed class ChdEncodingProfile
         if (!ChdMetadata.TryReadTextMetadata(chdPath, MetadataTag, 0, out string text, out _))
             return false;
 
-        Dictionary<string, string> values = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        string[] fields = (text ?? "").Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
-        for (int i = 0; i < fields.Length; i++)
+        if (!TryParseMetadata(text, out profile))
+            return TryParseUnsupportedSchemaEnvelope(text, out profile);
+
+        PopulateNativeFacts(chdPath, profile);
+        return true;
+    }
+
+    internal static bool TryParseMetadata(string text, out ChdEncodingProfile profile)
+    {
+        profile = null;
+        if (!TryTokenizeMetadata(text, out Dictionary<string, string> values))
+            return false;
+
+        if (!values.TryGetValue("schema", out string schemaText) || !int.TryParse(schemaText, NumberStyles.None, CultureInfo.InvariantCulture, out int schema) ||
+            !values.TryGetValue("profile", out string profileId) ||
+            !values.TryGetValue("revision", out string revisionText) || !int.TryParse(revisionText, NumberStyles.None, CultureInfo.InvariantCulture, out int revision) || revision <= 0 ||
+            !values.TryGetValue("storage", out string storage) || !IsStorage(storage))
         {
-            int equals = fields[i].IndexOf('=');
-            if (equals <= 0 || equals == fields[i].Length - 1)
-                continue;
-            values[fields[i].Substring(0, equals).Trim()] = fields[i].Substring(equals + 1).Trim();
+            return false;
+        }
+        if (schema != CurrentProfileSchema ||
+            !string.Equals(profileId, ProfileId, StringComparison.Ordinal))
+            return false;
+
+        if (!ContainsOnlyKnownFields(values))
+            return false;
+
+        string chdmanText = "";
+        Version chdmanVersion = null;
+        if (values.TryGetValue("chdman", out string parsedChdmanText))
+        {
+            if (!Version.TryParse(parsedChdmanText, out chdmanVersion))
+                return false;
+            chdmanText = parsedChdmanText;
         }
 
-        if (!values.TryGetValue("schema", out string schemaText) || !int.TryParse(schemaText, out int schema) ||
-            !values.TryGetValue("profile", out string profileId) ||
-            !values.TryGetValue("chdman", out string chdmanText) || !Version.TryParse(chdmanText, out Version chdmanVersion) ||
-            !values.TryGetValue("family", out string family) ||
-            !values.TryGetValue("codecs", out string codecs) ||
-            !values.TryGetValue("hunk", out string hunkText) || !int.TryParse(hunkText, out int hunkSize))
+        int writerRevision = 0;
+        if (values.TryGetValue("writer", out string writerText) &&
+            (!int.TryParse(writerText, NumberStyles.None, CultureInfo.InvariantCulture, out writerRevision) || writerRevision < 0 ||
+             writerRevision == 0))
+            return false;
+
+        string toolSha256 = "";
+        if (values.TryGetValue("toolsha256", out string parsedToolSha256))
         {
-            return false;
+            if (!IsSha256(parsedToolSha256))
+                return false;
+            toolSha256 = parsedToolSha256;
         }
-        if (schema != CurrentProfileSchema || !string.Equals(profileId, ProfileId, StringComparison.Ordinal))
-            return false;
 
         profile = new ChdEncodingProfile
         {
@@ -180,24 +226,167 @@ internal sealed class ChdEncodingProfile
             Profile = profileId,
             ChdmanText = chdmanText,
             ChdmanVersion = chdmanVersion,
-            Family = family.ToLowerInvariant(),
-            Storage = values.TryGetValue("storage", out string storage) ? storage.ToLowerInvariant() : "",
-            Codecs = NormalizeCodecs(codecs),
-            HunkSize = hunkSize,
-            UnitSize = values.TryGetValue("unit", out string unitText) && int.TryParse(unitText, out int unitSize) ? unitSize : 0
+            Family = "",
+            Storage = storage.ToLowerInvariant(),
+            Codecs = "",
+            HunkSize = 0,
+            UnitSize = 0,
+            ProfileRevision = revision,
+            WriterRevision = writerRevision,
+            ToolSha256 = toolSha256.ToLowerInvariant()
         };
-        if (values.TryGetValue("revision", out string revisionText) && int.TryParse(revisionText, out int revision))
-            profile.ProfileRevision = revision;
-        if (values.TryGetValue("writer", out string writerText) && int.TryParse(writerText, out int writer))
-            profile.WriterRevision = writer;
-        if (values.TryGetValue("toolsha256", out string toolSha256))
-            profile.ToolSha256 = toolSha256;
-        if (values.TryGetValue("sector", out string sectorText) && int.TryParse(sectorText, out int sector)) profile.HddSectorSize = sector;
-        if (values.TryGetValue("cylinders", out string cylinderText) && long.TryParse(cylinderText, out long cylinders)) profile.HddCylinders = cylinders;
-        if (values.TryGetValue("heads", out string headsText) && int.TryParse(headsText, out int heads)) profile.HddHeads = heads;
-        if (values.TryGetValue("sectors", out string sectorsText) && int.TryParse(sectorsText, out int sectors)) profile.HddSectors = sectors;
-        if (values.TryGetValue("geometry", out string geometry)) profile.HddGeometryMode = geometry;
         return true;
+    }
+
+    // Unknown schema numbers are not part of the current wire contract. When
+    // one is embedded in a CHD, retain only enough of its envelope to make
+    // policy callers fail closed instead of treating it as missing metadata
+    // and rewriting the CHD with today's rules.
+    private static bool TryParseUnsupportedSchemaEnvelope(string text, out ChdEncodingProfile profile)
+    {
+        profile = null;
+        if (!TryTokenizeMetadata(text, out Dictionary<string, string> values) ||
+            !values.TryGetValue("schema", out string schemaText) ||
+            !int.TryParse(schemaText, NumberStyles.None, CultureInfo.InvariantCulture, out int schema) ||
+            schema <= 0 || schema == CurrentProfileSchema)
+            return false;
+
+        int revision = 0;
+        if (values.TryGetValue("revision", out string revisionText))
+            int.TryParse(revisionText, NumberStyles.None, CultureInfo.InvariantCulture, out revision);
+
+        profile = new ChdEncodingProfile
+        {
+            Schema = schema,
+            Profile = values.TryGetValue("profile", out string profileId) ? profileId : "",
+            Storage = values.TryGetValue("storage", out string storage) ? storage.ToLowerInvariant() : "",
+            ProfileRevision = revision
+        };
+        return true;
+    }
+
+    private static bool TryTokenizeMetadata(string text, out Dictionary<string, string> values)
+    {
+        values = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        string[] fields = (text ?? "").Split(new[] { ';' }, StringSplitOptions.None);
+        for (int i = 0; i < fields.Length; i++)
+        {
+            int equals = fields[i].IndexOf('=');
+            if (equals <= 0)
+                return false;
+            string key = fields[i].Substring(0, equals).Trim();
+            string value = fields[i].Substring(equals + 1).Trim();
+            if (key.Length == 0 || values.ContainsKey(key))
+                return false;
+            values.Add(key, value);
+        }
+        return true;
+    }
+
+    private static bool ContainsOnlyKnownFields(Dictionary<string, string> values)
+    {
+        foreach (string key in values.Keys)
+        {
+            switch (key.ToLowerInvariant())
+            {
+                case "schema":
+                case "profile":
+                case "revision":
+                case "storage":
+                case "writer":
+                case "chdman":
+                case "toolsha256":
+                    break;
+                default:
+                    return false;
+            }
+        }
+        return true;
+    }
+
+    // Keep parsing separate from policy interpretation.  A future RVEP
+    // revision must remain visible to diagnostics, but this build must never
+    // apply today's codecs, hunk sizes, or geometry rules to it.
+    internal static bool CanUseCurrentPhysicalPolicy(ChdEncodingProfile profile, out string error)
+    {
+        error = "";
+        if (profile == null)
+        {
+            error = "CHD has no valid RomVault encoder profile.";
+            return false;
+        }
+        if (profile.Schema != CurrentProfileSchema)
+        {
+            error = $"CHD uses unsupported RomVault encoder profile schema {profile.Schema}; " +
+                    $"this build supports schema {CurrentProfileSchema}. The CHD was left unchanged.";
+            return false;
+        }
+        if (profile.ProfileRevision != CurrentProfileRevision)
+        {
+            error = $"CHD uses unsupported RomVault encoder profile revision {profile.ProfileRevision}; " +
+                    $"this build supports revision {CurrentProfileRevision}. The CHD was left unchanged.";
+            return false;
+        }
+        return true;
+    }
+
+    private static void PopulateNativeFacts(string chdPath, ChdEncodingProfile profile)
+    {
+        if (profile == null || !ChdMetadata.TryReadContainerInfo(chdPath, out ChdContainerInfo container, out _))
+            return;
+
+        string legacyFamily = profile.Family;
+        profile.Codecs = NormalizeCodecs(string.Join(",", container.Codecs));
+        profile.HunkSize = (int)container.HunkSize;
+        profile.UnitSize = (int)container.UnitSize;
+        profile.HddSectorSize = 0;
+        profile.HddCylinders = 0;
+        profile.HddHeads = 0;
+        profile.HddSectors = 0;
+        profile.HddGeometryMode = "";
+
+        if (ChdReconstructionManifest.TryRead(chdPath, out ChdReconstructionManifest manifest, out _) &&
+            !string.IsNullOrWhiteSpace(manifest.Family))
+        {
+            profile.Family = manifest.Family.Trim().ToLowerInvariant();
+        }
+        else
+        {
+            profile.Family = DetectNativeFamily(chdPath, container, legacyFamily);
+        }
+
+        if (profile.Family == "hdd" && ChdHddGeometry.TryRead(chdPath, out ChdHddGeometry geometry))
+        {
+            profile.HddSectorSize = geometry.SectorSize;
+            profile.HddCylinders = geometry.Cylinders;
+            profile.HddHeads = geometry.Heads;
+            profile.HddSectors = geometry.Sectors;
+            profile.HddGeometryMode = geometry.Mode;
+        }
+    }
+
+    private static string DetectNativeFamily(string chdPath, ChdContainerInfo container, string legacyFamily)
+    {
+        bool hasCdCodec = false;
+        bool hasAvCodec = false;
+        for (int i = 0; i < (container?.Codecs?.Count ?? 0); i++)
+        {
+            string codec = container.Codecs[i] ?? "";
+            hasCdCodec |= codec.StartsWith("cd", StringComparison.OrdinalIgnoreCase);
+            hasAvCodec |= string.Equals(codec, "avhu", StringComparison.OrdinalIgnoreCase);
+        }
+
+        bool isGdRom = false;
+        bool hasCdTracks = ChdMetadata.TryReadCdTrackLayout(chdPath, out _, out isGdRom, out _);
+        if (hasCdTracks || hasCdCodec)
+            return isGdRom ? "gdi" : "cd";
+        if (hasAvCodec || ChdMetadata.TryReadBinaryMetadata(chdPath, "AVAV", 0, out _, out _))
+            return "laserdisc";
+        if (ChdMetadata.TryReadBinaryMetadata(chdPath, "GDDD", 0, out _, out _))
+            return "hdd";
+        if (ChdMetadata.TryReadBinaryMetadata(chdPath, "DVD ", 0, out _, out _))
+            return string.Equals(legacyFamily, "psp", StringComparison.OrdinalIgnoreCase) ? "psp" : "dvd";
+        return "raw";
     }
 
     public static bool TryDescribeExisting(string chdPath, bool psp, ChdStorageProfile storageProfile, out ChdEncodingProfileSpec spec, out ChdContainerInfo container, out string error)
@@ -211,44 +400,24 @@ internal sealed class ChdEncodingProfile
             return false;
         }
 
-        if (TryRead(chdPath, out ChdEncodingProfile stored) && !string.IsNullOrWhiteSpace(stored.Family))
+        bool hasStoredProfile = TryRead(chdPath, out ChdEncodingProfile stored);
+        if (hasStoredProfile && !CanUseCurrentPhysicalPolicy(stored, out error))
+            return false;
+
+        if (hasStoredProfile && !string.IsNullOrWhiteSpace(stored.Family))
         {
-            spec = ForFamily(stored.Family, storageProfile,
-                stored.Family == "laserdisc" ? (int)container.HunkSize : 0,
-                stored.Family == "laserdisc" ? (int)container.UnitSize : 0);
-            if (stored.Family == "hdd")
+            string storedFamily = psp && stored.Family == "dvd" ? "psp" : stored.Family;
+            spec = ForFamily(storedFamily, storageProfile,
+                storedFamily == "laserdisc" ? (int)container.HunkSize : 0,
+                storedFamily == "laserdisc" ? (int)container.UnitSize : 0);
+            if (storedFamily == "hdd")
                 ApplyHddGeometry(spec, (long)container.LogicalSize, storageProfile, Settings.rvSettings?.ChdHddGeometry ?? ChdHddGeometryMode.Auto);
-            if (stored.Family == "cd" && ChdReconstructionManifest.TryRead(chdPath, out ChdReconstructionManifest storedManifest, out _))
+            if (storedFamily == "cd" && ChdReconstructionManifest.TryRead(chdPath, out ChdReconstructionManifest storedManifest, out _))
                 ApplyDialect(spec, storedManifest.Dialect);
             return true;
         }
 
-        bool hasCdCodec = false;
-        bool hasAvCodec = false;
-        for (int i = 0; i < container.Codecs.Count; i++)
-        {
-            if (container.Codecs[i].StartsWith("cd", StringComparison.OrdinalIgnoreCase))
-            {
-                hasCdCodec = true;
-                break;
-            }
-            if (string.Equals(container.Codecs[i], "avhu", StringComparison.OrdinalIgnoreCase))
-                hasAvCodec = true;
-        }
-
-        bool isGdRom = false;
-        bool hasCdTracks = ChdMetadata.TryReadCdTrackLayout(chdPath, out _, out isGdRom, out _);
-        string family;
-        if (hasCdTracks || hasCdCodec)
-            family = isGdRom ? "gdi" : "cd";
-        else if (hasAvCodec || ChdMetadata.TryReadBinaryMetadata(chdPath, "AVAV", 0, out _, out _))
-            family = "laserdisc";
-        else if (ChdMetadata.TryReadBinaryMetadata(chdPath, "GDDD", 0, out _, out _))
-            family = "hdd";
-        else if (ChdMetadata.TryReadBinaryMetadata(chdPath, "DVD ", 0, out _, out _))
-            family = psp ? "psp" : "dvd";
-        else
-            family = "raw";
+        string family = DetectNativeFamily(chdPath, container, psp ? "psp" : "");
         spec = ForFamily(family, storageProfile,
             family == "laserdisc" ? (int)container.HunkSize : 0,
             family == "laserdisc" ? (int)container.UnitSize : 0);
@@ -263,7 +432,10 @@ internal sealed class ChdEncodingProfile
     {
         reason = "";
         bool hasProfile = TryRead(chdPath, out ChdEncodingProfile stored);
-        if (hasProfile && stored.ChdmanVersion.CompareTo(installed.Version) > 0)
+        if (hasProfile && !CanUseCurrentPhysicalPolicy(stored, out reason))
+            return false;
+        if (hasProfile && stored.ChdmanVersion != null && installed?.Version != null &&
+            stored.ChdmanVersion.CompareTo(installed.Version) > 0)
         {
             reason = $"CHD was encoded by newer chdman {stored.ChdmanText}.";
             return false;
@@ -275,16 +447,13 @@ internal sealed class ChdEncodingProfile
             return true;
         }
 
-        string actualCodecs = NormalizeCodecs(string.Join(",", actual.Codecs));
+        string actualCodecs = NormalizeCodecs(string.Join(",", actual?.Codecs ?? new List<string>()));
         string expectedCodecs = NormalizeCodecs(expected.Codecs);
         if (stored.Schema != CurrentProfileSchema ||
             !string.Equals(stored.Profile, ProfileId, StringComparison.Ordinal) ||
             stored.ProfileRevision != expected.ProfileRevision ||
-            !string.Equals(stored.Family, expected.Family, StringComparison.Ordinal) ||
             !string.Equals(stored.Storage, expected.Storage, StringComparison.Ordinal) ||
-            !string.Equals(stored.Codecs, expectedCodecs, StringComparison.Ordinal) ||
-            stored.HunkSize != expected.HunkSize ||
-            stored.UnitSize != expected.UnitSize ||
+            actual == null ||
             actual.HunkSize != expected.HunkSize ||
             (expected.UnitSize > 0 && actual.UnitSize != expected.UnitSize) ||
             !string.Equals(actualCodecs, expectedCodecs, StringComparison.Ordinal))
@@ -293,9 +462,7 @@ internal sealed class ChdEncodingProfile
             return true;
         }
         if (expected.Family == "hdd" &&
-            (stored.HddSectorSize != expected.HddSectorSize || stored.HddCylinders != expected.HddCylinders ||
-             stored.HddHeads != expected.HddHeads || stored.HddSectors != expected.HddSectors ||
-             !ChdHddGeometry.Matches(chdPath, expected)))
+            !ChdHddGeometry.Matches(chdPath, expected))
         {
             reason = "Hard-disk CHD geometry does not match the selected playback/archive profile.";
             return true;
@@ -307,29 +474,124 @@ internal sealed class ChdEncodingProfile
             return true;
         }
         if (manifest.Schema != ChdReconstructionManifest.CurrentSchema ||
-            manifest.ProfileRevision != expected.ProfileRevision ||
-            !string.Equals(manifest.ProfileId, ProfileId, StringComparison.Ordinal) ||
             !string.Equals(manifest.Family, expected.Family, StringComparison.Ordinal) ||
-            !string.Equals(manifest.Storage, expected.Storage, StringComparison.Ordinal))
+            manifest.Tracks == null || manifest.Tracks.Count == 0)
         {
-            reason = "CHD reconstruction metadata does not match the standard profile.";
+            reason = "CHD reconstruction metadata is incomplete or does not match the media family.";
+            return true;
+        }
+        if (!ChdReconstructionManifest.HasCompleteOpticalIdentity(manifest, out string descriptorError))
+        {
+            reason = descriptorError;
             return true;
         }
 
-        int installedWriterRevision = installed.Capabilities?.WriterRevision(expected.Family) ?? 0;
-        if (installedWriterRevision > stored.WriterRevision || installedWriterRevision > manifest.WriterRevision)
+        int installedWriterRevision = installed?.Capabilities?.WriterRevision(expected.Family) ?? 0;
+        if (stored.WriterRevision > 0 && installedWriterRevision > stored.WriterRevision)
         {
             reason = $"Installed chdman {installed.VersionText} has a newer validated {expected.Family.ToUpperInvariant()} writer revision.";
             return true;
         }
 
-        if (Settings.rvSettings?.ChdRecompressOnEncoderUpdate == true && stored.ChdmanVersion.CompareTo(installed.Version) < 0)
+        if (Settings.rvSettings?.ChdRecompressOnEncoderUpdate == true && stored.ChdmanVersion != null && installed?.Version != null &&
+            stored.ChdmanVersion.CompareTo(installed.Version) < 0)
         {
             reason = $"Installed chdman {installed.VersionText} is newer than encoder {stored.ChdmanText}, and full encoder upgrades are enabled.";
             return true;
         }
 
         return false;
+    }
+
+    public static bool RunSelfTest(out string error)
+    {
+        error = "";
+        try
+        {
+            string sha256 = new string('A', 64);
+            ChdEncodingProfileSpec spec = ForFamily("hdd", ChdStorageProfile.Archive);
+            ChdmanIdentity identity = new ChdmanIdentity
+            {
+                VersionText = "0.289",
+                Version = new Version(0, 289),
+                BinarySha256 = sha256,
+                Capabilities = new ChdmanCapabilities { HddArchiveRoundTrip = true }
+            };
+            string encoded = spec.ToMetadata(identity);
+            string expected = "schema=1;profile=rvworld-v1;revision=1;storage=archive;writer=1;chdman=0.289;toolsha256=" + sha256.ToLowerInvariant();
+            if (!string.Equals(encoded, expected, StringComparison.Ordinal) ||
+                encoded.Contains(";family=", StringComparison.Ordinal) ||
+                encoded.Contains(";codecs=", StringComparison.Ordinal) ||
+                encoded.Contains(";hunk=", StringComparison.Ordinal) ||
+                encoded.Contains(";unit=", StringComparison.Ordinal) ||
+                encoded.Contains(";sector=", StringComparison.Ordinal))
+                throw new InvalidDataException("RVEP schema 1 is not canonical and slim.");
+
+            if (!TryParseMetadata(encoded, out ChdEncodingProfile parsed) || parsed.Schema != 1 ||
+                parsed.ProfileRevision != 1 || parsed.Storage != "archive" || parsed.WriterRevision != 1 ||
+                parsed.ChdmanVersion != new Version(0, 289) || parsed.ToolSha256 != sha256.ToLowerInvariant())
+                throw new InvalidDataException("Canonical RVEP schema 1 did not round trip.");
+
+            string minimum = "schema=1;profile=rvworld-v1;revision=1;storage=playback";
+            if (!TryParseMetadata(minimum, out ChdEncodingProfile minimal) || minimal.ChdmanVersion != null ||
+                minimal.WriterRevision != 0 || minimal.ToolSha256.Length != 0)
+                throw new InvalidDataException("Minimum RVEP schema 1 metadata was rejected.");
+            if (!CanUseCurrentPhysicalPolicy(minimal, out string currentPolicyError))
+                throw new InvalidDataException("Current RVEP revision was rejected: " + currentPolicyError);
+
+            for (int futureRevision = CurrentProfileRevision + 1; futureRevision <= CurrentProfileRevision + 2; futureRevision++)
+            {
+                string future = "schema=1;profile=rvworld-v1;revision=" + futureRevision.ToString(CultureInfo.InvariantCulture) + ";storage=playback";
+                if (!TryParseMetadata(future, out ChdEncodingProfile futureProfile) || futureProfile.ProfileRevision != futureRevision)
+                    throw new InvalidDataException("A future RVEP revision could not be distinguished by diagnostics.");
+                if (CanUseCurrentPhysicalPolicy(futureProfile, out string futureError) ||
+                    string.IsNullOrWhiteSpace(futureError) || !futureError.Contains(futureRevision.ToString(CultureInfo.InvariantCulture), StringComparison.Ordinal))
+                    throw new InvalidDataException("A future RVEP revision was interpreted with the current physical policy.");
+            }
+
+            string oldFullRecord = "schema=1;profile=rvworld-v1;revision=1;writer=0;chdman=0.289;toolsha256=;family=hdd;storage=archive;codecs=lzma;hunk=1048576;unit=512;sector=512;cylinders=10;heads=1;sectors=1;geometry=canonical";
+            AssertMetadataRejected(oldFullRecord, "the retired full schema-1 shape");
+
+            spec.ProfileRevision = CurrentProfileRevision + 1;
+            try
+            {
+                spec.ToMetadata(identity);
+                throw new InvalidDataException("The current writer emitted an unsupported RVEP profile revision.");
+            }
+            catch (InvalidOperationException)
+            {
+            }
+
+            AssertMetadataRejected(minimum + ";STORAGE=archive", "duplicate key");
+            AssertMetadataRejected("schema=1;profile=rvworld-v1;revision=1;storage=cold", "invalid storage");
+            AssertMetadataRejected(minimum + ";toolsha256=abc", "invalid tool hash");
+            AssertMetadataRejected(minimum + ";chdman=not-a-version", "invalid tool version");
+            AssertMetadataRejected(minimum + ";writer=0", "invalid writer revision");
+            AssertMetadataRejected(minimum + ";family=hdd", "retired physical fields");
+            AssertMetadataRejected(minimum + ";unknown=value", "unknown fields");
+            AssertMetadataRejected(minimum + ";", "a trailing empty field");
+            int futureSchema = CurrentProfileSchema + 1;
+            string unsupportedSchema = "schema=" + futureSchema.ToString(CultureInfo.InvariantCulture) +
+                                       ";profile=rvworld-v1;revision=1;storage=archive;future=value";
+            AssertMetadataRejected(unsupportedSchema, "unsupported schema");
+            if (!TryParseUnsupportedSchemaEnvelope(unsupportedSchema, out ChdEncodingProfile unsupported) ||
+                unsupported.Schema != futureSchema || CanUseCurrentPhysicalPolicy(unsupported, out string unsupportedError) ||
+                string.IsNullOrWhiteSpace(unsupportedError) ||
+                !unsupportedError.Contains("schema " + futureSchema.ToString(CultureInfo.InvariantCulture), StringComparison.Ordinal))
+                throw new InvalidDataException("A future RVEP schema was not retained as a fail-closed envelope.");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            error = ex.Message;
+            return false;
+        }
+    }
+
+    private static void AssertMetadataRejected(string metadata, string description)
+    {
+        if (TryParseMetadata(metadata, out _))
+            throw new InvalidDataException("RVEP accepted " + description + ".");
     }
 
     public static int GreatestCommonDivisor(int left, int right)
@@ -348,5 +610,24 @@ internal sealed class ChdEncodingProfile
     private static string NormalizeCodecs(string codecs)
     {
         return (codecs ?? "").Replace(" ", "").Trim().ToLowerInvariant();
+    }
+
+    internal static bool IsStorage(string storage)
+    {
+        return string.Equals(storage, "playback", StringComparison.OrdinalIgnoreCase) ||
+               string.Equals(storage, "archive", StringComparison.OrdinalIgnoreCase);
+    }
+
+    internal static bool IsSha256(string value)
+    {
+        if (value == null || value.Length != 64)
+            return false;
+        for (int i = 0; i < value.Length; i++)
+        {
+            char c = value[i];
+            if (!((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F')))
+                return false;
+        }
+        return true;
     }
 }

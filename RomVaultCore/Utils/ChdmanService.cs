@@ -327,6 +327,40 @@ internal static class ChdmanService
         return result;
     }
 
+    /// <summary>
+    /// Validates paths passed to external chdman builds on Windows.  RomVault
+    /// deliberately stays within the traditional Win32 limit because a child
+    /// executable must opt in to long paths independently of the host process.
+    /// </summary>
+    internal static bool TryValidateExternalPaths(out string error, params string[] paths)
+    {
+        error = "";
+        if (Path.DirectorySeparatorChar != '\\' || paths == null)
+            return true;
+
+        for (int i = 0; i < paths.Length; i++)
+        {
+            string path = paths[i];
+            if (string.IsNullOrWhiteSpace(path))
+                continue;
+            try
+            {
+                string full = Path.GetFullPath(path);
+                if (full.Length < 260)
+                    continue;
+                error = $"A CHD operation path is {full.Length} characters long, but compatible Windows chdman paths must be shorter than 260 characters. " +
+                        "Shorten the RomRoot or mapped directory path and try again.";
+                return false;
+            }
+            catch (Exception ex)
+            {
+                error = "Could not validate a CHD operation path: " + ex.Message;
+                return false;
+            }
+        }
+        return true;
+    }
+
     public static bool TryGetIdentity(string executable, ChdmanProbeLevel probeLevel, out ChdmanIdentity identity, out string error)
     {
         identity = null;
@@ -410,6 +444,8 @@ internal static class ChdmanService
 
     public static long? TryGetLogicalSize(string executable, string chdPath, string workingDirectory)
     {
+        if (!TryValidateExternalPaths(out _, chdPath, workingDirectory))
+            return null;
         ChdmanRunResult result = Run(executable, "info -i " + Quote(chdPath), workingDirectory, 30000);
         if (!result.Success)
             return null;

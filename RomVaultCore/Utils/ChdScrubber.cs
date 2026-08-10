@@ -82,6 +82,14 @@ public static class ChdScrubber
             family = embedded.Family ?? "";
             storage = embedded.Storage ?? "";
         }
+        if ((string.Equals(family, "cd", StringComparison.OrdinalIgnoreCase) ||
+             string.Equals(family, "gdi", StringComparison.OrdinalIgnoreCase)) &&
+            (!ChdReconstructionManifest.TryRead(path, out ChdReconstructionManifest opticalManifest, out string manifestError) ||
+             !ChdReconstructionManifest.HasCompleteOpticalIdentity(opticalManifest, out manifestError)))
+        {
+            return ChdOperationResult.Fail(ChdErrorCode.InvalidDescriptor, "reconstruction",
+                "The standardized optical CHD has incomplete payload identities.", manifestError);
+        }
         string temp = Path.Combine(Path.GetTempPath(), "rv-chd-scrub-" + Guid.NewGuid().ToString("N"));
         try
         {

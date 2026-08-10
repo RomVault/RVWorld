@@ -11,11 +11,23 @@ public sealed class ChdCdTrackInfo
 {
     public int TrackNo { get; set; }
     public string TrackType { get; set; }
+    public string TrackSubtype { get; set; }
     public long StartFrame { get; set; }
     public long Frames { get; set; }
     public long PreGapFrames { get; set; }
+    public string PreGapTrackType { get; set; }
+    public string PreGapSubtype { get; set; }
+    public bool PreGapDataStored { get; set; }
     public long PostGapFrames { get; set; }
+    public long PadFrames { get; set; }
     public int SectorSize { get; set; }
+    public int SubcodeSize { get; set; }
+
+    /// <summary>
+    /// Number of source payload frames represented by this track.  CHGD
+    /// FRAMES includes the inter-track padding recorded separately in PAD.
+    /// </summary>
+    public long PayloadFrames => Math.Max(0, Frames - PadFrames);
 }
 
 public sealed class ChdContainerInfo
@@ -218,11 +230,15 @@ public static class ChdMetadata
                 }
 
                 parsed.Sort((a, b) => a.TrackNo.CompareTo(b.TrackNo));
+                // Standard CHT2/CHGD FRAMES are physical CHD frames.  In
+                // CHGD, FRAMES already includes PAD, so the next track's LBA
+                // is the cumulative frame count.  Pregap and postgap describe
+                // the track; adding them again here shifts every later track.
                 long cursor = 0;
                 for (int i = 0; i < parsed.Count; i++)
                 {
-                    parsed[i].StartFrame = cursor + Math.Max(0, parsed[i].PreGapFrames);
-                    cursor += Math.Max(0, parsed[i].PreGapFrames) + Math.Max(0, parsed[i].Frames) + Math.Max(0, parsed[i].PostGapFrames);
+                    parsed[i].StartFrame = cursor;
+                    cursor += Math.Max(0, parsed[i].Frames);
                 }
 
                 tracks = parsed;
@@ -440,6 +456,7 @@ public static class ChdMetadata
             long frames = TryGetLong(text, "FRAMES");
             long pregap = TryGetLong(text, "PREGAP");
             long postgap = TryGetLong(text, "POSTGAP");
+            long pad = TryGetLong(text, "PAD");
             string type = TryGetString(text, "TYPE");
             if (string.IsNullOrWhiteSpace(type))
             {
@@ -447,6 +464,13 @@ public static class ChdMetadata
                 if (!string.IsNullOrWhiteSpace(mode))
                     type = mode;
             }
+            string subtype = TryGetString(text, "SUBTYPE");
+            string pregapType = TryGetString(text, "PGTYPE");
+            string pregapSubtype = TryGetString(text, "PGSUB");
+            bool pregapDataStored = !string.IsNullOrEmpty(pregapType) &&
+                                    char.ToUpperInvariant(pregapType[0]) == 'V';
+            if (pregapDataStored)
+                pregapType = pregapType.Substring(1);
 
             int sector = ResolveSectorSize(type);
             if (sector <= 0)
@@ -456,10 +480,16 @@ public static class ChdMetadata
             {
                 TrackNo = trackNo,
                 TrackType = type ?? "",
+                TrackSubtype = subtype ?? "",
                 Frames = frames,
                 PreGapFrames = pregap,
+                PreGapTrackType = pregapType ?? "",
+                PreGapSubtype = pregapSubtype ?? "",
+                PreGapDataStored = pregapDataStored,
                 PostGapFrames = postgap,
-                SectorSize = sector
+                PadFrames = pad,
+                SectorSize = sector,
+                SubcodeSize = ResolveSubcodeSize(subtype)
             };
         }
         catch
@@ -473,15 +503,38 @@ public static class ChdMetadata
         if (string.IsNullOrWhiteSpace(trackType))
             return 2352;
         string t = trackType.Trim().ToUpperInvariant();
-        if (t.Contains("2048"))
-            return 2048;
-        if (t.Contains("AUDIO"))
-            return 2352;
-        if (t.Contains("2352"))
-            return 2352;
-        if (t.Contains("MODE1") || t.Contains("MODE2"))
-            return 2352;
-        return 2352;
+        switch (t)
+        {
+            case "MODE1":
+            case "MODE1/2048":
+                return 2048;
+            case "MODE1_RAW":
+            case "MODE1/2352":
+            case "MODE2_RAW":
+            case "MODE2/2352":
+            case "AUDIO":
+                return 2352;
+            case "MODE2":
+            case "MODE2/2336":
+            case "MODE2_FORM_MIX":
+                return 2336;
+            case "MODE2_FORM1":
+            case "MODE2/2048":
+                return 2048;
+            case "MODE2_FORM2":
+            case "MODE2/2324":
+                return 2324;
+            default:
+                return 2352;
+        }
+    }
+
+    private static int ResolveSubcodeSize(string subtype)
+    {
+        if (string.IsNullOrWhiteSpace(subtype))
+            return 0;
+        string value = subtype.Trim().ToUpperInvariant();
+        return value == "RW" || value == "RW_RAW" ? 96 : 0;
     }
 
     private static int TryGetInt(string text, string key)

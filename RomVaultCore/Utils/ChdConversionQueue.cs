@@ -134,7 +134,19 @@ public static class ChdConversionQueue
         if (!ChdReconstructionManifest.TryRead(path, out ChdReconstructionManifest manifest, out string manifestError))
         {
             job.Status = "blocked";
-            job.LastError = "Authenticated reconstruction manifest required: " + manifestError;
+            job.LastError = "Integrity-checked reconstruction manifest required: " + manifestError;
+            return job;
+        }
+        if (manifest.Schema != ChdReconstructionManifest.CurrentSchema)
+        {
+            job.Status = "blocked";
+            job.LastError = "This CHD has legacy reconstruction metadata. Repair it through DAT-aware fixing to migrate identity safely before standalone conversion.";
+            return job;
+        }
+        if (!ChdReconstructionManifest.HasCompleteOpticalIdentity(manifest, out string descriptorError))
+        {
+            job.Status = "blocked";
+            job.LastError = descriptorError + " Repair this CHD through DAT-aware fixing before queue conversion.";
             return job;
         }
         job.Family = manifest.Family ?? "";
@@ -284,7 +296,12 @@ internal static class ChdStandaloneConverter
         if (!File.Exists(path)) { report = "CHD was not found."; return 2; }
         if (!ChdReconstructionManifest.TryRead(path, out ChdReconstructionManifest manifest, out string manifestError) ||
             manifest.Schema != ChdReconstructionManifest.CurrentSchema)
-        { report = "Authenticated current reconstruction manifest required: " + manifestError; return 2; }
+        { report = "Integrity-checked current reconstruction manifest required: " + manifestError; return 2; }
+        if (!ChdReconstructionManifest.HasCompleteOpticalIdentity(manifest, out string descriptorError))
+        { report = descriptorError + " Repair this CHD through DAT-aware fixing before standalone conversion."; return 2; }
+        byte[] canonicalManifest;
+        try { canonicalManifest = manifest.Serialize(); }
+        catch (Exception ex) { report = "Reconstruction identity is not canonical: " + ex.Message; return 2; }
         if (!ChdEncodingProfile.TryDescribeExisting(path, false, target, out ChdEncodingProfileSpec profile, out ChdContainerInfo before, out string describeError))
         { report = describeError; return 2; }
         ChdEncodingProfile.ApplyDialect(profile, manifest.Dialect);
@@ -300,6 +317,9 @@ internal static class ChdStandaloneConverter
         if (!ChdEncodingProfile.NeedsRecompression(path, profile, before, identity, out string reason))
         { report = "CHD already matches " + profile.Storage + " v1."; return 0; }
         if (before.RequiresParent) { report = "Parented CHDs must be materialized before standalone conversion."; return 2; }
+        if (!ChdBoundPayloadValidator.TryCaptureOpticalLayout(path, manifest,
+                out ChdOpticalLayoutSnapshot expectedOpticalLayout, out string layoutSnapshotError))
+        { report = layoutSnapshotError; return 2; }
 
         string full = Path.GetFullPath(path);
         long sourceLength;
@@ -312,12 +332,41 @@ internal static class ChdStandaloneConverter
             return 5;
         }
         string directory = Path.GetDirectoryName(full) ?? Environment.CurrentDirectory;
-        string token = Guid.NewGuid().ToString("N");
-        string stage = full + ".__queue-stage." + token + ".chd";
-        string final = full + ".__queue-final." + token + ".chd";
-        string backup = full + ".__queue-backup." + token + ".chd";
-        string metadata = full + ".__queue-manifest." + token + ".bin";
-        string raw = full + ".__queue-raw." + token + ".img";
+        if (!ChdArtifactPaths.TryAllocate(full, out ChdArtifactPathSet artifacts, out string artifactError,
+                ChdArtifactKind.Stage, ChdArtifactKind.Final, ChdArtifactKind.Backup,
+                ChdArtifactKind.Manifest, ChdArtifactKind.Raw))
+        {
+            report = artifactError;
+            return 5;
+        }
+        string stage = artifacts[ChdArtifactKind.Stage];
+        string final = artifacts[ChdArtifactKind.Final];
+        string backup = artifacts[ChdArtifactKind.Backup];
+        string metadata = artifacts[ChdArtifactKind.Manifest];
+        string raw = artifacts[ChdArtifactKind.Raw];
+        if (!ChdmanService.TryValidateExternalPaths(out string pathError, tool, directory, full, stage, final, metadata, raw))
+        {
+            report = pathError;
+            return 5;
+        }
+        bool backupCreated = false;
+        bool installedDestination = false;
+        bool destinationVerified = false;
+        bool recoveryNeeded = false;
+        bool preserveInterruptedArtifacts = false;
+        string journalId = null;
+        try
+        {
+            journalId = ChdUpgradeRecovery.Begin(full, full, stage, final, backup, metadata, raw);
+            ChdUpgradeRecovery.SetExpectedRvrm(journalId, canonicalManifest);
+            ChdFaultInjection.Check(ChdFaultPoint.JournalCreated);
+        }
+        catch (Exception ex)
+        {
+            try { ChdUpgradeRecovery.ReleaseOwnership(journalId); } catch { }
+            report = "Could not create the CHD conversion recovery journal: " + ex.Message;
+            return 5;
+        }
         try
         {
             int stageHunk = ChdEncodingProfile.GreatestCommonDivisor((int)before.HunkSize, profile.HunkSize);
@@ -334,47 +383,201 @@ internal static class ChdStandaloneConverter
             else
                 step = ChdmanService.Run(tool, $"copy -i {ChdmanService.Quote(full)} -o {ChdmanService.Quote(stage)} -c none -hs {stageHunk} -f", directory, 0);
             if (!step.Success) throw new InvalidDataException(step.Output);
+            ChdFaultInjection.Check(ChdFaultPoint.StageCreated);
 
-            manifest.ProfileId = ChdEncodingProfile.ProfileId;
-            manifest.ProfileRevision = profile.ProfileRevision;
-            manifest.WriterRevision = identity.Capabilities?.WriterRevision(profile.Family) ?? 0;
-            manifest.Storage = profile.Storage;
-            manifest.ChdmanVersion = identity.VersionText;
-            manifest.ChdmanBanner = identity.Banner;
-            manifest.ChdmanSha256 = identity.BinarySha256;
-            manifest.CapabilityFingerprint = identity.Capabilities?.Fingerprint ?? "";
-            File.WriteAllBytes(metadata, manifest.Serialize());
+            File.WriteAllBytes(metadata, canonicalManifest);
             step = ChdmanService.Run(tool, $"addmeta -i {ChdmanService.Quote(stage)} -t {ChdEncodingProfile.MetadataTag} -ix 0 -vt {ChdmanService.Quote(profile.ToMetadata(identity))} -nocs", directory, 30000);
             if (step.Success)
+                ChdFaultInjection.Check(ChdFaultPoint.ProfileMetadataWritten);
+            if (step.Success)
                 step = ChdmanService.Run(tool, $"addmeta -i {ChdmanService.Quote(stage)} -t {ChdReconstructionManifest.MetadataTag} -ix 0 -vf {ChdmanService.Quote(metadata)} -nocs", directory, 30000);
+            if (step.Success)
+                ChdFaultInjection.Check(ChdFaultPoint.ManifestMetadataWritten);
             if (step.Success)
                 step = ChdmanService.Run(tool, $"copy -i {ChdmanService.Quote(stage)} -o {ChdmanService.Quote(final)} -c {profile.Codecs} -hs {profile.HunkSize} -f", directory, 0);
             if (step.Success)
                 step = ChdmanService.Run(tool, $"verify -i {ChdmanService.Quote(final)}", directory, 0);
             if (!step.Success) throw new InvalidDataException(step.Output);
-            if (!ChdMetadata.TryReadContainerInfo(final, out ChdContainerInfo after, out string finalError)) throw new InvalidDataException(finalError);
+            if (!ValidateConvertedCandidate(final, profile, identity, manifest, out ChdContainerInfo after, out string finalError))
+                throw new InvalidDataException("Converted CHD validation failed: " + finalError);
             if (!Equal(before.RawSha1 ?? before.Sha1, after.RawSha1 ?? after.Sha1)) throw new InvalidDataException("Logical CHD SHA-1 changed during conversion.");
-            string embeddedError = "";
-            if (!ChdEncodingProfile.TryRead(final, out _) || !ChdReconstructionManifest.TryRead(final, out _, out embeddedError))
-                throw new InvalidDataException("Converted CHD metadata validation failed: " + embeddedError);
+            if (!ChdBoundPayloadValidator.TryValidate(final, tool, directory, manifest, expectedOpticalLayout, out string payloadError))
+                throw new InvalidDataException("Converted CHD RVRM payload validation failed before installation: " + payloadError);
+            ChdUpgradeRecovery.SetExpectedChdHashes(journalId, after.Sha1, after.RawSha1);
+            ChdFaultInjection.Check(ChdFaultPoint.FinalCreated);
 
-            try { File.Replace(final, full, backup, true); }
-            catch { File.Move(full, backup); try { File.Move(final, full); } catch { File.Move(backup, full); throw; } }
-            try { if (File.Exists(backup)) File.Delete(backup); } catch { }
+            try
+            {
+                File.Replace(final, full, backup, true);
+                backupCreated = true;
+                ChdFaultInjection.Check(ChdFaultPoint.BackupCreated);
+            }
+            catch (ChdInjectedCrashException) { throw; }
+            catch
+            {
+                File.Move(full, backup);
+                backupCreated = true;
+                ChdFaultInjection.Check(ChdFaultPoint.BackupCreated);
+                try { File.Move(final, full); }
+                catch
+                {
+                    File.Move(backup, full);
+                    backupCreated = false;
+                    throw;
+                }
+            }
+            installedDestination = true;
+            recoveryNeeded = true;
+            ChdUpgradeRecovery.MarkInstalled(journalId);
+            ChdFaultInjection.Check(ChdFaultPoint.DestinationInstalled);
+
+            step = ChdmanService.Run(tool, $"verify -i {ChdmanService.Quote(full)}", directory, 0);
+            ChdContainerInfo installed = null;
+            string installedError = "";
+            if (!step.Success)
+                throw new InvalidDataException(step.Output);
+            if (!ValidateConvertedCandidate(full, profile, identity, manifest, out installed, out installedError))
+                throw new InvalidDataException(installedError);
+            if (!Equal(before.RawSha1 ?? before.Sha1, installed?.RawSha1 ?? installed?.Sha1))
+                throw new InvalidDataException("Installed CHD logical SHA-1 changed during conversion.");
+            if (!ChdBoundPayloadValidator.TryValidate(full, tool, directory, manifest, expectedOpticalLayout, out string installedPayloadError))
+                throw new InvalidDataException("Installed CHD RVRM payload validation failed: " + installedPayloadError);
+            ChdUpgradeRecovery.MarkVerified(journalId);
+            destinationVerified = true;
+            ChdFaultInjection.Check(ChdFaultPoint.DestinationVerified);
+
+            bool cleanupComplete = TryCleanupArtifacts(stage, final, metadata, raw, backup);
+            backupCreated = File.Exists(backup);
+            recoveryNeeded = !cleanupComplete;
+            preserveInterruptedArtifacts = !cleanupComplete;
             changed = true;
-            report = "Converted CHD to " + profile.Storage + " v1; reason=" + reason + "; path=" + ChdDiagnosticFormatter.RedactPath(full);
+            report = "Converted CHD to " + profile.Storage + " v1; reason=" + reason + "; path=" + ChdDiagnosticFormatter.RedactPath(full) +
+                     (cleanupComplete ? "" : "; temporary cleanup deferred to recovery");
             return 0;
         }
         catch (Exception ex)
         {
-            if (!File.Exists(full) && File.Exists(backup)) { try { File.Move(backup, full); } catch { } }
+            if (destinationVerified || ex is ChdInjectedCrashException)
+            {
+                preserveInterruptedArtifacts = true;
+                recoveryNeeded = true;
+            }
+            else if (backupCreated && File.Exists(backup))
+            {
+                TryRollback(journalId, tool);
+                backupCreated = File.Exists(backup);
+                recoveryNeeded = true;
+                preserveInterruptedArtifacts = true;
+            }
+            else if (installedDestination)
+            {
+                recoveryNeeded = true;
+            }
             report = "CHD conversion failed: " + ex.Message;
             return 5;
         }
         finally
         {
-            foreach (string item in new[] { stage, final, metadata, raw }) try { if (File.Exists(item)) File.Delete(item); } catch { }
+            if (!preserveInterruptedArtifacts)
+            {
+                bool cleanupComplete = backupCreated
+                    ? TryCleanupArtifacts(stage, final, metadata, raw)
+                    : TryCleanupArtifacts(stage, final, metadata, raw, backup);
+                if (!cleanupComplete)
+                    recoveryNeeded = true;
+                if (!recoveryNeeded)
+                {
+                    try { ChdUpgradeRecovery.Complete(journalId); }
+                    catch { recoveryNeeded = true; }
+                }
+            }
+            try { ChdUpgradeRecovery.ReleaseOwnership(journalId); } catch { }
         }
+    }
+
+    private static bool TryRollback(string journalId, string executable)
+    {
+        try { return ChdUpgradeRecovery.TryCheckpointRollback(journalId, executable, out _); }
+        catch { return false; }
+    }
+
+    private static bool ValidateConvertedCandidate(
+        string path,
+        ChdEncodingProfileSpec expected,
+        ChdmanIdentity identity,
+        ChdReconstructionManifest expectedManifest,
+        out ChdContainerInfo container,
+        out string error)
+    {
+        container = null;
+        error = "";
+        int expectedWriterRevision = identity?.Capabilities?.WriterRevision(expected?.Family) ?? 0;
+        if (expected == null || !ChdEncodingProfile.TryRead(path, out ChdEncodingProfile profile))
+        {
+            error = "The requested RVEP encoder profile is missing or invalid.";
+            return false;
+        }
+        if (!string.Equals(profile.Profile, ChdEncodingProfile.ProfileId, StringComparison.Ordinal) ||
+            profile.Schema != ChdEncodingProfile.CurrentProfileSchema ||
+            profile.ProfileRevision != expected.ProfileRevision ||
+            profile.WriterRevision != expectedWriterRevision ||
+            !string.Equals(profile.Storage, expected.Storage, StringComparison.Ordinal) ||
+            !string.Equals(profile.Family, expected.Family, StringComparison.Ordinal) ||
+            !ChdEncodingProfile.IsSha256(identity?.BinarySha256) ||
+            !string.Equals(profile.ToolSha256 ?? "", identity?.BinarySha256 ?? "", StringComparison.OrdinalIgnoreCase))
+        {
+            error = "RVEP does not identify the requested storage profile, media family, writer revision, and tool.";
+            return false;
+        }
+        if (!ChdMetadata.TryReadContainerInfo(path, out container, out string containerError) ||
+            container.RequiresParent ||
+            container.HunkSize != expected.HunkSize ||
+            (expected.UnitSize > 0 && container.UnitSize != expected.UnitSize) ||
+            !string.Equals(NormalizeCodecs(container?.Codecs), NormalizeCodecs(expected.Codecs), StringComparison.OrdinalIgnoreCase))
+        {
+            error = "Native CHD storage facts do not match the requested profile: " + containerError;
+            return false;
+        }
+        if (expected.Family == "hdd" && !ChdHddGeometry.Matches(path, expected))
+        {
+            error = "Native hard-disk geometry does not match the requested profile.";
+            return false;
+        }
+        if (!ChdReconstructionManifest.TryRead(path, out ChdReconstructionManifest manifest, out string manifestError) ||
+            manifest.Schema != ChdReconstructionManifest.CurrentSchema ||
+            !string.Equals(manifest.Family, expected.Family, StringComparison.Ordinal) ||
+            !ChdReconstructionManifest.HasCompleteOpticalIdentity(manifest, out manifestError))
+        {
+            error = "RVRM is missing, invalid, or inconsistent with the requested media family: " + manifestError;
+            return false;
+        }
+        if (!RvrmWireFormat.CanonicallyEquals(expectedManifest, manifest, out string identityError))
+        {
+            error = "RVRM reconstruction identity changed during conversion: " + identityError;
+            return false;
+        }
+        return true;
+    }
+
+    private static string NormalizeCodecs(IEnumerable<string> codecs)
+    {
+        return string.Join(",", codecs ?? Array.Empty<string>()).Replace(" ", "");
+    }
+
+    private static string NormalizeCodecs(string codecs)
+    {
+        return (codecs ?? "").Replace(" ", "");
+    }
+
+    private static bool TryCleanupArtifacts(params string[] paths)
+    {
+        bool cleaned = true;
+        for (int i = 0; paths != null && i < paths.Length; i++)
+        {
+            try { if (File.Exists(paths[i])) File.Delete(paths[i]); } catch { }
+            cleaned &= string.IsNullOrWhiteSpace(paths[i]) || !File.Exists(paths[i]);
+        }
+        return cleaned;
     }
 
     private static bool Equal(byte[] left, byte[] right)

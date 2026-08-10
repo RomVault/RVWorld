@@ -10,16 +10,15 @@ internal static class ChdOpticalReconstruction
     /// <summary>
     /// Recreates a single-file cdrdao TOC payload from canonical 2448-byte CHD
     /// frames.  This preserves interleaved RW/RW_RAW subchannel bytes that CUE
-    /// output cannot describe.  The authenticated manifest SHA-256 is the
+    /// output cannot describe.  The integrity-checked manifest SHA-256 is the
     /// acceptance boundary.
     /// </summary>
     public static bool TryMaterializeSingleTocPayload(string chdPath, ChdReconstructionManifest manifest, string outputPath, out string error)
     {
         error = "";
-        if (manifest == null || !string.Equals(manifest.Dialect, "toc-exact", StringComparison.OrdinalIgnoreCase) ||
-            !string.Equals(Path.GetExtension(manifest.DescriptorName ?? ""), ".toc", StringComparison.OrdinalIgnoreCase))
+        if (manifest == null || !string.Equals(manifest.Dialect, "toc-exact", StringComparison.OrdinalIgnoreCase))
         {
-            error = "The CHD does not contain an authenticated TOC representation.";
+            error = "The CHD does not contain an integrity-checked TOC payload representation.";
             return false;
         }
         if (manifest.Tracks == null || manifest.Tracks.Count != 1)
@@ -42,7 +41,7 @@ internal static class ChdOpticalReconstruction
             using (SHA256 sha256 = SHA256.Create())
             {
                 if (logical.Length < track.Size)
-                    throw new InvalidDataException("CHD logical stream is shorter than the authenticated TOC payload.");
+                    throw new InvalidDataException("CHD logical stream is shorter than the integrity-checked TOC payload.");
                 byte[] buffer = new byte[1024 * 1024];
                 long remaining = track.Size;
                 while (remaining > 0)

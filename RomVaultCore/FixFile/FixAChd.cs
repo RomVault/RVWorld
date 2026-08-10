@@ -46,6 +46,30 @@ public static class FixAChd
 
         if (chdDir.GotStatus == GotStatus.Got)
         {
+            if (IsConsumedSourceChd(chdDir))
+            {
+                string sourcePath = chdDir.FullNameCase;
+                if (string.IsNullOrWhiteSpace(sourcePath) || !System.IO.File.Exists(sourcePath))
+                    sourcePath = chdDir.FullName;
+                if (ChdParentResolver.WouldOrphanExistingDependents(sourcePath))
+                {
+                    chdDir.ChdStatus = "Retained temporarily because a parented CHD still depends on this source.";
+                    return ReturnCode.Good;
+                }
+                try
+                {
+                    if (System.IO.File.Exists(sourcePath))
+                        System.IO.File.Delete(sourcePath);
+                }
+                catch (Exception ex)
+                {
+                    errorMessage = "Could not remove the consumed source CHD from ToSort: " + ex.Message;
+                    return ReturnCode.FileSystemError;
+                }
+                FixFileUtils.CheckDeleteFile(chdDir);
+                return ReturnCode.Good;
+            }
+
             ReturnCode recompressRc = FixFileUtils.RecompressCurrentChdIfNeeded(chdDir, out bool changed, out string recompressError);
             if (recompressRc != ReturnCode.Good)
             {
@@ -66,6 +90,12 @@ public static class FixAChd
             if (string.Equals(errorMessage, "__SKIP_NO_SOURCES__", StringComparison.Ordinal) ||
                 string.Equals(errorMessage, "__SKIP_PARTIAL_SET__", StringComparison.Ordinal))
             {
+                if (IsAdvertisedAsFixable(chdDir))
+                {
+                    errorMessage = "The CHD is marked fixable, but no complete usable disc source was found. " +
+                                   "If the source is a parented CHD, scan its matching parent first and run Find Fixes again.";
+                    return ReturnCode.FileSystemError;
+                }
                 errorMessage = "";
                 return ReturnCode.Good; // silently skip: only build CHD if we have all required disc files
             }
@@ -120,6 +150,11 @@ public static class FixAChd
             if (string.Equals(chdError, "__SKIP_NO_SOURCES__", StringComparison.Ordinal) ||
                 string.Equals(chdError, "__SKIP_PARTIAL_SET__", StringComparison.Ordinal))
             {
+                if (IsAdvertisedAsFixable(chdDir))
+                {
+                    errorMessage = "The CHD is marked fixable, but its available sources do not form a complete usable disc.";
+                    return ReturnCode.FileSystemError;
+                }
                 errorMessage = "";
                 return ReturnCode.Good;
             }
@@ -169,6 +204,43 @@ public static class FixAChd
         }
         totalFixed++;
         return ReturnCode.Good;
+    }
+
+    private static bool IsConsumedSourceChd(RvFile chd)
+    {
+        if (chd == null || chd.FileType != FileType.CHD ||
+            (chd.DatStatus != DatStatus.InToSort && chd.DatStatus != DatStatus.NotInDat))
+            return false;
+        bool hasMember = false;
+        for (int i = 0; i < chd.ChildCount; i++)
+        {
+            RvFile member = chd.Child(i);
+            if (member?.FileType != FileType.FileCHD)
+                continue;
+            hasMember = true;
+            if (member.RepStatus != RepStatus.Delete)
+                return false;
+        }
+        return hasMember;
+    }
+
+    private static bool IsAdvertisedAsFixable(RvFile chd)
+    {
+        if (chd == null)
+            return false;
+        if (chd.RepStatus == RepStatus.CanBeFixed ||
+            chd.RepStatus == RepStatus.CanBeFixedMIA ||
+            chd.RepStatus == RepStatus.CorruptCanBeFixed)
+            return true;
+        for (int i = 0; i < chd.ChildCount; i++)
+        {
+            RepStatus status = chd.Child(i)?.RepStatus ?? RepStatus.Unknown;
+            if (status == RepStatus.CanBeFixed ||
+                status == RepStatus.CanBeFixedMIA ||
+                status == RepStatus.CorruptCanBeFixed)
+                return true;
+        }
+        return false;
     }
 
     /// <summary>
@@ -373,6 +445,12 @@ public static class FixAChd
     /// </remarks>
     private static RvFile FindBestDiscSource(RvFile chdDir)
     {
+        // Source filtering may need to resolve a parented CHD. Populate the
+        // collection-wide index before candidates are evaluated so Fix ROMs
+        // also works after a restart, without relying on a prior scan to have
+        // warmed the resolver.
+        FixFileUtils.EnsureChdParentCandidatesRegistered();
+
         RvFile best = null;
         int bestPriority = 0;
         bool requireGdi = false;
@@ -389,6 +467,8 @@ public static class FixAChd
 
         List<RvFile> toSortSearchRoots = GetToSortSearchRoots(chdDir);
         RvFile toSortDisc = FindDiscSourceInDirs(chdDir, toSortSearchRoots);
+        if (toSortDisc != null && !IsUsableDiscSourceNode(toSortDisc))
+            toSortDisc = null;
         if (toSortDisc != null && !MatchesEncodedMediaRoot(toSortDisc, chdDir?.Name, encodedRoot))
             toSortDisc = null;
         if (toSortDisc != null)
@@ -406,6 +486,8 @@ public static class FixAChd
         // Migration assist: when sidecar folder layout is enabled, existing CHDs may still sit one level up
         // (e.g. "<category>/<set>.chd" while expected is "<category>/<set>/<set>.chd").
         RvFile siblingDisc = FindSiblingDiscSource(chdDir);
+        if (siblingDisc != null && !IsUsableDiscSourceNode(siblingDisc))
+            siblingDisc = null;
         if (siblingDisc != null && !MatchesEncodedMediaRoot(siblingDisc, chdDir?.Name, encodedRoot))
             siblingDisc = null;
         if (siblingDisc != null)
@@ -424,12 +506,14 @@ public static class FixAChd
         {
             for (int i = 0; i < chdDir.FileGroup.Files.Count; i++)
             {
-                RvFile src = chdDir.FileGroup.Files[i];
+                RvFile matched = chdDir.FileGroup.Files[i];
+                bool promoted = IsChdMemberSource(matched);
+                RvFile src = PromoteChdMemberSource(matched);
                 if (src == null || !IsUsableDiscSourceNode(src))
                     continue;
                 if (src.GotStatus != GotStatus.Got)
                     continue;
-                if (!MatchesEncodedMediaRoot(src, chdDir?.Name, encodedRoot))
+                if (!promoted && !MatchesEncodedMediaRoot(src, chdDir?.Name, encodedRoot))
                     continue;
                 if (requireGdi)
                 {
@@ -455,16 +539,18 @@ public static class FixAChd
                 continue;
 
             int pr = SourcePriority(expected.Name);
-            if (pr == 0)
-                continue;
 
             List<RvFile> sources = FindSourceFile.GetFixFileList(expected);
             for (int j = 0; j < sources.Count; j++)
             {
-                RvFile src = sources[j];
+                RvFile matched = sources[j];
+                bool promoted = IsChdMemberSource(matched);
+                RvFile src = PromoteChdMemberSource(matched);
                 if (src == null || !IsUsableDiscSourceNode(src))
                     continue;
-                if (!MatchesEncodedMediaRoot(src, chdDir?.Name, encodedRoot))
+                if (src.GotStatus != GotStatus.Got)
+                    continue;
+                if (!promoted && !MatchesEncodedMediaRoot(src, chdDir?.Name, encodedRoot))
                     continue;
                 if (requireGdi)
                 {
@@ -472,17 +558,21 @@ public static class FixAChd
                     if (ext != ".gdi" && ext != ".chd")
                         continue;
                 }
-                if (!string.Equals(System.IO.Path.GetExtension(src.Name), System.IO.Path.GetExtension(expected.Name), StringComparison.OrdinalIgnoreCase))
+                if (src.FileType != FileType.CHD &&
+                    !string.Equals(System.IO.Path.GetExtension(src.Name), System.IO.Path.GetExtension(expected.Name), StringComparison.OrdinalIgnoreCase))
                     continue;
 
-                if (pr > bestPriority)
+                int candidatePriority = promoted ? SourcePriority(src.Name) : pr;
+                if (candidatePriority == 0)
+                    continue;
+                if (candidatePriority > bestPriority)
                 {
-                    bestPriority = pr;
+                    bestPriority = candidatePriority;
                     best = src;
                 }
             }
 
-            if (bestPriority < pr)
+            if (pr > 0 && bestPriority < pr)
             {
                 RvFile toSortMatch = FindFileByNameInDirs(toSortSearchRoots, expected.Name);
                 if (toSortMatch != null)
@@ -501,8 +591,29 @@ public static class FixAChd
         if (src == null)
             return false;
         if (src.FileType == FileType.CHD)
-            return true;
+        {
+            string path = src.FullNameCase;
+            if (string.IsNullOrWhiteSpace(path) || !System.IO.File.Exists(path))
+                path = src.FullName;
+            if (string.IsNullOrWhiteSpace(path) || !System.IO.File.Exists(path))
+                return false;
+            if (!ChdParentResolver.TryRegister(path, out var info, out _))
+                return false;
+            return !info.RequiresParent || ChdParentResolver.TryResolveParent(path, out _, out _);
+        }
         return src.IsFile && (src.FileType == FileType.File || src.FileType == FileType.FileZip || src.FileType == FileType.FileSevenZip);
+    }
+
+    private static bool IsChdMemberSource(RvFile source)
+    {
+        return source?.FileType == FileType.FileCHD && source.Parent?.FileType == FileType.CHD;
+    }
+
+    private static RvFile PromoteChdMemberSource(RvFile source)
+    {
+        if (IsChdMemberSource(source))
+            return source.Parent;
+        return source;
     }
 
     private static RvFile FindSiblingDiscSource(RvFile chdDir)

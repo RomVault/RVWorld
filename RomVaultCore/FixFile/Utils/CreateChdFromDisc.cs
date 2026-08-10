@@ -19,12 +19,14 @@ namespace RomVaultCore.FixFile.Utils
 {
     public static partial class FixFileUtils
     {
+        private static int _chdParentIndexGeneration = int.MinValue;
+
         /// <summary>
         /// Attempts to satisfy an expected CHD container from a disc source.
         /// </summary>
         /// <remarks>
         /// This supports multiple pathways:
-        /// - CHD source: if the CHD's member track hashes match the destination set ("track parity"), the CHD can be moved/renamed directly.
+        /// - CHD source: if the CHD's member track hashes match the destination set ("track parity"), it is upgraded or verified as self-contained before it can be moved/renamed.
         /// - CUE/GDI/ISO source: invoke <c>chdman createcd/createdvd</c> to create the output CHD.
         /// - Track-only audio source: a separate helper may synthesize a minimal CUE and create an audio CHD.
         ///
@@ -78,6 +80,7 @@ namespace RomVaultCore.FixFile.Utils
 
                 List<string> chdTempPathsToDelete = new List<string>();
                 string sourcePathChd = null;
+                bool materializedParentedSource = false;
                 if (sourceFile.FileType == FileType.File || sourceFile.FileType == FileType.CHD)
                 {
                     sourcePathChd = ResolveExistingFilePath(sourceFile.FullNameCase);
@@ -108,6 +111,17 @@ namespace RomVaultCore.FixFile.Utils
                         return true;
                     }
                     sourcePathChd = extracted;
+                }
+
+                string originalSourcePathChd = sourcePathChd;
+
+                if (!TryPrepareParentedChdSource(sourcePathChd, chdTempPathsToDelete,
+                        out sourcePathChd, out materializedParentedSource, out string parentPreparationError))
+                {
+                    CleanupTempPaths(chdTempPathsToDelete);
+                    returnCode = ReturnCode.SourceCheckSumMismatch;
+                    errorMessage = parentPreparationError;
+                    return true;
                 }
 
                 ReturnCode hashRc = ReadChdInternalHashes(sourcePathChd, false, out uint? chdVersion, out byte[] srcSha1, out byte[] srcMd5, out string hashError);
@@ -164,7 +178,7 @@ namespace RomVaultCore.FixFile.Utils
                         if (Settings.rvSettings.ChdKeepCueGdi &&
                             (sourceFile.FileType == FileType.File || sourceFile.FileType == FileType.CHD))
                         {
-                            MoveChdSidecarDescriptors(sourcePathChd, destinationPathChd);
+                            CopyChdSidecarDescriptors(originalSourcePathChd, destinationPathChd);
                             MarkSidecarDescriptorChildrenGot(destinationFile, destinationPathChd);
                         }
 
@@ -206,7 +220,8 @@ namespace RomVaultCore.FixFile.Utils
                     return true;
                 }
 
-                if (sourceFile.FileType == FileType.FileZip || sourceFile.FileType == FileType.FileSevenZip)
+                if (!materializedParentedSource &&
+                    (sourceFile.FileType == FileType.FileZip || sourceFile.FileType == FileType.FileSevenZip))
                 {
                     CleanupTempPaths(chdTempPathsToDelete);
 
@@ -229,17 +244,79 @@ namespace RomVaultCore.FixFile.Utils
                         return true;
                     }
 
-                    usedFiles.Add(sourceFile);
+                    if (sourceFile.FileType != FileType.CHD)
+                        usedFiles.Add(sourceFile);
                     return true;
                 }
 
-                CleanupTempPaths(chdTempPathsToDelete);
+                if (!materializedParentedSource)
+                    CleanupTempPaths(chdTempPathsToDelete);
 
                 ReturnCode sourceVerifyRc = VerifyAndMergeCreatedChd(sourcePathChd, destinationFile, "", out string sourceVerifyError, mergeResults: false);
                 if (sourceVerifyRc != ReturnCode.Good)
                 {
+                    CleanupTempPaths(chdTempPathsToDelete);
                     returnCode = sourceVerifyRc;
                     errorMessage = sourceVerifyError;
+                    return true;
+                }
+
+                if (materializedParentedSource)
+                {
+                    Report.ReportProgress(new bgwShowFix(Path.GetDirectoryName(destinationPathChd), "", Path.GetFileName(destinationPathChd), sourceFile.Size,
+                        "<--Materialize (Parented CHD)", Path.GetDirectoryName(sourceFile.FullNameCase), "", sourceFile.Name));
+                    if (!TryInstallChdCopy(sourcePathChd, destinationPathChd, out string installError))
+                    {
+                        CleanupTempPaths(chdTempPathsToDelete);
+                        returnCode = ReturnCode.FileSystemError;
+                        errorMessage = "Could not install the standalone CHD materialized from the parented source: " + installError;
+                        return true;
+                    }
+
+                    ReturnCode materializedVerifyRc = VerifyAndMergeCreatedChd(destinationPathChd, destinationFile, "", out string materializedVerifyError);
+                    if (materializedVerifyRc != ReturnCode.Good)
+                    {
+                        CleanupFailedChd(destinationPathChd);
+                        CleanupTempPaths(chdTempPathsToDelete);
+                        returnCode = materializedVerifyRc;
+                        errorMessage = materializedVerifyError;
+                        return true;
+                    }
+                    if (Settings.rvSettings.ChdKeepCueGdi)
+                    {
+                        CopyChdSidecarDescriptors(originalSourcePathChd, destinationPathChd);
+                        MarkSidecarDescriptorChildrenGot(destinationFile, destinationPathChd);
+                    }
+                    CleanupTempPaths(chdTempPathsToDelete);
+                    usedFiles.Add(sourceFile);
+                    return true;
+                }
+
+                if (sourceFile.FileType == FileType.CHD)
+                {
+                    Report.ReportProgress(new bgwShowFix(Path.GetDirectoryName(destinationPathChd), "", Path.GetFileName(destinationPathChd), sourceFile.Size,
+                        "<--Copy (CHD Internal Hash)", Path.GetDirectoryName(sourcePathChd), "", Path.GetFileName(sourcePathChd)));
+                    if (!TryInstallChdCopy(sourcePathChd, destinationPathChd, out string copyError))
+                    {
+                        returnCode = ReturnCode.FileSystemError;
+                        errorMessage = "Could not copy the source CHD to its destination: " + copyError;
+                        return true;
+                    }
+
+                    ReturnCode copiedVerifyRc = VerifyAndMergeCreatedChd(destinationPathChd, destinationFile, "", out string copiedVerifyError);
+                    if (copiedVerifyRc != ReturnCode.Good)
+                    {
+                        CleanupFailedChd(destinationPathChd);
+                        returnCode = copiedVerifyRc;
+                        errorMessage = copiedVerifyError;
+                        return true;
+                    }
+                    if (Settings.rvSettings.ChdKeepCueGdi)
+                    {
+                        CopyChdSidecarDescriptors(originalSourcePathChd, destinationPathChd);
+                        MarkSidecarDescriptorChildrenGot(destinationFile, destinationPathChd);
+                    }
+                    usedFiles.Add(sourceFile);
                     return true;
                 }
 
@@ -261,7 +338,11 @@ namespace RomVaultCore.FixFile.Utils
                         MoveChdSidecarDescriptors(sourcePathChd, destinationPathChd);
                         MarkSidecarDescriptorChildrenGot(destinationFile, destinationPathChd);
                     }
-                    usedFiles.Add(sourceFile);
+                    // MoveFile already detached a physical CHD owner from the
+                    // DB. Its verified destination members are now the live
+                    // group entries, so do not queue the detached owner again.
+                    if (sourceFile.FileType != FileType.CHD)
+                        usedFiles.Add(sourceFile);
                     return true;
                 }
 
@@ -287,11 +368,49 @@ namespace RomVaultCore.FixFile.Utils
                     {
                     }
 
+                    if (!System.IO.File.Exists(destinationPathChd) && rule.ConvertWhileFixing)
+                    {
+                        ReturnCode recompressRc = RecompressChdIfNeeded(sourcePathChd, destinationPathChd, destinationFile, rule,
+                            out bool recompressed, out string recompressError);
+                        if (recompressRc != ReturnCode.Good)
+                        {
+                            returnCode = recompressRc;
+                            errorMessage = recompressError;
+                            return true;
+                        }
+                        if (recompressed)
+                        {
+                            if (Settings.rvSettings.ChdKeepCueGdi)
+                            {
+                                MoveChdSidecarDescriptors(sourcePathChd, destinationPathChd);
+                                MarkSidecarDescriptorChildrenGot(destinationFile, destinationPathChd);
+                            }
+                            usedFiles.Add(sourceFile);
+                            return true;
+                        }
+                    }
+
+                    ReturnCode sourceVerifyRc = VerifyAndMergeCreatedChd(sourcePathChd, destinationFile, "",
+                        out string sourceVerifyError, mergeResults: false);
+                    if (sourceVerifyRc != ReturnCode.Good)
+                    {
+                        returnCode = sourceVerifyRc;
+                        errorMessage = sourceVerifyError;
+                        return true;
+                    }
+
                     Report.ReportProgress(new bgwShowFix(Path.GetDirectoryName(destinationPathChd), "", Path.GetFileName(destinationPathChd), sourceFile.Size, "<--Move (Track Parity)", Path.GetDirectoryName(sourcePathChd), "", Path.GetFileName(sourcePathChd)));
 
                     returnCode = MoveFile(sourceFile, destinationFile, destinationPathChd, out bool moved, out errorMessage, forceMove: true, skipDatValidation: true);
                     if (returnCode == ReturnCode.Good && moved)
                     {
+                        ReturnCode verifyRc = VerifyAndMergeCreatedChd(destinationPathChd, destinationFile, "", out string verifyError);
+                        if (verifyRc != ReturnCode.Good)
+                        {
+                            returnCode = verifyRc;
+                            errorMessage = verifyError;
+                            return true;
+                        }
                         ApplyChdMemberParity(sourceFile, destinationFile);
                         if (Settings.rvSettings.ChdKeepCueGdi)
                         {
@@ -530,7 +649,7 @@ namespace RomVaultCore.FixFile.Utils
                         }
                     }
 
-                    // SBI corrections are authenticated auxiliary reconstruction
+                    // SBI corrections are integrity-checked auxiliary reconstruction
                     // inputs rather than descriptor references.  Consume the
                     // same-stem source after it has been embedded in RVRM.
                     if (ext == ".cue" || ext == ".toc")
@@ -1206,6 +1325,34 @@ namespace RomVaultCore.FixFile.Utils
             }
         }
 
+        private static void CopyChdSidecarDescriptors(string sourceChdPath, string destinationChdPath)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(sourceChdPath) || string.IsNullOrWhiteSpace(destinationChdPath))
+                    return;
+                string srcDir = System.IO.Path.GetDirectoryName(sourceChdPath) ?? "";
+                string dstDir = System.IO.Path.GetDirectoryName(destinationChdPath) ?? "";
+                string srcBase = System.IO.Path.GetFileNameWithoutExtension(sourceChdPath) ?? "";
+                string dstBase = System.IO.Path.GetFileNameWithoutExtension(destinationChdPath) ?? srcBase;
+                if (string.IsNullOrWhiteSpace(srcDir) || string.IsNullOrWhiteSpace(dstDir) ||
+                    string.IsNullOrWhiteSpace(srcBase) || string.IsNullOrWhiteSpace(dstBase))
+                    return;
+
+                string[] extensions = { ".cue", ".gdi", ".toc" };
+                for (int i = 0; i < extensions.Length; i++)
+                {
+                    string source = System.IO.Path.Combine(srcDir, srcBase + extensions[i]);
+                    string destination = System.IO.Path.Combine(dstDir, dstBase + extensions[i]);
+                    if (System.IO.File.Exists(source) && !System.IO.File.Exists(destination))
+                        System.IO.File.Copy(source, destination, false);
+                }
+            }
+            catch
+            {
+            }
+        }
+
         /// <summary>
         /// Marks descriptor children (CUE/GDI/TOC) as collected when sidecar files exist on disk.
         /// </summary>
@@ -1833,8 +1980,12 @@ namespace RomVaultCore.FixFile.Utils
             string sourceDialect;
             try { sourceDialect = ChdDialect.DetectSource(inputPath, profile.Family); }
             catch { sourceDialect = ""; }
+            bool requiresUnicodeStaging;
+            try { requiresUnicodeStaging = ChdDialect.RequiresUnicodeStaging(inputPath); }
+            catch { requiresUnicodeStaging = false; }
+            string capabilityDialect = requiresUnicodeStaging ? "cue-unicode" : sourceDialect;
             ChdEncodingProfile.ApplyDialect(profile, sourceDialect);
-            string selectedTool = ChdToolchainRegistry.Select(profile.Family, storageProfile, sourceDialect, out string selectionError);
+            string selectedTool = ChdToolchainRegistry.Select(profile.Family, storageProfile, capabilityDialect, out string selectionError);
             if (!string.IsNullOrWhiteSpace(selectedTool))
                 chdmanExe = selectedTool;
             else if (!string.IsNullOrWhiteSpace(selectionError))
@@ -1877,9 +2028,9 @@ namespace RomVaultCore.FixFile.Utils
             {
                 try { Report.ReportProgress(new bgwText("CHD multi-view: same-stem ISO matches the single-track CUE payload exactly.")); } catch { }
             }
-            if (toolIdentity.Capabilities == null || !toolIdentity.Capabilities.CanWriteDialect(manifest.Dialect, storageProfile))
+            if (toolIdentity.Capabilities == null || !toolIdentity.Capabilities.CanWriteDialect(capabilityDialect, storageProfile))
             {
-                errorMessage = "This source uses the '" + manifest.Dialect + "' disc dialect, but the selected chdman did not pass RomVault's exact " + profile.Storage + " round-trip fixture for that dialect. Use a validated newer chdman or keep the source files unchanged.";
+                errorMessage = "This source uses the '" + capabilityDialect + "' input path, but the selected chdman did not pass RomVault's exact " + profile.Storage + " round-trip fixture for it. Use a validated newer chdman or keep the source files unchanged.";
                 return ReturnCode.DestinationCheckSumMismatch;
             }
             ulong logicalSize = 0;
@@ -1894,14 +2045,26 @@ namespace RomVaultCore.FixFile.Utils
                 return ReturnCode.FileSystemError;
             }
             try { Report.ReportProgress(new bgwText($"CHD preflight: temporary space {requiredBytes:N0} bytes; available {freeBytes:N0} bytes")); } catch { }
-            string stagePath = outputPath + ".__rvstage." + Guid.NewGuid().ToString("N") + ".chd";
-            string manifestPath = outputPath + ".__rvmanifest." + Guid.NewGuid().ToString("N") + ".bin";
+            if (!ChdArtifactPaths.TryAllocate(outputPath, out ChdArtifactPathSet artifacts, out string artifactError,
+                    ChdArtifactKind.Stage, ChdArtifactKind.Manifest))
+            {
+                errorMessage = artifactError;
+                return ReturnCode.FileSystemError;
+            }
+            string stagePath = artifacts[ChdArtifactKind.Stage];
+            string manifestPath = artifacts[ChdArtifactKind.Manifest];
             string encoderInputPath = inputPath;
             string descriptorStageRoot = "";
-            if (string.Equals(manifest.Dialect, "cue-unicode", StringComparison.OrdinalIgnoreCase) &&
+            if (requiresUnicodeStaging &&
                 !ChdDescriptorStager.TryStageCueWithAsciiNames(inputPath, workingDirectory, out encoderInputPath, out descriptorStageRoot, out string descriptorStageError))
             {
                 errorMessage = "Could not stage the Unicode CUE for this chdman build: " + descriptorStageError;
+                return ReturnCode.FileSystemError;
+            }
+            if (!ChdmanService.TryValidateExternalPaths(out string pathError, chdmanExe, workingDirectory, encoderInputPath, stagePath, manifestPath, outputPath))
+            {
+                ChdDescriptorStager.TryDelete(descriptorStageRoot);
+                errorMessage = pathError;
                 return ReturnCode.FileSystemError;
             }
             try
@@ -1936,7 +2099,7 @@ namespace RomVaultCore.FixFile.Utils
                 }
 
                 rc = RunChdman(chdmanExe, BuildCopyChdmanArguments(stagePath, outputPath, profile.Codecs, profile.HunkSize), workingDirectory, out output);
-                if (rc == ReturnCode.Good && !ValidateEmbeddedStandardMetadata(outputPath, profile, toolIdentity, out string metadataError))
+                if (rc == ReturnCode.Good && !ValidateEmbeddedStandardMetadata(outputPath, profile, toolIdentity, out string metadataError, manifest))
                 {
                     errorMessage = metadataError;
                     CleanupFailedChd(outputPath);
@@ -1956,10 +2119,20 @@ namespace RomVaultCore.FixFile.Utils
         private static ReturnCode CreateStandardizedLaserDiscChd(string inputPath, string outputPath, RvFile destinationFile, RomVaultCore.ChdStorageProfile storageProfile, string chdmanExe, string workingDirectory, ChdmanIdentity toolIdentity, out string errorMessage)
         {
             errorMessage = "";
-            string token = Guid.NewGuid().ToString("N");
-            string encodedPath = outputPath + ".__rvav." + token + ".chd";
-            string stagePath = outputPath + ".__rvstage." + token + ".chd";
-            string manifestPath = outputPath + ".__rvmanifest." + token + ".bin";
+            if (!ChdArtifactPaths.TryAllocate(outputPath, out ChdArtifactPathSet artifacts, out string artifactError,
+                    ChdArtifactKind.Encoded, ChdArtifactKind.Stage, ChdArtifactKind.Manifest))
+            {
+                errorMessage = artifactError;
+                return ReturnCode.FileSystemError;
+            }
+            string encodedPath = artifacts[ChdArtifactKind.Encoded];
+            string stagePath = artifacts[ChdArtifactKind.Stage];
+            string manifestPath = artifacts[ChdArtifactKind.Manifest];
+            if (!ChdmanService.TryValidateExternalPaths(out string pathError, chdmanExe, workingDirectory, inputPath, encodedPath, stagePath, manifestPath, outputPath))
+            {
+                errorMessage = pathError;
+                return ReturnCode.FileSystemError;
+            }
             try
             {
                 ReturnCode rc = RunChdman(chdmanExe,
@@ -2008,7 +2181,7 @@ namespace RomVaultCore.FixFile.Utils
                     errorMessage = output;
                     return rc;
                 }
-                if (!ValidateEmbeddedStandardMetadata(outputPath, profile, toolIdentity, out errorMessage))
+                if (!ValidateEmbeddedStandardMetadata(outputPath, profile, toolIdentity, out errorMessage, manifest))
                     return ReturnCode.DestinationCheckSumMismatch;
                 return ReturnCode.Good;
             }
@@ -2087,9 +2260,8 @@ namespace RomVaultCore.FixFile.Utils
             string chdmanExe = ChdToolchainRegistry.Select(profile.Family, rule.ChdStorageProfile, null, out _);
             if (string.IsNullOrWhiteSpace(chdmanExe) || !ChdmanService.TryGetIdentity(chdmanExe, ChdmanProbeLevel.Full, out ChdmanIdentity installed, out _))
             {
-                // Existing CHDs remain usable when no discovered encoder has
-                // passed this exact family/dialect profile.
-                return ReturnCode.Good;
+                errorMessage = $"The source CHD was left unchanged because no validated chdman is available to prove and write the exact {profile.Family.ToUpperInvariant()} {profile.Storage} reconstruction profile.";
+                return ReturnCode.FileSystemError;
             }
 
             if (installed.Capabilities == null || !installed.Capabilities.CanWriteProfile(profile.Family, rule.ChdStorageProfile))
@@ -2117,14 +2289,27 @@ namespace RomVaultCore.FixFile.Utils
         {
             changed = false;
             errorMessage = "";
+            sourcePath = System.IO.Path.GetFullPath(sourcePath);
             destinationPath = System.IO.Path.GetFullPath(destinationPath);
             string destinationDirectory = System.IO.Path.GetDirectoryName(destinationPath) ?? Environment.CurrentDirectory;
-            string token = Guid.NewGuid().ToString("N");
-            string stagePath = destinationPath + ".__rvstage." + token + ".chd";
-            string finalPath = destinationPath + ".__rvfinal." + token + ".chd";
-            string backupPath = destinationPath + ".__rvbackup." + token + ".chd";
-            string manifestPath = destinationPath + ".__rvmanifest." + token + ".bin";
-            string hddRawPath = destinationPath + ".__rvhdd." + token + ".img";
+            if (!ChdArtifactPaths.TryAllocate(destinationPath, out ChdArtifactPathSet artifacts, out string artifactError,
+                    ChdArtifactKind.Stage, ChdArtifactKind.Final, ChdArtifactKind.Backup,
+                    ChdArtifactKind.Manifest, ChdArtifactKind.Raw))
+            {
+                errorMessage = artifactError;
+                return ReturnCode.FileSystemError;
+            }
+            string stagePath = artifacts[ChdArtifactKind.Stage];
+            string finalPath = artifacts[ChdArtifactKind.Final];
+            string backupPath = artifacts[ChdArtifactKind.Backup];
+            string manifestPath = artifacts[ChdArtifactKind.Manifest];
+            string hddRawPath = artifacts[ChdArtifactKind.Raw];
+            if (!ChdmanService.TryValidateExternalPaths(out string pathError,
+                    chdmanExe, destinationDirectory, sourcePath, destinationPath, stagePath, finalPath, manifestPath, hddRawPath))
+            {
+                errorMessage = pathError;
+                return ReturnCode.FileSystemError;
+            }
             int stageHunk = ChdEncodingProfile.GreatestCommonDivisor((int)actual.HunkSize, profile.HunkSize);
             if (stageHunk < 16 || actual.UnitSize == 0 || stageHunk % actual.UnitSize != 0)
             {
@@ -2141,11 +2326,41 @@ namespace RomVaultCore.FixFile.Utils
             }
             try { Report.ReportProgress(new bgwText($"CHD upgrade preflight: temporary space {requiredBytes:N0} bytes; available {freeBytes:N0} bytes")); } catch { }
 
+            ChdReconstructionManifest previousManifest = null;
+            if (ChdMetadata.TryReadBinaryMetadata(sourcePath, ChdReconstructionManifest.MetadataTag, 0,
+                    out byte[] sourceRvrm, out string sourceRvrmReadError))
+            {
+                if (!ChdReconstructionManifest.TryDeserialize(sourceRvrm, out previousManifest, out string sourceRvrmParseError))
+                {
+                    errorMessage = "The source contains malformed or unsupported RVRM metadata and cannot be recompressed safely: " + sourceRvrmParseError;
+                    return ReturnCode.SourceCheckSumMismatch;
+                }
+            }
+            else if (!string.Equals(sourceRvrmReadError, "Metadata not found.", StringComparison.Ordinal))
+            {
+                errorMessage = "The source RVRM could not be inspected safely: " + sourceRvrmReadError;
+                return ReturnCode.SourceCheckSumMismatch;
+            }
+            bool preserveSourceIdentity = previousManifest != null;
+            if (preserveSourceIdentity)
+            {
+                try
+                {
+                    previousManifest.Serialize();
+                }
+                catch (Exception ex)
+                {
+                    errorMessage = "The source RVRM cannot be preserved safely: " + ex.Message;
+                    return ReturnCode.SourceCheckSumMismatch;
+                }
+            }
+
             bool installedDestination = false;
             bool backupCreated = false;
             bool recoveryNeeded = false;
             bool preserveInterruptedArtifacts = false;
-            string journalId;
+            bool destinationVerified = false;
+            string journalId = null;
             try
             {
                 journalId = ChdUpgradeRecovery.Begin(sourcePath, destinationPath, stagePath, finalPath, backupPath, manifestPath, hddRawPath);
@@ -2153,6 +2368,7 @@ namespace RomVaultCore.FixFile.Utils
             }
             catch (Exception ex)
             {
+                try { ChdUpgradeRecovery.ReleaseOwnership(journalId); } catch { }
                 errorMessage = "Could not create the CHD upgrade recovery journal: " + ex.Message;
                 return ReturnCode.FileSystemError;
             }
@@ -2193,14 +2409,25 @@ namespace RomVaultCore.FixFile.Utils
                 }
                 ChdFaultInjection.Check(ChdFaultPoint.ProfileMetadataWritten);
 
-                ChdReconstructionManifest.TryRead(sourcePath, out ChdReconstructionManifest previousManifest, out _);
-                ChdReconstructionManifest manifest = ChdReconstructionManifest.CreateFromDat(destinationFile, profile, installed, previousManifest);
-                if (!ChdManifestPayloadHasher.EnsureSha256(sourcePath, chdmanExe, destinationDirectory, manifest, out string sha256Error))
+                if (!ChdReconstructionManifest.TryCreateFromDat(sourcePath, destinationFile, profile, installed, previousManifest,
+                        out ChdReconstructionManifest manifest, out string reconstructionError))
                 {
-                    errorMessage = "Could not upgrade the reconstruction manifest to payload SHA-256: " + sha256Error;
+                    errorMessage = "Could not prove complete CHD reconstruction: " + reconstructionError;
                     return ReturnCode.SourceCheckSumMismatch;
                 }
-                System.IO.File.WriteAllBytes(manifestPath, manifest.Serialize());
+                if (!ChdManifestPayloadHasher.EnsureCanonicalHashes(sourcePath, chdmanExe, destinationDirectory, manifest, out string hashUpgradeError))
+                {
+                    errorMessage = "Could not upgrade the reconstruction manifest to its canonical payload hash set: " + hashUpgradeError;
+                    return ReturnCode.SourceCheckSumMismatch;
+                }
+                if (preserveSourceIdentity && !PreservesSourceRvrm(previousManifest, manifest, out string sourceIdentityError))
+                {
+                    errorMessage = "Pure CHD recompression was stopped because " + sourceIdentityError;
+                    return ReturnCode.SourceCheckSumMismatch;
+                }
+                byte[] canonicalManifest = manifest.Serialize();
+                ChdUpgradeRecovery.SetExpectedRvrm(journalId, canonicalManifest);
+                System.IO.File.WriteAllBytes(manifestPath, canonicalManifest);
                 rc = RunChdman(chdmanExe,
                     $"addmeta -i \"{stagePath}\" -t {ChdReconstructionManifest.MetadataTag} -ix 0 -vf \"{manifestPath}\" -nocs",
                     destinationDirectory,
@@ -2219,11 +2446,17 @@ namespace RomVaultCore.FixFile.Utils
                     return rc;
                 }
 
-                if (!ValidateEmbeddedStandardMetadata(finalPath, profile, installed, out string metadataError))
+                if (!ValidateEmbeddedStandardMetadata(finalPath, profile, installed, out string metadataError, manifest))
                 {
                     errorMessage = metadataError;
                     return ReturnCode.DestinationCheckSumMismatch;
                 }
+                if (!ChdMetadata.TryReadContainerInfo(finalPath, out ChdContainerInfo finalContainer, out string finalContainerError))
+                {
+                    errorMessage = "Could not bind the verified CHD candidate to its recovery journal: " + finalContainerError;
+                    return ReturnCode.DestinationCheckSumMismatch;
+                }
+                ChdUpgradeRecovery.SetExpectedChdHashes(journalId, finalContainer.Sha1, finalContainer.RawSha1);
                 ChdFaultInjection.Check(ChdFaultPoint.FinalCreated);
 
                 if (System.IO.File.Exists(destinationPath))
@@ -2234,6 +2467,10 @@ namespace RomVaultCore.FixFile.Utils
                         System.IO.File.Replace(finalPath, destinationPath, backupPath, true);
                         backupCreated = true;
                         ChdFaultInjection.Check(ChdFaultPoint.BackupCreated);
+                    }
+                    catch (ChdInjectedCrashException)
+                    {
+                        throw;
                     }
                     catch
                     {
@@ -2261,35 +2498,70 @@ namespace RomVaultCore.FixFile.Utils
                 ChdUpgradeRecovery.MarkInstalled(journalId);
                 ChdFaultInjection.Check(ChdFaultPoint.DestinationInstalled);
 
-                rc = VerifyAndMergeCreatedChd(destinationPath, destinationFile, chdmanExe, out errorMessage);
+                rc = VerifyCreatedChd(destinationPath, destinationFile, chdmanExe, out VerifiedChdResult verifiedChd, out errorMessage);
                 if (rc != ReturnCode.Good)
                 {
                     if (backupCreated && System.IO.File.Exists(backupPath))
                     {
-                        CleanupFailedChd(destinationPath);
-                        System.IO.File.Move(backupPath, destinationPath);
-                        backupCreated = false;
-                        recoveryNeeded = false;
+                        TryRollbackChdTransaction(journalId, chdmanExe);
+                        backupCreated = System.IO.File.Exists(backupPath);
+                        recoveryNeeded = true;
+                        preserveInterruptedArtifacts = true;
                     }
                     else
                     {
                         CleanupFailedChd(destinationPath);
-                        recoveryNeeded = false;
+                        recoveryNeeded = System.IO.File.Exists(destinationPath);
+                        preserveInterruptedArtifacts = recoveryNeeded;
                     }
                     installedDestination = false;
                     return rc;
                 }
+                string installedManifestError = "";
+                string installedIdentityError = "";
+                if (!ChdReconstructionManifest.TryRead(destinationPath, out ChdReconstructionManifest installedManifest, out installedManifestError) ||
+                    !RvrmWireFormat.CanonicallyEquals(manifest, installedManifest, out installedIdentityError))
+                {
+                    errorMessage = "Installed CHD did not preserve canonical reconstruction identity: " +
+                                   (string.IsNullOrWhiteSpace(installedManifestError) ? installedIdentityError : installedManifestError);
+                    rc = ReturnCode.DestinationCheckSumMismatch;
+                    if (backupCreated && System.IO.File.Exists(backupPath))
+                    {
+                        TryRollbackChdTransaction(journalId, chdmanExe);
+                        backupCreated = System.IO.File.Exists(backupPath);
+                        recoveryNeeded = true;
+                        preserveInterruptedArtifacts = true;
+                    }
+                    return rc;
+                }
+                ChdUpgradeRecovery.MarkVerified(journalId);
+                destinationVerified = true;
                 ChdFaultInjection.Check(ChdFaultPoint.DestinationVerified);
 
-                CleanupFailedChd(backupPath);
-                backupCreated = false;
-                recoveryNeeded = false;
+                MergeVerifiedChd(destinationPath, destinationFile, verifiedChd);
+
+                bool cleanupComplete = TryCleanupChdArtifacts(stagePath, finalPath, manifestPath, hddRawPath, backupPath);
+                backupCreated = System.IO.File.Exists(backupPath);
+                recoveryNeeded = !cleanupComplete;
+                preserveInterruptedArtifacts = !cleanupComplete;
+                if (!cleanupComplete)
+                    try { Report.ReportProgress(new bgwText("CHD conversion succeeded; temporary artifact cleanup will be retried during recovery.")); } catch { }
                 changed = true;
                 return ReturnCode.Good;
             }
             catch (Exception ex)
             {
                 errorMessage = ex.Message;
+                if (destinationVerified)
+                {
+                    // Full DAT-aware verification is durable in the journal.
+                    // Keep the proven destination and its backup for startup
+                    // recovery instead of rolling disk state back after a DB
+                    // merge or post-verification failure.
+                    preserveInterruptedArtifacts = true;
+                    recoveryNeeded = true;
+                    return ReturnCode.FileSystemError;
+                }
                 if (ex is ChdInjectedCrashException)
                 {
                     preserveInterruptedArtifacts = true;
@@ -2298,22 +2570,16 @@ namespace RomVaultCore.FixFile.Utils
                 }
                 if (backupCreated && System.IO.File.Exists(backupPath))
                 {
-                    try
-                    {
-                        CleanupFailedChd(destinationPath);
-                        System.IO.File.Move(backupPath, destinationPath);
-                        backupCreated = false;
-                        recoveryNeeded = false;
-                    }
-                    catch
-                    {
-                        recoveryNeeded = true;
-                    }
+                    TryRollbackChdTransaction(journalId, chdmanExe);
+                    backupCreated = System.IO.File.Exists(backupPath);
+                    recoveryNeeded = true;
+                    preserveInterruptedArtifacts = true;
                 }
                 else if (installedDestination && !string.Equals(sourcePath, destinationPath, StringComparison.OrdinalIgnoreCase))
                 {
                     CleanupFailedChd(destinationPath);
                     recoveryNeeded = System.IO.File.Exists(destinationPath);
+                    preserveInterruptedArtifacts = recoveryNeeded;
                 }
                 return ReturnCode.FileSystemError;
             }
@@ -2321,17 +2587,18 @@ namespace RomVaultCore.FixFile.Utils
             {
                 if (!preserveInterruptedArtifacts)
                 {
-                    CleanupFailedChd(stagePath);
-                    CleanupFailedChd(finalPath);
-                    CleanupFailedChd(manifestPath);
-                    CleanupFailedChd(hddRawPath);
-                    if (!backupCreated)
-                        CleanupFailedChd(backupPath);
+                    bool cleanupComplete = backupCreated
+                        ? TryCleanupChdArtifacts(stagePath, finalPath, manifestPath, hddRawPath)
+                        : TryCleanupChdArtifacts(stagePath, finalPath, manifestPath, hddRawPath, backupPath);
+                    if (!cleanupComplete)
+                        recoveryNeeded = true;
                     if (!recoveryNeeded)
                     {
-                        try { ChdUpgradeRecovery.Complete(journalId); } catch { }
+                        try { ChdUpgradeRecovery.Complete(journalId); }
+                        catch { recoveryNeeded = true; }
                     }
                 }
+                try { ChdUpgradeRecovery.ReleaseOwnership(journalId); } catch { }
             }
         }
 
@@ -2373,7 +2640,8 @@ namespace RomVaultCore.FixFile.Utils
             return ReturnCode.Good;
         }
 
-        private static bool ValidateEmbeddedStandardMetadata(string chdPath, ChdEncodingProfileSpec expected, ChdmanIdentity identity, out string error)
+        private static bool ValidateEmbeddedStandardMetadata(string chdPath, ChdEncodingProfileSpec expected, ChdmanIdentity identity, out string error,
+            ChdReconstructionManifest expectedManifest = null)
         {
             error = "";
             int expectedWriterRevision = identity?.Capabilities?.WriterRevision(expected.Family) ?? 0;
@@ -2386,27 +2654,22 @@ namespace RomVaultCore.FixFile.Utils
                 profile.Schema != ChdEncodingProfile.CurrentProfileSchema ||
                 profile.ProfileRevision != expected.ProfileRevision ||
                 profile.WriterRevision != expectedWriterRevision ||
-                !string.Equals(profile.Family, expected.Family, StringComparison.Ordinal) ||
                 !string.Equals(profile.Storage, expected.Storage, StringComparison.Ordinal) ||
-                !string.Equals((profile.Codecs ?? "").Replace(" ", ""), (expected.Codecs ?? "").Replace(" ", ""), StringComparison.OrdinalIgnoreCase) ||
-                profile.HunkSize != expected.HunkSize ||
-                profile.UnitSize != expected.UnitSize ||
                 !string.Equals(profile.ToolSha256 ?? "", identity?.BinarySha256 ?? "", StringComparison.OrdinalIgnoreCase))
             {
                 error = "Created CHD encoder profile metadata is incomplete or inconsistent.";
                 return false;
             }
-            if (expected.Family == "hdd" &&
-                (profile.HddSectorSize != expected.HddSectorSize || profile.HddCylinders != expected.HddCylinders ||
-                 profile.HddHeads != expected.HddHeads || profile.HddSectors != expected.HddSectors ||
-                 !ChdHddGeometry.Matches(chdPath, expected)))
+            if (expected.Family == "hdd" && !ChdHddGeometry.Matches(chdPath, expected))
             {
                 error = "Created hard-disk CHD geometry does not match the selected exact profile.";
                 return false;
             }
             if (!ChdMetadata.TryReadContainerInfo(chdPath, out ChdContainerInfo container, out string containerError) ||
                 container.HunkSize != expected.HunkSize ||
-                (expected.UnitSize > 0 && container.UnitSize != expected.UnitSize))
+                (expected.UnitSize > 0 && container.UnitSize != expected.UnitSize) ||
+                !string.Equals((string.Join(",", container?.Codecs ?? new List<string>())).Replace(" ", ""),
+                    (expected.Codecs ?? "").Replace(" ", ""), StringComparison.OrdinalIgnoreCase))
             {
                 error = "Created CHD container geometry does not match the standard profile: " + containerError;
                 return false;
@@ -2417,23 +2680,46 @@ namespace RomVaultCore.FixFile.Utils
                 return false;
             }
             if (manifest.Schema != ChdReconstructionManifest.CurrentSchema ||
-                manifest.ProfileRevision != expected.ProfileRevision ||
-                manifest.WriterRevision != expectedWriterRevision ||
-                !string.Equals(manifest.ProfileId, ChdEncodingProfile.ProfileId, StringComparison.Ordinal) ||
                 !string.Equals(manifest.Family, expected.Family, StringComparison.Ordinal) ||
-                !string.Equals(manifest.Storage, expected.Storage, StringComparison.Ordinal) ||
-                !string.Equals(manifest.ChdmanSha256 ?? "", identity?.BinarySha256 ?? "", StringComparison.OrdinalIgnoreCase) ||
-                !string.Equals(manifest.CapabilityFingerprint ?? "", identity?.Capabilities?.Fingerprint ?? "", StringComparison.Ordinal) ||
                 manifest.Tracks == null || manifest.Tracks.Count == 0)
             {
                 error = "Created CHD reconstruction metadata is incomplete or inconsistent.";
                 return false;
             }
+            if (!ChdReconstructionManifest.HasCompleteOpticalIdentity(manifest, out string descriptorError))
+            {
+                error = "Created CHD has incomplete optical content identities: " + descriptorError;
+                return false;
+            }
+            if (expectedManifest != null && !RvrmWireFormat.CanonicallyEquals(expectedManifest, manifest, out string identityError))
+            {
+                error = "Created CHD did not preserve canonical reconstruction identity: " + identityError;
+                return false;
+            }
             return true;
+        }
+
+        private sealed class VerifiedChdResult
+        {
+            public long Timestamp { get; set; }
+            public ulong Size { get; set; }
+            public uint? Version { get; set; }
+            public byte[] Sha1 { get; set; }
+            public byte[] Md5 { get; set; }
+            public ScannedFile Contents { get; set; }
         }
 
         private static ReturnCode VerifyAndMergeCreatedChd(string destinationPath, RvFile destinationFile, string chdmanExe, out string errorMessage, bool mergeResults = true)
         {
+            ReturnCode rc = VerifyCreatedChd(destinationPath, destinationFile, chdmanExe, out VerifiedChdResult verified, out errorMessage);
+            if (rc == ReturnCode.Good && mergeResults)
+                MergeVerifiedChd(destinationPath, destinationFile, verified);
+            return rc;
+        }
+
+        private static ReturnCode VerifyCreatedChd(string destinationPath, RvFile destinationFile, string chdmanExe, out VerifiedChdResult verified, out string errorMessage)
+        {
+            verified = null;
             errorMessage = "";
 
             FileInfo fi = new FileInfo(destinationPath);
@@ -2449,7 +2735,10 @@ namespace RomVaultCore.FixFile.Utils
                 return ReturnCode.FileSystemError;
             }
 
-            ReturnCode verifyRc = RunChdman(chdmanExe, $"verify -i \"{destinationPath}\"", System.IO.Path.GetDirectoryName(destinationPath) ?? Environment.CurrentDirectory, out string verifyOutput);
+            string workingDirectory = System.IO.Path.GetDirectoryName(destinationPath) ?? Environment.CurrentDirectory;
+            if (!ChdmanService.TryValidateExternalPaths(out errorMessage, chdmanExe, destinationPath, workingDirectory))
+                return ReturnCode.FileSystemError;
+            ReturnCode verifyRc = RunChdman(chdmanExe, $"verify -i \"{destinationPath}\"", workingDirectory, out string verifyOutput);
             if (verifyRc != ReturnCode.Good)
             {
                 errorMessage = string.IsNullOrWhiteSpace(verifyOutput) ? "chdman verify failed." : ("chdman verify failed: " + verifyOutput);
@@ -2480,6 +2769,12 @@ namespace RomVaultCore.FixFile.Utils
                 return ReturnCode.DestinationCheckSumMismatch;
             }
 
+            if (RequiresCompleteOpticalManifest(destinationFile, destinationPath, out string reconstructionError))
+            {
+                errorMessage = "CHD has incomplete content-addressed reconstruction metadata: " + reconstructionError;
+                return ReturnCode.DestinationCheckSumMismatch;
+            }
+
             ScannedFile chdContents;
             try
             {
@@ -2494,34 +2789,79 @@ namespace RomVaultCore.FixFile.Utils
             if (!ValidateRoundTripPayload(destinationFile, chdContents, out errorMessage))
                 return ReturnCode.DestinationCheckSumMismatch;
 
-            if (!mergeResults)
-                return ReturnCode.Good;
-
-            ScannedFile sf = new ScannedFile(FileType.File)
+            verified = new VerifiedChdResult
             {
-                Name = destinationPath,
-                FileModTimeStamp = ts,
-                GotStatus = GotStatus.Got,
-                DeepScanned = false,
-                Size = (ulong)fi.Length
+                Timestamp = ts,
+                Size = (ulong)fi.Length,
+                Version = chdVersion,
+                Sha1 = chdSha1,
+                Md5 = chdMd5,
+                Contents = chdContents
             };
-            sf.FileStatusSet(FileStatus.SizeVerified);
-            sf.CHDVersion = chdVersion;
-            sf.AltSHA1 = chdSha1;
-            sf.AltMD5 = chdMd5;
-            if (chdSha1 != null)
-                sf.FileStatusSet(FileStatus.AltSHA1FromHeader | FileStatus.AltSHA1Verified);
-            if (chdMd5 != null)
-                sf.FileStatusSet(FileStatus.AltMD5FromHeader | FileStatus.AltMD5Verified);
-
-            destinationFile.FileMergeIn(sf, false);
-            destinationFile.CHDVersion = chdVersion;
-            destinationFile.MergeInArchive(chdContents);
-
             return ReturnCode.Good;
         }
 
-        private static bool ValidateRoundTripPayload(RvFile destinationFile, ScannedFile extracted, out string errorMessage)
+        private static void MergeVerifiedChd(string destinationPath, RvFile destinationFile, VerifiedChdResult verified)
+        {
+            if (verified == null)
+                throw new InvalidDataException("Verified CHD results are missing.");
+            ScannedFile sf = new ScannedFile(FileType.File)
+            {
+                Name = destinationPath,
+                FileModTimeStamp = verified.Timestamp,
+                GotStatus = GotStatus.Got,
+                DeepScanned = false,
+                Size = verified.Size
+            };
+            sf.FileStatusSet(FileStatus.SizeVerified);
+            sf.CHDVersion = verified.Version;
+            sf.AltSHA1 = verified.Sha1;
+            sf.AltMD5 = verified.Md5;
+            if (verified.Sha1 != null)
+                sf.FileStatusSet(FileStatus.AltSHA1FromHeader | FileStatus.AltSHA1Verified);
+            if (verified.Md5 != null)
+                sf.FileStatusSet(FileStatus.AltMD5FromHeader | FileStatus.AltMD5Verified);
+
+            destinationFile.FileMergeIn(sf, false);
+            destinationFile.CHDVersion = verified.Version;
+            destinationFile.MergeInArchive(verified.Contents);
+            ChdParentResolver.TryRegister(destinationPath, out _, out _);
+        }
+
+        private static bool RequiresCompleteOpticalManifest(RvFile destinationFile, string chdPath, out string error)
+        {
+            error = "";
+            bool optical;
+            if (ChdReconstructionManifest.TryRead(chdPath, out ChdReconstructionManifest embeddedManifest, out _))
+            {
+                optical = string.Equals(embeddedManifest.Family, "cd", StringComparison.OrdinalIgnoreCase) ||
+                          string.Equals(embeddedManifest.Family, "gdi", StringComparison.OrdinalIgnoreCase);
+            }
+            else
+            {
+                optical = false;
+                for (int i = 0; destinationFile != null && i < destinationFile.ChildCount; i++)
+                {
+                    string extension = System.IO.Path.GetExtension(destinationFile.Child(i)?.Name ?? "");
+                    if (string.Equals(extension, ".cue", StringComparison.OrdinalIgnoreCase) ||
+                        string.Equals(extension, ".gdi", StringComparison.OrdinalIgnoreCase) ||
+                        string.Equals(extension, ".toc", StringComparison.OrdinalIgnoreCase) ||
+                        string.Equals(extension, ".bin", StringComparison.OrdinalIgnoreCase))
+                    {
+                        optical = true;
+                        break;
+                    }
+                }
+            }
+
+            if (!optical)
+                return false;
+            if (!ChdReconstructionManifest.TryRead(chdPath, out ChdReconstructionManifest manifest, out error))
+                return true;
+            return !ChdReconstructionManifest.HasCompleteOpticalIdentity(manifest, out error);
+        }
+
+        internal static bool ValidateRoundTripPayload(RvFile destinationFile, ScannedFile extracted, out string errorMessage)
         {
             errorMessage = "";
             if (destinationFile == null || extracted == null)
@@ -2538,24 +2878,19 @@ namespace RomVaultCore.FixFile.Utils
                     extractedByName.Add(file.Name, file);
             }
 
-            int payloadCount = 0;
+            int memberCount = 0;
             for (int i = 0; i < destinationFile.ChildCount; i++)
             {
                 RvFile expected = destinationFile.Child(i);
                 if (expected == null || !expected.IsFile || string.IsNullOrWhiteSpace(expected.Name))
                     continue;
 
-                string extension = System.IO.Path.GetExtension(expected.Name);
-                if (string.Equals(extension, ".cue", StringComparison.OrdinalIgnoreCase) ||
-                    string.Equals(extension, ".gdi", StringComparison.OrdinalIgnoreCase) ||
-                    string.Equals(extension, ".toc", StringComparison.OrdinalIgnoreCase))
-                    continue;
-
-                payloadCount++;
+                memberCount++;
+                bool semanticOpticalDescriptor = IsRegeneratedOpticalDescriptor(expected.Name);
                 bool hasHash = (expected.SHA1 != null && expected.SHA1.Length > 0) ||
                                (expected.MD5 != null && expected.MD5.Length > 0) ||
                                (expected.CRC != null && expected.CRC.Length > 0);
-                if (!hasHash)
+                if (!hasHash && !semanticOpticalDescriptor)
                 {
                     errorMessage = $"Cannot guarantee CHD round trip for '{expected.Name}' because the DAT has no payload hash.";
                     return false;
@@ -2565,6 +2900,36 @@ namespace RomVaultCore.FixFile.Utils
                 {
                     errorMessage = $"CHD round trip did not reproduce DAT payload '{expected.Name}'.";
                     return false;
+                }
+
+                // CUE/GDI text is a regenerated semantic view. Its FILE names
+                // come from the active DAT and its whitespace/quoting are
+                // canonicalized, so byte hashes are deliberately not part of
+                // the CHD round-trip contract. The referenced payloads below
+                // remain exact-size and exact-hash checked.
+                if (semanticOpticalDescriptor)
+                {
+                    if (actual.Size == 0)
+                    {
+                        errorMessage = $"CHD round trip produced an empty optical descriptor '{expected.Name}'.";
+                        return false;
+                    }
+                    bool exactDescriptor =
+                        (!expected.Size.HasValue || expected.Size.Value == 0 || actual.Size == expected.Size.Value) &&
+                        (expected.SHA1 == null || (actual.SHA1 != null && ByteUtils.ByteArrEquals(expected.SHA1, actual.SHA1))) &&
+                        (expected.MD5 == null || (actual.MD5 != null && ByteUtils.ByteArrEquals(expected.MD5, actual.MD5))) &&
+                        (expected.CRC == null || (actual.CRC != null && ByteUtils.ByteArrEquals(expected.CRC, actual.CRC)));
+                    bool generatedDescriptor =
+                        string.Equals(actual.ChdDescriptorMatch, "Semantic", StringComparison.OrdinalIgnoreCase) ||
+                        string.Equals(actual.ChdDescriptorMatch, "Synthetic", StringComparison.OrdinalIgnoreCase) ||
+                        string.Equals(actual.ChdDescriptorMatch, "True", StringComparison.OrdinalIgnoreCase) ||
+                        string.Equals(actual.ChdDescriptorMatch, "Embedded Exact", StringComparison.OrdinalIgnoreCase);
+                    if (!exactDescriptor && !generatedDescriptor)
+                    {
+                        errorMessage = $"CHD round trip did not prove a semantic optical descriptor for '{expected.Name}'.";
+                        return false;
+                    }
+                    continue;
                 }
 
                 if (!string.IsNullOrWhiteSpace(actual.ChdHashMatchMode) &&
@@ -2596,13 +2961,20 @@ namespace RomVaultCore.FixFile.Utils
                 }
             }
 
-            if (payloadCount == 0)
+            if (memberCount == 0)
             {
-                errorMessage = "Cannot guarantee CHD round trip because the DAT contains no payload files.";
+                errorMessage = "Cannot guarantee CHD round trip because the DAT contains no reconstructable members.";
                 return false;
             }
 
             return true;
+        }
+
+        private static bool IsRegeneratedOpticalDescriptor(string name)
+        {
+            string extension = System.IO.Path.GetExtension(name ?? "");
+            return string.Equals(extension, ".cue", StringComparison.OrdinalIgnoreCase) ||
+                   string.Equals(extension, ".gdi", StringComparison.OrdinalIgnoreCase);
         }
 
         private static string GetDatHintText(RvFile destinationFile)
@@ -3131,9 +3503,186 @@ namespace RomVaultCore.FixFile.Utils
             }
         }
 
+        private static bool TryInstallChdCopy(string sourcePath, string destinationPath, out string error)
+        {
+            error = "";
+            string stagePath = "";
+            try
+            {
+                string sourceFull = System.IO.Path.GetFullPath(sourcePath);
+                string destinationFull = System.IO.Path.GetFullPath(destinationPath);
+                if (string.Equals(sourceFull, destinationFull, StringComparison.OrdinalIgnoreCase))
+                    return true;
+                if (!System.IO.File.Exists(sourceFull))
+                {
+                    error = "The prepared source CHD no longer exists.";
+                    return false;
+                }
+                if (System.IO.File.Exists(destinationFull))
+                {
+                    error = "The destination CHD already exists.";
+                    return false;
+                }
+
+                string destinationDirectory = System.IO.Path.GetDirectoryName(destinationFull) ?? Environment.CurrentDirectory;
+                System.IO.Directory.CreateDirectory(destinationDirectory);
+                long sourceLength = new System.IO.FileInfo(sourceFull).Length;
+                long required = sourceLength > long.MaxValue - 64L * 1024 * 1024
+                    ? long.MaxValue
+                    : sourceLength + 64L * 1024 * 1024;
+                if (ChdFreeSpace.TryGetAvailableBytes(destinationDirectory, out long available, out _) && available < required)
+                {
+                    error = $"Insufficient destination free space. required={required} free={available}";
+                    return false;
+                }
+
+                stagePath = System.IO.Path.Combine(destinationDirectory,
+                    "." + System.IO.Path.GetFileName(destinationFull) + ".rv-install-" + Guid.NewGuid().ToString("N") + ".tmp");
+                System.IO.File.Copy(sourceFull, stagePath, false);
+                System.IO.File.Move(stagePath, destinationFull);
+                stagePath = "";
+                return true;
+            }
+            catch (Exception ex)
+            {
+                error = ex.Message;
+                return false;
+            }
+            finally
+            {
+                if (!string.IsNullOrWhiteSpace(stagePath))
+                    TryDeleteFile(stagePath);
+            }
+        }
+
+        private static bool TryPrepareParentedChdSource(
+            string sourcePath,
+            List<string> cleanupPaths,
+            out string preparedPath,
+            out bool materialized,
+            out string error)
+        {
+            preparedPath = sourcePath;
+            materialized = false;
+            error = "";
+            if (!ChdMetadata.TryReadContainerInfo(sourcePath, out ChdContainerInfo child, out error))
+                return false;
+            ChdParentResolver.Register(sourcePath, child);
+            if (!child.RequiresParent)
+                return true;
+
+            EnsureChdParentCandidatesRegistered();
+            if (!ChdParentResolver.TryResolveParent(sourcePath, out string parentPath, out string parentError))
+            {
+                error = "Could not resolve the parent required by the source CHD: " + parentError;
+                return false;
+            }
+
+            if (!ChdTemporaryWorkspace.TryCreateForSource(sourcePath, ChdWorkspacePurpose.Verify, out string workspace, out string workspaceError))
+            {
+                error = "Could not create a workspace for parented CHD materialization: " + workspaceError;
+                return false;
+            }
+            cleanupPaths?.Add(workspace);
+
+            if (!ChdFreeSpace.TryGetAvailableBytes(workspace, out long available, out string freeSpaceError))
+            {
+                error = freeSpaceError;
+                return false;
+            }
+            long required;
+            try { required = checked((long)Math.Min(child.LogicalSize, (ulong)long.MaxValue) + 256L * 1024 * 1024); }
+            catch (OverflowException) { required = long.MaxValue; }
+            if (available < required)
+            {
+                error = $"Insufficient free space to materialize the parented CHD. required={required} free={available}";
+                return false;
+            }
+
+            string standalonePath = System.IO.Path.Combine(workspace, "source-standalone.chd");
+            int result = ChdParentGraph.MaterializeStandalone(sourcePath, parentPath, standalonePath, out string report);
+            if (result != 0)
+            {
+                error = "Parented CHD materialization failed: " + report;
+                return false;
+            }
+
+            if (!ChdMetadata.TryReadContainerInfo(standalonePath, out ChdContainerInfo standalone, out string standaloneError) || standalone.RequiresParent)
+            {
+                error = "Parented CHD materialization did not produce a readable standalone CHD: " + standaloneError;
+                return false;
+            }
+            ChdParentResolver.Register(standalonePath, standalone);
+            preparedPath = standalonePath;
+            materialized = true;
+            return true;
+        }
+
+        private static void RegisterKnownChdParentCandidates(RvFile node)
+        {
+            if (node == null)
+                return;
+            if (node.FileType == FileType.CHD)
+            {
+                string path = ResolveExistingFilePath(node.FullNameCase);
+                if (!string.IsNullOrWhiteSpace(path) && System.IO.File.Exists(path))
+                    ChdParentResolver.TryRegister(path, out _, out _);
+            }
+            if (!node.IsDirectory)
+                return;
+            for (int i = 0; i < node.ChildCount; i++)
+                RegisterKnownChdParentCandidates(node.Child(i));
+        }
+
+        internal static void EnsureChdParentCandidatesRegistered()
+        {
+            int generation = ChdParentResolver.Generation;
+            if (_chdParentIndexGeneration == generation)
+                return;
+
+            RvFile root = DB.DirRoot;
+            for (int i = 0; root != null && i < root.ChildCount; i++)
+            {
+                string physicalRoot = ResolveExistingDirectoryPath(root.Child(i)?.FullName);
+                if (!string.IsNullOrWhiteSpace(physicalRoot) && System.IO.Directory.Exists(physicalRoot))
+                    ChdParentResolver.RegisterDirectory(physicalRoot, true);
+            }
+            RegisterKnownChdParentCandidates(root);
+            ChdParentResolver.RegisterConfiguredSearchPaths();
+            _chdParentIndexGeneration = generation;
+        }
+
         private static void CleanupFailedChd(string destinationPath)
         {
             TryDeleteFile(destinationPath);
+        }
+
+        private static bool TryCleanupChdArtifacts(params string[] paths)
+        {
+            bool cleaned = true;
+            for (int i = 0; paths != null && i < paths.Length; i++)
+            {
+                CleanupFailedChd(paths[i]);
+                cleaned &= string.IsNullOrWhiteSpace(paths[i]) || !System.IO.File.Exists(paths[i]);
+            }
+            return cleaned;
+        }
+
+        private static bool PreservesSourceRvrm(ChdReconstructionManifest source, ChdReconstructionManifest candidate, out string error)
+        {
+            error = "";
+            if (source == null || candidate == null)
+            {
+                error = "Reconstruction identity metadata is unavailable.";
+                return false;
+            }
+            return RvrmWireFormat.CanonicallyEquals(source, candidate, out error);
+        }
+
+        private static bool TryRollbackChdTransaction(string journalId, string executable)
+        {
+            try { return ChdUpgradeRecovery.TryCheckpointRollback(journalId, executable, out _); }
+            catch { return false; }
         }
 
         private static IEnumerable<string> GetReferencedFilesFromCue(string cuePath)

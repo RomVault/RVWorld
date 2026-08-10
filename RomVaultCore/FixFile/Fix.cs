@@ -121,10 +121,7 @@ namespace RomVaultCore.FixFile
                             count++;
                         }
                         else if (child.GotStatus != GotStatus.Got &&
-                            (child.RepStatus == RepStatus.CanBeFixed ||
-                             child.RepStatus == RepStatus.CanBeFixedMIA ||
-                             child.RepStatus == RepStatus.Missing ||
-                             child.RepStatus == RepStatus.MissingMIA))
+                                 child.DirStatus.CountCanBeFixed() > 0)
                         {
                             count++;
                         }

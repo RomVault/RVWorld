@@ -7,8 +7,10 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using CHDSharpLib;
 using FileScanner;
 using RomVaultCore.RvDB;
+using RomVaultCore.Utils;
 using Directory = RVIO.Directory;
 
 namespace RomVaultCore.Scanner
@@ -20,6 +22,9 @@ namespace RomVaultCore.Scanner
         public static RvFile StartAt;
         public static EScanLevel EScanLevel;
         private static bool _fileErrorAbort;
+        private static bool _deferParentedChds;
+        private static readonly List<DeferredChdScan> DeferredChdScans = new List<DeferredChdScan>();
+        private static readonly List<string> ChdParentSearchRoots = new List<string>();
 
         public static void ScanFiles(ThreadWorker thWrk)
         {
@@ -28,6 +33,10 @@ namespace RomVaultCore.Scanner
             {
 #endif
                 _fileErrorAbort = false;
+                _deferParentedChds = true;
+                DeferredChdScans.Clear();
+                ChdParentSearchRoots.Clear();
+                ChdParentResolver.Reset();
                 _cacheSaveTimer = new Stopwatch();
                 _cacheSaveTimer.Reset();
                 if (Settings.rvSettings.CacheSaveTimerEnabled)
@@ -40,6 +49,9 @@ namespace RomVaultCore.Scanner
                 {
                     _cacheSaveTimer?.Stop();
                     _cacheSaveTimer = null;
+                    _deferParentedChds = false;
+                    DeferredChdScans.Clear();
+                    ChdParentSearchRoots.Clear();
                     return;
                 }
 
@@ -63,6 +75,7 @@ namespace RomVaultCore.Scanner
                     string lDir = lstDir[i].FullName;
                     if (Directory.Exists(lDir))
                     {
+                        AddParentSearchRoot(lDir);
                         lstDir[i].GotStatus = GotStatus.Got;
                         CheckADir(lstDir[i], null);
                     }
@@ -77,6 +90,8 @@ namespace RomVaultCore.Scanner
                     }
                 }
 
+                ProcessDeferredChdScans();
+
                 _thWrk.Report(new bgwText("Updating Cache"));
                 DB.Write();
 
@@ -86,6 +101,9 @@ namespace RomVaultCore.Scanner
                 _cacheSaveTimer?.Stop();
                 _cacheSaveTimer = null;
                 _thWrk = null;
+                _deferParentedChds = false;
+                DeferredChdScans.Clear();
+                ChdParentSearchRoots.Clear();
 #if !DEBUG
             }
             catch (Exception exc)
@@ -97,6 +115,9 @@ namespace RomVaultCore.Scanner
                 _thWrk?.Report(new bgwText("Complete"));
                 if (_thWrk != null) _thWrk.Finished = true;
                 _thWrk = null;
+                _deferParentedChds = false;
+                DeferredChdScans.Clear();
+                ChdParentSearchRoots.Clear();
                 _cacheSaveTimer?.Stop();
                 _cacheSaveTimer = null;
             }
@@ -126,10 +147,38 @@ namespace RomVaultCore.Scanner
                 _thWrk?.Report(new bgwValue2((int)checkIndex));
             _thWrk?.Report(new bgwText2(dbDir.FullName));
 
-            ScannedFile fileArchive = Populate.FromAZipFileArchive(dbDir, EScanLevel, _thWrk);
+            string parentPath = "";
+            if (ft == FileType.CHD)
+            {
+                string chdPath = ResolvePhysicalPath(dbDir);
+                if (ChdParentResolver.TryRegister(chdPath, out ChdContainerInfo info, out _) && info.RequiresParent)
+                {
+                    if (_deferParentedChds)
+                    {
+                        QueueDeferredChdScan(dbDir, report, checkIndex, chdPath, info.ParentSha1);
+                        return;
+                    }
+                    if (!ChdParentResolver.TryResolveParent(chdPath, out parentPath, out string parentError))
+                    {
+                        MarkChdWaitingForParent(dbDir, chdPath, parentError);
+                        return;
+                    }
+                }
+            }
+
+            CheckAnArchiveCore(dbDir, report, checkIndex, parentPath);
+        }
+
+        private static void CheckAnArchiveCore(RvFile dbDir, bool report, int? checkIndex, string parentPath)
+        {
+            if (dbDir.FileType == FileType.CHD && NeedsChdParentRetry(dbDir))
+                dbDir.ChdStatus = null;
+            ScannedFile fileArchive = Populate.FromAZipFileArchive(dbDir, EScanLevel, _thWrk, parentPath);
             if (fileArchive == null)
             {
                 dbDir.MarkAsMissing();
+                if (dbDir.FileType == FileType.CHD && !string.IsNullOrWhiteSpace(parentPath))
+                    dbDir.ChdStatus = "Parent resolved, but CHD extraction failed; retry is required.";
                 return;
             }
 
@@ -139,6 +188,143 @@ namespace RomVaultCore.Scanner
                 _thWrk.Report(new bgwRange2Visible(true));
             }
             dbDir.MergeInArchive(fileArchive);
+            if (dbDir.FileType == FileType.CHD)
+            {
+                // FileMergeIn intentionally preserves existing diagnostics. A
+                // deferred child, however, carries a temporary waiting status
+                // which must be replaced by the result of the successful scan.
+                dbDir.ChdStatus = fileArchive.ChdStatus;
+                dbDir.ChdScanMethod = fileArchive.ChdScanMethod;
+                dbDir.ChdHashMatchMode = fileArchive.ChdHashMatchMode;
+                dbDir.ChdDescriptorMatch = fileArchive.ChdDescriptorMatch;
+            }
+        }
+
+        private static void QueueDeferredChdScan(RvFile dbDir, bool report, int? checkIndex, string path, byte[] parentSha1)
+        {
+            for (int i = 0; i < DeferredChdScans.Count; i++)
+            {
+                if (ReferenceEquals(DeferredChdScans[i].DbDir, dbDir))
+                    return;
+            }
+            dbDir.ChdStatus = "Waiting for parent SHA1 " + ChdParentResolver.Hex(parentSha1);
+            DeferredChdScans.Add(new DeferredChdScan(dbDir, report, checkIndex, path));
+        }
+
+        private static void ProcessDeferredChdScans()
+        {
+            _deferParentedChds = false;
+            if (DeferredChdScans.Count == 0)
+                return;
+
+            _thWrk?.Report(new bgwText("Resolving parented CHDs"));
+            RegisterPhysicalParentSearchRoots();
+            RegisterKnownChds(DB.DirRoot);
+            ChdParentResolver.RegisterConfiguredSearchPaths();
+
+            for (int i = 0; i < DeferredChdScans.Count; i++)
+            {
+                if (_thWrk?.CancellationPending == true || _fileErrorAbort)
+                    break;
+
+                DeferredChdScan pending = DeferredChdScans[i];
+                if (!ChdParentResolver.TryResolveParent(pending.Path, out string parentPath, out string error))
+                {
+                    MarkChdWaitingForParent(pending.DbDir, pending.Path, error);
+                    continue;
+                }
+
+                _thWrk?.Report(new bgwText("Scanning parented CHD : " + pending.DbDir.FullName));
+                CheckAnArchiveCore(pending.DbDir, pending.Report, pending.CheckIndex, parentPath);
+            }
+            DeferredChdScans.Clear();
+        }
+
+        private static void RegisterKnownChds(RvFile node)
+        {
+            if (node == null)
+                return;
+            if (node.FileType == FileType.CHD)
+            {
+                string path = ResolvePhysicalPath(node);
+                if (!string.IsNullOrWhiteSpace(path) && System.IO.File.Exists(path))
+                    ChdParentResolver.TryRegister(path, out _, out _);
+            }
+            if (!node.IsDirectory)
+                return;
+            for (int i = 0; i < node.ChildCount; i++)
+                RegisterKnownChds(node.Child(i));
+        }
+
+        private static void MarkChdWaitingForParent(RvFile dbDir, string path, string error)
+        {
+            if (dbDir == null)
+                return;
+            dbDir.MarkAsMissing();
+            dbDir.GotStatus = GotStatus.Got;
+            dbDir.ChdStatus = "Parent required: " + error;
+            _thWrk?.Report(new bgwShowError(path, dbDir.ChdStatus));
+        }
+
+        private static bool NeedsChdParentRetry(RvFile file)
+        {
+            if (file?.FileType != FileType.CHD)
+                return false;
+            if (file.GotStatus == GotStatus.Corrupt || string.IsNullOrWhiteSpace(file.ChdScanMethod))
+                return true;
+            string status = file.ChdStatus ?? "";
+            return status.StartsWith("Waiting for parent", StringComparison.OrdinalIgnoreCase) ||
+                   status.StartsWith("Parent required", StringComparison.OrdinalIgnoreCase) ||
+                   status.StartsWith("Parent resolved", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static void AddParentSearchRoot(string path)
+        {
+            if (string.IsNullOrWhiteSpace(path))
+                return;
+            string fullPath;
+            try { fullPath = System.IO.Path.GetFullPath(path); }
+            catch { fullPath = path; }
+            if (!ChdParentSearchRoots.Exists(item => string.Equals(item, fullPath, StringComparison.OrdinalIgnoreCase)))
+                ChdParentSearchRoots.Add(fullPath);
+        }
+
+        private static void RegisterPhysicalParentSearchRoots()
+        {
+            for (int i = 0; i < ChdParentSearchRoots.Count; i++)
+                ChdParentResolver.RegisterDirectory(ChdParentSearchRoots[i], true);
+
+            RvFile root = DB.DirRoot;
+            for (int i = 0; root != null && i < root.ChildCount; i++)
+            {
+                string physicalRoot = root.Child(i)?.FullName;
+                if (!string.IsNullOrWhiteSpace(physicalRoot) && System.IO.Directory.Exists(physicalRoot))
+                    ChdParentResolver.RegisterDirectory(physicalRoot, true);
+            }
+        }
+
+        private static string ResolvePhysicalPath(RvFile file)
+        {
+            string path = file?.FullNameCase;
+            if (!string.IsNullOrWhiteSpace(path) && System.IO.File.Exists(path))
+                return path;
+            return file?.FullName ?? path ?? "";
+        }
+
+        private sealed class DeferredChdScan
+        {
+            public DeferredChdScan(RvFile dbDir, bool report, int? checkIndex, string path)
+            {
+                DbDir = dbDir;
+                Report = report;
+                CheckIndex = checkIndex;
+                Path = path;
+            }
+
+            public RvFile DbDir { get; }
+            public bool Report { get; }
+            public int? CheckIndex { get; }
+            public string Path { get; }
         }
 
         /// <summary>
@@ -398,7 +584,9 @@ namespace RomVaultCore.Scanner
                 case FileType.Zip:
                 case FileType.SevenZip:
                 case FileType.CHD:
-                    if (dbChild.FileModTimeStamp != fileChild.FileModTimeStamp || EScanLevel == EScanLevel.Level3 || EScanLevel == EScanLevel.Level2 && !dbChild.IsDeepScanned)
+                    if (dbChild.FileModTimeStamp != fileChild.FileModTimeStamp ||
+                        EScanLevel == EScanLevel.Level3 ||
+                        EScanLevel == EScanLevel.Level2 && (!dbChild.IsDeepScanned || NeedsChdParentRetry(dbChild)))
                     {
                         dbChild.MarkAsMissing();
                         dbChild.FileMergeIn(fileChild, false);

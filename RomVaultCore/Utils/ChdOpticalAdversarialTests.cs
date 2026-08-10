@@ -29,10 +29,10 @@ internal static class ChdOpticalAdversarialTests
             ChdEncodingProfileSpec profile = ChdEncodingProfile.ForFamily("cd", ChdStorageProfile.Playback);
             if (!ChdReconstructionManifest.TryCreateFromSource(cue, profile, identity, out ChdReconstructionManifest manifest, out error))
                 return false;
-            if (!string.Equals(manifest.Dialect, "cue-unicode", StringComparison.Ordinal) || manifest.Auxiliaries.Count != 1 ||
+            if (!string.Equals(manifest.Dialect, "cue-mode1-2352", StringComparison.Ordinal) || manifest.Auxiliaries.Count != 1 ||
                 !manifest.Auxiliaries[0].Bytes.SequenceEqual(sbi) || manifest.Auxiliaries[0].Sha256?.Length != 32)
             {
-                error = "Unicode descriptor or exact SBI auxiliary was not preserved in RVRM.";
+                error = "Unicode filenames affected the media dialect or the SBI content identity was not preserved.";
                 return false;
             }
             if (!ChdReconstructionManifest.TryDeserialize(manifest.Serialize(), out ChdReconstructionManifest roundTrip, out error) ||

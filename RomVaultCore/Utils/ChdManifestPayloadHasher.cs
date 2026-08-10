@@ -3,18 +3,19 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
+using CHDSharpLib;
 using RomVaultCore.Scanner;
 
 namespace RomVaultCore.Utils;
 
 /// <summary>
-/// Migrates older reconstruction manifests to the current authenticated schema by obtaining SHA-256
-/// from an independent, canonical chdman extraction.  Existing SHA-256 values
-/// are never invented from weaker DAT hashes.
+/// Completes reconstruction manifests with the fixed
+/// CRC32/MD5/SHA1/SHA256 identity set obtained from an independent, canonical
+/// chdman extraction. Strong hashes are never invented from weaker DAT hashes.
 /// </summary>
 internal static class ChdManifestPayloadHasher
 {
-    public static bool EnsureSha256(string chdPath, string chdmanPath, string workingRoot, ChdReconstructionManifest manifest, out string error)
+    public static bool EnsureCanonicalHashes(string chdPath, string chdmanPath, string workingRoot, ChdReconstructionManifest manifest, out string error)
     {
         error = "";
         if (manifest == null)
@@ -28,10 +29,28 @@ internal static class ChdManifestPayloadHasher
             return true;
         }
 
-        string root = Path.Combine(ResolveDirectory(workingRoot), "rv-chd-sha256-" + Guid.NewGuid().ToString("N"));
+        if (!ChdmanService.TryValidateExternalPaths(out error, chdPath))
+            return false;
+        if (!ChdMetadata.TryReadContainerInfo(chdPath, out ChdContainerInfo container, out string sizeError))
+        {
+            error = "Could not determine the CHD logical size for hashing-space preflight: " + sizeError;
+            return false;
+        }
+        long logicalSize = container.LogicalSize > long.MaxValue ? long.MaxValue : (long)container.LogicalSize;
+        bool needsIsoView = (manifest.Views ?? new List<ChdManifestView>()).Any(view =>
+            string.Equals(view?.Name, "iso", StringComparison.OrdinalIgnoreCase) &&
+            view.Tracks != null && view.Tracks.Any(track => !HasCanonicalHashes(track)));
+        long requiredBytes = SaturatingAdd(logicalSize, 256L * 1024 * 1024);
+        if (needsIsoView)
+            requiredBytes = SaturatingAdd(requiredBytes, logicalSize);
+        if (!ChdTemporaryWorkspace.TryCreateForRoot(ResolveDirectory(workingRoot), ChdWorkspacePurpose.Hash, requiredBytes, out string root, out error))
+        {
+            error = "Could not create a writable CHD hashing workspace: " + error;
+            return false;
+        }
+        bool succeeded = false;
         try
         {
-            Directory.CreateDirectory(root);
             IChdExtractor extractor = new ChdmanChdExtractor(chdmanPath, root);
             Dictionary<ChdManifestTrack, string> extracted = new Dictionary<ChdManifestTrack, string>();
             string family = (manifest.Family ?? "").Trim().ToLowerInvariant();
@@ -40,12 +59,12 @@ internal static class ChdManifestPayloadHasher
                 string extension = family == "gdi" && !string.Equals(manifest.Dialect, "redump-gdrom-cue", StringComparison.OrdinalIgnoreCase) ? ".gdi" : ".cue";
                 string descriptor = Path.Combine(root, "disc" + extension);
                 if (!extractor.ExtractCd(chdPath, descriptor, out error))
-                    return false;
+                    throw new InvalidDataException(error);
                 List<string> payloads = Directory.GetFiles(root, "*", SearchOption.TopDirectoryOnly)
                     .Where(path => !string.Equals(path, descriptor, StringComparison.OrdinalIgnoreCase))
                     .ToList();
                 if (!MapTracks(manifest.Tracks, payloads, extracted, out error))
-                    return false;
+                    throw new InvalidDataException(error);
             }
             else
             {
@@ -56,52 +75,54 @@ internal static class ChdManifestPayloadHasher
                 else if (family == "laserdisc") ok = extractor.ExtractLaserDisc(chdPath, output, out error);
                 else ok = extractor.ExtractRaw(chdPath, output, out error);
                 if (!ok)
-                    return false;
+                    throw new InvalidDataException(error);
                 if (!MapTracks(manifest.Tracks, new List<string> { output }, extracted, out error))
-                    return false;
+                    throw new InvalidDataException(error);
             }
 
             foreach (KeyValuePair<ChdManifestTrack, string> item in extracted)
-                item.Key.Sha256 = HashFile(item.Value).Sha256;
+                ApplyHashes(item.Key, HashFile(item.Value));
 
             for (int i = 0; i < (manifest.Views?.Count ?? 0); i++)
             {
                 ChdManifestView view = manifest.Views[i];
-                if (view?.Tracks == null || view.Tracks.All(track => track?.Sha256?.Length == 32))
+                if (view?.Tracks == null || view.Tracks.All(HasCanonicalHashes))
                     continue;
                 if (!string.Equals(view.Name, "iso", StringComparison.OrdinalIgnoreCase) || manifest.Tracks.Count != 1 ||
                     !extracted.TryGetValue(manifest.Tracks[0], out string primary))
                 {
-                    error = "An older alternate reconstruction view cannot be upgraded to SHA-256 safely.";
-                    return false;
+                    error = "An alternate reconstruction view cannot be completed with SHA-256 safely.";
+                    throw new InvalidDataException(error);
                 }
                 string iso = Path.Combine(root, "view.iso");
                 if (!ChdMultiView.TryMaterializeIsoView(primary, view, iso, out error))
-                    return false;
+                    throw new InvalidDataException(error);
                 if (view.Tracks.Count != 1)
                 {
                     error = "The ISO reconstruction view is ambiguous.";
-                    return false;
+                    throw new InvalidDataException(error);
                 }
-                view.Tracks[0].Sha256 = HashFile(iso).Sha256;
+                ApplyHashes(view.Tracks[0], HashFile(iso));
             }
             manifest.Schema = ChdReconstructionManifest.CurrentSchema;
             if (!AllPresent(manifest))
             {
-                error = "Canonical extraction did not produce SHA-256 for every manifest payload.";
-                return false;
+                error = "Canonical extraction did not produce the complete fixed hash set for every manifest payload.";
+                throw new InvalidDataException(error);
             }
-            return true;
+            succeeded = true;
         }
         catch (Exception ex)
         {
             error = ex.Message;
+        }
+        if (!ChdTemporaryWorkspace.TryDelete(root, out string cleanupError))
+        {
+            error = (succeeded ? "CHD hashing completed, but" : (error + " Cleanup also failed because")) +
+                    " the CHD hashing workspace could not be removed: " + cleanupError;
             return false;
         }
-        finally
-        {
-            try { if (Directory.Exists(root)) Directory.Delete(root, true); } catch { }
-        }
+        return succeeded;
     }
 
     private static bool MapTracks(List<ChdManifestTrack> expected, List<string> candidates, Dictionary<ChdManifestTrack, string> result, out string error)
@@ -143,8 +164,24 @@ internal static class ChdManifestPayloadHasher
 
     private static bool AllPresent(ChdReconstructionManifest manifest)
     {
-        return manifest.Tracks != null && manifest.Tracks.Count > 0 && manifest.Tracks.All(track => track?.Sha256?.Length == 32) &&
-               (manifest.Views ?? new List<ChdManifestView>()).All(view => view?.Tracks != null && view.Tracks.All(track => track?.Sha256?.Length == 32));
+        return manifest.Tracks != null && manifest.Tracks.Count > 0 && manifest.Tracks.All(HasCanonicalHashes) &&
+               (manifest.Views ?? new List<ChdManifestView>()).All(view => view?.Tracks != null && view.Tracks.All(HasCanonicalHashes));
+    }
+
+    private static bool HasCanonicalHashes(ChdManifestTrack track)
+    {
+        return track != null && track.Crc32?.Length == 4 && track.Md5?.Length == 16 &&
+               track.Sha1?.Length == 20 && track.Sha256?.Length == 32;
+    }
+
+    private static void ApplyHashes(ChdManifestTrack track, FileHashes hashes)
+    {
+        if (track == null || hashes == null)
+            throw new InvalidDataException("Canonical hashing produced no payload identity.");
+        track.Crc32 = hashes.Crc32;
+        track.Md5 = hashes.Md5;
+        track.Sha1 = hashes.Sha1;
+        track.Sha256 = hashes.Sha256;
     }
 
     private static FileHashes HashFile(string path)
@@ -185,6 +222,11 @@ internal static class ChdManifestPayloadHasher
         crc ^= value;
         for (int i = 0; i < 8; i++) crc = (crc & 1) != 0 ? (crc >> 1) ^ 0xedb88320 : crc >> 1;
         return crc;
+    }
+
+    private static long SaturatingAdd(long left, long right)
+    {
+        return left > long.MaxValue - right ? long.MaxValue : left + right;
     }
 
     private static string ResolveDirectory(string value)

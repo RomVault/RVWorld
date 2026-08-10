@@ -32,6 +32,15 @@ internal static class ChdConversionSelfTests
             if (!step.Success) { error = step.Output; return false; }
             int code = ChdStandaloneConverter.Convert(output, ChdStorageProfile.Playback, executable, out bool changed, out string report);
             if (code != 0 || !changed) { error = report; return false; }
+            string convertedManifestError = "";
+            string identityError = "";
+            if (!ChdReconstructionManifest.TryRead(output, out ChdReconstructionManifest convertedManifest, out convertedManifestError) ||
+                !RvrmWireFormat.CanonicallyEquals(manifest, convertedManifest, out identityError))
+            {
+                error = "Playback conversion changed RVRM identity: " +
+                        (string.IsNullOrWhiteSpace(convertedManifestError) ? identityError : convertedManifestError);
+                return false;
+            }
             string extracted = Path.Combine(root, "extracted.raw");
             step = ChdmanService.Run(executable, $"extractraw -i {ChdmanService.Quote(output)} -o {ChdmanService.Quote(extracted)} -f", root, 180000);
             if (!step.Success || !Hash(source).SequenceEqual(Hash(extracted)) || !ChdEncodingProfile.TryRead(output, out ChdEncodingProfile converted) ||
