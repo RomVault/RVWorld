@@ -40,7 +40,8 @@ namespace RomVaultCore.FindFix
                 RvFile child = basePath.Child(i);
                 if (child.Game != null)
                 {
-                    if (nextSelect && datRule != null && datRule.CompleteOnly)
+                    bool isCompleteOnly = nextSelect && datRule != null && datRule.CompleteOnly;
+                    if (isCompleteOnly || child.FileType == FileType.CHD)
                         RemovePartialSets(child);
                 }
                 else

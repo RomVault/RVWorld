@@ -111,6 +111,22 @@ namespace RomVaultCore.FixFile
 
                         break;
 
+                    case FileType.CHD:
+                        if (!thisSelected)
+                        {
+                            continue;
+                        }
+                        if (child.GotStatus == GotStatus.Got && FixFileUtils.CurrentChdNeedsRecompression(child))
+                        {
+                            count++;
+                        }
+                        else if (child.GotStatus != GotStatus.Got &&
+                                 child.DirStatus.CountCanBeFixed() > 0)
+                        {
+                            count++;
+                        }
+                        break;
+
                     case FileType.Dir:
 
                         count += CountFixDir(child, thisSelected);
@@ -203,6 +219,12 @@ namespace RomVaultCore.FixFile
             ReturnCode returnCode = ReturnCode.LogicError;
             switch (child.FileType)
             {
+                case FileType.FileZip:
+                case FileType.FileSevenZip:
+                case FileType.FileCHD:
+                    // Container members are fixed by their owning container (Zip/7z/CHD), not directly.
+                    return ReturnCode.Good;
+
                 case FileType.Zip:
                 case FileType.SevenZip:
                     if (!thisSelected)
@@ -211,6 +233,15 @@ namespace RomVaultCore.FixFile
                     }
 
                     returnCode = FixAZip.FixZip(child, fileProcessQueue, ref totalFixed, out errorMessage);
+                    break;
+
+                case FileType.CHD:
+                    if (!thisSelected)
+                    {
+                        return ReturnCode.Good;
+                    }
+
+                    returnCode = FixAChd.FixChd(child, thisSelected, fileProcessQueue, ref totalFixed, out errorMessage);
                     break;
 
                 case FileType.Dir:

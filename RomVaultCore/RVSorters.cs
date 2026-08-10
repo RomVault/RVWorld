@@ -99,20 +99,12 @@ namespace RomVaultCore
         private static int CompareName(FileType f1, string name1, FileType f2, string name2)
         {
             int res;
-            if (f1 == FileType.FileZip || f2 == FileType.FileZip)
+            if (f1 == FileType.FileZip && f2 == FileType.FileZip)
             {
-                if (f1 != f2)
-                {
-                    ReportError.SendAndShow("Incompatible Compare type");
-                }
                 return Sorters.TrrntZipStringCompareCase(name1, name2);
             }
-            if (f1 == FileType.FileSevenZip || f2 == FileType.FileSevenZip)
+            if (f1 == FileType.FileSevenZip && f2 == FileType.FileSevenZip)
             {
-                if (f1 != f2)
-                {
-                    ReportError.SendAndShow("Incompatible Compare type");
-                }
                 return Sorters.Trrnt7ZipStringCompare(name1, name2);
             }
 
@@ -126,6 +118,26 @@ namespace RomVaultCore
                 f2Test= FileType.File;
 #endif
             return f1.CompareTo(f2);
+        }
+
+        internal static bool RunMixedContainerMemberSelfTest(out string error)
+        {
+            error = "";
+            try
+            {
+                int zipToChd = CompareName(FileType.FileZip, "same.cue", FileType.FileCHD, "same.cue");
+                int chdToZip = CompareName(FileType.FileCHD, "same.cue", FileType.FileZip, "same.cue");
+                int sevenToFile = CompareName(FileType.FileSevenZip, "same.cue", FileType.File, "same.cue");
+                int fileToSeven = CompareName(FileType.File, "same.cue", FileType.FileSevenZip, "same.cue");
+                if (zipToChd == 0 || chdToZip != -zipToChd || sevenToFile == 0 || fileToSeven != -sevenToFile)
+                    throw new InvalidOperationException("Mixed container-member comparisons are not symmetric and deterministic.");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                error = ex.Message;
+                return false;
+            }
         }
 
     }

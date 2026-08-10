@@ -231,6 +231,13 @@ namespace DATReader.DatStore
                             return res;
                         break;
                     }
+                case FileType.CHD:
+                    {
+                        int res = Sorters.DirectoryNameCompareCase(lName.Name, dBase.Name);
+                        if (res != 0)
+                            return res;
+                        break;
+                    }
                 default:
 
                     throw new InvalidOperationException("Invalid directory compare type " + FileType);

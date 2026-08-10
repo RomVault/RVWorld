@@ -102,10 +102,19 @@ namespace RomVaultCore.FixFile.FixAZipCore
             }
             if (fixStyle == FixStyle.ExtractToCache)
             {
-                ReturnCode returnCode1 = Decompress7ZipFile.DecompressSource7ZipFile(fixFileSource.Parent, copyOriginal, filesUsedForFix, out errorMessage);
+                ReturnCode returnCode1;
+                if (fixFileSource.FileType == FileType.FileCHD)
+                {
+                    returnCode1 = DecompressChdFile.DecompressSourceChdFile(fixFileSource.Parent, filesUsedForFix, out errorMessage);
+                }
+                else
+                {
+                    returnCode1 = Decompress7ZipFile.DecompressSource7ZipFile(fixFileSource.Parent, copyOriginal, filesUsedForFix, out errorMessage);
+                }
+
                 if (returnCode1 != ReturnCode.Good)
                 {
-                    ReportError.LogOut($"DecompressSource7Zip: {fixFileSource.Parent.FileName} return {returnCode1}");
+                    ReportError.LogOut($"DecompressSource: {fixFileSource.Parent.FileName} return {returnCode1}");
                     return returnCode1;
                 }
                 lstFixRomTable = GetFixFileList(fixZippedFile);
@@ -113,7 +122,7 @@ namespace RomVaultCore.FixFile.FixAZipCore
 
                 if (fixStyle == FixStyle.ExtractToCache)
                 {
-                    ReportError.LogOut($"DecompressSource7Zip: {fixFileSource.Parent.FileName} return {returnCode1}");
+                    ReportError.LogOut($"DecompressSource: {fixFileSource.Parent.FileName} return {returnCode1}");
                     return ReturnCode.FileSystemError;
                 }
             }

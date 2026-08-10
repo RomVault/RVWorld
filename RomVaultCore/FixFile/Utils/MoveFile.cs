@@ -10,19 +10,19 @@ namespace RomVaultCore.FixFile.Utils
 
     public static partial class FixFileUtils
     {
-        public static ReturnCode MoveFile(RvFile fileIn, RvFile fileOut, string outFilename, out bool fileMoved, out string error)
+        public static ReturnCode MoveFile(RvFile fileIn, RvFile fileOut, string outFilename, out bool fileMoved, out string error, bool forceMove = false, bool skipDatValidation = false)
         {
             error = "";
             fileMoved = false;
 
-            bool fileMove = TestFileMove(fileIn, fileOut);
+            bool fileMove = forceMove || TestFileMove(fileIn, fileOut);
 
             if (!fileMove)
             {
                 return ReturnCode.Good;
             }
 
-            byte[] bCRC;
+            byte[] bCRC = null;
             byte[] bMD5 = null;
             byte[] bSHA1 = null;
 
@@ -42,7 +42,12 @@ namespace RomVaultCore.FixFile.Utils
             string fileNameOut = outFilename ?? fileOut.FullName;
             try
             {
-                File.Move(fileNameIn, fileNameOut);
+                string outDir = System.IO.Path.GetDirectoryName(fileNameOut);
+                if (!string.IsNullOrWhiteSpace(outDir) && !System.IO.Directory.Exists(outDir))
+                    System.IO.Directory.CreateDirectory(outDir);
+
+                if (!string.Equals(fileNameIn, fileNameOut, System.StringComparison.OrdinalIgnoreCase))
+                    File.Move(fileNameIn, fileNameOut);
             }
             catch
             {
@@ -51,21 +56,26 @@ namespace RomVaultCore.FixFile.Utils
             }
 
 
-            bCRC = fileIn.CRC.Copy();
+            if (fileIn.CRC != null)
+                bCRC = fileIn.CRC.Copy();
             if (fileIn.FileStatusIs(FileStatus.MD5Verified))
             {
-                bMD5 = fileIn.MD5.Copy();
+                if (fileIn.MD5 != null)
+                    bMD5 = fileIn.MD5.Copy();
             }
 
             if (fileIn.FileStatusIs(FileStatus.SHA1Verified))
             {
-                bSHA1 = fileIn.SHA1.Copy();
+                if (fileIn.SHA1 != null)
+                    bSHA1 = fileIn.SHA1.Copy();
             }
 
             FileInfo fi = new FileInfo(fileNameOut);
             fileOut.FileModTimeStamp = fi.LastWriteTime;
 
-            ReturnCode retC = ValidateFileOut(fileIn, fileOut, true, bCRC, bSHA1, bMD5, out error);
+            ReturnCode retC = skipDatValidation
+                ? ValidateFileOutSkipDatCheck(fileIn, fileOut, true, bCRC, bSHA1, bMD5, out error)
+                : ValidateFileOut(fileIn, fileOut, true, bCRC, bSHA1, bMD5, out error);
             if (retC != ReturnCode.Good)
             {
                 return retC;
@@ -82,9 +92,9 @@ namespace RomVaultCore.FixFile.Utils
             if (fileIn == null)
                 return false;
 
-            if (fileIn.FileType != FileType.File)
+            if (fileIn.FileType != FileType.File && fileIn.FileType != FileType.CHD)
                 return false;
-            if (fileOut.FileType != FileType.File)
+            if (fileOut.FileType != FileType.File && fileOut.FileType != FileType.CHD)
                 return false;
 
             if (RvFile.treeType(fileIn) == RvTreeRow.TreeSelect.Locked)

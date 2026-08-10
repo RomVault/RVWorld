@@ -149,7 +149,9 @@ namespace RomVaultCore.FixFile
             for (int iRom = 0; iRom < fixZip.ChildCount; iRom++)
             {
                 var getChild = fixZip.Child(iRom);
-                if (getChild.RepStatus == RepStatus.Missing || getChild.RepStatus == RepStatus.NotCollected)
+                if (getChild.RepStatus == RepStatus.Missing ||
+                    getChild.RepStatus == RepStatus.MissingMIA ||
+                    getChild.RepStatus == RepStatus.NotCollected)
                     continue;
                 if (getChild.FileGroup == null)
                     return ReturnCode.FindFixesMissingFileGroups;
@@ -186,6 +188,7 @@ namespace RomVaultCore.FixFile
                     {
                         // any file we do not have or do not want in the destination zip
                         case RepStatus.Missing:
+                        case RepStatus.MissingMIA:
                         case RepStatus.NotCollected:
                         case RepStatus.Rename:
                         case RepStatus.Delete:
@@ -238,6 +241,7 @@ namespace RomVaultCore.FixFile
 
                         // any files we are just moving from the original zip to the destination zip
                         case RepStatus.Correct:
+                        case RepStatus.CorrectMIA:
                         case RepStatus.InToSort:
                         case RepStatus.NeededForFix:
                         case RepStatus.Corrupt:
@@ -265,6 +269,7 @@ namespace RomVaultCore.FixFile
                             }
 
                         case RepStatus.CanBeFixed:
+                        case RepStatus.CanBeFixedMIA:
                         case RepStatus.CorruptCanBeFixed:
                             {
                                 ReportError.procLog($"FixAZip: Calling Can Be fixed, Fixing");

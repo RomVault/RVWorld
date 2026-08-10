@@ -10,7 +10,36 @@ namespace RomVaultCore.FixFile.Utils
         {
             //Check to see if the files used for fix, can now be set to delete
             List<RvFile> parentCheckList = new List<RvFile>();
-            foreach (RvFile fixRom in lstFixRomTable)
+            List<RvFile> fixItems = new List<RvFile>();
+            foreach (RvFile source in lstFixRomTable)
+            {
+                if (source?.FileType != FileType.CHD)
+                {
+                    if (source != null) fixItems.Add(source);
+                    continue;
+                }
+
+                // A direct CHD move removes the old owner from the DB before
+                // this bookkeeping runs. Its destination members have already
+                // been merged and are the live source for any remaining fixes.
+                if (source.Parent == null || source.GotStatus != GotStatus.Got)
+                    continue;
+
+                // Find Fixes groups the virtual FileCHD member, while the CHD
+                // fixer consumes its owning physical container. Expand the
+                // owner back to the exact virtual members so their repair
+                // state is retired and the source CHD can be cleaned up.
+                for (int i = 0; i < source.ChildCount; i++)
+                {
+                    RvFile member = source.Child(i);
+                    if (member?.FileType == FileType.FileCHD &&
+                        (member.RepStatus == RepStatus.NeededForFix ||
+                         checkingAFile && member.RepStatus == RepStatus.Rename))
+                        fixItems.Add(member);
+                }
+            }
+
+            foreach (RvFile fixRom in fixItems)
             {
                 //check NeededForFix files, and Rename files if checkRename==true
                 if (fixRom.RepStatus != RepStatus.NeededForFix && (!checkingAFile || fixRom.RepStatus != RepStatus.Rename)) 
@@ -27,7 +56,9 @@ namespace RomVaultCore.FixFile.Utils
                 bool foundCanBeFixed = false;
                 foreach (RvFile gFile in fixRom.FileGroup.Files)
                 {
-                    if (gFile.RepStatus == RepStatus.CanBeFixed)
+                    if (gFile.RepStatus == RepStatus.CanBeFixed ||
+                        gFile.RepStatus == RepStatus.CanBeFixedMIA ||
+                        gFile.RepStatus == RepStatus.CorruptCanBeFixed)
                     {
                         foundCanBeFixed = true;
                         break;
@@ -53,6 +84,7 @@ namespace RomVaultCore.FixFile.Utils
                         break;
                     case FileType.FileZip:
                     case FileType.FileSevenZip:
+                    case FileType.FileCHD:
                         // if this is a compressed fixRom and adds its parent to the parentCheckList to see if the parent can now be reprocessed
                         RvFile checkFile = fixRom.Parent;
                         if (!parentCheckList.Contains(checkFile))
@@ -99,6 +131,36 @@ namespace RomVaultCore.FixFile.Utils
                 // if nothing needed deleted or zip still have NeededForFix or Rename then skip it.
                 if (!hasDelete || hasNeededForFix)
                     continue;
+
+                if (checkFile.FileType == FileType.CHD)
+                {
+                    bool hasChdMember = false;
+                    bool allChdMembersDelete = true;
+                    for (int i = 0; i < checkFile.ChildCount; i++)
+                    {
+                        RvFile member = checkFile.Child(i);
+                        if (member?.FileType != FileType.FileCHD)
+                            continue;
+                        hasChdMember = true;
+                        if (member.RepStatus != RepStatus.Delete)
+                            allChdMembersDelete = false;
+                    }
+
+                    if (!hasChdMember || !allChdMembersDelete)
+                    {
+                        // A physical CHD cannot discard only some virtual
+                        // members. Retain the owner and normalize members that
+                        // are no longer needed so they do not create a
+                        // permanent Delete/no-op loop on later Fix runs.
+                        for (int i = 0; i < checkFile.ChildCount; i++)
+                        {
+                            RvFile member = checkFile.Child(i);
+                            if (member?.FileType == FileType.FileCHD && member.RepStatus == RepStatus.Delete)
+                                member.RepStatus = member.IsInToSort ? RepStatus.InToSort : RepStatus.Unknown;
+                        }
+                        continue;
+                    }
+                }
 
                 // else add the zip file to the reprocess queue to get cleaned up next
                 Debug.WriteLine(checkFile.FullName + " adding to process list.");

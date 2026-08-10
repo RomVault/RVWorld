@@ -62,7 +62,9 @@ namespace RomVaultCore.FixFile
                 {
                     case RepStatus.InToSort:
                     case RepStatus.Correct:
+                    case RepStatus.CorrectMIA:
                     case RepStatus.CanBeFixed:
+                    case RepStatus.CanBeFixedMIA:
                     case RepStatus.CorruptCanBeFixed:
                         uncompressedSize += sevenZippedFile.FileGroup.Size ?? 0;
                         break;

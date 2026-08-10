@@ -15,7 +15,7 @@ namespace RomVaultCore.FindFix
         {
             List<RvFile> files = family.Files;
 
-            if (family.Size == 0 && family.CRC[0] == 0 && family.CRC[1] == 0 && family.CRC[2] == 0 && family.CRC[3] == 0)
+            if (family.Size == 0 && family.CRC?.Length >= 4 && family.CRC[0] == 0 && family.CRC[1] == 0 && family.CRC[2] == 0 && family.CRC[3] == 0)
             {
                 // set the found status of this file
                 foreach (RvFile tFile in files)
@@ -28,9 +28,13 @@ namespace RomVaultCore.FindFix
                         case RepStatus.UnScanned:
                             break;
                         case RepStatus.Missing:
-                            tFile.RepStatus = RepStatus.CanBeFixed;
+                        case RepStatus.MissingMIA:
+                        case RepStatus.CanBeFixed:
+                        case RepStatus.CanBeFixedMIA:
+                            tFile.RepStatus = tFile.MIAStatus == MIAStatus.None ? RepStatus.CanBeFixed : RepStatus.CanBeFixedMIA;
                             break;
                         case RepStatus.Correct:
+                        case RepStatus.CorrectMIA:
                             break;
                         case RepStatus.Corrupt:
                             if (tFile.DatStatus == DatStatus.InDatCollect)
@@ -51,6 +55,14 @@ namespace RomVaultCore.FindFix
                             break;
                         case RepStatus.Ignore:
                             break; // Ignore File
+                        case RepStatus.CorruptCanBeFixed:
+                        case RepStatus.MoveToCorrupt:
+                        case RepStatus.MoveToSort:
+                        case RepStatus.Delete:
+                        case RepStatus.NeededForFix:
+                        case RepStatus.Rename:
+                        case RepStatus.Deleted:
+                            break;
                         default:
                             ReportError.SendAndShow("Unknown test status " + tFile.FullName + "," + tFile.DatStatus + "," + tFile.RepStatus);
                             break;
@@ -78,20 +90,32 @@ namespace RomVaultCore.FindFix
                     case RepStatus.UnScanned:
                         break;
                     case RepStatus.Missing:
+                    case RepStatus.MissingMIA:
+                    case RepStatus.CanBeFixed:
+                    case RepStatus.CanBeFixedMIA:
+                    case RepStatus.CorruptCanBeFixed:
                         missingFiles.Add(tFile); // these are checked in step 1 to fixes from the allGotFiles List.
                         break;
                     case RepStatus.Correct:
+                    case RepStatus.CorrectMIA:
                         correctFiles.Add(tFile);
                         break;
                     case RepStatus.Corrupt:
-                        if (tFile.DatStatus == DatStatus.InDatCollect)
+                        if (tFile.DatStatus == DatStatus.InDatCollect || tFile.MIAStatus != MIAStatus.None)
                             missingFiles.Add(tFile); // corrupt files that are also InDatcollect are treated as missing files, and a fix should be found.
                         else
                             corruptFiles.Add(tFile); // all other corrupt files should be deleted or moved to tosort/corrupt
                         break;
+                    case RepStatus.MoveToCorrupt:
+                        corruptFiles.Add(tFile);
+                        break;
                     case RepStatus.UnNeeded:
                     case RepStatus.Unknown:
                     case RepStatus.IncompleteRemove:
+                    case RepStatus.MoveToSort:
+                    case RepStatus.Delete:
+                    case RepStatus.NeededForFix:
+                    case RepStatus.Rename:
                         unNeededFiles.Add(tFile);
                         break;
                     case RepStatus.NotCollected:
@@ -102,6 +126,8 @@ namespace RomVaultCore.FindFix
                         break;
                     case RepStatus.Ignore:
                         break; // Ignore File
+                    case RepStatus.Deleted:
+                        break;
                     default:
                         ReportError.SendAndShow("Unknown test status " + tFile.FullName + "," + tFile.DatStatus + "," + tFile.RepStatus);
                         break;
@@ -133,7 +159,9 @@ namespace RomVaultCore.FindFix
                 foreach (RvFile gotFile in allGotFiles)
                 {
                     if (!DBHelper.CheckIfMissingFileCanBeFixedByGotFile(missingFile, gotFile)) continue;
-                    missingFile.RepStatus = missingFile.RepStatus == RepStatus.Corrupt ? RepStatus.CorruptCanBeFixed : RepStatus.CanBeFixed;
+                    missingFile.RepStatus = missingFile.RepStatus == RepStatus.Corrupt
+                        ? RepStatus.CorruptCanBeFixed
+                        : missingFile.MIAStatus == MIAStatus.None ? RepStatus.CanBeFixed : RepStatus.CanBeFixedMIA;
                     break;
                 }
                 if (missingFile.RepStatus == RepStatus.Corrupt)

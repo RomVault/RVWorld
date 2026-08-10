@@ -43,6 +43,10 @@ public class ScannedFile
     public byte[] AltSHA256;
 
     public uint? CHDVersion;
+    public string ChdStatus;
+    public string ChdScanMethod;
+    public string ChdHashMatchMode;
+    public string ChdDescriptorMatch;
 
     public bool SearchFound = false;
 
@@ -71,7 +75,7 @@ public class ScannedFile
         StatusFlags |= flag;
     }
 
-    public bool IsDirectory => FileType == FileType.Dir || FileType == FileType.Zip || FileType == FileType.SevenZip;
+    public bool IsDirectory => FileType == FileType.Dir || FileType == FileType.Zip || FileType == FileType.SevenZip || FileType == FileType.CHD;
 
     public void Sort()
     {
@@ -87,6 +91,7 @@ public class ScannedFile
             case FileType.Zip:
                 cf = CompareNameTrrntZip;
                 break;
+            case FileType.CHD:
             case FileType.Dir:
                 cf = CompareNameDir;
                 break;

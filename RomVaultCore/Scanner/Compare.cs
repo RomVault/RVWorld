@@ -69,8 +69,8 @@ namespace RomVaultCore.Scanner
 
                 // filetypes are now know to be the same
 
-                // Dir's and Zip's are not deep scanned so matching here is done
-                if (dbfileType == FileType.Dir || dbfileType == FileType.Zip || dbfileType == FileType.SevenZip)
+                // Dir's and Archives (Zip/7z/CHD) are not matched by CRC here, matching here is done.
+                if (dbfileType == FileType.Dir || dbfileType == FileType.Zip || dbfileType == FileType.SevenZip || dbfileType == FileType.CHD)
                     return true;
 
                 // check headerTypes

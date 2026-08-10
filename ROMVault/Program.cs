@@ -54,6 +54,10 @@ namespace ROMVault
             if (!string.IsNullOrWhiteSpace(errorReadingSettings))
                 MessageBox.Show(errorReadingSettings, "Error Reading Settings", MessageBoxButtons.OK, MessageBoxIcon.Error);
 
+            string chdRecoveryReport = ChdUpgradeRecovery.RecoverPending();
+            if (!string.IsNullOrWhiteSpace(chdRecoveryReport))
+                MessageBox.Show(chdRecoveryReport, "CHD Upgrade Recovery", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
             ReportError.ErrorForm += ShowErrorForm;
             ReportError.Dialog += ShowDialog;
 

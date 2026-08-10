@@ -48,6 +48,8 @@
             this.lblArchiveCompression = new System.Windows.Forms.Label();
             this.cboCompression = new System.Windows.Forms.ComboBox();
             this.chkConvertWhenFixing = new System.Windows.Forms.CheckBox();
+            this.cboChdStorageProfile = new System.Windows.Forms.ComboBox();
+            this.lblChdStorageProfile = new System.Windows.Forms.Label();
             this.cboHeaderType = new System.Windows.Forms.ComboBox();
             this.lblHeaderType = new System.Windows.Forms.Label();
             this.lblArchiveType = new System.Windows.Forms.Label();
@@ -61,6 +63,7 @@
             this.cboFilterType = new System.Windows.Forms.ComboBox();
             this.chkSingleArchive = new System.Windows.Forms.CheckBox();
             this.lblROMCHDFilter = new System.Windows.Forms.Label();
+            this.chkChdStrict = new System.Windows.Forms.CheckBox();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
             this.chkMultiDatDirOverride = new System.Windows.Forms.CheckBox();
             this.tabAdvanced = new System.Windows.Forms.TabPage();
@@ -272,6 +275,8 @@
             this.groupBox2.Controls.Add(this.lblArchiveCompression);
             this.groupBox2.Controls.Add(this.cboCompression);
             this.groupBox2.Controls.Add(this.chkConvertWhenFixing);
+            this.groupBox2.Controls.Add(this.cboChdStorageProfile);
+            this.groupBox2.Controls.Add(this.lblChdStorageProfile);
             this.groupBox2.Controls.Add(this.cboHeaderType);
             this.groupBox2.Controls.Add(this.lblHeaderType);
             this.groupBox2.Controls.Add(this.lblArchiveType);
@@ -285,6 +290,7 @@
             this.groupBox2.Controls.Add(this.cboFilterType);
             this.groupBox2.Controls.Add(this.chkSingleArchive);
             this.groupBox2.Controls.Add(this.lblROMCHDFilter);
+            this.groupBox2.Controls.Add(this.chkChdStrict);
             this.groupBox2.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.groupBox2.Location = new System.Drawing.Point(14, 60);
             this.groupBox2.Name = "groupBox2";
@@ -322,9 +328,31 @@
             this.chkConvertWhenFixing.TabIndex = 49;
             this.chkConvertWhenFixing.Text = "Convert when fixing";
             this.chkConvertWhenFixing.UseVisualStyleBackColor = true;
-            // 
+            //
+            // cboChdStorageProfile
+            //
+            this.cboChdStorageProfile.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.cboChdStorageProfile.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.cboChdStorageProfile.FormattingEnabled = true;
+            this.cboChdStorageProfile.Location = new System.Drawing.Point(465, 44);
+            this.cboChdStorageProfile.Name = "cboChdStorageProfile";
+            this.cboChdStorageProfile.Size = new System.Drawing.Size(102, 21);
+            this.cboChdStorageProfile.TabIndex = 52;
+            this.cboChdStorageProfile.Visible = false;
+            //
+            // lblChdStorageProfile
+            //
+            this.lblChdStorageProfile.AutoSize = true;
+            this.lblChdStorageProfile.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblChdStorageProfile.Location = new System.Drawing.Point(375, 47);
+            this.lblChdStorageProfile.Name = "lblChdStorageProfile";
+            this.lblChdStorageProfile.Size = new System.Drawing.Size(82, 13);
+            this.lblChdStorageProfile.TabIndex = 51;
+            this.lblChdStorageProfile.Text = "CHD Storage:";
+            this.lblChdStorageProfile.Visible = false;
+            //
             // cboHeaderType
-            // 
+            //
             this.cboHeaderType.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.cboHeaderType.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.cboHeaderType.FormattingEnabled = true;
@@ -454,6 +482,16 @@
             this.lblROMCHDFilter.Size = new System.Drawing.Size(88, 13);
             this.lblROMCHDFilter.TabIndex = 40;
             this.lblROMCHDFilter.Text = "ROM/CHD Filter:";
+            //
+            // chkChdStrict
+            //
+            this.chkChdStrict.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.chkChdStrict.Location = new System.Drawing.Point(312, 119);
+            this.chkChdStrict.Name = "chkChdStrict";
+            this.chkChdStrict.Size = new System.Drawing.Size(255, 19);
+            this.chkChdStrict.TabIndex = 50;
+            this.chkChdStrict.Text = "Require CHD descriptor matching";
+            this.chkChdStrict.UseVisualStyleBackColor = true;
             // 
             // groupBox1
             // 
@@ -699,6 +737,7 @@
         private System.Windows.Forms.ComboBox cboFilterType;
         private System.Windows.Forms.CheckBox chkSingleArchive;
         private System.Windows.Forms.Label lblROMCHDFilter;
+        private System.Windows.Forms.CheckBox chkChdStrict;
         private System.Windows.Forms.GroupBox groupBox1;
         private System.Windows.Forms.CheckBox chkMultiDatDirOverride;
         private System.Windows.Forms.TabPage tabExclude;
@@ -721,5 +760,7 @@
         private System.Windows.Forms.Label lblArchiveCompression;
         private System.Windows.Forms.ComboBox cboCompression;
         private System.Windows.Forms.CheckBox chkConvertWhenFixing;
+        private System.Windows.Forms.ComboBox cboChdStorageProfile;
+        private System.Windows.Forms.Label lblChdStorageProfile;
     }
 }

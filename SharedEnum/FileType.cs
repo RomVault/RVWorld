@@ -7,6 +7,8 @@
     File = 4,
     FileZip = 5,
     FileSevenZip = 6,
+    CHD = 7,
+    FileCHD = 8,
 
     FileOnly = 100
 }

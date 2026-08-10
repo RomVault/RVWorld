@@ -48,6 +48,8 @@ namespace DATReader.DatClean
                     return ".zip";
                 case FileType.SevenZip:
                     return ".7z";
+                case FileType.CHD:
+                    return ".chd";
                 default:
                     return "";
             }
