@@ -1,7 +1,7 @@
 /******************************************************
  *     ROMVault3 is written by Gordon J.              *
  *     Contact gordon@romvault.com                    *
- *     Copyright 2024                                 *
+ *     Copyright 2026                                 *
  ******************************************************/
 
 using DATReader.DatStore;
@@ -29,7 +29,7 @@ namespace ROMVault
     {
         private RvFile _clickedTree;
 
-        #region Startup
+        #region FrmMainOpenClose
 
         public FrmMain()
         {
@@ -59,13 +59,37 @@ namespace ROMVault
                 SetTextBoxHeight(ucGameInfo);
             }
 
-            grdGame.updateGameInfo += UpdateGameGrid;
-            grdGame.updateDatInfo += UpdateDatInfoUpdate;
-            grdGame.MenuClick += OpenMenu;
+            grdGame.updateGameInfo += UpdateGameGridCallback;
+            grdGame.updateDatInfo += UpdateDatInfoUpdateCallback;
+            grdGame.MenuClick += OpenMenuCallback;
 
-            sidePannel.DisplaySide += SidePannel_DisplaySide;
-            SidePannel_DisplaySide(false);
+            sidePannel.DisplaySide += SidePannelDisplaySide;
+            SidePannelDisplaySide(false);
         }
+
+        protected override void OnFormClosing(FormClosingEventArgs e)
+        {
+            if (_working)
+            {
+                e.Cancel = true;
+                return;
+            }
+            WriteDefaults();
+        }
+        private void FrmMain_FormClosed(object sender, FormClosedEventArgs e)
+        {
+            if (_formKey != null && !_formKey.IsDisposed)
+                _formKey.Close();
+
+            while (sendingTextIsEmpty)
+                Thread.Sleep(1000);
+
+            this.Hide();
+
+            Environment.Exit(0);
+        }
+
+
         #endregion
 
 
@@ -129,6 +153,72 @@ namespace ROMVault
 
         #endregion
 
+        #region TreeEvents
+        private void DirTreeRvChecked(object sender, MouseEventArgs e)
+        {
+            RepairStatus.ReportStatusReset(DB.DirRoot);
+            DatSetSelected(ctrRvTree.Selected);
+        }
+
+        private void DirTreeRvSelected(object sender, MouseEventArgs e)
+        {
+            RvFile cf = (RvFile)sender;
+
+            if (e.Button != MouseButtons.Right)
+            {
+                if (cf != grdGame.gameGridSource)
+                {
+                    DatSetSelected(cf);
+                }
+                return;
+            }
+
+            if (cf != ctrRvTree.Selected)
+            {
+                DatSetSelected(cf);
+            }
+
+            _clickedTree = (RvFile)sender;
+
+            if (_working)
+                return;
+
+            Point controLocation = ControlLoc(ctrRvTree);
+
+            if (cf.IsInToSort)
+            {
+                _mnuToSortOpen.Enabled = Directory.Exists(_clickedTree.FullName);
+                _mnuToSortDelete.Enabled = !(_clickedTree.ToSortStatusIs(RvFile.ToSortDirType.ToSortPrimary) || _clickedTree.ToSortStatusIs(RvFile.ToSortDirType.ToSortCache));
+                _mnuToSortSetCache.Visible = !(_clickedTree.ToSortStatusIs(RvFile.ToSortDirType.ToSortCache) || _clickedTree.ToSortStatusIs(RvFile.ToSortDirType.ToSortFileOnly));
+                _mnuToSortSetPrimary.Visible = !(_clickedTree.ToSortStatusIs(RvFile.ToSortDirType.ToSortPrimary) || _clickedTree.ToSortStatusIs(RvFile.ToSortDirType.ToSortFileOnly));
+
+                _mnuToSortSetFileOnly.Visible = !(_clickedTree.ToSortStatusIs(RvFile.ToSortDirType.ToSortFileOnly) || _clickedTree.ToSortStatusIs(RvFile.ToSortDirType.ToSortPrimary) || _clickedTree.ToSortStatusIs(RvFile.ToSortDirType.ToSortCache));
+                _mnuToSortClearFileOnly.Visible = _clickedTree.ToSortStatusIs(RvFile.ToSortDirType.ToSortFileOnly);
+
+                int thisToSort = 0;
+                for (int i = 0; i < DB.DirRoot.ChildCount; i++)
+                {
+                    if (DB.DirRoot.Child(i) == cf)
+                    {
+                        thisToSort = i;
+                        break;
+                    }
+                }
+                _mnuToSortUp.Enabled = thisToSort >= 2;
+                _mnuToSortDown.Enabled = thisToSort <= DB.DirRoot.ChildCount - 2;
+
+                _mnuTreeToSort.Show(this, new Point(controLocation.X + e.X - 32, controLocation.Y + e.Y - 10));
+            }
+            else
+            {
+                _mnuOpen.Enabled = Directory.Exists(_clickedTree.FullName);
+                //_mnuFile.Enabled = _clickedTree.Dat == null;
+                _mnuTreeMain.Show(this, new Point(controLocation.X + e.X - 32, controLocation.Y + e.Y - 10));
+            }
+        }
+
+
+        #endregion
 
         #region MainTreeMenu
         private ContextMenuStrip _mnuTreeMain;
@@ -376,7 +466,21 @@ namespace ROMVault
             _mnuLaunchEmulator = addMenuItem(null, "Launch Emulator", LaunchEmulator);
         }
 
-        public void OpenMenu(RvFile thisGame, MouseEventArgs e)
+        private Point ControlLoc(Control c)
+        {
+            Point ret = new Point(c.Left, c.Top);
+
+            if (c.Parent == this)
+                return ret;
+
+            Point pNext = ControlLoc(c.Parent);
+            ret.X += pNext.X;
+            ret.Y += pNext.Y;
+
+            return ret;
+        }
+
+        public void OpenMenuCallback(RvFile thisGame, MouseEventArgs e)
         {
             Point controLocation = ControlLoc(grdGame);
             _mnuGameGrid.Items.Clear();
@@ -772,66 +876,6 @@ namespace ROMVault
 
         #endregion
 
-
-        #region TopRightFilters
-        private void ctrFilter_CheckedChanged(object sender, EventArgs e)
-        {
-            DatSetSelected(ctrRvTree.Selected);
-        }
-        private void ctrFilter_FilterTextChanged(object sender, UIElements.UIFilterOptions.FilterTextChangedEventArgs e)
-        {
-            grdGame.FilterText = e.FilterText;
-            if (grdGame.gameGridSource != null)
-                grdGame.UpdateGameGrid(grdGame.gameGridSource);
-        }
-        #endregion
-
-
-
-        #region TitleBarText
-
-        private string txtDefault;
-        private string txtNow = "";
-        private bool sendingTextIsEmpty = false;
-
-        public void settext(string txt)
-        {
-            if (InvokeRequired)
-            {
-                BeginInvoke(new MethodInvoker(() => settext(txt)));
-                return;
-            }
-
-            txtNow = txt;
-
-            string res = txtDefault;
-            sendingTextIsEmpty = !string.IsNullOrWhiteSpace(txtNow);
-            if (sendingTextIsEmpty)
-                res += " " + txtNow;
-
-            if (Text != res)
-                Text = res;
-        }
-
-        /*
-        public sealed override string Text
-        {
-            get => base.Text;
-            set => base.Text = value;
-        }
-        */
-
-        private void InitializeTitleBarText()
-        {
-            txtDefault = $@"RomVault ({Program.strVersion}) {Application.StartupPath}";
-            settext("");
-            MIA.stme = settext;
-        }
-
-        #endregion
-
-
-
         #region MenuCommonWorkerFunctions
 
         private static ToolStripMenuItem addMenuItem(ContextMenuStrip menu, string text, EventHandler click, object tag = null)
@@ -908,240 +952,18 @@ namespace ROMVault
             frmFixFiles.Show();
         }
 
-        #endregion
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        private float _scaleFactorX = 1;
-        private float _scaleFactorY = 1;
-
-        #region MainUISetup
-
-        private void SidePannel_DisplaySide(bool visible)
+        private void setPos(Form childForm)
         {
-            splitListArt.Panel2Collapsed = !visible;
-            if (visible)
-                splitListArt.Panel2.Show();
-            else
-                splitListArt.Panel2.Hide();
-        }
-
-        /*
-        private void MnuExportToLB(object sender, EventArgs e)
-        {
-            RVLB.DoExport.Go(_clickedTree);
-            DatSetSelected(ctrRvTree.Selected);
-            MessageBox.Show("Export to LB Complete");
-        }
-        */
-
-
-        private static void SetTextBoxHeight(Control c)
-        {
-            foreach (Control c1 in c.Controls)
-                SetTextBoxHeight(c1);
-
-            switch (c)
-            {
-                case TextBox tb:
-                    tb.Height = 14;
-                    break;
-            }
+            childForm.Owner = this;
+            childForm.StartPosition = FormStartPosition.Manual;
+            childForm.Location = new Point(
+              Location.X + (Width - childForm.Width) / 2,
+              Location.Y + (Height - childForm.Height) / 2
+            );
         }
 
 
-        private void splitDatInfoTree_Panel1_Resize(object sender, EventArgs e)
-        {
-            // fixes a rendering issue in mono
-            if (splitDatInfoTree.Panel1.Width == 0)
-                return;
-
-            ucDatInfo.Width = splitDatInfoTree.Panel1.Width - ucDatInfo.Left * 2;
-        }
-
-        private void splitGameInfoLists_Panel1_Resize(object sender, EventArgs e)
-        {
-            // fixes a rendering issue in mono
-            if (splitGameInfoLists.Panel1.Width == 0)
-                return;
-
-            int chkLeft = splitGameInfoLists.Panel1.Width - 150;
-            if (chkLeft < 430)
-                chkLeft = 430;
-
-            ctrFilter.Left = chkLeft;
-            ucGameInfo.Width = chkLeft - ucGameInfo.Left - 10;
-        }
-
-        protected override void ScaleControl(SizeF factor, BoundsSpecified specified)
-        {
-            base.ScaleControl(factor, specified);
-            splitToolBarMain.SplitterDistance = (int)(splitToolBarMain.SplitterDistance * factor.Width);
-            splitDatInfoGameInfo.SplitterDistance = (int)(splitDatInfoGameInfo.SplitterDistance * factor.Width);
-            splitDatInfoGameInfo.Panel1MinSize = (int)(splitDatInfoGameInfo.Panel1MinSize * factor.Width);
-
-            splitDatInfoTree.SplitterDistance = (int)(splitDatInfoTree.SplitterDistance * factor.Height);
-            splitGameInfoLists.SplitterDistance = (int)(splitGameInfoLists.SplitterDistance * factor.Height);
-
-            _scaleFactorX *= factor.Width;
-            _scaleFactorY *= factor.Height;
-
-            ucDatInfo.SetScaleFactor(factor);
-            ucGameInfo.SetScaleFactor(factor);
-        }
-
-        protected override void OnFormClosing(FormClosingEventArgs e)
-        {
-            if (_working)
-            {
-                e.Cancel = true;
-                return;
-            }
-            WriteDefaults();
-        }
-        #endregion
-
-
-        #region Tree
-        private void DirTreeRvChecked(object sender, MouseEventArgs e)
-        {
-            RepairStatus.ReportStatusReset(DB.DirRoot);
-            DatSetSelected(ctrRvTree.Selected);
-        }
-
-        private void DirTreeRvSelected(object sender, MouseEventArgs e)
-        {
-            RvFile cf = (RvFile)sender;
-
-            if (e.Button != MouseButtons.Right)
-            {
-                if (cf != grdGame.gameGridSource)
-                {
-                    DatSetSelected(cf);
-                }
-                return;
-            }
-
-            if (cf != ctrRvTree.Selected)
-            {
-                DatSetSelected(cf);
-            }
-
-            _clickedTree = (RvFile)sender;
-
-            if (_working)
-                return;
-
-            Point controLocation = ControlLoc(ctrRvTree);
-
-            if (cf.IsInToSort)
-            {
-                _mnuToSortOpen.Enabled = Directory.Exists(_clickedTree.FullName);
-                _mnuToSortDelete.Enabled = !(_clickedTree.ToSortStatusIs(RvFile.ToSortDirType.ToSortPrimary) || _clickedTree.ToSortStatusIs(RvFile.ToSortDirType.ToSortCache));
-                _mnuToSortSetCache.Visible = !(_clickedTree.ToSortStatusIs(RvFile.ToSortDirType.ToSortCache) || _clickedTree.ToSortStatusIs(RvFile.ToSortDirType.ToSortFileOnly));
-                _mnuToSortSetPrimary.Visible = !(_clickedTree.ToSortStatusIs(RvFile.ToSortDirType.ToSortPrimary) || _clickedTree.ToSortStatusIs(RvFile.ToSortDirType.ToSortFileOnly));
-
-                _mnuToSortSetFileOnly.Visible = !(_clickedTree.ToSortStatusIs(RvFile.ToSortDirType.ToSortFileOnly) || _clickedTree.ToSortStatusIs(RvFile.ToSortDirType.ToSortPrimary) || _clickedTree.ToSortStatusIs(RvFile.ToSortDirType.ToSortCache));
-                _mnuToSortClearFileOnly.Visible = _clickedTree.ToSortStatusIs(RvFile.ToSortDirType.ToSortFileOnly);
-
-                int thisToSort = 0;
-                for (int i = 0; i < DB.DirRoot.ChildCount; i++)
-                {
-                    if (DB.DirRoot.Child(i) == cf)
-                    {
-                        thisToSort = i;
-                        break;
-                    }
-                }
-                _mnuToSortUp.Enabled = thisToSort >= 2;
-                _mnuToSortDown.Enabled = thisToSort <= DB.DirRoot.ChildCount - 2;
-
-                _mnuTreeToSort.Show(this, new Point(controLocation.X + e.X - 32, controLocation.Y + e.Y - 10));
-            }
-            else
-            {
-                _mnuOpen.Enabled = Directory.Exists(_clickedTree.FullName);
-                //_mnuFile.Enabled = _clickedTree.Dat == null;
-                _mnuTreeMain.Show(this, new Point(controLocation.X + e.X - 32, controLocation.Y + e.Y - 10));
-            }
-        }
-
-        private Point ControlLoc(Control c)
-        {
-            Point ret = new Point(c.Left, c.Top);
-
-            if (c.Parent == this)
-                return ret;
-
-            Point pNext = ControlLoc(c.Parent);
-            ret.X += pNext.X;
-            ret.Y += pNext.Y;
-
-            return ret;
-        }
-
-
-        #endregion
-
-
-        #region popupMenus
-
-
-
-        private static void MakeFixDat(RvFile baseDir, bool redOnly)
+        public static void MakeFixDat(RvFile baseDir, bool redOnly)
         {
             FolderBrowser browse = new FolderBrowser
             {
@@ -1171,64 +993,80 @@ namespace ROMVault
             FixDatReport.RecursiveDatTree(Settings.rvSettings.FixDatOutPath, baseDir, redOnly);
         }
 
-
-
-
-
         #endregion
 
 
-        #region coreFunctions
 
-
-        public void UpdateDats()
+        #region TopRightFilters
+        private void ctrFilter_CheckedChanged(object sender, EventArgs e)
         {
-            // incase the selected tree item(DAT) is removed from the tree in the updated we need to build a parent list and traverse up it until we find a parent item still in the tree.
+            DatSetSelected(ctrRvTree.Selected);
+        }
+        private void ctrFilter_FilterTextChanged(object sender, UIElements.UIFilterOptions.FilterTextChangedEventArgs e)
+        {
+            grdGame.FilterText = e.FilterText;
+            if (grdGame.gameGridSource != null)
+                grdGame.UpdateGameGrid(grdGame.gameGridSource);
+        }
+        #endregion
 
-            // build a list of the selected item in the Tree view and all the items up the parent list from there back to the root.
-            RvFile selected = ctrRvTree.Selected;
-            List<RvFile> parents = new List<RvFile>();
-            while (selected != null)
+
+
+        #region TitleBarText
+
+        private string txtDefault;
+        private string txtNow = "";
+        private bool sendingTextIsEmpty = false;
+
+        public void settext(string txt)
+        {
+            if (InvokeRequired)
             {
-                parents.Add(selected);
-                selected = selected.Parent;
+                BeginInvoke(new MethodInvoker(() => settext(txt)));
+                return;
             }
 
-            // update the dats
-            using (FrmProgressWindow progress = new FrmProgressWindow(this, "Scanning Dats", DatUpdate.UpdateDat, null))
-            {
-                progress.HideCancelButton();
-                progress.ShowDialog(this);
-            }
-            // rebuild the tree
-            ctrRvTree.Setup(ref DB.DirRoot);
+            txtNow = txt;
 
-            // if the rvFile.Parent is null it have been removed from the tree so remove it from the list.
-            // set up until we find a rvFile with a parent.
-            while (parents.Count > 1 && parents[0].Parent == null)
-                parents.RemoveAt(0);
+            string res = txtDefault;
+            sendingTextIsEmpty = !string.IsNullOrWhiteSpace(txtNow);
+            if (sendingTextIsEmpty)
+                res += " " + txtNow;
 
-            // did we find a parent
-            if (parents.Count > 0)
-                selected = parents[0];
+            if (Text != res)
+                Text = res;
+        }
+
+        /*
+        public sealed override string Text
+        {
+            get => base.Text;
+            set => base.Text = value;
+        }
+        */
+
+        private void InitializeTitleBarText()
+        {
+            txtDefault = $@"RomVault ({Program.strVersion}) {Application.StartupPath}";
+            settext("");
+            MIA.stme = settext;
+        }
+
+        #endregion
+
+        #region SidePannel
+        private void SidePannelDisplaySide(bool visible)
+        {
+            splitListArt.Panel2Collapsed = !visible;
+            if (visible)
+                splitListArt.Panel2.Show();
             else
-                selected = null;
-
-            // update the selected tree item, and the game grid view.
-            ctrRvTree.SetSelected(selected);
-            DatSetSelected(selected);
+                splitListArt.Panel2.Hide();
         }
 
-        private void setPos(Form childForm)
-        {
-            childForm.Owner = this;
-            childForm.StartPosition = FormStartPosition.Manual;
-            childForm.Location = new Point(
-              Location.X + (Width - childForm.Width) / 2,
-              Location.Y + (Height - childForm.Height) / 2
-            );
-        }
+        #endregion
 
+        #region UIWorking
 
         private bool _working = false;
 
@@ -1288,11 +1126,111 @@ namespace ROMVault
             grdGame.Refresh();
         }
 
+        #endregion
+
+
+        #region UIResize
+
+        private float _scaleFactorX = 1;
+        private float _scaleFactorY = 1;
+
+        private static void SetTextBoxHeight(Control c)
+        {
+            foreach (Control c1 in c.Controls)
+                SetTextBoxHeight(c1);
+
+            switch (c)
+            {
+                case TextBox tb:
+                    tb.Height = 14;
+                    break;
+            }
+        }
+
+
+        private void splitDatInfoTree_Panel1_Resize(object sender, EventArgs e)
+        {
+            // fixes a rendering issue in mono
+            if (splitDatInfoTree.Panel1.Width == 0)
+                return;
+
+            ucDatInfo.Width = splitDatInfoTree.Panel1.Width - ucDatInfo.Left * 2;
+        }
+
+        private void splitGameInfoLists_Panel1_Resize(object sender, EventArgs e)
+        {
+            // fixes a rendering issue in mono
+            if (splitGameInfoLists.Panel1.Width == 0)
+                return;
+
+            int chkLeft = splitGameInfoLists.Panel1.Width - 150;
+            if (chkLeft < 430)
+                chkLeft = 430;
+
+            ctrFilter.Left = chkLeft;
+            ucGameInfo.Width = chkLeft - ucGameInfo.Left - 10;
+        }
+
+        protected override void ScaleControl(SizeF factor, BoundsSpecified specified)
+        {
+            base.ScaleControl(factor, specified);
+            splitToolBarMain.SplitterDistance = (int)(splitToolBarMain.SplitterDistance * factor.Width);
+            splitDatInfoGameInfo.SplitterDistance = (int)(splitDatInfoGameInfo.SplitterDistance * factor.Width);
+            splitDatInfoGameInfo.Panel1MinSize = (int)(splitDatInfoGameInfo.Panel1MinSize * factor.Width);
+
+            splitDatInfoTree.SplitterDistance = (int)(splitDatInfoTree.SplitterDistance * factor.Height);
+            splitGameInfoLists.SplitterDistance = (int)(splitGameInfoLists.SplitterDistance * factor.Height);
+
+            _scaleFactorX *= factor.Width;
+            _scaleFactorY *= factor.Height;
+
+            ucDatInfo.SetScaleFactor(factor);
+            ucGameInfo.SetScaleFactor(factor);
+        }
+
 
         #endregion
 
 
-        #region DatDisplay
+
+        #region coreWorkerFunctions
+        public void UpdateDats()
+        {
+            // incase the selected tree item(DAT) is removed from the tree in the updated we need to build a parent list and traverse up it until we find a parent item still in the tree.
+
+            // build a list of the selected item in the Tree view and all the items up the parent list from there back to the root.
+            RvFile selected = ctrRvTree.Selected;
+            List<RvFile> parents = new List<RvFile>();
+            while (selected != null)
+            {
+                parents.Add(selected);
+                selected = selected.Parent;
+            }
+
+            // update the dats
+            using (FrmProgressWindow progress = new FrmProgressWindow(this, "Scanning Dats", DatUpdate.UpdateDat, null))
+            {
+                progress.HideCancelButton();
+                progress.ShowDialog(this);
+            }
+            // rebuild the tree
+            ctrRvTree.Setup(ref DB.DirRoot);
+
+            // if the rvFile.Parent is null it have been removed from the tree so remove it from the list.
+            // set up until we find a rvFile with a parent.
+            while (parents.Count > 1 && parents[0].Parent == null)
+                parents.RemoveAt(0);
+
+            // did we find a parent
+            if (parents.Count > 0)
+                selected = parents[0];
+            else
+                selected = null;
+
+            // update the selected tree item, and the game grid view.
+            ctrRvTree.SetSelected(selected);
+            DatSetSelected(selected);
+        }
 
         private void DatSetSelected(RvFile cf)
         {
@@ -1309,26 +1247,6 @@ namespace ROMVault
             grdGame.UpdateGameGrid(cf);
         }
 
-
-
-        #endregion
-
-
-
-
-        private void FrmMain_FormClosed(object sender, FormClosedEventArgs e)
-        {
-            if (_formKey != null && !_formKey.IsDisposed)
-                _formKey.Close();
-
-            while (sendingTextIsEmpty)
-                Thread.Sleep(1000);
-
-            this.Hide();
-
-            Environment.Exit(0);
-        }
-
         private void updateMIACallback()
         {
             MIA.updateType = (Control.ModifierKeys == Keys.Shift) ? MIA.MIAUpdateType.forceUpdate : MIA.MIAUpdateType.Regular;
@@ -1342,22 +1260,24 @@ namespace ROMVault
             DatSetSelected(ctrRvTree.Selected);
         }
 
+        #endregion
+
         #region gamegridMenu
 
-        public void UpdateGameGrid(RvFile tGame, bool onTimer)
+        public void UpdateGameGridCallback(RvFile tGame, bool onTimer)
         {
             ucGameInfo.UpdateGameMetaData(tGame);
             sidePannel.UpdateSidePannel(tGame);
             grdRom.UpdateRomGrid(tGame, onTimer);
         }
 
-        public void UpdateDatInfoUpdate(RvFile tGame)
+        public void UpdateDatInfoUpdateCallback(RvFile tGame)
         {
             ctrRvTree.SetSelected(tGame);
             ucDatInfo.UpdateDatMetaData(tGame);
         }
 
-        #endregion
 
+        #endregion
     }
 }
