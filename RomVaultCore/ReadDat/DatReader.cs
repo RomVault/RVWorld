@@ -102,7 +102,7 @@ namespace RomVaultCore.ReadDat
                 }
 
                 bool outputTestDATs = false;
-                string outDirName=datFile.DatFullName.Substring(8).Replace("\\","-");
+                string outDirName = datFile.DatFullName.Substring(8).Replace("\\", "-");
 
                 ReportError.LogOut($"DatRule {dirNameRule}");
 
@@ -233,7 +233,7 @@ namespace RomVaultCore.ReadDat
                     DatXMLWriter.WriteDat($"D:\\outPath\\{outDirName}-16.dat", datHeader);
 
                 // 17: FixDupes
-                DatClean.FixDupes(datHeader.BaseDir);
+                DatClean.FixDupes(datHeader.BaseDir, datRootFullName, ReadError);
 
                 if (outputTestDATs)
                     DatXMLWriter.WriteDat($"D:\\outPath\\{outDirName}-17.dat", datHeader);

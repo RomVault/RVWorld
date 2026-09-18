@@ -147,7 +147,7 @@ namespace DATReader.DatClean
 
 
 
-        public static void FixDupes(DatDir dDir)
+        public static void FixDupes(DatDir dDir, string fullPath, ReportError ErrorReport)
         {
             DatBase[] arrDir = dDir.ToArray();
             string lastName = "";
@@ -160,6 +160,7 @@ namespace DATReader.DatClean
 
                 if (lastFileType == fileType && lastName.ToLowerInvariant() == thisName.ToLowerInvariant())
                 {
+                    //ErrorReport.Invoke(fullPath, $"Game: {dDir.Name}, Duplicate name found: {thisName}");
                     switch (lastFileType)
                     {
                         case FileType.Dir:
@@ -194,7 +195,7 @@ namespace DATReader.DatClean
 
                 if (db is DatDir ddir)
                 {
-                    FixDupes(ddir);
+                    FixDupes(ddir, fullPath, ErrorReport);
                 }
             }
         }

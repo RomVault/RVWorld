@@ -61,11 +61,13 @@
 // -----------------------------------------------------------------------
 
 
+using System.Runtime.CompilerServices;
+
 namespace Compress.Support.Compression.Deflate
 {
     sealed class Tree
     {
-        private static readonly int HEAP_SIZE = (2 * InternalConstants.L_CODES + 1);
+        private const int HEAP_SIZE = (2 * InternalConstants.L_CODES + 1);
                 
         // extra bits for each length code
         internal static readonly int[] ExtraLengthBits = new int[]
@@ -166,18 +168,19 @@ namespace Compress.Support.Compression.Deflate
             256, 384, 512, 768, 1024, 1536, 2048, 3072, 4096, 6144, 8192, 12288, 16384, 24576
         };
 
-        
+
         /// <summary>
         /// Map from a distance to a distance code.
         /// </summary>
         /// <remarks> 
         /// No side effects. _dist_code[256] and _dist_code[257] are never used.
         /// </remarks>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static int DistanceCode(int dist)
         {
             return (dist < 256)
                 ? _dist_code[dist]
-                : _dist_code[256 + SharedUtils.URShift(dist, 7)];
+                : _dist_code[256 + (int)((uint)dist>>7)];
         }
 
         internal short[] dyn_tree; // the dynamic tree
@@ -281,6 +284,9 @@ namespace Compress.Support.Compression.Deflate
         //     also updated if stree is not null. The field max_code is set.
         internal void  build_tree(DeflateManager s)
         {
+            int[] heap = s.heap;
+            sbyte[] depth = s.depth;
+
             short[] tree  = dyn_tree;
             short[] stree = staticTree.treeCodes;
             int elems     = staticTree.elems;
@@ -298,8 +304,8 @@ namespace Compress.Support.Compression.Deflate
             {
                 if (tree[n * 2] != 0)
                 {
-                    s.heap[++s.heap_len] = max_code = n;
-                    s.depth[n] = 0;
+                    heap[++s.heap_len] = max_code = n;
+                    depth[n] = 0;
                 }
                 else
                 {
@@ -313,9 +319,9 @@ namespace Compress.Support.Compression.Deflate
             // two codes of non zero frequency.
             while (s.heap_len < 2)
             {
-                node = s.heap[++s.heap_len] = (max_code < 2?++max_code:0);
+                node = heap[++s.heap_len] = (max_code < 2?++max_code:0);
                 tree[node * 2] = 1;
-                s.depth[node] = 0;
+                depth[node] = 0;
                 s.opt_len--;
                 if (stree != null)
                     s.static_len -= stree[node * 2 + 1];
@@ -336,26 +342,26 @@ namespace Compress.Support.Compression.Deflate
             do 
             {
                 // n = node of least frequency
-                n = s.heap[1];
-                s.heap[1] = s.heap[s.heap_len--];
+                n = heap[1];
+                heap[1] = heap[s.heap_len--];
                 s.pqdownheap(tree, 1);
-                m = s.heap[1]; // m = node of next least frequency
+                m = heap[1]; // m = node of next least frequency
                                 
-                s.heap[--s.heap_max] = n; // keep the nodes sorted by frequency
-                s.heap[--s.heap_max] = m;
+                heap[--s.heap_max] = n; // keep the nodes sorted by frequency
+                heap[--s.heap_max] = m;
                                 
                 // Create a new node father of n and m
                 tree[node * 2] = unchecked((short) (tree[n * 2] + tree[m * 2]));
-                s.depth[node] = (sbyte) (System.Math.Max((byte) s.depth[n], (byte) s.depth[m]) + 1);
+                depth[node] = (sbyte) (System.Math.Max((byte) depth[n], (byte) depth[m]) + 1);
                 tree[n * 2 + 1] = tree[m * 2 + 1] = (short) node;
                                 
                 // and insert the new node in the heap
-                s.heap[1] = node++;
+                heap[1] = node++;
                 s.pqdownheap(tree, 1);
             }
             while (s.heap_len >= 2);
                         
-            s.heap[--s.heap_max] = s.heap[1];
+            heap[--s.heap_max] = heap[1];
                         
             // At this point, the fields freq and dad are set. We can now
             // generate the bit lengths.

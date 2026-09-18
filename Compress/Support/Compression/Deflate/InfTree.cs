@@ -267,7 +267,7 @@ namespace Compress.Support.Compression.Deflate
                                                         x[h] = i; // save pattern for backing up
                                                         r[0] = (sbyte) j; // bits in this table
                                                         r[1] = (sbyte) l; // bits to dump before this table
-                                                        j = SharedUtils.URShift(i, (w - l));
+                                                        j = (int)((uint)i >> (w - l)); //SharedUtils.URShift(i, (w - l));
                                                         r[2] = (int) (q - u[h - 1] - j); // offset to this table
                                                         Array.Copy(r, 0, hp, (u[h - 1] + j) * 3, 3); // connect to last table
                                                 }
@@ -296,13 +296,13 @@ namespace Compress.Support.Compression.Deflate
                                         
                                         // fill code-like entries with r
                                         f = 1 << (k - w);
-                                        for (j = SharedUtils.URShift(i, w); j < z; j += f)
+                                        for (j = (int)((uint)i>>w); j < z; j += f)
                                         {
                                                 Array.Copy(r, 0, hp, (q + j) * 3, 3);
                                         }
                                         
                                         // backwards increment the k-bit code i
-                                        for (j = 1 << (k - 1); (i & j) != 0; j = SharedUtils.URShift(j, 1))
+                                        for (j = 1 << (k - 1); (i & j) != 0; j = (int)((uint)j>>1))
                                         {
                                                 i ^= j;
                                         }

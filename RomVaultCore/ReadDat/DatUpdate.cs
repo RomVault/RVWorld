@@ -22,15 +22,6 @@ namespace RomVaultCore.ReadDat
 
         public static Action UpdateMIAExternal;
 
-        private static void ShowDat(string message, string filename)
-        {
-            _thWrk.Report(new bgwShowError(filename, message));
-        }
-
-        public static void RetMessage(string filename, string message)
-        {
-            _thWrk.Report(new bgwShowError(filename, message));
-        }
 
         public static void UpdateDat(ThreadWorker thWrk)
         {
@@ -563,7 +554,7 @@ namespace RomVaultCore.ReadDat
                 {
                     if (dbChild == null || newDatChild == null)
                     {
-                        ShowDat("Error in Logic", dbDir.FullName);
+                        _thWrk.Report(new bgwShowError(dbDir.FullName,"Error in Logic"));
                         break;
                     }
 
@@ -595,7 +586,7 @@ namespace RomVaultCore.ReadDat
                             return true;
                         }
 
-                        ShowDat("Unknown Update Dat Status " + dbChild.DatStatus, dbDir.FullName);
+                        _thWrk.Report(new bgwShowError(dbDir.FullName, "Unknown Update Dat Status " + dbChild.DatStatus));
                         break;
                     }
 

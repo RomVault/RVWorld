@@ -40,7 +40,8 @@ namespace ROMVault.UIElements
             chkBoxShowMIA.Checked = Settings.rvSettings.chkBoxShowMIA;
             chkBoxShowMerged.Checked = Settings.rvSettings.chkBoxShowMerged;
         }
-        private void ChkBoxShowCompleteCheckedChanged(object sender, EventArgs e)
+
+        private void chkBoxShowComplete_CheckedChanged(object sender, EventArgs e)
         {
             if (Settings.rvSettings.chkBoxShowComplete != this.chkBoxShowComplete.Checked)
             {
@@ -50,7 +51,7 @@ namespace ROMVault.UIElements
             }
         }
 
-        private void ChkBoxShowPartialCheckedChanged(object sender, EventArgs e)
+        private void chkBoxShowPartial_CheckedChanged(object sender, EventArgs e)
         {
             if (Settings.rvSettings.chkBoxShowPartial != this.chkBoxShowPartial.Checked)
             {
@@ -59,7 +60,7 @@ namespace ROMVault.UIElements
                 CheckedChanged?.Invoke(this, e);
             }
         }
-        private void chkBoxShowEmptyCheckedChanged(object sender, EventArgs e)
+        private void chkBoxShowEmpty_CheckedChanged(object sender, EventArgs e)
         {
             if (Settings.rvSettings.chkBoxShowEmpty != this.chkBoxShowEmpty.Checked)
             {
@@ -69,7 +70,7 @@ namespace ROMVault.UIElements
             }
         }
 
-        private void ChkBoxShowFixesCheckedChanged(object sender, EventArgs e)
+        private void chkBoxShowFixes_CheckedChanged(object sender, EventArgs e)
         {
             if (Settings.rvSettings.chkBoxShowFixes != this.chkBoxShowFixes.Checked)
             {
@@ -90,7 +91,7 @@ namespace ROMVault.UIElements
             }
         }
 
-        private void ChkBoxShowMergedCheckedChanged(object sender, EventArgs e)
+        private void chkBoxShowMerged_CheckedChanged(object sender, EventArgs e)
         {
             if (Settings.rvSettings.chkBoxShowMerged != this.chkBoxShowMerged.Checked)
             {
@@ -113,6 +114,5 @@ namespace ROMVault.UIElements
             FilterTextChanged?.Invoke(this, new FilterTextChangedEventArgs(txtFilter.Text));
             txtFilter.Focus();
         }
-
     }
 }

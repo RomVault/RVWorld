@@ -49,6 +49,7 @@
             chkBoxShowEmpty.TabIndex = 28;
             chkBoxShowEmpty.Text = "Show Empty";
             chkBoxShowEmpty.UseVisualStyleBackColor = true;
+            chkBoxShowEmpty.CheckedChanged += chkBoxShowEmpty_CheckedChanged;
             // 
             // chkBoxShowMIA
             // 
@@ -61,6 +62,7 @@
             chkBoxShowMIA.TabIndex = 27;
             chkBoxShowMIA.Text = "Show MIA";
             chkBoxShowMIA.UseVisualStyleBackColor = true;
+            chkBoxShowMIA.CheckedChanged += chkBoxShowMIA_CheckedChanged;
             // 
             // btnClear
             // 
@@ -89,6 +91,7 @@
             chkBoxShowMerged.TabIndex = 24;
             chkBoxShowMerged.Text = "Show Merged / Deduped";
             chkBoxShowMerged.UseVisualStyleBackColor = true;
+            chkBoxShowMerged.CheckedChanged += chkBoxShowMerged_CheckedChanged;
             // 
             // chkBoxShowFixes
             // 
@@ -101,6 +104,7 @@
             chkBoxShowFixes.TabIndex = 23;
             chkBoxShowFixes.Text = "Show Fixes";
             chkBoxShowFixes.UseVisualStyleBackColor = true;
+            chkBoxShowFixes.CheckedChanged += chkBoxShowFixes_CheckedChanged;
             // 
             // chkBoxShowPartial
             // 
@@ -113,6 +117,7 @@
             chkBoxShowPartial.TabIndex = 22;
             chkBoxShowPartial.Text = "Show Partial";
             chkBoxShowPartial.UseVisualStyleBackColor = true;
+            chkBoxShowPartial.CheckedChanged += chkBoxShowPartial_CheckedChanged;
             // 
             // chkBoxShowComplete
             // 
@@ -125,6 +130,7 @@
             chkBoxShowComplete.TabIndex = 21;
             chkBoxShowComplete.Text = "Show Complete";
             chkBoxShowComplete.UseVisualStyleBackColor = true;
+            chkBoxShowComplete.CheckedChanged += chkBoxShowComplete_CheckedChanged;
             // 
             // UIFilterOptions
             // 

@@ -68,6 +68,7 @@
 
 
 using System;
+using System.Runtime.CompilerServices;
 
 namespace Compress.Support.Compression.Deflate
 {
@@ -89,8 +90,8 @@ namespace Compress.Support.Compression.Deflate
 
     internal sealed class DeflateManager
     {
-        private static readonly int MEM_LEVEL_MAX = 9;
-        private static readonly int MEM_LEVEL_DEFAULT = 8;
+        private const int MEM_LEVEL_MAX = 9;
+        private const int MEM_LEVEL_DEFAULT = 8;
 
         internal delegate BlockState CompressFunc(FlushType flush);
 
@@ -168,34 +169,34 @@ namespace Compress.Support.Compression.Deflate
         };
 
         // preset dictionary flag in zlib header
-        private static readonly int PRESET_DICT = 0x20;
+        private const int PRESET_DICT = 0x20;
 
-        private static readonly int INIT_STATE = 42;
-        private static readonly int BUSY_STATE = 113;
-        private static readonly int FINISH_STATE = 666;
+        private const int INIT_STATE = 42;
+        private const int BUSY_STATE = 113;
+        private const int FINISH_STATE = 666;
 
         // The deflate compression method
-        private static readonly int Z_DEFLATED = 8;
+        private const int Z_DEFLATED = 8;
 
-        private static readonly int STORED_BLOCK = 0;
-        private static readonly int STATIC_TREES = 1;
-        private static readonly int DYN_TREES = 2;
+        private const int STORED_BLOCK = 0;
+        private const int STATIC_TREES = 1;
+        private const int DYN_TREES = 2;
 
         // The three kinds of block type
-        private static readonly int Z_BINARY = 0;
-        private static readonly int Z_ASCII = 1;
-        private static readonly int Z_UNKNOWN = 2;
+        private const int Z_BINARY = 0;
+        private const int Z_ASCII = 1;
+        private const int Z_UNKNOWN = 2;
 
-        private static readonly int Buf_size = 8 * 2;
+        private const int Buf_size = 8 * 2;
 
-        private static readonly int MIN_MATCH = 3;
-        private static readonly int MAX_MATCH = 258;
+        private const int MIN_MATCH = 3;
+        private const int MAX_MATCH = 258;
 
-        private static readonly int MIN_LOOKAHEAD = (MAX_MATCH + MIN_MATCH + 1);
+        private const int MIN_LOOKAHEAD = (MAX_MATCH + MIN_MATCH + 1);
 
-        private static readonly int HEAP_SIZE = (2 * InternalConstants.L_CODES + 1);
+        private const int HEAP_SIZE = (2 * InternalConstants.L_CODES + 1);
 
-        private static readonly int END_BLOCK = 256;
+        private const int END_BLOCK = 256;
 
         internal ZlibCodec _codec; // the zlib encoder/decoder
         internal int status;       // as the name implies
@@ -637,13 +638,14 @@ namespace Compress.Support.Compression.Deflate
             }
         }
 #endif
-
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void send_code(int c, short[] tree)
         {
             int c2 = c * 2;
             send_bits((tree[c2] & 0xffff), (tree[c2 + 1] & 0xffff));
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void send_bits(int value, int length)
         {
             int len = length;
@@ -706,8 +708,9 @@ namespace Compress.Support.Compression.Deflate
         // the current block must be flushed.
         internal bool _tr_tally(int dist, int lc)
         {
-            pending[_distanceOffset + last_lit * 2] = unchecked((byte)((uint)dist >> 8));
-            pending[_distanceOffset + last_lit * 2 + 1] = unchecked((byte)dist);
+            int index = _distanceOffset + last_lit * 2;
+            pending[index] = unchecked((byte)((uint)dist >> 8));
+            pending[index + 1] = unchecked((byte)dist);
             pending[_lengthOffset + last_lit] = unchecked((byte)lc);
             last_lit++;
 
@@ -1431,6 +1434,9 @@ namespace Compress.Support.Compression.Deflate
 
         internal int longest_match(int cur_match)
         {
+            byte[] window = this.window;
+            short[] prev = this.prev;
+
             int chain_length = config.MaxChainLength; // max hash chain length
             int scan = strstart;              // current string
             int match;                                // matched string
@@ -1484,18 +1490,20 @@ namespace Compress.Support.Compression.Deflate
 
                 // We check for insufficient lookahead only every 8th comparison;
                 // the 256th check will be made at strstart+258.
-                do
+                unchecked
                 {
+                    do
+                    {
+                    }
+                    while (window[++scan] == window[++match] &&
+                           window[++scan] == window[++match] &&
+                           window[++scan] == window[++match] &&
+                           window[++scan] == window[++match] &&
+                           window[++scan] == window[++match] &&
+                           window[++scan] == window[++match] &&
+                           window[++scan] == window[++match] &&
+                           window[++scan] == window[++match] && scan < strend);
                 }
-                while (window[++scan] == window[++match] &&
-                       window[++scan] == window[++match] &&
-                       window[++scan] == window[++match] &&
-                       window[++scan] == window[++match] &&
-                       window[++scan] == window[++match] &&
-                       window[++scan] == window[++match] &&
-                       window[++scan] == window[++match] &&
-                       window[++scan] == window[++match] && scan < strend);
-
                 len = MAX_MATCH - (int)(strend - scan);
                 scan = strend - MAX_MATCH;
 
