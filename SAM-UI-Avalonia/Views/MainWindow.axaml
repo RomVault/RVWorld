@@ -1,6 +1,7 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:SAM_UI_Avalonia.ViewModels"
+        xmlns:views="using:SAM_UI_Avalonia.Views"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
@@ -15,29 +16,72 @@
         <vm:MainWindowViewModel/>
     </Design.DataContext>
 
-    <Grid RowDefinitions="*" ColumnDefinitions="300,*">
+    <Grid RowDefinitions="100,230,*,50" ColumnDefinitions="270,*">
 
-        <StackPanel Grid.Row="0" Grid.Column="0" Orientation="Vertical" HorizontalAlignment="Left" Margin="10">
-            <Button Content="Add Files" Command="{Binding AddFilesCommand}" Margin="5"/>
-            <Button Content="Remove Selected" Command="{Binding RemoveSelectedCommand}" Margin="5"/>
-            <Button Content="Clear All" Command="{Binding ClearAllCommand}" Margin="5"/>
+        <Image Grid.Row="0" Source="/Assets/title.png" Stretch="Uniform"/>
 
-            <TextBlock Text="Add Style" Margin="5,10,5,0"/>
-            <ComboBox Name="AddStyle"
-                      Margin="5"
-                      HorizontalAlignment="Stretch"
-                      ItemsSource="{Binding AddStyleOptions}"
-                      SelectedItem="{Binding AddStyle}"/>
-
+        <StackPanel Grid.Row="1" Margin="10,0,10,0">
+            <Grid ColumnDefinitions="73,*" VerticalAlignment="Top">
+                <Border BorderBrush="Gray" Background="LightGray" BorderThickness="1" Width="73" Height="70"/>
+                <StackPanel Grid.Column="1" Margin="10,10,0,0">
+                    <TextBlock Text="&lt;-- drop Files / Dirs here"/>  
+                    <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                        <Button Content="Pause" Width="80" Command="{Binding PauseCommand}" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
+                        <Button Content="Stop" Width="80" Command="{Binding StopCommand}" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
+                    </StackPanel>           
+                </StackPanel>
+            </Grid>
+            
+            <StackPanel Orientation="Horizontal" Margin="0,10,0,0">   
+                <TextBlock Text="Input:" Width="60" VerticalAlignment="Center" />
+                <ComboBox Width="180">
+					<ComboBoxItem Content="ZIP"/>
+					<ComboBoxItem Content="7Z"/>
+					<ComboBoxItem Content="ZIP &amp; 7Z"/>
+					<ComboBoxItem Content="Files"/>
+					<ComboBoxItem Content="Directories"/>
+					<ComboBoxItem Content="All"/>
+                </ComboBox>                    
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Margin="0,4,0,0">   
+                <TextBlock Text="Output:"  Width="60" VerticalAlignment="Center" />  
+                <ComboBox Width="180">
+					<ComboBoxItem Content="Zip-Torrent"/>
+					<ComboBoxItem Content="Zip-ZSTD"/>
+					<ComboBoxItem Content="7Z-ZSTD"/>
+					<ComboBoxItem Content="7Z-ZSTD-Solid"/>
+					<ComboBoxItem Content="7Z-LZMA"/>
+					<ComboBoxItem Content="7Z-LZMA-Solid"/>
+					<ComboBoxItem Content="Repair keep original"/>
+                </ComboBox>                    
+            </StackPanel>
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="0 / 0" VerticalAlignment="Center" Width="120"/>
+                <CheckBox Content="Dry Run" FlowDirection="RightToLeft" Width="120"/>
+            </StackPanel>
+            <Slider Minimum="1" Maximum="16" TickFrequency="1" IsSnapToTickEnabled="True" Value="{Binding ThreadCount}"/>
         </StackPanel>
 
-        <DataGrid Grid.Row="0" Grid.Column="1"  ItemsSource="{Binding Files}" SelectedItem="{Binding SelectedFile}">
-        <DataGrid.Columns>
-             <DataGridTextColumn Header="Merge" Binding="{Binding Name}" Width="600"/>
-            <DataGridTextColumn Header="Size" Binding="{Binding Status}" Width="600"/>
-       
-        </DataGrid.Columns>
+        <ScrollViewer Grid.Row="2" Margin="7,0,0,0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+            <ItemsControl ItemsSource="{Binding ProcessStats}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate DataType="vm:procStatis">
+                        <views:ProcessStatus/>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+                
+        <Image Grid.Row="3" Source="/Assets/RomVault.png" Stretch="Uniform"/>
+
+        <DataGrid Grid.Row="0" Grid.Column="1" Grid.RowSpan="4" ItemsSource="{Binding Files}">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Filename" Binding="{Binding Name}" Width="*"/>
+                <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="200"/>
+            </DataGrid.Columns>
         </DataGrid>
+
+
 
     </Grid>
 

@@ -1,13 +1,11 @@
 using Avalonia.Controls;
-using SAM_UI_Avalonia.ViewModels;
 
 namespace SAM_UI_Avalonia.Views;
 
-public partial class MainWindow : Window
+public partial class ProcessStatus : UserControl
 {
-    public MainWindow()
+    public ProcessStatus()
     {
         InitializeComponent();
-
     }
 }

@@ -1,75 +1,103 @@
 ﻿using System;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 
-namespace SAM_UI_Avalonia.ViewModels
+namespace SAM_UI_Avalonia.ViewModels;
+
+public partial class MainWindowViewModel : ViewModelBase
 {
-    public partial class MainWindowViewModel : ViewModelBase
+    public ObservableCollection<samFile> Files { get; } = new();
+    public ObservableCollection<procStatis> ProcessStats { get; } = new();
+
+    public MainWindowViewModel()
     {
-        public ObservableCollection<samFile> Files { get; } = new();
-
-        public AddStyle[] AddStyleOptions { get; } = Enum.GetValues<AddStyle>();
-
-        [ObservableProperty]
-        private AddStyle _addStyle = AddStyle.Files;
-
-        [ObservableProperty]
-        [NotifyCanExecuteChangedFor(nameof(RemoveSelectedCommand))]
-        private samFile? _selectedFile;
-
-        private int _stubCounter;
-
-        [RelayCommand]
-        private void AddFiles()
-        {
-            // Placeholder until the real file picker is wired up.
-            _stubCounter++;
-            Files.Add(new samFile
-            {
-                Name = $"File{_stubCounter}.zip",
-                Status = "Pending"
-            });
-        }
-
-        [RelayCommand(CanExecute = nameof(CanRemoveSelected))]
-        private void RemoveSelected()
-        {
-            if (SelectedFile is null)
-                return;
-
-            Files.Remove(SelectedFile);
-            SelectedFile = null;
-        }
-
-        private bool CanRemoveSelected() => SelectedFile is not null;
-
-        [RelayCommand]
-        private void ClearAll()
-        {
-            if (Files.Count > 0)
-            {
-                Files[0].Name += " - Cleared";
-            }
-            SelectedFile = null;
-        }
+        ThreadCountChanged(1);
     }
 
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(PauseCommand))]
+    [NotifyCanExecuteChangedFor(nameof(StopCommand))]
+    private bool _isRunning = true;
 
-    public enum AddStyle
+    [ObservableProperty]
+    private bool _isPaused;
+
+    [ObservableProperty]
+    private int _threadCount = 1;
+
+    partial void OnThreadCountChanged(int value)
     {
-        Files,
-        Zipped,
-        SevenZipped
+        ThreadCountChanged(value);
     }
 
-
-    public partial class samFile : ObservableObject
+    private void ThreadCountChanged(int value)
     {
-        [ObservableProperty]
-        private string _name = "";
+        while (value > ProcessStats.Count)
+        {
+            ProcessStats.Add(new procStatis() { Name = $"Process {ProcessStats.Count + 1}", Progress = 0 });
+        }
 
-        [ObservableProperty]
-        private string _status = "";
+        while (value < ProcessStats.Count)
+        {
+            ProcessStats.RemoveAt(ProcessStats.Count - 1);
+        }
+
     }
+
+    [RelayCommand(CanExecute = nameof(CanPause))]
+    private void Pause()
+    {
+        IsPaused = !IsPaused;
+
+        Files.Add(new samFile() { Name = "File1", Status = "Running..." });
+
+        ProcessStats.Add(new procStatis() { Name = "Process1", Progress = 50 });
+    }
+
+    private bool CanPause() => IsRunning;
+
+    [RelayCommand(CanExecute = nameof(CanStop))]
+    private void Stop()
+    {
+        IsRunning = false;
+        IsPaused = false;
+
+        foreach (samFile file in Files)
+        {
+            file.Status = "Cancelled";
+        }
+
+
+    }
+
+    private bool CanStop() => IsRunning;
+
+
+    /*
+    public samFile _selectedFile;
+    public samFile SelectedFile
+    {
+        get { return _selectedFile; }
+        set { _selectedFile = value; }
+    }
+    */
+}
+
+public partial class samFile : ObservableObject
+{
+    [ObservableProperty]
+    private string _name = "";
+
+    [ObservableProperty]
+    private string _status = "";
+}
+
+public partial class procStatis : ObservableObject
+{
+    [ObservableProperty]
+    private string _name = "";
+    [ObservableProperty]
+    private int _progress = 0;
 }
