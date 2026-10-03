@@ -1,18 +1,32 @@
-﻿using System;
+﻿using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Diagnostics;
+using System.Threading;
+using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using SAM_UI_Avalonia.Services;
 
 namespace SAM_UI_Avalonia.ViewModels;
 
 public partial class MainWindowViewModel : ViewModelBase
 {
+    private readonly IFileScanService _fileScanService;
+    private readonly IProcessRunner _processRunner;
+
     public ObservableCollection<samFile> Files { get; } = new();
     public ObservableCollection<procStatis> ProcessStats { get; } = new();
 
     public MainWindowViewModel()
+        : this(new FileScanService(), new ProcessRunner())
     {
+    }
+
+    public MainWindowViewModel(IFileScanService fileScanService, IProcessRunner processRunner)
+    {
+        _fileScanService = fileScanService;
+        _processRunner = processRunner;
+
+        IsRunning = _processRunner.IsRunning;
         ThreadCountChanged(1);
     }
 
@@ -49,11 +63,7 @@ public partial class MainWindowViewModel : ViewModelBase
     [RelayCommand(CanExecute = nameof(CanPause))]
     private void Pause()
     {
-        IsPaused = !IsPaused;
-
-        Files.Add(new samFile() { Name = "File1", Status = "Running..." });
-
-        ProcessStats.Add(new procStatis() { Name = "Process1", Progress = 50 });
+        IsPaused = _processRunner.TogglePause();
     }
 
     private bool CanPause() => IsRunning;
@@ -61,28 +71,41 @@ public partial class MainWindowViewModel : ViewModelBase
     [RelayCommand(CanExecute = nameof(CanStop))]
     private void Stop()
     {
-        IsRunning = false;
-        IsPaused = false;
+        _processRunner.Stop();
+
+        IsRunning = _processRunner.IsRunning;
+        IsPaused = _processRunner.IsPaused;
 
         foreach (samFile file in Files)
         {
             file.Status = "Cancelled";
         }
-
-
     }
 
     private bool CanStop() => IsRunning;
 
-
-    /*
-    public samFile _selectedFile;
-    public samFile SelectedFile
+    /// <summary>
+    /// Called when files and/or directories are dropped onto the drop target.
+    /// Directories are expanded recursively on a background thread; the
+    /// resulting files are then added to <see cref="Files"/> on the UI thread.
+    /// </summary>
+    /// <param name="paths">Full paths of the dropped files and directories.</param>
+    public async Task FilesDroppedAsync(
+        IReadOnlyList<string> paths,
+        CancellationToken cancellationToken = default)
     {
-        get { return _selectedFile; }
-        set { _selectedFile = value; }
+        IReadOnlyList<ScannedFile> scanned =
+            await _fileScanService.ExpandAsync(paths, cancellationToken).ConfigureAwait(true);
+
+        foreach (ScannedFile file in scanned)
+        {
+            Files.Add(new samFile
+            {
+                Name = file.FullPath,
+                Status = "Pending"
+            });
+        }
     }
-    */
 }
 
 public partial class samFile : ObservableObject

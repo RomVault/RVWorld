@@ -22,7 +22,10 @@
 
         <StackPanel Grid.Row="1" Margin="10,0,10,0">
             <Grid ColumnDefinitions="73,*" VerticalAlignment="Top">
-                <Border BorderBrush="Gray" Background="LightGray" BorderThickness="1" Width="73" Height="70"/>
+                <Border x:Name="DropTarget"
+                        BorderBrush="Gray" Background="LightGray" BorderThickness="1"
+                        Width="73" Height="70"
+                        DragDrop.AllowDrop="True"/>
                 <StackPanel Grid.Column="1" Margin="10,10,0,0">
                     <TextBlock Text="&lt;-- drop Files / Dirs here"/>  
                     <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
