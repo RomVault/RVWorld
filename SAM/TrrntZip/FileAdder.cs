@@ -32,31 +32,41 @@ namespace TrrntZip
         {
             //fileCount = 0;
 
-            foreach (string t in _file)
+            // Flag the queue as busy while this scan runs, so the UI does not go
+            // idle between finding files.
+            MainQueue.BeginProducing();
+            try
             {
-                if (File.Exists(t) && AddFile(t))
+                foreach (string t in _file)
                 {
-                    cFile cf = new cFile() { fileId = MainQueue.fileCount++, filename = t, settings = _settings };
-                    _fileCollection.Add(cf);
-                }
-            }
-            _updateFileCount?.Invoke(MainQueue.fileCount);
-
-            foreach (string t in _file)
-            {
-                if (Directory.Exists(t))
-                {
-                    if (_settings.InZip == InputZipType.Directory)
+                    if (File.Exists(t) && AddFile(t))
                     {
-
-                        cFile cf = new cFile() { fileId = MainQueue.fileCount++, filename = t, isDir = true, settings = _settings };
+                        cFile cf = new cFile() { fileId = MainQueue.fileCount++, filename = t, settings = _settings };
                         _fileCollection.Add(cf);
                     }
-                    else
-                        AddDirectory(t);
                 }
+                _updateFileCount?.Invoke(MainQueue.fileCount);
+
+                foreach (string t in _file)
+                {
+                    if (Directory.Exists(t))
+                    {
+                        if (_settings.InZip == InputZipType.Directory)
+                        {
+
+                            cFile cf = new cFile() { fileId = MainQueue.fileCount++, filename = t, isDir = true, settings = _settings };
+                            _fileCollection.Add(cf);
+                        }
+                        else
+                            AddDirectory(t);
+                    }
+                }
+                _processFileEndCallBack?.Invoke(-1, 0, TrrntZipStatus.Unknown, Compress.StructuredZip.ZipStructure.None);
             }
-            _processFileEndCallBack?.Invoke(-1, 0, TrrntZipStatus.Unknown, Compress.StructuredZip.ZipStructure.None);
+            finally
+            {
+                MainQueue.EndProducing();
+            }
         }
 
         private bool AddFile(string filename)

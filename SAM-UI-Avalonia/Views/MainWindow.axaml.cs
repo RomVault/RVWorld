@@ -8,6 +8,7 @@ using Avalonia.Input;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using SAM_UI_Avalonia.ViewModels;
+using TrrntZip;
 
 namespace SAM_UI_Avalonia.Views;
 
@@ -24,6 +25,23 @@ public partial class MainWindow : Window
 
         DataContextChanged += OnDataContextChanged;
         OnDataContextChanged(this, EventArgs.Empty);
+
+        Closing += OnClosing;
+    }
+
+    /// <summary>
+    /// The window may only be closed while nothing is being processed, i.e. no
+    /// worker is busy, the queue is empty and no files are being added.
+    /// </summary>
+    private void OnClosing(object? sender, WindowClosingEventArgs e)
+    {
+        if (MainQueue.IsBusy)
+        {
+            e.Cancel = true;
+            return;
+        }
+
+        Workers.RemoveAllWorks();
     }
 
     private static List<string> GetPaths(DragEventArgs e)

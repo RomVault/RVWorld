@@ -37,11 +37,60 @@ namespace TrrntZip
 
             while (true)
             {
+                // Blocked on Take() means this worker is idle and waiting for work.
                 cFile file = MainQueue.bccFile.Take();
+                MainQueue.WorkerBusy();
+                bool busy = true;
 
-                lock (Workers.lockObj)
+                try
                 {
-                    if (file.fileId == -1 && file.filename == "Removing")
+                    lock (Workers.lockObj)
+                    {
+                        if (file.fileId == -1 && file.filename == "Removing")
+                        {
+                            if (Workers.workers > Workers.requestedWorkers)
+                            {
+                                Debug.WriteLine($"Thread {ThreadId} Closing Down");
+                                ProcessorClosingCallBack?.Invoke(ThreadId);
+                                Workers.workers--;
+                                MainQueue.WorkerIdle();
+                                busy = false;
+                                break;
+                            }
+                            else
+                                continue;
+                        }
+                    }
+
+                    if (pauseCancel != null && pauseCancel.Cancelled)
+                    {
+                        ProcessFileEndCallBack?.Invoke(ThreadId, file.fileId, TrrntZipStatus.Cancel, ZipStructure.None);
+                        continue;
+                    }
+                    if (pauseCancel != null)
+                        pauseCancel.WaitOne();
+
+                    ProcessFileStartCallBack?.Invoke(ThreadId, file.fileId, file.filename);
+                    Debug.WriteLine($"Thread {ThreadId} Starting to Process File {file.filename}");
+                    TrrntZipStatus trrntZipFileStatus;
+
+                    ZipStructure zipStructure = ZipStructure.None;
+                    tz.workerCount = workerCount;
+                    if (file.isDir)
+                    {
+                        DirectoryInfo dirInfo = new DirectoryInfo(file.filename);
+                        trrntZipFileStatus = tz.Process(dirInfo, out zipStructure, file.settings, pauseCancel);
+                    }
+                    else
+                    {
+                        FileInfo fileInfo = new FileInfo(file.filename);
+                        trrntZipFileStatus = tz.Process(fileInfo, out zipStructure, file.settings, pauseCancel);
+                    }
+                    ProcessFileEndCallBack?.Invoke(ThreadId, file.fileId, trrntZipFileStatus, zipStructure);
+                    Debug.WriteLine($"Thread {ThreadId} Finished Process File {file.filename}");
+
+
+                    lock (Workers.lockObj)
                     {
                         if (Workers.workers > Workers.requestedWorkers)
                         {
@@ -50,48 +99,13 @@ namespace TrrntZip
                             Workers.workers--;
                             break;
                         }
-                        else
-                            continue;
                     }
                 }
-
-                if (pauseCancel != null && pauseCancel.Cancelled)
+                finally
                 {
-                    ProcessFileEndCallBack?.Invoke(ThreadId, file.fileId, TrrntZipStatus.Cancel, ZipStructure.None);
-                    continue;
-                }
-                if (pauseCancel != null)
-                    pauseCancel.WaitOne();
-
-                ProcessFileStartCallBack?.Invoke(ThreadId, file.fileId, file.filename);
-                Debug.WriteLine($"Thread {ThreadId} Starting to Process File {file.filename}");
-                TrrntZipStatus trrntZipFileStatus;
-
-                ZipStructure zipStructure = ZipStructure.None;
-                tz.workerCount = workerCount;
-                if (file.isDir)
-                {
-                    DirectoryInfo dirInfo = new DirectoryInfo(file.filename);
-                    trrntZipFileStatus = tz.Process(dirInfo, out zipStructure, file.settings, pauseCancel);
-                }
-                else
-                {
-                    FileInfo fileInfo = new FileInfo(file.filename);
-                    trrntZipFileStatus = tz.Process(fileInfo, out zipStructure, file.settings, pauseCancel);
-                }
-                ProcessFileEndCallBack?.Invoke(ThreadId, file.fileId, trrntZipFileStatus, zipStructure);
-                Debug.WriteLine($"Thread {ThreadId} Finished Process File {file.filename}");
-
-
-                lock (Workers.lockObj)
-                {
-                    if (Workers.workers > Workers.requestedWorkers)
-                    {
-                        Debug.WriteLine($"Thread {ThreadId} Closing Down");
-                        ProcessorClosingCallBack?.Invoke(ThreadId);
-                        Workers.workers--;
-                        break;
-                    }
+                    // Going back to wait on Take(), so this worker is idle again.
+                    if (busy)
+                        MainQueue.WorkerIdle();
                 }
             }
 

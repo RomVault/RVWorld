@@ -24,15 +24,35 @@ public partial class MainWindowViewModel : ViewModelBase
     public MainWindowViewModel()
     {
         ThreadCountChanged(1);
+
+        // IsRunning mirrors the queue: busy while any worker is processing a file,
+        // any file is waiting on the queue, or a FileAdder is still adding files.
+        MainQueue.BusyChanged += OnQueueBusyChanged;
+        IsRunning = MainQueue.IsBusy;
+    }
+
+    private void OnQueueBusyChanged(bool busy)
+    {
+        OnUIThread(() =>
+        { IsRunning = busy;
+            if (MainQueue.pc.Cancelled)
+                MainQueue.pc.ResetCancel();
+        });
     }
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(PauseCommand))]
     [NotifyCanExecuteChangedFor(nameof(StopCommand))]
-    private bool _isRunning = true;
+    private bool _isRunning;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(PauseButtonText))]
     private bool _isPaused;
+
+    /// <summary>
+    /// Caption of the Pause button: "UnPause" while paused, otherwise "Pause".
+    /// </summary>
+    public string PauseButtonText => IsPaused ? "UnPause" : "Pause";
 
     [ObservableProperty]
     private int _threadCount = 1;
@@ -73,26 +93,6 @@ public partial class MainWindowViewModel : ViewModelBase
     [ObservableProperty]
     private OutputType _selectedOutputType = OutputType.ZipTorrent;
 
-    partial void OnSelectedInputTypeChanged(InputZipType value)
-    {
-        InputTypeChanged(value);
-    }
-
-    partial void OnSelectedOutputTypeChanged(OutputType value)
-    {
-        OutputTypeChanged(value);
-    }
-
-    private void InputTypeChanged(InputZipType value)
-    {
-        // Input selection changed - react to the new input type here.
-    }
-
-    private void OutputTypeChanged(OutputType value)
-    {
-        // Output selection changed - react to the new output type here.
-    }
-
     partial void OnThreadCountChanged(int value)
     {
         ThreadCountChanged(value);
@@ -114,7 +114,7 @@ public partial class MainWindowViewModel : ViewModelBase
                     ErrorCallBack = ErrorCallBack,
                     ProcessFileEndCallBack = ProcessFileEndCallback,
                     ProcessorClosingCallBack = ProcessorClosingCallback,
-                    pauseCancel = null,
+                    pauseCancel = MainQueue.pc,
                     workerCount = 1
                 };
 
@@ -156,6 +156,13 @@ public partial class MainWindowViewModel : ViewModelBase
     private void Pause()
     {
         IsPaused = !IsPaused;
+        if (IsPaused!=MainQueue.pc.Paused)
+        {
+            if (IsPaused)
+                MainQueue.pc.Pause();
+            else
+                MainQueue.pc.UnPause();
+        }
     }
 
     private bool CanPause() => IsRunning;
@@ -163,11 +170,9 @@ public partial class MainWindowViewModel : ViewModelBase
     [RelayCommand(CanExecute = nameof(CanStop))]
     private void Stop()
     {
-
-        IsRunning = true;
         IsPaused = false;
         ClearFileQueue();
-
+        MainQueue.pc.Cancel();
     }
 
     /// <summary>
@@ -184,6 +189,9 @@ public partial class MainWindowViewModel : ViewModelBase
         while (queue.TryTake(out _))
         {
         }
+
+        // Draining bypasses the normal worker flow, so re-evaluate the busy state.
+        MainQueue.QueueChanged();
     }
 
     private bool CanStop() => IsRunning;
@@ -196,6 +204,13 @@ public partial class MainWindowViewModel : ViewModelBase
     /// <param name="paths">Full paths of the dropped files and directories.</param>
     public void FilesDroppedAsync(IReadOnlyList<string> paths, CancellationToken cancellationToken = default)
     {
+        if (!IsRunning)
+        {
+            MainQueue.fileCount = 0;
+            Files.Clear();
+        }
+
+
         Settings settings = new Settings()
         {
             Repair = SelectedOutputType == OutputType.RepairKeepOriginal,
