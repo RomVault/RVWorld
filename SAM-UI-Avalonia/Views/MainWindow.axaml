@@ -8,6 +8,9 @@
         x:Class="SAM_UI_Avalonia.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Icon="/Assets/avalonia-logo.ico"
+        Width="800" Height="600"
+        MinWidth="400" MinHeight="450"
+        WindowStartupLocation="CenterScreen"
         Title="SAM_UI_Avalonia">
 
     <Design.DataContext>
@@ -77,21 +80,28 @@
                   CanUserSortColumns="False"
                   CanUserReorderColumns="False">
             <DataGrid.Styles>
-                <!-- Read only display: rows cannot be picked or highlighted. -->
                 <Style Selector="DataGridRow">
                     <Setter Property="Focusable" Value="False"/>
-                    <Setter Property="IsHitTestVisible" Value="False"/>
                 </Style>
-                <!-- Tighten the default cell padding so the shorter rows are not clipped. -->
+                <Style Selector="DataGridRow:selected /template/ Rectangle#BackgroundRectangle">
+                    <Setter Property="Opacity" Value="0"/>
+                </Style>
+                <Style Selector="DataGridRow:pointerover /template/ Rectangle#BackgroundRectangle">
+                    <Setter Property="Opacity" Value="0"/>
+                </Style>
                 <Style Selector="DataGridCell">
                     <Setter Property="Padding" Value="8,0"/>
                     <Setter Property="MinHeight" Value="0"/>
                     <Setter Property="FontSize" Value="12"/>
+                    <Setter Property="Focusable" Value="False"/>
+                </Style>
+                <Style Selector="DataGridCell:current /template/ Grid#FocusVisual">
+                    <Setter Property="IsVisible" Value="False"/>
                 </Style>
             </DataGrid.Styles>
             <DataGrid.Columns>
                 <DataGridTextColumn Header="Filename" Binding="{Binding Name}" Width="*"/>
-                <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="240"/>
+                <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="200"/>
             </DataGrid.Columns>
         </DataGrid>
 

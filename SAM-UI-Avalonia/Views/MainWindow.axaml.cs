@@ -27,6 +27,16 @@ public partial class MainWindow : Window
         OnDataContextChanged(this, EventArgs.Empty);
 
         Closing += OnClosing;
+
+        // Rows stay hit testable so the mouse wheel scrolls, so clear any
+        // selection a click would otherwise make.
+        FilesGrid.SelectionChanged += OnFilesGridSelectionChanged;
+    }
+
+    private void OnFilesGridSelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (FilesGrid.SelectedItem is not null)
+            FilesGrid.SelectedItem = null;
     }
 
     /// <summary>
