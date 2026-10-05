@@ -13,7 +13,7 @@ namespace TrrntZip
 
     public class TorrentZip
     {
-        public Settings settings;
+        //        private Settings settings;
         private readonly byte[] _buffer;
         public StatusCallback StatusCallBack;
         public LogCallback StatusLogCallBack;
@@ -26,10 +26,10 @@ namespace TrrntZip
             _buffer = new byte[1024 * 1024];
         }
 
-        public TrrntZipStatus Process(FileInfo fi, out ZipStructure outZipStruct, PauseCancel pc = null)
+        public TrrntZipStatus Process(FileInfo fi, out ZipStructure outZipStruct, Settings settings, PauseCancel pc = null)
         {
             outZipStruct = ZipStructure.None;
-            if (settings.VerboseLogging)
+            if ( settings.VerboseLogging)
             {
                 StatusLogCallBack?.Invoke(ThreadId, "");
             }
@@ -206,7 +206,7 @@ namespace TrrntZip
 
         }
 
-        public TrrntZipStatus Process(DirectoryInfo di, out ZipStructure outputType, PauseCancel pc = null)
+        public TrrntZipStatus Process(DirectoryInfo di, out ZipStructure outputType, Settings settings, PauseCancel pc = null)
         {
             // read in all the files & dirs
             List<ZippedFile> zippedFiles = new List<ZippedFile>();

@@ -1,0 +1,49 @@
+﻿<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="48" d:DesignHeight="48"
+             x:Class="SAM_UI_Avalonia.Controls.BusySpinner"
+             x:Name="Root">
+
+    <UserControl.Styles>
+        <Style Selector="Border.spin">
+            <Style.Animations>
+                <Animation Duration="0:0:1" IterationCount="Infinite" Easing="LinearEasing">
+                    <KeyFrame Cue="0%">
+                        <Setter Property="RotateTransform.Angle" Value="0"/>
+                    </KeyFrame>
+                    <KeyFrame Cue="100%">
+                        <Setter Property="RotateTransform.Angle" Value="360"/>
+                    </KeyFrame>
+                </Animation>
+            </Style.Animations>
+        </Style>
+        <Style Selector="Ellipse.dot">
+            <Setter Property="Width" Value="7"/>
+            <Setter Property="Height" Value="7"/>
+        </Style>
+    </UserControl.Styles>
+
+    <Viewbox Stretch="Uniform">
+        <Border Classes.spin="{Binding #Root.IsBusy}"
+                Width="48" Height="48"
+                Background="Transparent"
+                RenderTransformOrigin="50%,50%">
+            <Border.RenderTransform>
+                <RotateTransform/>
+            </Border.RenderTransform>
+            <Canvas Width="48" Height="48">
+                <Ellipse Classes="dot" Canvas.Left="20.5" Canvas.Top="2" Fill="{Binding #Root.Foreground}" Opacity="1.0"/>
+                <Ellipse Classes="dot" Canvas.Left="33.5" Canvas.Top="7.4" Fill="{Binding #Root.Foreground}" Opacity="0.87"/>
+                <Ellipse Classes="dot" Canvas.Left="39" Canvas.Top="20.5" Fill="{Binding #Root.Foreground}" Opacity="0.74"/>
+                <Ellipse Classes="dot" Canvas.Left="33.5" Canvas.Top="33.6" Fill="{Binding #Root.Foreground}" Opacity="0.61"/>
+                <Ellipse Classes="dot" Canvas.Left="20.5" Canvas.Top="39" Fill="{Binding #Root.Foreground}" Opacity="0.48"/>
+                <Ellipse Classes="dot" Canvas.Left="7.4" Canvas.Top="33.6" Fill="{Binding #Root.Foreground}" Opacity="0.35"/>
+                <Ellipse Classes="dot" Canvas.Left="2" Canvas.Top="20.5" Fill="{Binding #Root.Foreground}" Opacity="0.22"/>
+                <Ellipse Classes="dot" Canvas.Left="7.4" Canvas.Top="7.4" Fill="{Binding #Root.Foreground}" Opacity="0.12"/>
+            </Canvas>
+        </Border>
+    </Viewbox>
+
+</UserControl>

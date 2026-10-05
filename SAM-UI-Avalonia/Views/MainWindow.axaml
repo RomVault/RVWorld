@@ -37,30 +37,23 @@
             
             <StackPanel Orientation="Horizontal" Margin="0,10,0,0">   
                 <TextBlock Text="Input:" Width="60" VerticalAlignment="Center" />
-                <ComboBox Width="180">
-					<ComboBoxItem Content="ZIP"/>
-					<ComboBoxItem Content="7Z"/>
-					<ComboBoxItem Content="ZIP &amp; 7Z"/>
-					<ComboBoxItem Content="Files"/>
-					<ComboBoxItem Content="Directories"/>
-					<ComboBoxItem Content="All"/>
-                </ComboBox>                    
+				<ComboBox Width="180"
+						  ItemsSource="{Binding InputTypes}"
+						  SelectedValue="{Binding SelectedInputType}"
+						  SelectedValueBinding="{Binding Value}"
+						  DisplayMemberBinding="{Binding Display}"/>
             </StackPanel>
             <StackPanel Orientation="Horizontal" Margin="0,4,0,0">   
                 <TextBlock Text="Output:"  Width="60" VerticalAlignment="Center" />  
-                <ComboBox Width="180">
-					<ComboBoxItem Content="Zip-Torrent"/>
-					<ComboBoxItem Content="Zip-ZSTD"/>
-					<ComboBoxItem Content="7Z-ZSTD"/>
-					<ComboBoxItem Content="7Z-ZSTD-Solid"/>
-					<ComboBoxItem Content="7Z-LZMA"/>
-					<ComboBoxItem Content="7Z-LZMA-Solid"/>
-					<ComboBoxItem Content="Repair keep original"/>
-                </ComboBox>                    
+				<ComboBox Width="180"
+						  ItemsSource="{Binding OutputTypes}"
+						  SelectedValue="{Binding SelectedOutputType}"
+						  SelectedValueBinding="{Binding Value}"
+						  DisplayMemberBinding="{Binding Display}"/>
             </StackPanel>
             <StackPanel Orientation="Horizontal">
-                <TextBlock Text="0 / 0" VerticalAlignment="Center" Width="120"/>
-                <CheckBox Content="Dry Run" FlowDirection="RightToLeft" Width="120"/>
+                <TextBlock Text="{Binding ProgressText}" VerticalAlignment="Center" Width="120"/>
+                <CheckBox Content="Dry Run" FlowDirection="RightToLeft" Width="120" IsChecked="{Binding IsDryRun}"/>
             </StackPanel>
             <Slider Minimum="1" Maximum="16" TickFrequency="1" IsSnapToTickEnabled="True" Value="{Binding ThreadCount}"/>
         </StackPanel>
@@ -68,7 +61,7 @@
         <ScrollViewer Grid.Row="2" Margin="7,0,0,0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
             <ItemsControl ItemsSource="{Binding ProcessStats}">
                 <ItemsControl.ItemTemplate>
-                    <DataTemplate DataType="vm:procStatis">
+                    <DataTemplate DataType="vm:procStatus">
                         <views:ProcessStatus/>
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
@@ -77,10 +70,10 @@
                 
         <Image Grid.Row="3" Source="/Assets/RomVault.png" Stretch="Uniform"/>
 
-        <DataGrid Grid.Row="0" Grid.Column="1" Grid.RowSpan="4" ItemsSource="{Binding Files}">
+        <DataGrid x:Name="FilesGrid" Grid.Row="0" Grid.Column="1" Grid.RowSpan="4" ItemsSource="{Binding Files}">
             <DataGrid.Columns>
                 <DataGridTextColumn Header="Filename" Binding="{Binding Name}" Width="*"/>
-                <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="200"/>
+                <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="240"/>
             </DataGrid.Columns>
         </DataGrid>
 

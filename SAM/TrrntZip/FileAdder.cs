@@ -3,9 +3,8 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using RVIO;
-using TrrntZip;
 
-namespace TrrntZipUICore
+namespace TrrntZip
 {
     public delegate void UpdateFileCount(int fileCount);
 
@@ -18,7 +17,6 @@ namespace TrrntZipUICore
         private readonly Settings _settings;
         private readonly PauseCancel _pc;
 
-        private int fileCount;
 
         public FileAdder(BlockingCollection<cFile> fileCollectionIn, string[] file, UpdateFileCount updateFileCount, ProcessFileEndCallback ProcessFileEndCallBack, Settings settings, PauseCancel pc)
         {
@@ -32,26 +30,26 @@ namespace TrrntZipUICore
 
         public void ProcFiles()
         {
-            fileCount = 0;
+            //fileCount = 0;
 
             foreach (string t in _file)
             {
                 if (File.Exists(t) && AddFile(t))
                 {
-                    cFile cf = new cFile() { fileId = fileCount++, filename = t };
+                    cFile cf = new cFile() { fileId = MainQueue.fileCount++, filename = t, settings = _settings };
                     _fileCollection.Add(cf);
                 }
             }
-            _updateFileCount?.Invoke(fileCount);
+            _updateFileCount?.Invoke(MainQueue.fileCount);
 
             foreach (string t in _file)
             {
                 if (Directory.Exists(t))
                 {
-                    if (_settings.InZip == zipType.dir)
+                    if (_settings.InZip == InputZipType.Directory)
                     {
 
-                        cFile cf = new cFile() { fileId = fileCount++, filename = t, isDir = true };
+                        cFile cf = new cFile() { fileId = MainQueue.fileCount++, filename = t, isDir = true, settings = _settings };
                         _fileCollection.Add(cf);
                     }
                     else
@@ -74,7 +72,7 @@ namespace TrrntZipUICore
 
             if (extn == ".zip")
             {
-                if (_settings.InZip == zipType.zip || _settings.InZip == zipType.archive || _settings.InZip == zipType.all)
+                if (_settings.InZip == InputZipType.Zip || _settings.InZip == InputZipType.Archive || _settings.InZip == InputZipType.All)
                 {
                     return true;
                 }
@@ -82,13 +80,13 @@ namespace TrrntZipUICore
 
             if (extn == ".7z")
             {
-                if (_settings.InZip == zipType.sevenzip || _settings.InZip == zipType.archive || _settings.InZip == zipType.all)
+                if (_settings.InZip == InputZipType.SevenZip || _settings.InZip == InputZipType.Archive || _settings.InZip == InputZipType.All)
                 {
                     return true;
                 }
             }
 
-            if (_settings.InZip == zipType.file || _settings.InZip == zipType.all)
+            if (_settings.InZip == InputZipType.File || _settings.InZip == InputZipType.All)
             {
                 return true;
             }
@@ -107,11 +105,11 @@ namespace TrrntZipUICore
             {
                 if (AddFile(t.FullName))
                 {
-                    cFile cf = new cFile() { fileId = fileCount++, filename = t.FullName };
+                    cFile cf = new cFile() { fileId = MainQueue.fileCount++, filename = t.FullName, settings = _settings };
                     _fileCollection.Add(cf);
                 }
             }
-            _updateFileCount?.Invoke(fileCount);
+            _updateFileCount?.Invoke(MainQueue.fileCount);
 
             List<DirectoryInfo> diChild = di.GetDirectories().ToList();
             diChild.Sort((x, y) => string.Compare(x.FullName, y.FullName, StringComparison.Ordinal));
@@ -127,6 +125,5 @@ namespace TrrntZipUICore
                 }
             }
         }
-
     }
 }

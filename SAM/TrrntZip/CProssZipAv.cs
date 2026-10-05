@@ -6,18 +6,7 @@ using RVIO;
 
 namespace TrrntZip
 {
-    public class cFile
-    {
-        public int fileId;
-        public string filename;
-        public bool isDir;
-
-        public Settings settings;
-    }
-
-    public delegate void ProcessFileStartCallback(int threadId, int fileId, string filename);
-    public delegate void ProcessFileEndCallback(int threadId, int fileId, TrrntZipStatus trrntZipStatus, ZipStructure zipStructure);
-    public class CProcessZip
+    public class CProcessZipAv
     {
         public int ThreadId;
         public ProcessFileStartCallback ProcessFileStartCallBack;
@@ -43,9 +32,10 @@ namespace TrrntZip
             };
             Debug.WriteLine($"Thread {ThreadId} Starting Up");
 
-
-            foreach (cFile file in MainQueue.bccFile.GetConsumingEnumerable(CancellationToken.None))
+            while (true)
             {
+                cFile file = MainQueue.bccFile.Take();
+
                 if (pauseCancel != null && pauseCancel.Cancelled)
                 {
                     ProcessFileEndCallBack?.Invoke(ThreadId, file.fileId, TrrntZipStatus.Cancel, ZipStructure.None);

@@ -15,21 +15,21 @@ namespace TrrntZip
     {
         public static TrrntZipStatus ReZipFiles(List<ZippedFile> zippedFiles, ICompress originalZipFile, ZipStructure outputType, byte[] buffer, StatusCallback statusCallBack, LogCallback logCallback, ErrorCallback errorCallback, int threadId, int threadCount, PauseCancel pc, Settings settings)
         {
-            zipType inputType;
+            InputZipType inputType;
 
             string inExt = "";
             switch (originalZipFile)
             {
                 case Zip _:
-                    inputType = zipType.zip;
+                    inputType = InputZipType.Zip;
                     inExt = ".zip";
                     break;
                 case SevenZ _:
-                    inputType = zipType.sevenzip;
+                    inputType = InputZipType.SevenZip;
                     inExt = ".7z";
                     break;
                 case Compress.File.File _:
-                    inputType = zipType.file;
+                    inputType = InputZipType.File;
                     break;
                 default:
                     return TrrntZipStatus.Unknown;
@@ -41,7 +41,7 @@ namespace TrrntZip
             string filename = originalZipFile.ZipFilename;
 
             // if the source file is a file (not an archive) use the full source name, if the source is an archive remove the original extention
-            string fileNameOutputPart = inputType == zipType.file ? Path.GetFileName(filename) : Path.GetFileNameWithoutExtension(filename);
+            string fileNameOutputPart = inputType == InputZipType.File ? Path.GetFileName(filename) : Path.GetFileNameWithoutExtension(filename);
             string fileNameOutputDir = Path.GetDirectoryName(filename);
 
             string tmpFilename = $"{fileNameOutputDir}{Path.DirSeparatorChar}__{Path.GetFileName(filename)}.samtmp";
@@ -110,13 +110,13 @@ namespace TrrntZip
                     {
                         switch (inputType)
                         {
-                            case zipType.zip:
+                            case InputZipType.Zip:
                                 zrInput = ((Zip)originalZipFile).ZipFileOpenReadStream(t.Index, false, out readStream, out streamSize, out ZipCompression _);
                                 break;
-                            case zipType.sevenzip:
+                            case InputZipType.SevenZip:
                                 zrInput = originalZipFile.ZipFileOpenReadStream(t.Index, out readStream, out streamSize);
                                 break;
-                            case zipType.file:
+                            case InputZipType.File:
                                 zrInput = originalZipFile.ZipFileOpenReadStream(t.Index, out readStream, out streamSize);
                                 break;
                         }
@@ -174,7 +174,7 @@ namespace TrrntZip
                     writeStream?.Flush();
 
                     crcCs.Close();
-                    if (inputType != zipType.sevenzip)
+                    if (inputType != InputZipType.SevenZip)
                     {
                         originalZipFile.ZipFileCloseReadStream();
                     }

@@ -20,7 +20,6 @@ namespace TrrntZipUICore
 
         private TzipSettings tZipSettings;
 
-        private BlockingCollection<cFile> bccFile;
 
         private class ThreadProcess
         {
@@ -103,7 +102,7 @@ namespace TrrntZipUICore
         {
             _threadCount = tbProccessors.Value;
 
-            bccFile?.CompleteAdding();
+            MainQueue.bccFile?.CompleteAdding();
 
             foreach (ThreadProcess tp in _threads)
             {
@@ -120,10 +119,10 @@ namespace TrrntZipUICore
                 tp.thread.Join();
             }
 
-            bccFile?.Dispose();
+            MainQueue.bccFile?.Dispose();
 
             _threads.Clear();
-            bccFile = new BlockingCollection<cFile>();
+            MainQueue.bccFile = new BlockingCollection<cFile>();
 
 
             int workers = (Environment.ProcessorCount - 1) / _threadCount;
@@ -164,7 +163,6 @@ namespace TrrntZipUICore
                 threadProcess.cProcessZip = new CProcessZip
                 {
                     ThreadId = i,
-                    bcCfile = bccFile,
                     ProcessFileStartCallBack = ProcessFileStartCallback,
                     StatusCallBack = StatusCallBack,
                     ErrorCallBack = ErrorCallBack,
@@ -210,12 +208,9 @@ namespace TrrntZipUICore
             {
                 Repair = cboOutType.SelectedIndex == 6,
                 DryRun = chkDryRun.Checked,
-                InZip = (zipType)cboInType.SelectedIndex,
+                InZip = (InputZipType)cboInType.SelectedIndex,
                 OutZip = ZipStructureFromUIIndex(cboOutType.SelectedIndex)
             };
-
-            for (int i = 0; i < _threads.Count; i++)
-                _threads[i].cProcessZip.tz.settings = settings;
 
             tGrid.Clear();
             tGridMax = 0;
@@ -225,7 +220,7 @@ namespace TrrntZipUICore
 
             FileCountProcessed = 0;
             scanningForFiles = true;
-            FileAdder pm = new FileAdder(bccFile, file, UpdateFileCount, ProcessFileEndCallback, settings, pc);
+            FileAdder pm = new FileAdder(MainQueue.bccFile, file, UpdateFileCount, ProcessFileEndCallback, settings, pc);
             Thread procT = new Thread(pm.ProcFiles);
             procT.Start();
 
@@ -271,7 +266,7 @@ namespace TrrntZipUICore
             }
             else
             {
-                bccFile?.CompleteAdding();
+                MainQueue.bccFile?.CompleteAdding();
                 foreach (ThreadProcess tp in _threads)
                 {
                     tp.cProcessZip.ProcessFileStartCallBack = null;
@@ -281,7 +276,7 @@ namespace TrrntZipUICore
                     tp.thread.Join();
                 }
 
-                bccFile?.Dispose();
+                MainQueue.bccFile?.Dispose();
             }
             if (frmErrorLog != null)
             {

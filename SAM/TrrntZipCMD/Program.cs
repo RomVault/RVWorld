@@ -135,8 +135,7 @@ namespace TrrntZipCMD
                 torrentZip = new TorrentZip()
                 {
                     StatusCallBack = StatusCallBack,
-                    StatusLogCallBack = StatusLogCallBack,
-                    settings = settings
+                    StatusLogCallBack = StatusLogCallBack
                 };
 
                 foreach (string tArg in args)
@@ -156,7 +155,7 @@ namespace TrrntZipCMD
                     // first check if arg is a directory
                     if (Directory.Exists(arg))
                     {
-                        ProcessDir(arg);
+                        ProcessDir(arg, settings);
                         continue;
                     }
 
@@ -177,7 +176,7 @@ namespace TrrntZipCMD
                         string ext = Path.GetExtension(file.FullName).ToLower();
                         if (!string.IsNullOrEmpty(ext) && ((ext == ".zip") || (ext == ".7z")))
                         {
-                            torrentZip.Process(new FileInfo(file.FullName),out ZipStructure zipStruct);
+                            torrentZip.Process(new FileInfo(file.FullName), out ZipStructure zipStruct, settings);
                         }
                     }
                 }
@@ -204,7 +203,7 @@ namespace TrrntZipCMD
             }
         }
 
-        private static void ProcessDir(string dirName)
+        private static void ProcessDir(string dirName, Settings settings)
         {
             Console.WriteLine("Checking Dir : " + dirName);
 
@@ -216,7 +215,7 @@ namespace TrrntZipCMD
                 string ext = Path.GetExtension(filename)?.ToLower();
                 if (!string.IsNullOrEmpty(ext) && (ext == ".zip" || ext == ".7z"))
                 {
-                    torrentZip.Process(new FileInfo(filename),out ZipStructure zipStruct);
+                    torrentZip.Process(new FileInfo(filename), out ZipStructure zipStruct, settings);
                 }
             }
 
@@ -228,7 +227,7 @@ namespace TrrntZipCMD
             string[] directories = System.IO.Directory.GetDirectories(dirName);
             foreach (string dir in directories)
             {
-                ProcessDir(dir);
+                ProcessDir(dir, settings);
             }
         }
 
