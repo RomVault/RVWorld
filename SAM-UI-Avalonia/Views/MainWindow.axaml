@@ -104,9 +104,6 @@
                 <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="200"/>
             </DataGrid.Columns>
         </DataGrid>
-
-
-
     </Grid>
 
 </Window>

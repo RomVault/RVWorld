@@ -34,7 +34,8 @@ public partial class MainWindowViewModel : ViewModelBase
     private void OnQueueBusyChanged(bool busy)
     {
         OnUIThread(() =>
-        { IsRunning = busy;
+        {
+            IsRunning = busy;
             if (MainQueue.pc.Cancelled)
                 MainQueue.pc.ResetCancel();
         });
@@ -148,7 +149,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
         int workers = (Environment.ProcessorCount - 1) / ProcessStats.Count;
         if (workers == 0) workers = 1;
-        foreach(procStatus ps in ProcessStats)
+        foreach (procStatus ps in ProcessStats)
             ps.CProcessZip.workerCount = workers;
     }
 
@@ -156,7 +157,7 @@ public partial class MainWindowViewModel : ViewModelBase
     private void Pause()
     {
         IsPaused = !IsPaused;
-        if (IsPaused!=MainQueue.pc.Paused)
+        if (IsPaused != MainQueue.pc.Paused)
         {
             if (IsPaused)
                 MainQueue.pc.Pause();
@@ -170,9 +171,12 @@ public partial class MainWindowViewModel : ViewModelBase
     [RelayCommand(CanExecute = nameof(CanStop))]
     private void Stop()
     {
-        IsPaused = false;
         ClearFileQueue();
         MainQueue.pc.Cancel();
+        IsPaused = false;
+
+        // clearing again just incase anything snuck in after the first clear.
+        ClearFileQueue();
     }
 
     /// <summary>
@@ -220,7 +224,7 @@ public partial class MainWindowViewModel : ViewModelBase
         };
 
         string[] files = paths.ToArray();
-        FileAdder pm = new FileAdder(MainQueue.bccFile, files, UpdateFileCount, ProcessFileEndCallback, settings, null);
+        FileAdder pm = new FileAdder(MainQueue.bccFile, files, UpdateFileCount, ProcessFileEndCallback, settings, MainQueue.pc);
         Thread procT = new Thread(pm.ProcFiles);
         procT.Start();
     }
@@ -294,7 +298,8 @@ public partial class MainWindowViewModel : ViewModelBase
                     break;
             }
 
-            Files[fileId].Status = status;
+            if (fileId < Files.Count)
+                Files[fileId].Status = status;
 
 
             foreach (procStatus proc in ProcessStats)

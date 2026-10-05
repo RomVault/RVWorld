@@ -113,6 +113,13 @@ namespace TrrntZip
 
             foreach (FileInfo t in fi)
             {
+                if (_pc != null)
+                {
+                    _pc.WaitOne();
+                    if (_pc.Cancelled)
+                        return;
+                }
+
                 if (AddFile(t.FullName))
                 {
                     cFile cf = new cFile() { fileId = MainQueue.fileCount++, filename = t.FullName, settings = _settings };
@@ -125,14 +132,14 @@ namespace TrrntZip
             diChild.Sort((x, y) => string.Compare(x.FullName, y.FullName, StringComparison.Ordinal));
             foreach (DirectoryInfo t in diChild)
             {
-                AddDirectory(t.FullName);
-
                 if (_pc != null)
                 {
                     _pc.WaitOne();
                     if (_pc.Cancelled)
                         return;
                 }
+
+                AddDirectory(t.FullName);
             }
         }
     }
