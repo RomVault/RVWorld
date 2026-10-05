@@ -6,12 +6,15 @@ using RVIO;
 
 namespace TrrntZip
 {
+    public delegate void ProcessorClosingCallback(int threadId);
+
     public class CProcessZipAv
     {
         public int ThreadId;
         public ProcessFileStartCallback ProcessFileStartCallBack;
         public ProcessFileEndCallback ProcessFileEndCallBack;
 
+        public ProcessorClosingCallback ProcessorClosingCallBack;
         public StatusCallback StatusCallBack;
         public ErrorCallback ErrorCallBack;
         public PauseCancel pauseCancel;
@@ -36,6 +39,22 @@ namespace TrrntZip
             {
                 cFile file = MainQueue.bccFile.Take();
 
+                lock (Workers.lockObj)
+                {
+                    if (file.fileId == -1 && file.filename == "Removing")
+                    {
+                        if (Workers.workers > Workers.requestedWorkers)
+                        {
+                            Debug.WriteLine($"Thread {ThreadId} Closing Down");
+                            ProcessorClosingCallBack?.Invoke(ThreadId);
+                            Workers.workers--;
+                            break;
+                        }
+                        else
+                            continue;
+                    }
+                }
+
                 if (pauseCancel != null && pauseCancel.Cancelled)
                 {
                     ProcessFileEndCallBack?.Invoke(ThreadId, file.fileId, TrrntZipStatus.Cancel, ZipStructure.None);
@@ -49,6 +68,7 @@ namespace TrrntZip
                 TrrntZipStatus trrntZipFileStatus;
 
                 ZipStructure zipStructure = ZipStructure.None;
+                tz.workerCount = workerCount;
                 if (file.isDir)
                 {
                     DirectoryInfo dirInfo = new DirectoryInfo(file.filename);
@@ -61,10 +81,21 @@ namespace TrrntZip
                 }
                 ProcessFileEndCallBack?.Invoke(ThreadId, file.fileId, trrntZipFileStatus, zipStructure);
                 Debug.WriteLine($"Thread {ThreadId} Finished Process File {file.filename}");
+
+
+                lock (Workers.lockObj)
+                {
+                    if (Workers.workers > Workers.requestedWorkers)
+                    {
+                        Debug.WriteLine($"Thread {ThreadId} Closing Down");
+                        ProcessorClosingCallBack?.Invoke(ThreadId);
+                        Workers.workers--;
+                        break;
+                    }
+                }
             }
 
             Debug.WriteLine($"Thread {ThreadId} Finished");
-
         }
     }
 }

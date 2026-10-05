@@ -1,14 +1,12 @@
-﻿using Avalonia.Controls;
-using Avalonia.Dialogs.Internal;
-using Avalonia.Threading;
+﻿using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Compress.StructuredZip;
 using SAM_UI_Avalonia.Models;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using TrrntZip;
@@ -102,32 +100,56 @@ public partial class MainWindowViewModel : ViewModelBase
 
     private void ThreadCountChanged(int value)
     {
-        while (value > ProcessStats.Count)
+        lock (Workers.lockObj)
         {
-            CProcessZipAv newProc = new CProcessZipAv
+            Workers.requestedWorkers = value;
+
+            while (Workers.requestedWorkers > Workers.workers)
             {
-                ThreadId = ProcessStats.Count + 1,
-                ProcessFileStartCallBack = ProcessFileStartCallback,
-                StatusCallBack = StatusCallBack,
-                ErrorCallBack = ErrorCallBack,
-                ProcessFileEndCallBack = ProcessFileEndCallback,
-                pauseCancel = null,
-                workerCount = 0
-            };
+                CProcessZipAv newProc = new CProcessZipAv
+                {
+                    ThreadId = Workers.ThreadId,
+                    ProcessFileStartCallBack = ProcessFileStartCallback,
+                    StatusCallBack = StatusCallBack,
+                    ErrorCallBack = ErrorCallBack,
+                    ProcessFileEndCallBack = ProcessFileEndCallback,
+                    ProcessorClosingCallBack = ProcessorClosingCallback,
+                    pauseCancel = null,
+                    workerCount = 1
+                };
 
-            Thread thread = new Thread(newProc.MigrateZip);
-            thread.Start();
+                Thread thread = new Thread(newProc.MigrateZip);
+                thread.Start();
 
-            procStatus ps = new procStatus() { Name = $"Process {ProcessStats.Count + 1}", Progress = 0, CProcessZip = newProc };
+                procStatus ps = new procStatus() { Name = $"Process {Workers.ThreadId}", Progress = 0, CProcessZip = newProc };
 
-            ProcessStats.Add(ps);
+                ProcessStats.Add(ps);
+                Workers.workers++;
+                Workers.ThreadId++;
+
+                SetWorkerCount();
+            }
+
+            int extraWorkers = Workers.workers - Workers.requestedWorkers;
+            for (int i = 0; i < extraWorkers; i++)
+                MainQueue.bccFile.Add(new cFile() { fileId = -1, filename = "Removing" });
         }
+    }
+
+    private void SetWorkerCount()
+    {
         /*
-        while (value < ProcessStats.Count)
-        {
-            ProcessStats.RemoveAt(ProcessStats.Count - 1);
-        }
-        */
+         * this feels very non-MVVM because the main list of works is kept in the UI and not in the model
+         * should look at moving this and just updating the UI as needed
+         */
+
+        if (ProcessStats.Count == 0)
+            return;
+
+        int workers = (Environment.ProcessorCount - 1) / ProcessStats.Count;
+        if (workers == 0) workers = 1;
+        foreach(procStatus ps in ProcessStats)
+            ps.CProcessZip.workerCount = workers;
     }
 
     [RelayCommand(CanExecute = nameof(CanPause))]
@@ -205,6 +227,28 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         OnUIThread(() => FilesTotal = fileCount);
     }
+
+    private void ProcessorClosingCallback(int processId)
+    {
+        if (processId == -1)
+            return;
+        OnUIThread(() =>
+        {
+            lock (Workers.lockObj)
+            {
+                foreach (procStatus proc in ProcessStats)
+                {
+                    if (proc.CProcessZip.ThreadId == processId)
+                    {
+                        ProcessStats.Remove(proc);
+                        break;
+                    }
+                }
+                SetWorkerCount();
+            }
+        });
+    }
+
     private void ProcessFileEndCallback(int processId, int fileId, TrrntZipStatus trrntZipStatus, ZipStructure zipStruct)
     {
         if (processId == -1)
@@ -212,8 +256,8 @@ public partial class MainWindowViewModel : ViewModelBase
 
         OnUIThread(() =>
         {
-            if (FilesDone < fileId+1)
-                FilesDone = fileId+1;
+            if (FilesDone < fileId + 1)
+                FilesDone = fileId + 1;
 
             string status = "";
             switch (trrntZipStatus)
@@ -256,7 +300,6 @@ public partial class MainWindowViewModel : ViewModelBase
         OnUIThread(() =>
         {
             Files.Add(new samFile() { Name = filename, Status = "Processing" });
-
 
             foreach (procStatus proc in ProcessStats)
             {
