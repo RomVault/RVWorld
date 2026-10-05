@@ -8,8 +8,8 @@
              x:Class="SAM_UI_Avalonia.Views.ProcessStatus">
 
     <StackPanel Margin="0,0,0,6">
-        <TextBlock Text="{Binding Name}"/>
-        <ProgressBar Minimum="0" Maximum="100" Value="{Binding Progress}" Height="20" Margin="0,3,8,0"/>
+        <TextBlock Text="{Binding Name}" FontSize="12"/>
+        <ProgressBar Minimum="0" Maximum="100" Value="{Binding Progress}" Height="12" Margin="0,3,8,0"/>
     </StackPanel>
 
 </UserControl>

@@ -70,7 +70,25 @@
                 
         <Image Grid.Row="3" Source="/Assets/RomVault.png" Stretch="Uniform"/>
 
-        <DataGrid x:Name="FilesGrid" Grid.Row="0" Grid.Column="1" Grid.RowSpan="4" ItemsSource="{Binding Files}">
+        <DataGrid x:Name="FilesGrid" Grid.Row="0" Grid.Column="1" Grid.RowSpan="4" ItemsSource="{Binding Files}"
+                  IsReadOnly="True"
+                  SelectionMode="Single"
+                  RowHeight="20"
+                  CanUserSortColumns="False"
+                  CanUserReorderColumns="False">
+            <DataGrid.Styles>
+                <!-- Read only display: rows cannot be picked or highlighted. -->
+                <Style Selector="DataGridRow">
+                    <Setter Property="Focusable" Value="False"/>
+                    <Setter Property="IsHitTestVisible" Value="False"/>
+                </Style>
+                <!-- Tighten the default cell padding so the shorter rows are not clipped. -->
+                <Style Selector="DataGridCell">
+                    <Setter Property="Padding" Value="8,0"/>
+                    <Setter Property="MinHeight" Value="0"/>
+                    <Setter Property="FontSize" Value="12"/>
+                </Style>
+            </DataGrid.Styles>
             <DataGrid.Columns>
                 <DataGridTextColumn Header="Filename" Binding="{Binding Name}" Width="*"/>
                 <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="240"/>
