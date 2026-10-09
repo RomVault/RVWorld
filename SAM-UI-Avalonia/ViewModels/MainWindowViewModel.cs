@@ -9,7 +9,6 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading;
-using System.Xml;
 using TrrntZip;
 using TrrntZipUICore;
 
@@ -25,8 +24,6 @@ public partial class MainWindowViewModel : ViewModelBase
 
     public MainWindowViewModel()
     {
-
-
         var tZipSettings = TzipSettings.ReadConfig();
 
         SelectedInputType = (InputZipType)tZipSettings.InZip;
@@ -93,7 +90,7 @@ public partial class MainWindowViewModel : ViewModelBase
     /// <summary>
     /// Progress shown next to the Dry Run check box, e.g. "3 / 12".
     /// </summary>
-    public string ProgressText => $"{FilesDone} / {FilesTotal}";
+    public string ProgressText => $"{FilesDone} of {FilesTotal}";
 
     [ObservableProperty]
     private bool _isDryRun;
@@ -206,7 +203,7 @@ public partial class MainWindowViewModel : ViewModelBase
         {
             int c = 1;
             foreach (procStatus ps in ProcessStats)
-                ps.Name = $"Process {c++}";
+                ps.Name = $"Worker {c++}";
         }
     }
 
@@ -268,6 +265,7 @@ public partial class MainWindowViewModel : ViewModelBase
         if (!IsRunning)
         {
             MainQueue.fileCount = 0;
+            FilesDone = 0;
             Files.Clear();
         }
 
@@ -342,13 +340,13 @@ public partial class MainWindowViewModel : ViewModelBase
                     status = $"Valid {StructuredArchive.GetZipStructureName(zipStruct)}";
                     break;
                 case TrrntZipStatus.Trrntzipped:
-                    status = $"Re Struc {StructuredArchive.GetZipStructureName(zipStruct)}";
+                    status = $"Structured to {StructuredArchive.GetZipStructureName(zipStruct)}";
                     break;
                 case TrrntZipStatus.NeedsRepaired:
-                    status = $"Needs Repair {StructuredArchive.GetZipStructureName(zipStruct)}";
+                    status = $"Needs RePacked to {StructuredArchive.GetZipStructureName(zipStruct)}";
                     break;
                 case TrrntZipStatus.Trrntzipped | TrrntZipStatus.NeedsRepaired:
-                    status = $"Repaired {StructuredArchive.GetZipStructureName(zipStruct)}";
+                    status = $"RePacked to {StructuredArchive.GetZipStructureName(zipStruct)}";
                     break;
                 default:
                     status = trrntZipStatus.ToString();

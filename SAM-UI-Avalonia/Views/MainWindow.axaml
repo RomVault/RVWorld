@@ -62,7 +62,10 @@
                 <TextBlock Text="{Binding ProgressText}" VerticalAlignment="Center" Width="120"/>
                 <CheckBox Content="Dry Run" FlowDirection="RightToLeft" Width="120" IsChecked="{Binding IsDryRun}"/>
             </StackPanel>
-            <Slider Minimum="1" Maximum="{Binding MaxThreadCount}" TickFrequency="1" IsSnapToTickEnabled="True" Value="{Binding ThreadCount}"/>
+            <Grid ColumnDefinitions="*,25">
+                <Slider Grid.Column="0" Minimum="1" Maximum="{Binding MaxThreadCount}" TickFrequency="1" IsSnapToTickEnabled="True" Value="{Binding ThreadCount}"/>
+                <TextBlock Grid.Column="2" Text="{Binding ThreadCount}" VerticalAlignment="Center" HorizontalAlignment="Right"/>
+            </Grid>
         </StackPanel>
 
         <ScrollViewer Grid.Row="2" Margin="7,0,0,0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
