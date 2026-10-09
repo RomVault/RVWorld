@@ -5,7 +5,7 @@
     <AssemblyName>TrrntZip</AssemblyName>
     <RootNamespace>TrrntZip</RootNamespace>
     <Configurations>Debug;Release</Configurations>
-    <Platforms>X64</Platforms>
+    <Platforms>X64;AnyCPU</Platforms>
   </PropertyGroup>
 
   <ItemGroup>

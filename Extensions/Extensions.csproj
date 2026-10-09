@@ -5,6 +5,6 @@
 		<Configurations>Debug;Release;</Configurations>
 		<ForceDesignerDPIUnaware>true</ForceDesignerDPIUnaware>
 		<NoWarn>$(NoWarn);WFO1000;CA1416</NoWarn>
-		<Platforms>X64</Platforms>
+		<Platforms>X64;AnyCPU</Platforms>
 	</PropertyGroup>
 </Project>

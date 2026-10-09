@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <Configurations>Debug;Release</Configurations>
-    <Platforms>X64</Platforms>
+    <Platforms>X64;AnyCPU</Platforms>
   </PropertyGroup>
 
 </Project>

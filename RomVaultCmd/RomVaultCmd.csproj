@@ -9,7 +9,7 @@
     <Version>3.7.6</Version>
     <BaseOutputPath></BaseOutputPath>
     <Configurations>Debug;Release</Configurations>
-    <Platforms>X64</Platforms>
+    <Platforms>X64;AnyCPU</Platforms>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\RomVaultCore\RomVaultCore.csproj" />

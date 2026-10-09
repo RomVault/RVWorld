@@ -6,7 +6,7 @@
     <RootNamespace>Dark</RootNamespace>
     <AssemblyName>Dark</AssemblyName>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-    <Platforms>X64</Platforms>
+    <Platforms>X64;AnyCPU</Platforms>
   </PropertyGroup>
 
 </Project>

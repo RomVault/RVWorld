@@ -9,7 +9,9 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading;
+using System.Xml;
 using TrrntZip;
+using TrrntZipUICore;
 
 namespace SAM_UI_Avalonia.ViewModels;
 
@@ -23,10 +25,29 @@ public partial class MainWindowViewModel : ViewModelBase
 
     public MainWindowViewModel()
     {
-        ThreadCountChanged(1);
 
-        // IsRunning mirrors the queue: busy while any worker is processing a file,
-        // any file is waiting on the queue, or a FileAdder is still adding files.
+
+        var tZipSettings = TzipSettings.ReadConfig();
+
+        SelectedInputType = (InputZipType)tZipSettings.InZip;
+        SelectedOutputType = (OutputType)tZipSettings.OutZip;
+        IsDryRun = tZipSettings.DryRun;
+
+        MaxThreadCount = Environment.ProcessorCount;
+
+        int procc = tZipSettings.ProcCount;
+        if (procc <= 0)
+        {
+            procc = MaxThreadCount;
+        }
+
+        if (procc > MaxThreadCount)
+        {
+            procc = MaxThreadCount;
+        }
+
+        ThreadCount = procc;
+
         MainQueue.BusyChanged += OnQueueBusyChanged;
         IsRunning = MainQueue.IsBusy;
     }
@@ -56,6 +77,9 @@ public partial class MainWindowViewModel : ViewModelBase
     public string PauseButtonText => IsPaused ? "UnPause" : "Pause";
 
     [ObservableProperty]
+    private int _maxThreadCount = Environment.ProcessorCount;
+    
+    [ObservableProperty]
     private int _threadCount = 1;
 
     [ObservableProperty]
@@ -74,15 +98,7 @@ public partial class MainWindowViewModel : ViewModelBase
     [ObservableProperty]
     private bool _isDryRun;
 
-    partial void OnIsDryRunChanged(bool value)
-    {
-        DryRunChanged(value);
-    }
 
-    private void DryRunChanged(bool value)
-    {
-        // Dry Run toggled - react to the new setting here.
-    }
 
     public IReadOnlyList<EnumOption<InputZipType>> InputTypes { get; } = EnumOption<InputZipType>.CreateAll();
 
@@ -97,6 +113,32 @@ public partial class MainWindowViewModel : ViewModelBase
     partial void OnThreadCountChanged(int value)
     {
         ThreadCountChanged(value);
+        WriteSettings();
+    }
+
+    partial void OnIsDryRunChanged(bool value)
+    {
+        WriteSettings();
+    }
+    partial void OnSelectedOutputTypeChanged(OutputType value)
+    {
+        WriteSettings();
+    }
+
+    partial void OnSelectedInputTypeChanged(InputZipType value)
+    {
+        WriteSettings();
+    }
+
+    private void WriteSettings()
+    {
+        TzipSettings.WriteConfig(new TzipSettings()
+        {
+            InZip = (int)SelectedInputType,
+            OutZip = (int)SelectedOutputType,
+            DryRun = IsDryRun,
+            ProcCount = ThreadCount
+        });
     }
 
     private void ThreadCountChanged(int value)
@@ -122,7 +164,7 @@ public partial class MainWindowViewModel : ViewModelBase
                 Thread thread = new Thread(newProc.MigrateZip);
                 thread.Start();
 
-                procStatus ps = new procStatus() { Name = $"Process {Workers.ThreadId}", Progress = 0, CProcessZip = newProc };
+                procStatus ps = new procStatus() { Name = $"", Progress = 0, CProcessZip = newProc };
 
                 ProcessStats.Add(ps);
                 Workers.workers++;
@@ -135,6 +177,13 @@ public partial class MainWindowViewModel : ViewModelBase
             for (int i = 0; i < extraWorkers; i++)
                 MainQueue.bccFile.Add(new cFile() { fileId = -1, filename = "Removing" });
         }
+    }
+
+    partial void OnIsRunningChanged(bool value)
+    {
+        if (value)
+            return;
+        SetWorkerCount();
     }
 
     private void SetWorkerCount()
@@ -150,7 +199,15 @@ public partial class MainWindowViewModel : ViewModelBase
         int workers = (Environment.ProcessorCount - 1) / ProcessStats.Count;
         if (workers == 0) workers = 1;
         foreach (procStatus ps in ProcessStats)
-            ps.CProcessZip.workerCount = workers;
+            if (ps.CProcessZip != null)
+                ps.CProcessZip.workerCount = workers;
+
+        if (!IsRunning)
+        {
+            int c = 1;
+            foreach (procStatus ps in ProcessStats)
+                ps.Name = $"Process {c++}";
+        }
     }
 
     [RelayCommand(CanExecute = nameof(CanPause))]
@@ -257,7 +314,7 @@ public partial class MainWindowViewModel : ViewModelBase
             {
                 foreach (procStatus proc in ProcessStats)
                 {
-                    if (proc.CProcessZip.ThreadId == processId)
+                    if (proc.CProcessZip?.ThreadId == processId)
                     {
                         ProcessStats.Remove(proc);
                         break;
@@ -304,7 +361,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
             foreach (procStatus proc in ProcessStats)
             {
-                if (proc.CProcessZip.ThreadId == processId)
+                if (proc.CProcessZip?.ThreadId == processId)
                 {
                     proc.Progress = 0;
                     proc.Name = "";
@@ -323,7 +380,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
             foreach (procStatus proc in ProcessStats)
             {
-                if (proc.CProcessZip.ThreadId == processId)
+                if (proc.CProcessZip?.ThreadId == processId)
                 {
                     proc.Progress = 0;
                     proc.Name = filename;
@@ -339,7 +396,7 @@ public partial class MainWindowViewModel : ViewModelBase
         {
             foreach (procStatus proc in ProcessStats)
             {
-                if (proc.CProcessZip.ThreadId == processId)
+                if (proc.CProcessZip?.ThreadId == processId)
                 {
                     proc.Progress = percent;
                     return;
@@ -364,7 +421,7 @@ public partial class samFile : ObservableObject
 
 public partial class procStatus : ObservableObject
 {
-    public CProcessZipAv CProcessZip;
+    public CProcessZipAv? CProcessZip;
 
     [ObservableProperty]
     private string _name = "";

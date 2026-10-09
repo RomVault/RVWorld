@@ -2,6 +2,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:SAM_UI_Avalonia.ViewModels"
         xmlns:views="using:SAM_UI_Avalonia.Views"
+        xmlns:ctrl="using:SAM_UI_Avalonia.Controls"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
@@ -25,10 +26,13 @@
 
         <StackPanel Grid.Row="1" Margin="10,0,10,0">
             <Grid ColumnDefinitions="73,*" VerticalAlignment="Top">
-                <Border x:Name="DropTarget"
-                        BorderBrush="Gray" Background="LightGray" BorderThickness="1"
-                        Width="73" Height="70"
-                        DragDrop.AllowDrop="True"/>
+                <Border x:Name="DropTarget" BorderBrush="Gray" Background="Transparent" BorderThickness="1" Width="70" Height="70" DragDrop.AllowDrop="True">
+                    <ctrl:BusySpinner Width="66" Height="66"
+                                      Foreground="LightGray"
+                                      IsBusy="{Binding IsRunning}"
+                                      IsVisible="{Binding IsRunning}"
+                                      IsHitTestVisible="False"/>
+                </Border>
                 <StackPanel Grid.Column="1" Margin="10,10,0,0">
                     <TextBlock Text="&lt;-- drop Files / Dirs here"/>  
                     <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
@@ -58,7 +62,7 @@
                 <TextBlock Text="{Binding ProgressText}" VerticalAlignment="Center" Width="120"/>
                 <CheckBox Content="Dry Run" FlowDirection="RightToLeft" Width="120" IsChecked="{Binding IsDryRun}"/>
             </StackPanel>
-            <Slider Minimum="1" Maximum="16" TickFrequency="1" IsSnapToTickEnabled="True" Value="{Binding ThreadCount}"/>
+            <Slider Minimum="1" Maximum="{Binding MaxThreadCount}" TickFrequency="1" IsSnapToTickEnabled="True" Value="{Binding ThreadCount}"/>
         </StackPanel>
 
         <ScrollViewer Grid.Row="2" Margin="7,0,0,0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
