@@ -1,4 +1,5 @@
-﻿using Avalonia.Threading;
+﻿using Avalonia.Controls;
+using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Compress.StructuredZip;
@@ -24,6 +25,9 @@ public partial class MainWindowViewModel : ViewModelBase
 
     public MainWindowViewModel()
     {
+        if (Design.IsDesignMode)
+            return;
+
         var tZipSettings = TzipSettings.ReadConfig();
 
         SelectedInputType = (InputZipType)tZipSettings.InZip;
@@ -260,7 +264,7 @@ public partial class MainWindowViewModel : ViewModelBase
     /// resulting files are then added to <see cref="Files"/> on the UI thread.
     /// </summary>
     /// <param name="paths">Full paths of the dropped files and directories.</param>
-    public void FilesDroppedAsync(IReadOnlyList<string> paths, CancellationToken cancellationToken = default)
+    public void FilesDropped(IReadOnlyList<string> paths, CancellationToken cancellationToken = default)
     {
         if (!IsRunning)
         {

@@ -90,7 +90,7 @@ public partial class MainWindow : Window
 
         try
         {
-           vm.FilesDroppedAsync(paths);
+           vm.FilesDropped(paths);
         }
         catch (OperationCanceledException)
         {

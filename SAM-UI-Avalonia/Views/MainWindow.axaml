@@ -8,7 +8,7 @@
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
         x:Class="SAM_UI_Avalonia.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
-        Icon="/Assets/avalonia-logo.ico"
+        Icon="/Assets/chip.ico"
         Width="800" Height="600"
         MinWidth="400" MinHeight="450"
         WindowStartupLocation="CenterScreen"
