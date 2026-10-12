@@ -309,7 +309,7 @@ namespace ROMVault.UIElements
 
             if (GameGrid.SelectedRows.Count != 1)
             {
-                updateGameInfo?.Invoke(null, onTimer);
+                updateGameInfo?.Invoke(gameGridSource, onTimer);
                 //ucGameInfo.UpdateGameMetaData(null);
                 //UpdateSidePannel(null);
                 //grdRom.UpdateRomGrid(null, onTimer);
@@ -447,7 +447,7 @@ namespace ROMVault.UIElements
                         break;
 
                     case GameGridColumns.CDateTime:
-                    ///////////////      e.Value = SetCell(CompressUtils.zipDateTimeToString(tRvDir.FileModTimeStamp), tRvDir, FileStatus.DateFromDAT, 0, 0);
+                        e.Value = SetCell(CompressUtils.zipDateTimeToString(tRvDir.FileModTimeStamp), tRvDir, FileStatus.DateFromDAT, 0, 0);
                         break;
 
                     case GameGridColumns.CRomStatus:
@@ -518,6 +518,31 @@ namespace ROMVault.UIElements
             }
             catch { e.Value = ""; }
 
+        }
+        private static string SetCell(string txt, RvFile tRomTable, FileStatus dat, FileStatus file, FileStatus verified)
+        {
+            string flags = "";
+            if (dat != 0 && tRomTable.FileStatusIs(dat))
+            {
+                flags += "D";
+            }
+
+            if (file != 0 && tRomTable.FileStatusIs(file))
+            {
+                flags += "F";
+            }
+
+            if (verified != 0 && tRomTable.FileStatusIs(verified))
+            {
+                flags += "V";
+            }
+
+            if (!string.IsNullOrEmpty(flags))
+            {
+                flags = " (" + flags + ")";
+            }
+
+            return txt + flags;
         }
         private void GameGridCellFormatting(object sender, DataGridViewCellFormattingEventArgs e)
         {
