@@ -4,7 +4,7 @@ namespace DATReader.DatClean
 {
     public static partial class DatClean
     {
-        public static void SetExt(DatDir tDat, HeaderFileType headerFileType)
+        public static void SetExt(DatDir tDat)
         {
             DatBase[] db = tDat.ToArray();
             tDat.ChildrenClear();
@@ -15,16 +15,11 @@ namespace DATReader.DatClean
                 {
                     case DatFile df:
 
-                        if (df.isDisk)
+                        if (df.HeaderFileType == HeaderFileType.CHD)
                         {
-                            df.HeaderFileType = HeaderFileType.CHD;
                             df.Name += ".chd";
                             if (!string.IsNullOrEmpty(df.Merge))
                                 df.Merge += ".chd";
-                        }
-                        else
-                        {
-                            df.HeaderFileType = headerFileType;
                         }
 
                         tDat.ChildAdd(df);
@@ -32,7 +27,7 @@ namespace DATReader.DatClean
                     case DatDir dd:
                         dd.Name = dd.Name + GetExt(dd.FileType);
                         tDat.ChildAdd(dd);
-                        SetExt(dd, headerFileType);
+                        SetExt(dd);
                         break;
                 }
             }

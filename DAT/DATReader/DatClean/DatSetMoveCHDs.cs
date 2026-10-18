@@ -16,11 +16,11 @@ namespace DATReader.DatClean
 
             if (inDat is DatFile dFile)
             {
-                if (dFile.FileType!=FileType.File && dFile.isDisk)
+                if (dFile.FileType != FileType.File && dFile.HeaderFileType == HeaderFileType.CHD)
                 {
                     //go up 2 levels to find the directory of the game
                     //if two levels are not available (this is where file/single level archive has been selected in the rules) then just replace up one level.
-                    DatDir dir = parents[Math.Max(0,parentCount - 2)];
+                    DatDir dir = parents[Math.Max(0, parentCount - 2)];
                     DatDir zipDir = parents[parentCount - 1];
 
                     zipDir.ChildRemove(dFile);

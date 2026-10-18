@@ -262,7 +262,7 @@ namespace RomVaultCore.ReadDat
                 datFile.headerType = datRule.HeaderType;
                 datFile.datHeader = datHeader;
 
-                HeaderFileType headerFileType = FileScanner.FileHeaderReader.GetFileTypeFromHeader(datHeader.Header);
+                HeaderFileType headerFileType = FindHeaderFileType.GetTypeFromFileName(datHeader.Header);
                 if (headerFileType != HeaderFileType.Nothing)
                 {
                     switch (datFile.headerType)
@@ -273,14 +273,16 @@ namespace RomVaultCore.ReadDat
                         case HeaderType.Headerless:
                             // remove header
                             headerFileType = HeaderFileType.Nothing;
+                            DatClean.SetHeaderType(datHeader.BaseDir, headerFileType);
                             break;
                         case HeaderType.Headered:
                             headerFileType |= HeaderFileType.Required;
+                            DatClean.SetHeaderType(datHeader.BaseDir, headerFileType);
                             break;
                     }
                 }
 
-                DatClean.SetExt(datHeader.BaseDir, headerFileType);
+                DatClean.SetExt(datHeader.BaseDir);
 
                 DatClean.ClearDescription(datHeader.BaseDir);
                 return true;

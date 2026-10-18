@@ -136,7 +136,7 @@ namespace RomVaultCore.FixFile.FixAZipCore
                 fixZippedFile.FileTestFix(fixFileSource);
 
             RepStatus originalStatus = fixZippedFile.RepStatus;
-            ReturnCode returnCode = FixFileUtils.CopyFile(fixFileSource, tempFixZip, null, fixZippedFile, fixStyle, out errorMessage);
+            ReturnCode returnCode = FixFileUtils.CopyFile(fixFileSource, tempFixZip, null, fixZippedFile, fixStyle,true, out errorMessage);
             switch (returnCode)
             {
                 case ReturnCode.Good: // correct reply so continue;

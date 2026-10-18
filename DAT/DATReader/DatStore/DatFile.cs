@@ -13,7 +13,6 @@
         public string Status;
         public string Region;
         public string MIA;
-        public bool isDisk;
 
         public HeaderFileType HeaderFileType;
 
@@ -31,7 +30,6 @@
             DateModified= df.DateModified;
             Region = df.Region;
             MIA = df.MIA;
-            isDisk= df.isDisk;
 
             HeaderFileType = df.HeaderFileType;
 

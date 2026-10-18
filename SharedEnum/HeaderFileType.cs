@@ -24,3 +24,39 @@ public enum HeaderFileType
     Required = 0x80
 }
 
+public static class FindHeaderFileType
+{
+    public static HeaderFileType GetTypeFromFileName(string header)
+    {
+        if (string.IsNullOrWhiteSpace(header))
+            return HeaderFileType.Nothing;
+        
+        switch (header.ToLower())
+        {
+            case "a7800.xml":
+            case "no-intro_a7800.xml":
+                return HeaderFileType.A7800;
+            case "fds.xml":
+            case "no-intro-fds.xml":
+                return HeaderFileType.FDS;
+            case "lynx.xml":
+            case "no-intro-lynx.xml":
+                return HeaderFileType.Lynx;
+            case "nes.xml":
+            case "nes0.xml":
+            case "no-intro-nes.xml":
+            case "nongoodnes.xml":
+                return HeaderFileType.NES;
+            case "pce.xml":
+                return HeaderFileType.PCE;
+            case "psid.xml":
+                return HeaderFileType.PSID;
+            case "snes.xml":
+                return HeaderFileType.SNES;
+            case "spc.xml":
+                return HeaderFileType.SPC;
+            default:
+                return HeaderFileType.Nothing;
+        }
+    }
+}

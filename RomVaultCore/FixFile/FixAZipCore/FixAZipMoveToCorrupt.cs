@@ -79,7 +79,7 @@ namespace RomVaultCore.FixFile.FixAZipCore
             string fixZipFullName = fixZip.TreeFullName;
             Report.ReportProgress(new bgwShowFix(Path.GetDirectoryName(fixZipFullName), Path.GetFileName(fixZipFullName), fixZippedFile.Name, fixZippedFile.Size, "Raw-->", "Corrupt", Path.GetFileName(toSortFullName), fixZippedFile.Name));
 
-            ReturnCode returnCode = FixFileUtils.CopyFile(fixZip.Child(iRom), toSortCorruptOut, null, toSortCorruptRom, FindSourceFile.FixStyle.RawCopy, out string errorMessage);
+            ReturnCode returnCode = FixFileUtils.CopyFile(fixZip.Child(iRom), toSortCorruptOut, null, toSortCorruptRom, FindSourceFile.FixStyle.RawCopy,true, out string errorMessage);
             switch (returnCode)
             {
                 case ReturnCode.Good: // correct reply to continue;

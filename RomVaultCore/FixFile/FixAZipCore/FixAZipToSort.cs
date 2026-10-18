@@ -105,7 +105,7 @@ namespace RomVaultCore.FixFile.FixAZipCore
 
             Report.ReportProgress(new bgwShowFix(Path.GetDirectoryName(fixZipFullName), Path.GetFileName(fixZipFullName), fixZippedFile.Name, fixZippedFile.Size, "Raw-->", Path.GetDirectoryName(toSortFullName), Path.GetFileName(toSortFullName), toSortRom.Name));
 
-            returnCode = FixFileUtils.CopyFile(fileIn, toSortZipOut, null, toSortRom, fixStyle, out errorMessage);
+            returnCode = FixFileUtils.CopyFile(fileIn, toSortZipOut, null, toSortRom, fixStyle, true, out errorMessage);
             switch (returnCode)
             {
                 case ReturnCode.Good: // correct reply to continue;

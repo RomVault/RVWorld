@@ -23,13 +23,14 @@ namespace DATReader.DatReader
             {
                 return false;
             }
+            HeaderFileType headerFileType = FindHeaderFileType.GetTypeFromFileName(datHeader.Header);
 
             XmlNodeList dirNodeList = doc.DocumentElement.SelectNodes("dir");
             if (dirNodeList != null)
             {
                 for (int i = 0; i < dirNodeList.Count; i++)
                 {
-                    LoadDirFromDat(datHeader.BaseDir, dirNodeList[i]);
+                    LoadDirFromDat(datHeader.BaseDir, dirNodeList[i], headerFileType);
                 }
             }
 
@@ -38,7 +39,7 @@ namespace DATReader.DatReader
             {
                 for (int i = 0; i < gameNodeList.Count; i++)
                 {
-                    LoadGameFromDat(datHeader.BaseDir, gameNodeList[i]);
+                    LoadGameFromDat(datHeader.BaseDir, gameNodeList[i], headerFileType);
                 }
             }
 
@@ -47,7 +48,7 @@ namespace DATReader.DatReader
             {
                 for (int i = 0; i < machineNodeList.Count; i++)
                 {
-                    LoadGameFromDat(datHeader.BaseDir, machineNodeList[i]);
+                    LoadGameFromDat(datHeader.BaseDir, machineNodeList[i], headerFileType);
                 }
             }
 
@@ -56,7 +57,7 @@ namespace DATReader.DatReader
             {
                 for (int i = 0; i < romNodeList.Count; i++)
                 {
-                    LoadRomFromDat(datHeader.BaseDir, romNodeList[i]);
+                    LoadRomFromDat(datHeader.BaseDir, romNodeList[i], headerFileType);
                 }
             }
 
@@ -86,13 +87,14 @@ namespace DATReader.DatReader
             {
                 return false;
             }
+            HeaderFileType headerFileType = HeaderFileType.Nothing;
 
             XmlNodeList dirNodeList = doc.DocumentElement.SelectNodes("dir");
             if (dirNodeList != null)
             {
                 for (int i = 0; i < dirNodeList.Count; i++)
                 {
-                    LoadDirFromDat(datHeader.BaseDir, dirNodeList[i]);
+                    LoadDirFromDat(datHeader.BaseDir, dirNodeList[i], headerFileType);
                 }
             }
 
@@ -101,7 +103,7 @@ namespace DATReader.DatReader
             {
                 for (int i = 0; i < gameNodeList.Count; i++)
                 {
-                    LoadGameFromDat(datHeader.BaseDir, gameNodeList[i]);
+                    LoadGameFromDat(datHeader.BaseDir, gameNodeList[i], headerFileType);
                 }
             }
 
@@ -111,7 +113,7 @@ namespace DATReader.DatReader
             {
                 for (int i = 0; i < machineNodeList.Count; i++)
                 {
-                    LoadGameFromDat(datHeader.BaseDir, machineNodeList[i]);
+                    LoadGameFromDat(datHeader.BaseDir, machineNodeList[i], headerFileType);
                 }
             }
 
@@ -198,7 +200,7 @@ namespace DATReader.DatReader
         }
 
 
-        private static void LoadDirFromDat(DatDir parentDir, XmlNode dirNode)
+        private static void LoadDirFromDat(DatDir parentDir, XmlNode dirNode, HeaderFileType headerFileType)
         {
             if (dirNode.Attributes == null)
             {
@@ -216,7 +218,7 @@ namespace DATReader.DatReader
             {
                 for (int i = 0; i < dirNodeList.Count; i++)
                 {
-                    LoadDirFromDat(dir, dirNodeList[i]);
+                    LoadDirFromDat(dir, dirNodeList[i], headerFileType);
                 }
             }
 
@@ -225,7 +227,7 @@ namespace DATReader.DatReader
             {
                 for (int i = 0; i < gameNodeList.Count; i++)
                 {
-                    LoadGameFromDat(dir, gameNodeList[i]);
+                    LoadGameFromDat(dir, gameNodeList[i], headerFileType);
                 }
             }
             XmlNodeList machineNodeList = dirNode.SelectNodes("machine");
@@ -233,12 +235,12 @@ namespace DATReader.DatReader
             {
                 for (int i = 0; i < machineNodeList.Count; i++)
                 {
-                    LoadGameFromDat(dir, machineNodeList[i]);
+                    LoadGameFromDat(dir, machineNodeList[i], headerFileType);
                 }
             }
         }
 
-        private static void LoadGameFromDat(DatDir parentDir, XmlNode gameNode)
+        private static void LoadGameFromDat(DatDir parentDir, XmlNode gameNode, HeaderFileType headerFileType)
         {
             if (gameNode.Attributes == null)
             {
@@ -306,7 +308,7 @@ namespace DATReader.DatReader
             {
                 for (int i = 0; i < romNodeList.Count; i++)
                 {
-                    LoadRomFromDat(dDir, romNodeList[i]);
+                    LoadRomFromDat(dDir, romNodeList[i], headerFileType);
                 }
             }
 
@@ -341,7 +343,7 @@ namespace DATReader.DatReader
         }
 
 
-        private static void LoadRomFromDat(DatDir parentDir, XmlNode romNode)
+        private static void LoadRomFromDat(DatDir parentDir, XmlNode romNode, HeaderFileType headerFileType)
         {
             if (romNode.Attributes == null)
             {
@@ -359,7 +361,8 @@ namespace DATReader.DatReader
                 Status = VarFix.ToLower(romNode.Attributes.GetNamedItem("status")),
                 Region = VarFix.ToLower(romNode.Attributes.GetNamedItem("region")),
                 //DateModified =CompressUtils.StringDateTimeToTicks( VarFix.String(romNode.Attributes.GetNamedItem("date"))),
-                MIA = VarFix.String(romNode.Attributes.GetNamedItem("mia"))
+                MIA = VarFix.String(romNode.Attributes.GetNamedItem("mia")),
+                HeaderFileType = headerFileType
             };
 
             parentDir.ChildAdd(rvRom);
@@ -380,7 +383,7 @@ namespace DATReader.DatReader
                 Merge = VarFix.CleanCHD(VarFix.String(romNode.Attributes.GetNamedItem("merge"))),
                 Status = VarFix.ToLower(romNode.Attributes.GetNamedItem("status")),
                 MIA = VarFix.String(romNode.Attributes.GetNamedItem("mia")),
-                isDisk = true
+                HeaderFileType = HeaderFileType.CHD
             };
 
             parentDir.ChildAdd(rvRom);

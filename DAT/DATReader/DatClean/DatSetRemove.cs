@@ -201,7 +201,7 @@ namespace DATReader.DatClean
                     for (int r = 0; r < mGame.Count; r++)
                     {
                         DatFile df1 = (DatFile)mGame[r];
-                        if (!df1.isDisk)
+                        if (df1.HeaderFileType != HeaderFileType.CHD)
                             continue;
                         mGame.ChildRemove(df1);
                         r--;
@@ -225,7 +225,7 @@ namespace DATReader.DatClean
                     for (int r = 0; r < mGame.Count; r++)
                     {
                         DatFile df1 = (DatFile)mGame[r];
-                        if (df1.isDisk)
+                        if (df1.HeaderFileType == HeaderFileType.CHD)
                             continue;
                         mGame.ChildRemove(df1);
                         r--;

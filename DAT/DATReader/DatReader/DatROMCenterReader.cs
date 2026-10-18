@@ -338,7 +338,7 @@ namespace DATReader.DatReader
 
                 DatFile dRom = new DatFile(VarFix.CleanCHD(romName), FileType.UnSet)
                 {
-                    isDisk = true,
+                    HeaderFileType = HeaderFileType.CHD,
                     SHA1 = VarFix.CleanMD5SHA1(romCRC, 40),
                     Merge = VarFix.CleanCHD(merge)
                 };

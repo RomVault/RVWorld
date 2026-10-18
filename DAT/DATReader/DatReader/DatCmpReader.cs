@@ -19,6 +19,7 @@ namespace DATReader.DatReader
                     errorReport?.Invoke(strFilename, new Win32Exception(errorCode).Message);
                     return false;
                 }
+                HeaderFileType headerFileType = HeaderFileType.Nothing;
 
                 dfl.Gn();
                 if (dfl.EndOfStream())
@@ -31,11 +32,12 @@ namespace DATReader.DatReader
                     {
                         return false;
                     }
+                    headerFileType = FindHeaderFileType.GetTypeFromFileName(datHeader.Header);
                     dfl.Gn();
                 }
                 if (string.Equals(dfl.Next, "raine", StringComparison.OrdinalIgnoreCase))
                 {
-                    while (!string.Equals(dfl.Next,"emulator",StringComparison.OrdinalIgnoreCase))
+                    while (!string.Equals(dfl.Next, "emulator", StringComparison.OrdinalIgnoreCase))
                         dfl.Gn();
                     if (!LoadHeaderFromDat(dfl, strFilename, datHeader, errorReport))
                     {
@@ -54,7 +56,7 @@ namespace DATReader.DatReader
 
                 while (!dfl.EndOfStream())
                 {
-                    bool res = ReadNextBlock(dfl, datHeader.BaseDir, errorReport);
+                    bool res = ReadNextBlock(dfl, datHeader.BaseDir, errorReport, headerFileType);
                     if (!res)
                         return false;
                 }
@@ -64,25 +66,25 @@ namespace DATReader.DatReader
             return true;
         }
 
-        private static bool ReadNextBlock(DatFileLoader dfl, DatDir parentDir, ReportError errorReport)
+        private static bool ReadNextBlock(DatFileLoader dfl, DatDir parentDir, ReportError errorReport, HeaderFileType headerFileType)
         {
             switch (dfl.Next.ToLower())
             {
                 case "dir":
-                    if (!LoadDirFromDat(dfl, parentDir, errorReport))
+                    if (!LoadDirFromDat(dfl, parentDir, errorReport, headerFileType))
                     {
                         return false;
                     }
                     break;
                 case "game":
                 case "machine":
-                    if (!LoadGameFromDat(dfl, parentDir, errorReport))
+                    if (!LoadGameFromDat(dfl, parentDir, errorReport, headerFileType))
                     {
                         return false;
                     }
                     break;
                 case "resource":
-                    if (!LoadGameFromDat(dfl, parentDir, errorReport))
+                    if (!LoadGameFromDat(dfl, parentDir, errorReport, headerFileType))
                     {
                         return false;
                     }
@@ -217,7 +219,7 @@ namespace DATReader.DatReader
         }
 
 
-        private static bool LoadDirFromDat(DatFileLoader dfl, DatDir parentDir, ReportError errorReport)
+        private static bool LoadDirFromDat(DatFileLoader dfl, DatDir parentDir, ReportError errorReport, HeaderFileType headerFileType)
         {
             dfl.Gn();
             if (dfl.Next != "(")
@@ -239,14 +241,14 @@ namespace DATReader.DatReader
 
             while (dfl.Next != ")")
             {
-                bool res = ReadNextBlock(dfl, dir, errorReport);
+                bool res = ReadNextBlock(dfl, dir, errorReport, headerFileType);
                 if (!res)
                     return false;
             }
             return true;
         }
 
-        private static bool LoadGameFromDat(DatFileLoader dfl, DatDir parentDir, ReportError errorReport)
+        private static bool LoadGameFromDat(DatFileLoader dfl, DatDir parentDir, ReportError errorReport, HeaderFileType headerFileType)
         {
             dfl.Gn();
             if (dfl.Next != "(")
@@ -259,14 +261,14 @@ namespace DATReader.DatReader
             string snext = dfl.Next;
 
             string pathextra = "";
-            if (string.Equals(snext,"rebuildto",StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(snext, "rebuildto", StringComparison.OrdinalIgnoreCase))
             {
                 pathextra = dfl.Gn();
                 dfl.Gn();
                 snext = dfl.Next;
             }
 
-            if (!string.Equals(snext,"name",StringComparison.OrdinalIgnoreCase))
+            if (!string.Equals(snext, "name", StringComparison.OrdinalIgnoreCase))
             {
                 errorReport?.Invoke(dfl.Filename, "Name not found as first object in ( ), on line " + dfl.LineNumber);
                 return false;
@@ -373,7 +375,7 @@ namespace DATReader.DatReader
                     case "s16sndrom":
                     case "s16gfxrom":
                     case "neosndrom":
-                        if (!LoadRomFromDat(dfl, dDir, errorReport))
+                        if (!LoadRomFromDat(dfl, dDir, errorReport, headerFileType))
                         {
                             return false;
                         }
@@ -402,7 +404,7 @@ namespace DATReader.DatReader
             return true;
         }
 
-        private static bool LoadRomFromDat(DatFileLoader dfl, DatDir parentDir, ReportError errorReport)
+        private static bool LoadRomFromDat(DatFileLoader dfl, DatDir parentDir, ReportError errorReport, HeaderFileType headerFileType)
         {
             dfl.Gn();
             if (dfl.Next != "(")
@@ -419,7 +421,10 @@ namespace DATReader.DatReader
             }
 
 
-            DatFile dRom = new DatFile(dfl.Gn(), FileType.UnSet);
+            DatFile dRom = new DatFile(dfl.Gn(), FileType.UnSet)
+            {
+                HeaderFileType = headerFileType
+            };
             dfl.Gn();
 
 
@@ -507,7 +512,7 @@ namespace DATReader.DatReader
 
             DatFile dRom = new DatFile(VarFix.CleanCHD(dfl.Gn()), FileType.UnSet)
             {
-                isDisk = true
+                HeaderFileType = HeaderFileType.CHD
             };
 
             dfl.Gn();

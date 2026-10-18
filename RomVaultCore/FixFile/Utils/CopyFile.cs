@@ -76,7 +76,7 @@ namespace RomVaultCore.FixFile.Utils
         /// ReturnCode.Good is the valid return code otherwise we have an error.
         ///
         /// </returns>
-        public static ReturnCode CopyFile(RvFile fileIn, ICompress zipFileOut, string filenameOut, RvFile fileOut, FixStyle fixStyle, out string error)
+        public static ReturnCode CopyFile(RvFile fileIn, ICompress zipFileOut, string filenameOut, RvFile fileOut, FixStyle fixStyle, bool leaveZipOpen, out string error)
         {
 
             if (zipFileOut == null && filenameOut == null)
@@ -312,7 +312,8 @@ namespace RomVaultCore.FixFile.Utils
                         error = "Error Closing " + zr + " Stream :" + zipFileIn.ZipFilename;
                         return ReturnCode.FileSystemError;
                     }
-                    zipFileIn.ZipFileClose();
+                    if (!leaveZipOpen)
+                        zipFileIn.ZipFileClose();
                 }
                 else
                 {
@@ -433,6 +434,15 @@ namespace RomVaultCore.FixFile.Utils
             return ReturnCode.Good;
         }
 
+        private static ICompress localZipFileIn = null;
+        public static void CloseLocalZip()
+        {
+            if (localZipFileIn == null)
+                return;
+            localZipFileIn.ZipFileClose();
+            localZipFileIn = null;
+        }
+
         private static ReturnCode OpenInputStream(RvFile fileIn, bool rawCopy, out ICompress zipFileIn, out Stream readStream, out ulong streamSize, out ZipCompression compressionMethod, out byte[] properties, out string error)
         {
             zipFileIn = null;
@@ -453,37 +463,48 @@ namespace RomVaultCore.FixFile.Utils
                 string fileNameIn = zZipFileIn.FullNameCase;
                 ZipReturn zr1;
 
-
-                if (zZipFileIn.FileType == FileType.SevenZip)
+                if (localZipFileIn != null)
                 {
-                    zipFileIn = new SevenZ();
-                    zr1 = zipFileIn.ZipFileOpen(fileNameIn, zZipFileIn.FileModTimeStamp, false, FileStream.BufSizeMax);
+                    if (localZipFileIn.ZipOpen != ZipOpenType.OpenRead || localZipFileIn.ZipFilename != fileNameIn)
+                        CloseLocalZip();
+                }
+
+                if (localZipFileIn == null)
+                {
+                    if (zZipFileIn.FileType == FileType.SevenZip)
+                    {
+                        zipFileIn = new SevenZ();
+                        zr1 = zipFileIn.ZipFileOpen(fileNameIn, zZipFileIn.FileModTimeStamp, false, FileStream.BufSizeMax);
+                    }
+                    else
+                    {
+                        zipFileIn = new Zip();
+                        zr1 = zipFileIn.ZipFileOpen(fileNameIn, zZipFileIn.FileModTimeStamp, fileIn.ZipFileHeaderPosition == null, FileStream.BufSizeMax);
+                    }
+
+                    switch (zr1)
+                    {
+                        case ZipReturn.ZipGood:
+                            break;
+                        case ZipReturn.ZipErrorFileNotFound:
+                            error = "File not found, Rescan required before fixing " + fileIn.Name;
+                            return ReturnCode.RescanNeeded;
+                        case ZipReturn.ZipErrorTimeStamp:
+                            error = "File has changed, Rescan required before fixing " + fileIn.Name;
+                            return ReturnCode.RescanNeeded;
+                        case ZipReturn.ZipFileLocked:
+                            error = "Source file is locked by another app " + fileNameIn;
+                            return ReturnCode.FileSystemError;
+                        default:
+                            error = "Error Open Zip File " + fileNameIn;
+                            if (zipFileIn is Zip)
+                                error += $" ({zr1}, {Error.ErrorMessage})";
+                            return ReturnCode.FileSystemError;
+                    }
+                    localZipFileIn = zipFileIn;
                 }
                 else
-                {
-                    zipFileIn = new Zip();
-                    zr1 = zipFileIn.ZipFileOpen(fileNameIn, zZipFileIn.FileModTimeStamp, fileIn.ZipFileHeaderPosition == null, FileStream.BufSizeMax);
-                }
-
-                switch (zr1)
-                {
-                    case ZipReturn.ZipGood:
-                        break;
-                    case ZipReturn.ZipErrorFileNotFound:
-                        error = "File not found, Rescan required before fixing " + fileIn.Name;
-                        return ReturnCode.RescanNeeded;
-                    case ZipReturn.ZipErrorTimeStamp:
-                        error = "File has changed, Rescan required before fixing " + fileIn.Name;
-                        return ReturnCode.RescanNeeded;
-                    case ZipReturn.ZipFileLocked:
-                        error = "Source file is locked by another app " + fileNameIn;
-                        return ReturnCode.FileSystemError;
-                    default:
-                        error = "Error Open Zip File " + fileNameIn;
-                        if (zipFileIn is Zip)
-                            error += $" ({zr1}, {Error.ErrorMessage})";
-                        return ReturnCode.FileSystemError;
-                }
+                    zipFileIn = localZipFileIn;
 
                 if (fileIn.FileType == FileType.FileSevenZip)
                 {

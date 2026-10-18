@@ -224,6 +224,7 @@ namespace RomVaultCore.FixFile
                                 if (returnCode != ReturnCode.Good)
                                 {
                                     ReportError.procLog($"FixAZip: Error DoubleCheckDelete {returnCode}, closing Zips");
+                                    FixFileUtils.CloseLocalZip();
                                     CloseZipFile(ref tempFixZip);
                                     CloseToSortGame(toSortGame, ref toSortZipOut);
                                     CloseToSortCorruptGame(toSortCorruptGame, ref toSortCorruptOut);
@@ -254,6 +255,7 @@ namespace RomVaultCore.FixFile
                                 if (returnCode != ReturnCode.Good)
                                 {
                                     ReportError.procLog($"FixAZip: Returning from Can Be fixed error {returnCode}, closing zips");
+                                    FixFileUtils.CloseLocalZip();
                                     CloseZipFile(ref tempFixZip);
                                     CloseToSortGame(toSortGame, ref toSortZipOut);
                                     CloseToSortCorruptGame(toSortCorruptGame, ref toSortCorruptOut);
@@ -273,6 +275,7 @@ namespace RomVaultCore.FixFile
                                 if (returnCode != ReturnCode.Good)
                                 {
                                     ReportError.procLog($"FixAZip: Returning from Can Be fixed error {returnCode}, closing zips");
+                                    FixFileUtils.CloseLocalZip();
                                     CloseZipFile(ref tempFixZip);
                                     CloseToSortGame(toSortGame, ref toSortZipOut);
                                     CloseToSortCorruptGame(toSortCorruptGame, ref toSortCorruptOut);
@@ -290,6 +293,7 @@ namespace RomVaultCore.FixFile
                                 if (returnCode != ReturnCode.Good)
                                 {
                                     ReportError.procLog($"FixAZip: Returning from Can Be fixed error {returnCode}, closing zips");
+                                    FixFileUtils.CloseLocalZip();
                                     CloseZipFile(ref tempFixZip);
                                     CloseToSortGame(toSortGame, ref toSortZipOut);
                                     CloseToSortCorruptGame(toSortCorruptGame, ref toSortCorruptOut);
@@ -307,6 +311,7 @@ namespace RomVaultCore.FixFile
                             if (returnCode != ReturnCode.Good)
                             {
                                 ReportError.procLog($"FixAZip: Returning from Move To Corrupt error {returnCode}, closing zips");
+                                FixFileUtils.CloseLocalZip();
                                 CloseZipFile(ref tempFixZip);
                                 CloseToSortGame(toSortGame, ref toSortZipOut);
                                 CloseToSortCorruptGame(toSortCorruptGame, ref toSortCorruptOut);
@@ -324,6 +329,7 @@ namespace RomVaultCore.FixFile
                     if (Report.CancellationPending())
                     {
                         ReportError.procLog($"FixAZip: Cancellation Pending Closing All");
+                        FixFileUtils.CloseLocalZip();
                         try { tempFixZip?.ZipFileCloseFailed(); } catch { }
                         ; tempFixZip = null;
                         try { toSortZipOut?.ZipFileCloseFailed(); } catch { }
@@ -337,6 +343,8 @@ namespace RomVaultCore.FixFile
                     }
 
                 }
+
+                FixFileUtils.CloseLocalZip();
 
                 //if ToSort Zip Made then close the zip and add this new zip to the Database
                 ReportError.procLog($"FixAZip: ClosetoSortGame");

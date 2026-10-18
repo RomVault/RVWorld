@@ -33,7 +33,7 @@ namespace RomVaultCore.FixFile
 
                 case RepStatus.Correct:
                     // this is correct nothing to be done here
-                    return FixFileCheckName(fixFile,out errorMessage);
+                    return FixFileCheckName(fixFile, out errorMessage);
 
 
                 case RepStatus.NotCollected:
@@ -399,7 +399,7 @@ namespace RomVaultCore.FixFile
             if (DBHelper.IsZeroLengthFile(fixFile))
             {
                 RvFile fileIn = new RvFile(FileType.File) { Size = 0 };
-                returnCode = FixFileUtils.CopyFile(fileIn, null, fixFile.FullName, fixFile, FixStyle.Zero, out errorMessage);
+                returnCode = FixFileUtils.CopyFile(fileIn, null, fixFile.FullName, fixFile, FixStyle.Zero, false, out errorMessage);
                 if (returnCode != ReturnCode.Good)
                 {
                     errorMessage = fixFile.FullName + " " + fixFile.RepStatus + " " + returnCode + " : " + errorMessage;
@@ -460,7 +460,7 @@ namespace RomVaultCore.FixFile
                 return ReturnCode.Good;
             }
 
-            returnCode = FixFileUtils.CopyFile(fixingFile, null, fixFile.FullName, fixFile, FixStyle.Zero, out errorMessage);
+            returnCode = FixFileUtils.CopyFile(fixingFile, null, fixFile.FullName, fixFile, FixStyle.Zero, false, out errorMessage);
 
             switch (returnCode)
             {

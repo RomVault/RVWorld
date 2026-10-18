@@ -109,7 +109,8 @@ namespace RomVaultCore.ReadDat
                     SHA1 = rvfile.SHA1,
                     MD5 = rvfile.MD5,
                     Merge = rvfile.Merge,
-                    Status = rvfile.Status
+                    Status = rvfile.Status,
+                    HeaderFileType = rvfile.HeaderFileType
                 };
 
                 if (rvfile.MIAStatusIs(MIAStatus.MIAFromDat) || rvfile.MIAStatusIs(MIAStatus.MIA))
@@ -120,7 +121,6 @@ namespace RomVaultCore.ReadDat
                 bool isDisk = (rvfile.HeaderFileType == HeaderFileType.CHD);
                 if (isDisk)
                 {
-                    extFile.isDisk = true;
                     extFile.Name = VarFix.CleanCHD(extFile.Name);
                     extFile.Merge = VarFix.CleanCHD(extFile.Merge);
                     if (rvfile.AltMD5 != null || rvfile.AltSHA1 != null)

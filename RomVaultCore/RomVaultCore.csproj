@@ -8,12 +8,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Libraries\StorageList\StorageList.csproj" />
+	  <ProjectReference Include="..\DAT\DATReader\DATReader.csproj" />
+	  <ProjectReference Include="..\Libraries\StorageList\StorageList.csproj" />
     <ProjectReference Include="..\CHD\CHDSharpLib\CHDSharpLib.csproj" />
     <ProjectReference Include="..\Compress\Compress.csproj" />
-    <ProjectReference Include="..\DAT\DATReader\DATReader.csproj" />
     <ProjectReference Include="..\FileScanner\FileScanner.csproj" />
-    <ProjectReference Include="..\SharedEnum\SharedEnum.csproj" />
   </ItemGroup>
 
 </Project>

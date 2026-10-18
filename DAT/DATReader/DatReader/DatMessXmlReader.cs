@@ -171,7 +171,7 @@ namespace DATReader.DatReader
             {
                 SHA1 = VarFix.CleanMD5SHA1(romNode.Attributes.GetNamedItem("sha1"), 40),
                 Status = VarFix.ToLower(romNode.Attributes.GetNamedItem("status")),
-                isDisk = true
+                HeaderFileType = HeaderFileType.CHD
             };
 
             parentDir.ChildAdd(dRom);

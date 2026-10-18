@@ -194,7 +194,7 @@ namespace DATReader.DatWriter
                     }
                     else
                     {
-                        if (baseRom.isDisk)
+                        if (baseRom.HeaderFileType == HeaderFileType.CHD)
                             sw.Write(@"<disk");
                         else
                             sw.Write(newStyle ? @"<file" : @"<rom");

@@ -80,7 +80,7 @@ namespace DATReader.DatClean
 
                 foreach (DatBase tGame in mGameKeep)
                 {
-                    if (mergeWithGameName && !((DatFile)tGame).isDisk)
+                    if (mergeWithGameName && ((DatFile)tGame).HeaderFileType != HeaderFileType.CHD)
                         tGame.Name = mGame.Name + "/" + tGame.Name;
                     romOfTopParent.ChildAdd(tGame);
                 }
@@ -135,7 +135,7 @@ namespace DATReader.DatClean
                         continue;
                     }
 
-                    if (dr0.isDisk != dr1.isDisk)
+                    if (dr0.HeaderFileType != dr1.HeaderFileType)
                     {
                         continue;
                     }
