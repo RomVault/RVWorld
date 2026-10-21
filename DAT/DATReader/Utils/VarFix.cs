@@ -108,12 +108,6 @@ namespace DATReader.Utils
                 return null;
             }
 
-            //if (checksum.Length % 2 == 1)
-            //    checksum = "0" + checksum;
-
-            //if (checksum.Length != length)
-            //    return null;
-
             while (checksum.Length < length)
             {
                 checksum = "0" + checksum;

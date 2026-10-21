@@ -14,6 +14,8 @@
         public string Region;
         public string MIA;
 
+        public string Header;
+
         public HeaderFileType HeaderFileType;
 
         public MIAStatus MIAStatus = MIAStatus.None;
@@ -31,6 +33,7 @@
             Region = df.Region;
             MIA = df.MIA;
 
+            Header = df.Header;
             HeaderFileType = df.HeaderFileType;
 
             MIAStatus = df.MIAStatus;

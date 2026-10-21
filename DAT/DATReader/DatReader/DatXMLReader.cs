@@ -362,6 +362,7 @@ namespace DATReader.DatReader
                 Region = VarFix.ToLower(romNode.Attributes.GetNamedItem("region")),
                 //DateModified =CompressUtils.StringDateTimeToTicks( VarFix.String(romNode.Attributes.GetNamedItem("date"))),
                 MIA = VarFix.String(romNode.Attributes.GetNamedItem("mia")),
+                Header = VarFix.String(romNode.Attributes.GetNamedItem("header")),
                 HeaderFileType = headerFileType
             };
 

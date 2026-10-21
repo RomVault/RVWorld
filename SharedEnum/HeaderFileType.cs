@@ -37,14 +37,14 @@ public static class FindHeaderFileType
             case "no-intro_a7800.xml":
                 return HeaderFileType.A7800;
             case "fds.xml":
-            case "no-intro-fds.xml":
+            case "no-intro_fds.xml":
                 return HeaderFileType.FDS;
             case "lynx.xml":
-            case "no-intro-lynx.xml":
+            case "no-intro_lynx.xml":
                 return HeaderFileType.Lynx;
             case "nes.xml":
             case "nes0.xml":
-            case "no-intro-nes.xml":
+            case "no-intro_nes.xml":
             case "nongoodnes.xml":
                 return HeaderFileType.NES;
             case "pce.xml":
