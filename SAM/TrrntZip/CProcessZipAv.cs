@@ -62,7 +62,7 @@ namespace TrrntZip
                         }
                     }
 
-                    if (pauseCancel != null && pauseCancel.Cancelled)
+                    if (pauseCancel != null && pauseCancel.StopHard)
                     {
                         ProcessFileEndCallBack?.Invoke(ThreadId, file.fileId, TrrntZipStatus.Cancel, ZipStructure.None);
                         continue;
@@ -70,8 +70,6 @@ namespace TrrntZip
                     if (pauseCancel != null)
                         pauseCancel.WaitOne();
 
-                    ProcessFileStartCallBack?.Invoke(ThreadId, file.fileId, file.filename);
-                    Debug.WriteLine($"Thread {ThreadId} Starting to Process File {file.filename}");
                     TrrntZipStatus trrntZipFileStatus;
 
                     ZipStructure zipStructure = ZipStructure.None;
@@ -79,12 +77,14 @@ namespace TrrntZip
                     if (file.isDir)
                     {
                         DirectoryInfo dirInfo = new DirectoryInfo(file.filename);
-                        trrntZipFileStatus = tz.Process(dirInfo, out zipStructure, file.settings, pauseCancel);
+                        ProcessFileStartCallBack?.Invoke(ThreadId, file.fileId, file.filename, -1);
+                        trrntZipFileStatus = tz.Process(dirInfo, file.fileId, out zipStructure, file.settings, pauseCancel);
                     }
                     else
                     {
                         FileInfo fileInfo = new FileInfo(file.filename);
-                        trrntZipFileStatus = tz.Process(fileInfo, out zipStructure, file.settings, pauseCancel);
+                        ProcessFileStartCallBack?.Invoke(ThreadId, file.fileId, file.filename, fileInfo.Length);
+                        trrntZipFileStatus = tz.Process(fileInfo, file.fileId, out zipStructure, file.settings, pauseCancel);
                     }
                     ProcessFileEndCallBack?.Invoke(ThreadId, file.fileId, trrntZipFileStatus, zipStructure);
                     Debug.WriteLine($"Thread {ThreadId} Finished Process File {file.filename}");

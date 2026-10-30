@@ -34,7 +34,9 @@
     </Project>
   </Folder>
   <Folder Name="/SAM/">
-    <Project Path="SAM-UI-Avalonia/SAM-UI-Avalonia.csproj" Id="2583afb1-4cc6-42fe-9216-e4e30ba361a0" />
+    <Project Path="SAM-UI-Avalonia/SAM-UI-Avalonia.csproj" Id="2583afb1-4cc6-42fe-9216-e4e30ba361a0">
+      <Platform Solution="Debug|x64" Project="x64" />
+    </Project>
     <Project Path="SAM/TrrntZip/TrrntZip.csproj">
       <Platform Solution="*|x64" Project="X64" />
     </Project>

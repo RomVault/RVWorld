@@ -9,9 +9,10 @@
         x:Class="SAM_UI_Avalonia.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Icon="/Assets/chip.ico"
-        Width="800" Height="600"
+        Width="800" Height="630"
         MinWidth="400" MinHeight="450"
         WindowStartupLocation="CenterScreen"
+        Background="{DynamicResource SamWindowBackground}"
         Title="SAM_UI_Avalonia">
 
     <Design.DataContext>
@@ -20,51 +21,59 @@
         <vm:MainWindowViewModel/>
     </Design.DataContext>
 
-    <Grid RowDefinitions="100,230,*,50" ColumnDefinitions="270,*">
+    <Grid RowDefinitions="100,Auto,*,Auto" ColumnDefinitions="270,*">
+
+                <Border Grid.Row="0" Grid.Column="0" Grid.RowSpan="4"
+                Background="{DynamicResource SamSidebarBackground}"
+                BorderBrush="{DynamicResource SamDividerBrush}"
+                BorderThickness="0,0,1,0"/>
 
         <Image Grid.Row="0" Source="/Assets/title.png" Stretch="Uniform"/>
 
         <StackPanel Grid.Row="1" Margin="10,0,10,0">
-            <Grid ColumnDefinitions="73,*" VerticalAlignment="Top">
-                <Border x:Name="DropTarget" BorderBrush="Gray" Background="Transparent" BorderThickness="1" Width="70" Height="70" DragDrop.AllowDrop="True">
+            <Grid ColumnDefinitions="71,*" VerticalAlignment="Top">
+                <Border x:Name="DropTarget" BorderBrush="{DynamicResource SamDropBorderBrush}" Background="Transparent" BorderThickness="1" Width="70" Height="70"
+                        VerticalAlignment="Top" DragDrop.AllowDrop="True">
                     <ctrl:BusySpinner Width="66" Height="66"
-                                      Foreground="LightGray"
-                                      IsBusy="{Binding IsRunning}"
+                                      Foreground="{DynamicResource SamDropBorderBrush}"
+                                      IsBusy="{Binding IsSpinning}"
                                       IsVisible="{Binding IsRunning}"
                                       IsHitTestVisible="False"/>
                 </Border>
                 <StackPanel Grid.Column="1" Margin="10,10,0,0">
                     <TextBlock Text="&lt;-- drop Files / Dirs here"/>  
-                    <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
-                        <Button Content="{Binding PauseButtonText}" Width="80" Command="{Binding PauseCommand}" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
-                        <Button Content="Stop" Width="80" Command="{Binding StopCommand}" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
+                        <Button Content="{Binding PauseButtonText}" Width="170" Command="{Binding PauseCommand}" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>                      
+                    <StackPanel Orientation="Horizontal" Margin="0,2,2,0">
+                        <Button Content="Soft Stop" Width="85" Command="{Binding SoftStopCommand}" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
+                        <Button Content="Hard Stop" Width="85" Command="{Binding HardStopCommand}" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
                     </StackPanel>           
                 </StackPanel>
             </Grid>
             
             <StackPanel Orientation="Horizontal" Margin="0,10,0,0">   
-                <TextBlock Text="Input:" Width="60" VerticalAlignment="Center" />
-				<ComboBox Width="180"
+                <TextBlock Text="Input:" Width="68" VerticalAlignment="Center" />
+				<ComboBox Width="182"
 						  ItemsSource="{Binding InputTypes}"
 						  SelectedValue="{Binding SelectedInputType}"
 						  SelectedValueBinding="{Binding Value}"
 						  DisplayMemberBinding="{Binding Display}"/>
             </StackPanel>
             <StackPanel Orientation="Horizontal" Margin="0,4,0,0">   
-                <TextBlock Text="Output:"  Width="60" VerticalAlignment="Center" />  
-				<ComboBox Width="180"
+                <TextBlock Text="Output:"  Width="68" VerticalAlignment="Center" />  
+				<ComboBox Width="182"
 						  ItemsSource="{Binding OutputTypes}"
 						  SelectedValue="{Binding SelectedOutputType}"
 						  SelectedValueBinding="{Binding Value}"
 						  DisplayMemberBinding="{Binding Display}"/>
             </StackPanel>
+            <CheckBox Content="Dry Run" FlowDirection="RightToLeft" HorizontalAlignment="Right" IsChecked="{Binding IsDryRun}"/>
             <StackPanel Orientation="Horizontal">
-                <TextBlock Text="{Binding ProgressText}" VerticalAlignment="Center" Width="120"/>
-                <CheckBox Content="Dry Run" FlowDirection="RightToLeft" Width="120" IsChecked="{Binding IsDryRun}"/>
+                <TextBlock Text="{Binding ProgressText}"/>
+                <TextBlock Text="{Binding StateText}" Margin="10,0,0,0"/>
             </StackPanel>
             <Grid ColumnDefinitions="*,25">
-                <Slider Grid.Column="0" Minimum="1" Maximum="{Binding MaxThreadCount}" TickFrequency="1" IsSnapToTickEnabled="True" Value="{Binding ThreadCount}"/>
-                <TextBlock Grid.Column="2" Text="{Binding ThreadCount}" VerticalAlignment="Center" HorizontalAlignment="Right"/>
+                <Slider Grid.Column="0" Minimum="1" Maximum="{Binding MaxThreadCount}" TickFrequency="1" VerticalAlignment="Center" IsSnapToTickEnabled="True" Value="{Binding ThreadCount}"/>
+                <TextBlock Grid.Column="1" Text="{Binding ThreadCount}" VerticalAlignment="Center" HorizontalAlignment="Right"/>
             </Grid>
         </StackPanel>
 
@@ -77,15 +86,23 @@
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
         </ScrollViewer>
-                
-        <Image Grid.Row="3" Source="/Assets/RomVault.png" Stretch="Uniform"/>
+               
+        <TextBlock Grid.Row="3" Text="www.romvault.com" VerticalAlignment="Center" HorizontalAlignment="Center"
+                   Foreground="{DynamicResource SystemAccentColor}"
+                   TextDecorations="Underline"
+                   Cursor="Hand"
+                   ToolTip.Tip="https://www.romvault.com"
+                   PointerPressed="OnRomVaultLinkPressed"/>
 
         <DataGrid x:Name="FilesGrid" Grid.Row="0" Grid.Column="1" Grid.RowSpan="4" ItemsSource="{Binding Files}"
+                  Background="{DynamicResource SamWindowBackground}"
                   IsReadOnly="True"
                   SelectionMode="Single"
                   RowHeight="20"
                   CanUserSortColumns="False"
-                  CanUserReorderColumns="False">
+                  CanUserReorderColumns="False"
+                  CanUserResizeColumns="True"
+                  HorizontalScrollBarVisibility="Auto">
             <DataGrid.Styles>
                 <Style Selector="DataGridRow">
                     <Setter Property="Focusable" Value="False"/>
@@ -107,8 +124,60 @@
                 </Style>
             </DataGrid.Styles>
             <DataGrid.Columns>
-                <DataGridTextColumn Header="Filename" Binding="{Binding Name}" Width="*"/>
-                <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="200"/>
+                <DataGridTemplateColumn Header="Filename" Width="*" MinWidth="120">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate x:DataType="vm:samFile">
+                            <ctrl:PathTextBlock Text="{Binding Name}"
+                                                FontSize="12"
+                                                VerticalAlignment="Center"
+                                                ToolTip.Tip="{Binding Name}"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+
+                <DataGridTemplateColumn Header="Size" Width="100" MinWidth="60">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate x:DataType="vm:samFile">
+                            <TextBlock Text="{Binding SizeText}"
+                                                FontSize="12"
+                                                HorizontalAlignment="Right"
+                                                VerticalAlignment="Center"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+
+                <DataGridTemplateColumn Header="Status" Width="150" MinWidth="100">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate x:DataType="vm:samFile">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <!-- While processing: progress bar + percentage. -->
+                                <ProgressBar Grid.Column="0"
+                                             Minimum="0" Maximum="100"
+                                             Value="{Binding Progress}"
+                                             IsVisible="{Binding IsProcessing}"
+                                             Height="10" MinHeight="0" MinWidth="0"
+                                             VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="1"
+                                           Text="{Binding ProgressText}"
+                                           IsVisible="{Binding IsProcessing}"
+                                           FontSize="12"
+                                           MinWidth="36"
+                                           TextAlignment="Right"
+                                           Margin="6,0,0,0"
+                                           VerticalAlignment="Center"/>
+                                <!-- When finished: the result text. -->
+                                <TextBlock Grid.Column="0" Grid.ColumnSpan="2"
+                                           Text="{Binding Status}"
+                                           IsVisible="{Binding IsNotProcessing}"
+                                           FontSize="12"
+                                           TextTrimming="CharacterEllipsis"
+                                           VerticalAlignment="Center"
+                                           ToolTip.Tip="{Binding Status}"/>
+                            </Grid>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+
             </DataGrid.Columns>
         </DataGrid>
     </Grid>

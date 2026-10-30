@@ -5,7 +5,7 @@ using System.Collections.Generic;
 
 namespace TrrntZip
 {
-    public delegate void StatusCallback(int threadId, int precent);
+    public delegate void StatusCallback(int threadId, int FileId, int precent);
 
     public delegate void LogCallback(int threadId, string log);
 
@@ -26,10 +26,10 @@ namespace TrrntZip
             _buffer = new byte[1024 * 1024];
         }
 
-        public TrrntZipStatus Process(FileInfo fi, out ZipStructure outZipStruct, Settings settings, PauseCancel pc = null)
+        public TrrntZipStatus Process(FileInfo fi, int fileId, out ZipStructure outZipStruct, Settings settings, PauseCancel pc = null)
         {
             outZipStruct = ZipStructure.None;
-            if ( settings.VerboseLogging)
+            if (settings.VerboseLogging)
             {
                 StatusLogCallBack?.Invoke(ThreadId, "");
             }
@@ -113,7 +113,7 @@ namespace TrrntZip
             }
 
             StatusLogCallBack?.Invoke(ThreadId, "TorrentZipping");
-            TrrntZipStatus fixedTzs = TorrentZipRebuild.ReZipFiles(zippedFiles, zipFile, outZipStruct, _buffer, StatusCallBack, StatusLogCallBack, ErrorCallBack, ThreadId, workerCount, pc, settings);
+            TrrntZipStatus fixedTzs = TorrentZipRebuild.ReZipFiles(fileId, zippedFiles, zipFile, outZipStruct, _buffer, StatusCallBack, StatusLogCallBack, ErrorCallBack, ThreadId, workerCount, pc, settings);
 
             if ((tzs | TrrntZipStatus.NeedsRepaired) == TrrntZipStatus.NeedsRepaired)
                 fixedTzs |= TrrntZipStatus.NeedsRepaired;
@@ -206,7 +206,7 @@ namespace TrrntZip
 
         }
 
-        public TrrntZipStatus Process(DirectoryInfo di, out ZipStructure outputType, Settings settings, PauseCancel pc = null)
+        public TrrntZipStatus Process(DirectoryInfo di, int fileId, out ZipStructure outputType, Settings settings, PauseCancel pc = null)
         {
             // read in all the files & dirs
             List<ZippedFile> zippedFiles = new List<ZippedFile>();
@@ -237,7 +237,7 @@ namespace TrrntZip
             }
 
             StatusLogCallBack?.Invoke(ThreadId, "TorrentZipping");
-            TrrntZipStatus fixedTzs = TorrentZipMake.ZipFiles(zippedFiles, di.FullName, _buffer, StatusCallBack, StatusLogCallBack, ErrorCallBack, ThreadId, workerCount, pc, settings);
+            TrrntZipStatus fixedTzs = TorrentZipMake.ZipFiles(zippedFiles, di.FullName, fileId, _buffer, StatusCallBack, StatusLogCallBack, ErrorCallBack, ThreadId, workerCount, pc, settings);
             return fixedTzs;
 
         }

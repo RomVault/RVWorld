@@ -176,7 +176,7 @@ namespace TrrntZipCMD
                         string ext = Path.GetExtension(file.FullName).ToLower();
                         if (!string.IsNullOrEmpty(ext) && ((ext == ".zip") || (ext == ".7z")))
                         {
-                            torrentZip.Process(new FileInfo(file.FullName), out ZipStructure zipStruct, settings);
+                            torrentZip.Process(new FileInfo(file.FullName), -1, out ZipStructure zipStruct, settings);
                         }
                     }
                 }
@@ -215,7 +215,7 @@ namespace TrrntZipCMD
                 string ext = Path.GetExtension(filename)?.ToLower();
                 if (!string.IsNullOrEmpty(ext) && (ext == ".zip" || ext == ".7z"))
                 {
-                    torrentZip.Process(new FileInfo(filename), out ZipStructure zipStruct, settings);
+                    torrentZip.Process(new FileInfo(filename), -1, out ZipStructure zipStruct, settings);
                 }
             }
 
@@ -232,7 +232,7 @@ namespace TrrntZipCMD
         }
 
 
-        private static void StatusCallBack(int processID, int percent)
+        private static void StatusCallBack(int processID, int fileId, int percent)
         {
             Console.Write($"{percent,3}%");
         }

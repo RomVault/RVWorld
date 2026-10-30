@@ -40,6 +40,25 @@ public partial class MainWindow : Window
     }
 
     /// <summary>
+    /// Opens the RomVault website in the user's default browser.
+    /// </summary>
+    private void OnRomVaultLinkPressed(object? sender, PointerPressedEventArgs e)
+    {
+        try
+        {
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = "https://www.romvault.com",
+                UseShellExecute = true
+            });
+        }
+        catch
+        {
+            // Nothing useful to do if a browser cannot be launched.
+        }
+    }
+
+    /// <summary>
     /// The window may only be closed while nothing is being processed, i.e. no
     /// worker is busy, the queue is empty and no files are being added.
     /// </summary>

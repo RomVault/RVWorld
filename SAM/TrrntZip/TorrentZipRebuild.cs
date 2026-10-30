@@ -13,7 +13,7 @@ namespace TrrntZip
 {
     public static class TorrentZipRebuild
     {
-        public static TrrntZipStatus ReZipFiles(List<ZippedFile> zippedFiles, ICompress originalZipFile, ZipStructure outputType, byte[] buffer, StatusCallback statusCallBack, LogCallback logCallback, ErrorCallback errorCallback, int threadId, int threadCount, PauseCancel pc, Settings settings)
+        public static TrrntZipStatus ReZipFiles(int fileId, List<ZippedFile> zippedFiles, ICompress originalZipFile, ZipStructure outputType, byte[] buffer, StatusCallback statusCallBack, LogCallback logCallback, ErrorCallback errorCallback, int threadId, int threadCount, PauseCancel pc, Settings settings)
         {
             InputZipType inputType;
 
@@ -127,7 +127,7 @@ namespace TrrntZip
                         zrInput = ZipReturn.ZipGood;
                     }
 
-                    ZipCompression outputcompressionType = StructuredArchive.GetCompressionType(outputType,t.Size);
+                    ZipCompression outputcompressionType = StructuredArchive.GetCompressionType(outputType, t.Size);
 
                     ZipReturn zrOutput = zipFileOut.ZipFileOpenWriteStream(false, t.Name, streamSize, outputcompressionType, out Stream writeStream, threadCount: threadCount);
 
@@ -148,7 +148,7 @@ namespace TrrntZip
                         if (pc != null)
                         {
                             pc.WaitOne();
-                            if (pc.Cancelled)
+                            if (pc.StopHard)
                             {
                                 zipFileOut.ZipFileCloseFailed();
                                 originalZipFile.ZipFileClose();
@@ -163,7 +163,7 @@ namespace TrrntZip
                         int filePercent = (int)((double)fileSizeProgress / fileSizeTotal * 20);
                         if (filePercent != filePercentReported)
                         {
-                            statusCallBack?.Invoke(threadId, filePercent * 5);
+                            statusCallBack?.Invoke(threadId, fileId, filePercent * 5);
                             filePercentReported = filePercent;
                         }
 
@@ -217,7 +217,7 @@ namespace TrrntZip
 
                     zipFileOut.ZipFileCloseWriteStream(t.ByteCRC);
                 }
-                statusCallBack?.Invoke(threadId, 100);
+                statusCallBack?.Invoke(threadId, fileId, 100);
 
                 TrrntZipStatus result = TrrntZipStatus.Trrntzipped;
                 try
