@@ -11,7 +11,7 @@ namespace TrrntZip
 {
     public static class TorrentZipMake
     {
-        public static TrrntZipStatus ZipFiles(List<ZippedFile> zippedFiles, string filename, byte[] buffer, StatusCallback statusCallBack, LogCallback logCallback, ErrorCallback errorCallback, int threadId, int threadCount, PauseCancel pc, Settings settings)
+        public static TrrntZipStatus ZipFiles(List<ZippedFile> zippedFiles, string filename,int fileId, byte[] buffer, StatusCallback statusCallBack, LogCallback logCallback, ErrorCallback errorCallback, int threadId, int threadCount, PauseCancel pc, Settings settings)
         {
 
             int bufferSize = buffer.Length;
@@ -117,7 +117,7 @@ namespace TrrntZip
                         if (pc != null)
                         {
                             pc.WaitOne();
-                            if (pc.Cancelled)
+                            if (pc.StopHard)
                             {
                                 zipFileOut.ZipFileCloseFailed();
                                 originalZipFile.ZipFileClose();
@@ -132,7 +132,7 @@ namespace TrrntZip
                         int filePercent = (int)((double)fileSizeProgress / fileSizeTotal * 20);
                         if (filePercent != filePercentReported)
                         {
-                            statusCallBack?.Invoke(threadId, filePercent * 5);
+                            statusCallBack?.Invoke(threadId,fileId, filePercent * 5);
                             filePercentReported = filePercent;
                         }
 
@@ -161,7 +161,7 @@ namespace TrrntZip
 
                     zipFileOut.ZipFileCloseWriteStream(t.ByteCRC);
                 }
-                statusCallBack?.Invoke(threadId, 100);
+                statusCallBack?.Invoke(threadId, fileId, 100);
 
                 TrrntZipStatus result = TrrntZipStatus.Trrntzipped;
                 try

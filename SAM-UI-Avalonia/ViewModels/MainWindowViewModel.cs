@@ -20,7 +20,9 @@ public partial class MainWindowViewModel : ViewModelBase
 
     public ObservableCollection<samFile> Files { get; } = new();
     public ObservableCollection<procStatus> ProcessStats { get; } = new();
+    private Dictionary<int, procStatus> _processStats = new();
 
+    private readonly Dictionary<int, samFile> _rowsByFileId = new();
 
 
     public MainWindowViewModel()
@@ -58,28 +60,53 @@ public partial class MainWindowViewModel : ViewModelBase
         OnUIThread(() =>
         {
             IsRunning = busy;
-            if (MainQueue.pc.Cancelled)
+            if (!busy && MainQueue.pc.Stopping)
                 MainQueue.pc.ResetCancel();
         });
     }
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(PauseCommand))]
-    [NotifyCanExecuteChangedFor(nameof(StopCommand))]
+    [NotifyCanExecuteChangedFor(nameof(SoftStopCommand))]
+    [NotifyCanExecuteChangedFor(nameof(HardStopCommand))]
+    [NotifyPropertyChangedFor(nameof(IsSpinning))]
+    [NotifyPropertyChangedFor(nameof(StateText))]
     private bool _isRunning;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(PauseButtonText))]
+    [NotifyPropertyChangedFor(nameof(IsSpinning))]
+    [NotifyPropertyChangedFor(nameof(StateText))]
     private bool _isPaused;
+
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(SoftStopCommand))]
+    [NotifyCanExecuteChangedFor(nameof(PauseCommand))]
+    [NotifyPropertyChangedFor(nameof(StateText))]
+    private bool _isSoftStopping;
+
+
+    public bool IsSpinning => IsRunning && !IsPaused;
 
     /// <summary>
     /// Caption of the Pause button: "UnPause" while paused, otherwise "Pause".
     /// </summary>
-    public string PauseButtonText => IsPaused ? "UnPause" : "Pause";
+    public string PauseButtonText => IsPaused ? "Resume" : "Pause";
+
+    public string StateText
+    {
+        get
+        {
+            if (!IsRunning) return "Idle";
+            if (IsSoftStopping) return "Stopping after current files...";
+            if (IsPaused) return "Paused";
+            return "Working";
+        }
+    }
 
     [ObservableProperty]
     private int _maxThreadCount = Environment.ProcessorCount;
-    
+
     [ObservableProperty]
     private int _threadCount = 1;
 
@@ -168,6 +195,7 @@ public partial class MainWindowViewModel : ViewModelBase
                 procStatus ps = new procStatus() { Name = $"", Progress = 0, CProcessZip = newProc };
 
                 ProcessStats.Add(ps);
+                _processStats.Add(ps.CProcessZip.ThreadId, ps);
                 Workers.workers++;
                 Workers.ThreadId++;
 
@@ -184,6 +212,13 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         if (value)
             return;
+
+        // Everything has finished (or been stopped).
+        IsSoftStopping = false;
+        IsPaused = false;
+        if (MainQueue.pc.Paused)
+            MainQueue.pc.UnPause();
+
         SetWorkerCount();
     }
 
@@ -224,10 +259,23 @@ public partial class MainWindowViewModel : ViewModelBase
         }
     }
 
-    private bool CanPause() => IsRunning;
 
-    [RelayCommand(CanExecute = nameof(CanStop))]
-    private void Stop()
+    private bool CanPause() => IsRunning && !IsSoftStopping;
+
+    [RelayCommand(CanExecute = nameof(CanSoftStop))]
+    private void SoftStop()
+    {
+        IsSoftStopping = true;
+        MainQueue.pc.SoftCancel();
+        IsPaused = false;
+
+        ClearFileQueue();
+    }
+
+    private bool CanSoftStop() => IsRunning && !IsSoftStopping;
+
+    [RelayCommand(CanExecute = nameof(CanHardStop))]
+    private void HardStop()
     {
         ClearFileQueue();
         MainQueue.pc.Cancel();
@@ -237,6 +285,7 @@ public partial class MainWindowViewModel : ViewModelBase
         ClearFileQueue();
     }
 
+    private bool CanHardStop() => IsRunning;
     /// <summary>
     /// Empties the pending file queue. <see cref="BlockingCollection{T}"/> has no
     /// Clear method, so drain every item that can be taken without blocking.
@@ -248,15 +297,21 @@ public partial class MainWindowViewModel : ViewModelBase
         if (queue is null)
             return;
 
-        while (queue.TryTake(out _))
+
+        int removeMarkers = 0;
+        while (queue.TryTake(out cFile? item))
         {
+            if (item != null && item.fileId == -1 && item.filename == "Removing")
+                removeMarkers++;
         }
+
+        for (int i = 0; i < removeMarkers; i++)
+            queue.Add(new cFile() { fileId = -1, filename = "Removing" });
 
         // Draining bypasses the normal worker flow, so re-evaluate the busy state.
         MainQueue.QueueChanged();
     }
 
-    private bool CanStop() => IsRunning;
 
     /// <summary>
     /// Called when files and/or directories are dropped onto the drop target.
@@ -266,10 +321,14 @@ public partial class MainWindowViewModel : ViewModelBase
     /// <param name="paths">Full paths of the dropped files and directories.</param>
     public void FilesDropped(IReadOnlyList<string> paths, CancellationToken cancellationToken = default)
     {
+        if (IsSoftStopping)
+            return;
+
         if (!IsRunning)
         {
             MainQueue.fileCount = 0;
             FilesDone = 0;
+            FilesTotal = 0;
             Files.Clear();
         }
 
@@ -314,19 +373,35 @@ public partial class MainWindowViewModel : ViewModelBase
         {
             lock (Workers.lockObj)
             {
-                foreach (procStatus proc in ProcessStats)
-                {
-                    if (proc.CProcessZip?.ThreadId == processId)
-                    {
-                        ProcessStats.Remove(proc);
-                        break;
-                    }
-                }
+                ProcessStats.Remove(_processStats[processId]);
+                _processStats.Remove(processId);
                 SetWorkerCount();
             }
         });
     }
 
+
+    private void ProcessFileStartCallback(int processId, int fileId, string filename, long size)
+    {
+        OnUIThread(() =>
+        {
+            samFile row = new samFile()
+            {
+                Name = filename,
+                Size = size,
+                Status = "Processing",
+                Progress = 0,
+                IsProcessing = true
+            };
+            _rowsByFileId[fileId] = row;
+            Files.Add(row);
+
+            procStatus proc = _processStats[processId];
+            proc.Progress = 0;
+            proc.Name = filename;
+            return;
+        });
+    }
     private void ProcessFileEndCallback(int processId, int fileId, TrrntZipStatus trrntZipStatus, ZipStructure zipStruct)
     {
         if (processId == -1)
@@ -352,58 +427,37 @@ public partial class MainWindowViewModel : ViewModelBase
                 case TrrntZipStatus.Trrntzipped | TrrntZipStatus.NeedsRepaired:
                     status = $"RePacked to {StructuredArchive.GetZipStructureName(zipStruct)}";
                     break;
+                case TrrntZipStatus.Cancel:
+                    status = "Stopped Hard. (File Unchanged";
+                    break;
                 default:
                     status = trrntZipStatus.ToString();
                     break;
             }
 
-            if (fileId < Files.Count)
-                Files[fileId].Status = status;
-
-
-            foreach (procStatus proc in ProcessStats)
+            if (_rowsByFileId.TryGetValue(fileId, out samFile? row))
             {
-                if (proc.CProcessZip?.ThreadId == processId)
-                {
-                    proc.Progress = 0;
-                    proc.Name = "";
-                    return;
-                }
+                row.Status = status;
+                row.IsProcessing = false;
+                _rowsByFileId.Remove(fileId);
             }
+
+            procStatus proc = _processStats[processId];
+            proc.Progress = 0;
+            proc.Name = "";
 
         });
     }
 
-    private void ProcessFileStartCallback(int processId, int fileId, string filename)
+    private void StatusCallBack(int processId, int fileId, int percent)
     {
         OnUIThread(() =>
         {
-            Files.Add(new samFile() { Name = filename, Status = "Processing" });
+            procStatus proc = _processStats[processId];
+            proc.Progress = percent;
 
-            foreach (procStatus proc in ProcessStats)
-            {
-                if (proc.CProcessZip?.ThreadId == processId)
-                {
-                    proc.Progress = 0;
-                    proc.Name = filename;
-                    return;
-                }
-            }
-        });
-    }
-
-    private void StatusCallBack(int processId, int percent)
-    {
-        OnUIThread(() =>
-        {
-            foreach (procStatus proc in ProcessStats)
-            {
-                if (proc.CProcessZip?.ThreadId == processId)
-                {
-                    proc.Progress = percent;
-                    return;
-                }
-            }
+            if (_rowsByFileId.TryGetValue(fileId, out samFile? row))
+                row.Progress = percent;
         });
     }
 
@@ -419,6 +473,36 @@ public partial class samFile : ObservableObject
 
     [ObservableProperty]
     private string _status = "";
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(SizeText))]
+    private long _size = -1;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ProgressText))]
+    private int _progress;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsNotProcessing))]
+    private bool _isProcessing;
+
+    public bool IsNotProcessing => !IsProcessing;
+    public string ProgressText => $"{Progress}%";
+    public string SizeText => FormatSize(Size);
+
+    private static string FormatSize(long bytes)
+    {
+        if (bytes < 0) return "";
+        string[] units = { "B", "KB", "MB", "GB", "TB" };
+        double value = bytes;
+        int unit = 0;
+        while (value >= 1024 && unit < units.Length - 1)
+        {
+            value /= 1024;
+            unit++;
+        }
+        return unit == 0 ? $"{bytes} B" : $"{value:0.00} {units[unit]}";
+    }
 }
 
 public partial class procStatus : ObservableObject

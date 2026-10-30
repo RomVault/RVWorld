@@ -2,18 +2,20 @@
 
 namespace TrrntZip
 {
-
     public class PauseCancel
     {
         public bool Paused { get; private set; } = false;
-        public bool Cancelled { get; private set; } = false;
+        public bool StopHard { get; private set; } = false;
+        public bool StopSoft { get; private set; } = false;
 
+        public bool Stopping => StopHard || StopSoft;
         private ManualResetEvent mrse;
 
         public PauseCancel()
         {
             mrse = new ManualResetEvent(true);
-            Cancelled = false;
+            StopHard = false; 
+            StopSoft = false;
         }
 
         public void Pause()
@@ -30,13 +32,20 @@ namespace TrrntZip
 
         public void Cancel()
         {
-            Cancelled = true;
+            StopHard = true;
+            UnPause();
+        }
+         
+        public void SoftCancel()
+        {
+            StopSoft = true;
             UnPause();
         }
 
         public void ResetCancel()
         {
-            Cancelled = false;
+            StopHard = false;
+            StopSoft = false;
             UnPause();
         }
 
@@ -44,7 +53,5 @@ namespace TrrntZip
         {
             mrse.WaitOne();
         }
-
     }
-
 }

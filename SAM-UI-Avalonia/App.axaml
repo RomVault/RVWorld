@@ -8,7 +8,29 @@
     <Application.DataTemplates>
         <local:ViewLocator/>
     </Application.DataTemplates>
-  
+
+    <!-- App colours. Fluent's own dark window background is pure black, so the
+         window and sidebar use these instead. The matching set is picked
+         automatically from the OS light/dark setting. -->
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.ThemeDictionaries>
+                <ResourceDictionary x:Key="Dark">
+                    <SolidColorBrush x:Key="SamWindowBackground" Color="#FF202020"/>
+                    <SolidColorBrush x:Key="SamSidebarBackground" Color="#FF2C2C2C"/>
+                    <SolidColorBrush x:Key="SamDividerBrush" Color="#FF3C3C3C"/>
+                    <SolidColorBrush x:Key="SamDropBorderBrush" Color="#FF6A6A6A"/>
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="Light">
+                    <SolidColorBrush x:Key="SamWindowBackground" Color="#FFF9F9F9"/>
+                    <SolidColorBrush x:Key="SamSidebarBackground" Color="#FFECECEC"/>
+                    <SolidColorBrush x:Key="SamDividerBrush" Color="#FFD6D6D6"/>
+                    <SolidColorBrush x:Key="SamDropBorderBrush" Color="#FF8A8A8A"/>
+                </ResourceDictionary>
+            </ResourceDictionary.ThemeDictionaries>
+        </ResourceDictionary>
+    </Application.Resources>
+
     <Application.Styles>
         <FluentTheme />
             <StyleInclude Source="avares://Avalonia.Controls.DataGrid/Themes/Fluent.xaml"/>

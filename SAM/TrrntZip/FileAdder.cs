@@ -39,6 +39,9 @@ namespace TrrntZip
             {
                 foreach (string t in _file)
                 {
+                    if (_pc != null && _pc.Stopping)
+                        break;
+
                     if (File.Exists(t) && AddFile(t))
                     {
                         cFile cf = new cFile() { fileId = MainQueue.fileCount++, filename = t, settings = _settings };
@@ -49,6 +52,9 @@ namespace TrrntZip
 
                 foreach (string t in _file)
                 {
+                    if (_pc != null && _pc.Stopping)
+                        break;
+
                     if (Directory.Exists(t))
                     {
                         if (_settings.InZip == InputZipType.Directory)
@@ -116,7 +122,7 @@ namespace TrrntZip
                 if (_pc != null)
                 {
                     _pc.WaitOne();
-                    if (_pc.Cancelled)
+                    if (_pc.Stopping)
                         return;
                 }
 
@@ -135,7 +141,7 @@ namespace TrrntZip
                 if (_pc != null)
                 {
                     _pc.WaitOne();
-                    if (_pc.Cancelled)
+                    if (_pc.Stopping)
                         return;
                 }
 

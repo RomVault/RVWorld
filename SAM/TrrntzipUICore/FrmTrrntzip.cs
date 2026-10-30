@@ -431,11 +431,11 @@ namespace TrrntZipUICore
         }
 
 
-        private void ProcessFileStartCallback(int processId, int fileId, string filename)
+        private void ProcessFileStartCallback(int processId, int fileId, string filename,long size)
         {
             if (InvokeRequired)
             {
-                BeginInvoke(new ProcessFileStartCallback(ProcessFileStartCallback), processId, fileId, filename);
+                BeginInvoke(new ProcessFileStartCallback(ProcessFileStartCallback), processId, fileId, filename, size);
                 return;
             }
 
@@ -468,7 +468,7 @@ namespace TrrntZipUICore
                 if (FileCount == 0)
                 {
                     StopWorking();
-                    if (pc.Cancelled)
+                    if (pc.StopHard)
                         pc.ResetCancel();
                 }
             }
@@ -509,14 +509,14 @@ namespace TrrntZipUICore
                 if (!scanningForFiles && FileCountProcessed == FileCount)
                 {
                     StopWorking();
-                    if (pc.Cancelled)
+                    if (pc.StopHard)
                         pc.ResetCancel();
                 }
             }
 
         }
 
-        private void StatusCallBack(int processId, int percent)
+        private void StatusCallBack(int processId,int fileId, int percent)
         {
             _threads[processId].tProgress = percent;
         }
