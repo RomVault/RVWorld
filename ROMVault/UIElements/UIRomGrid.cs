@@ -196,7 +196,7 @@ namespace ROMVault.UIElements
             try
             {
 
-                if (tFile.DatStatus != DatStatus.InDatMerged || tFile.RepStatus != RepStatus.NotCollected)////////// || chkBoxShowMerged.Checked)
+                if (tFile.DatStatus != DatStatus.InDatMerged || tFile.RepStatus != RepStatus.NotCollected || Settings.rvSettings.chkBoxShowMerged)
                 {
                     tFile.UiDisplayName = pathAdd + tFile.Name;
                     fileList.Add(tFile);
