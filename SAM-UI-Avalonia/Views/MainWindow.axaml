@@ -81,7 +81,7 @@
             <ItemsControl ItemsSource="{Binding ProcessStats}">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate DataType="vm:procStatus">
-                        <views:ProcessStatus/>
+                        <ctrl:ProcessStatus/>
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>

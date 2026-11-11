@@ -490,7 +490,7 @@ namespace ROMVault.UIElements
                     if (pTree.ToSortStatusIs(RvFile.ToSortDirType.ToSortPrimary) || pTree.ToSortStatusIs(RvFile.ToSortDirType.ToSortCache))
                         return true;
 
-                    SetChecked(pTree, RvTreeRow.TreeSelect.Locked, shiftPressed);
+                     SetChecked(pTree, RvTreeRow.TreeSelect.Locked, shiftPressed);
                     return true;
                 }
 
